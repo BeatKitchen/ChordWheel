@@ -408,6 +408,7 @@ export default function HarmonyWheel(){
        Enter on Gm / Gm7 / C7 (from any mode).
        Stay on F/Fmaj7, Gm/Gm7, C7, exact C triad.
        Exit on Cmaj7, Am7, Dm/Dm7, or non-stay after debounce (CW spin).
+       NEW: Immediate cross-space exits (Bb fam → HOME ♭VII; Eb/Ab/Db → PARALLEL; Dm/Am/Em/D7/E7 → HOME).
     */
     {
       const enterByGm = isSubset([7,10,2]) || isSubset([7,10,2,5]);
@@ -429,6 +430,61 @@ export default function HarmonyWheel(){
         const useWindow = performance.now() < homeSuppressUntilRef.current;
         const S = useWindow ? windowedRelSet() : pcsRel;
 
+        /* ---------- FAST EXITS FROM SUB (no debounce) ---------- */
+        // Bb family → HOME, light ♭VII
+        const bbTri   = isSubset([10,2,5]);     // Bb
+        const bb7     = isSubset([10,2,5,8]);   // Bb7
+        const bbmTri  = isSubset([10,1,5]);     // Bbm
+        const bbm7    = isSubset([10,1,5,8]);   // Bbm7
+        if (bbTri || bb7 || bbmTri || bbm7){
+          subdomLatchedRef.current = false;
+          subSpinExit();
+          setSubdomActive(false);
+          setVisitorActive(false); setRelMinorActive(false);
+          homeSuppressUntilRef.current = 0;
+          setActiveWithTrail("♭VII", absName || (bbmTri||bbm7 ? "Bbm" : "Bb"));
+          return;
+        }
+
+        // Eb / Ab / Db families → PARALLEL (Eb space)
+        const eb   = isSubset([3,7,10]) || isSubset([3,7,10,2]);     // Eb / Eb7
+        const ab   = isSubset([8,0,3]) || isSubset([8,0,3,6]);       // Ab / Ab7
+        const db   = isSubset([1,5,8]) || isSubset([1,5,8,11]);      // Db / Db7
+        if (eb || ab || db){
+          subdomLatchedRef.current = false;
+          subSpinExit();
+          setSubdomActive(false);
+          setRelMinorActive(false);
+          setVisitorActive(true);
+          // Map using Eb detectors so the correct wedge lights
+          const m7 = firstMatch(EB_REQ7, pcsRel);
+          if (m7){ setActiveWithTrail(m7.f as Fn, m7.n); return; }
+          const tri = firstMatch(EB_REQT, pcsRel);
+          if (tri){ setActiveWithTrail(tri.f as Fn, tri.n); return; }
+          setActiveWithTrail("I","Eb"); // fallback
+          return;
+        }
+
+        // Dm / Am / Em (triad or m7) and D7 / E7 → HOME
+        const dm   = isSubset([2,5,9]) || isSubset([2,5,9,0]);
+        const am   = isSubset([9,0,4]) || isSubset([9,0,4,7]);
+        const em   = isSubset([4,7,11]) || isSubset([4,7,11,2]);
+        const d7   = isSubset([2,6,9,0]);
+        const e7   = isSubset([4,8,11,2]);
+        if (dm || am || em || d7 || e7){
+          subdomLatchedRef.current = false;
+          subSpinExit();
+          setSubdomActive(false);
+          setVisitorActive(false); setRelMinorActive(false);
+          homeSuppressUntilRef.current = 0;
+          if (dm){ setActiveWithTrail("ii",  absName || (isSubset([2,5,9,0])?"Dm7":"Dm")); return; }
+          if (am){ setActiveWithTrail("vi",  absName || (isSubset([9,0,4,7])?"Am7":"Am")); return; }
+          if (em){ setActiveWithTrail("iii", absName || (isSubset([4,7,11,2])?"Em7":"Em")); return; }
+          if (d7){ setActiveWithTrail("V/V", "D7"); return; }
+          if (e7){ setActiveWithTrail("V/vi","E7"); return; }
+        }
+
+        /* ---------- normal SUB latching/exit ---------- */
         if (subdomLatchedRef.current && S.size < 3) {
           homeSuppressUntilRef.current = performance.now() + RECENT_PC_WINDOW_MS;
           return;
@@ -448,7 +504,7 @@ export default function HarmonyWheel(){
           subSpinExit();
           setSubdomActive(false);
           setVisitorActive(false); setRelMinorActive(false);
-          homeSuppressUntilRef.current = performance.now() + 140; // suppress I/C blip
+          homeSuppressUntilRef.current = performance.now() + 140; // brief I/C flicker suppression
           justExitedSubRef.current = true;
           return;
         }
@@ -509,8 +565,8 @@ export default function HarmonyWheel(){
       if(amPresent){ setVisitorActive(false); setActiveWithTrail("vi", absName || "Am"); return; }
     }
 
-    // Bbm7 guard
-    if(exactSet([10,1,5,8])){ centerOnly("Bbm7"); return; }
+    // Bbm7 guard (disabled in SUB; allowed elsewhere)
+    if(!subdomActiveRef.current && exactSet([10,1,5,8])){ centerOnly("Bbm7"); return; }
 
     // Eb quick exits
     if(visitorActiveRef.current && (isSubset([2,5,9]) || isSubset([2,5,9,0]))){
@@ -520,32 +576,28 @@ export default function HarmonyWheel(){
       setVisitorActive(false); setActiveWithTrail("iii", absName || (isSubset([4,7,11,2])?"Em7":"Em")); return;
     }
 
-  /* ---------- explicit dim7 mapping in HOME ---------- */
-if (!visitorActiveRef.current){
-  const root = findDim7Root(pcsRel);
-  if (root!==null){
-    const names = ["C","C#","D","Eb","E","F","F#","G","Ab","A","Bb","B"];
-    const label = `${names[root]}dim7`;
+    /* ---------- explicit dim7 mapping in HOME ---------- */
+    if (!visitorActiveRef.current){
+      const root = findDim7Root(pcsRel);
+      if (root!==null){
+        const names = ["C","C#","D","Eb","E","F","F#","G","Ab","A","Bb","B"];
+        const label = `${names[root]}dim7`;
 
-    // Only pick wedges that exist in Fn: V/V, V/vi, V7. No V/ii wedge in this app.
-    if (root === 1) {
-      // C#°7 (leading tone to ii) → show label only; the V/ii idea is handled by the A7 bonus overlay.
-      setActiveFn("");
-      setCenterLabel(label);
-      return;
+        // No V/ii wedge in this app; C#°7 shows label only; A7 overlay covers that idea.
+        if (root === 1) {
+          setActiveFn(""); setCenterLabel(label); return;
+        }
+
+        const homeMap: Record<number, Fn> = {
+          6: "V/V",   // F#°7 → V/V
+          8: "V/vi",  // G#°7 → V/vi
+          11:"V7"     // B°7  → V of I
+        };
+        const mapped = homeMap[root] || mapDimRootToFn_ByBottom(root) || "V7";
+        setActiveWithTrail(mapped as Fn, label);
+        return;
+      }
     }
-
-    const homeMap: Record<number, Fn> = {
-      6: "V/V",   // F#°7 → V/V
-      8: "V/vi",  // G#°7 → V/vi
-      11: "V7"    // B°7  → V of I
-    };
-    const mapped = homeMap[root] || mapDimRootToFn_ByBottom(root) || "V7";
-    setActiveWithTrail(mapped as Fn, label);
-    return;
-  }
-}
-
 
     /* In Eb mapping */
     if(visitorActiveRef.current){
@@ -555,7 +607,6 @@ if (!visitorActiveRef.current){
     }
 
     /* In C mapping */
-    // (suppress I/C flicker right after SUB exit)
     if (performance.now() >= homeSuppressUntilRef.current){
       const m7 = firstMatch(C_REQ7, pcsRel); if(m7){ setActiveWithTrail(m7.f as Fn, m7.n); return; }
       if(/(maj7|m7♭5|m7$|dim7$|[^m]7$)/.test(absName)) { centerOnly(absName); return; }
@@ -649,8 +700,7 @@ if (!visitorActiveRef.current){
     return new Set(fitted);
   };
 
-  // PREVIEW should use the same spelling as the wedge label:
-  // Eb in PARALLEL, F in SUB, tonic otherwise.
+  // PREVIEW uses display label key: Eb in PARALLEL, F in SUB, tonic otherwise.
   const previewFn = (fn:Fn)=>{
     lastInputWasPreviewRef.current = true;
     const renderKey:KeyName = visitorActiveRef.current
@@ -687,14 +737,13 @@ if (!visitorActiveRef.current){
             <text x={labelPos.x} y={labelPos.y-6} textAnchor="middle" fontSize={16}
               style={{ fill: FN_LABEL_COLORS[fn], fontWeight:600, paintOrder:"stroke", stroke:'#000', strokeWidth:0.9 }}>
               <tspan x={labelPos.x} dy={0}>{fn}</tspan>
-              {/* Use display-only label key so SUB reads in F, PARALLEL in Eb */}
+              {/* display-only label key so SUB reads in F, PARALLEL in Eb */}
               <tspan x={labelPos.x} dy={17} fontSize={13}>{realizeFunction(fn, labelKey)}</tspan>
             </text>
           )}
         </g>
       );
     });
-  // include subdomActive so labels switch immediately on enter/exit SUB
   },[layout, activeFn, trailFn, trailTick, trailOn, baseKey, visitorActive, relMinorActive, subdomActive, labelKey]);
 
   const activeBtnStyle = (on:boolean): React.CSSProperties =>
