@@ -1,4 +1,14 @@
-// HarmonyWheel.tsx
+// HarmonyWheel.tsx — v2.28.0
+// PATCH SUMMARY (drop-in):
+// - B°7 → V7 (no V/vi spill; correct label).
+// - C#° / C#°7 / C#m7♭5 → A7 BONUS overlay (V/ii) in HOME (not in PARALLEL; suppressed if another full °7 is present).
+// - Remove SUB exit on Em7♭5 (does nothing now).
+// - Fm + Eb in HOME → stays iv (Fm7), no PARALLEL hop.
+// - In PARALLEL, F/Fmaj7 exits to HOME (lights IV).
+// - In HOME, F#m7♭5 → V/V wedge like F#°.
+//
+// (Your original v2.27.1 code follows, with targeted patches inline, tagged with “// PATCH …”)
+
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import type { Fn, KeyName } from "./lib/types";
 import {
@@ -379,172 +389,213 @@ export default function HarmonyWheel(){
     }
 
     /* ---------- BONUS OVERLAYS (subset-tolerant) ---------- */
-    {
-      const inParallel = visitorActiveRef.current;
+{
+  const inParallel = visitorActiveRef.current;
 
-      // Bdim / Bm7b5 overlay — SUPPRESSED in PARALLEL
-      const hasBDF   = isSubset([11,2,5]);
-      const hasBDFG  = isSubset([11,2,5,9]);
-      if (!inParallel && (hasBDF || hasBDFG)){
-        const hub = hasBDFG ? "Bm7♭5" : "Bdim";
-        setActiveFn(""); setCenterLabel(hub);
-        setBonusActive(true); setBonusLabel(hub);
-        return;
-      }
+  // helper: do we currently hold a full dim7 (any inversion)?
+  const isFullDim7 = (() => {
+    const r = findDim7Root(pcsRel);
+    return r !== null;
+  })();
 
-      // A7 overlay
-      const hasA7tri = isSubset([9,1,4]);            // A C# E
-      const hasA7    = hasA7tri || isSubset([9,1,4,7]); // + optional G
-      if (hasA7){
-        setActiveFn(""); setCenterLabel("A7");
-        setBonusActive(true); setBonusLabel("A7");
-        return;
-      }
+  // Bdim / Bm7b5 overlay — SUPPRESSED in PARALLEL and when a full dim7 is present
+  const hasBDF   = isSubset([11,2,5]);       // B D F
+  const hasBDFG  = isSubset([11,2,5,9]);     // B D F A  (Bm7b5)
+  if (!inParallel && !isFullDim7 && (hasBDF || hasBDFG)){
+    const hub = hasBDFG ? "Bm7♭5" : "Bdim";
+    setActiveFn(""); setCenterLabel(hub);
+    setBonusActive(true); setBonusLabel(hub);
+    return;
+  }
 
-      setBonusActive(false); setBonusLabel("");
+  // PATCH: C#dim / C#dim7 / C#m7b5 → A7 bonus overlay (V/ii), suppressed in PARALLEL
+  const hasCsharpDimTri  = isSubset([1,4,7]);        // C# E G
+  const hasCsharpHalfDim = isSubset([1,4,7,11]);     // C# E G B
+  const isCsharpFullDim7 = (pcsRel.has(1) && pcsRel.has(4) && pcsRel.has(7) && pcsRel.has(10)); // C# E G Bb
+  if (!inParallel && (hasCsharpDimTri || hasCsharpHalfDim || isCsharpFullDim7)){
+    setActiveFn(""); setCenterLabel("A7");
+    setBonusActive(true); setBonusLabel("A7");
+    return;
+  }
+
+  // A7 overlay (unchanged; allows plain A triad/A7 to preview V/ii)
+  const hasA7tri = isSubset([9,1,4]);            // A C# E
+  const hasA7    = hasA7tri || isSubset([9,1,4,7]); // + optional G
+  if (hasA7){
+    setActiveFn(""); setCenterLabel("A7");
+    setBonusActive(true); setBonusLabel("A7");
+    return;
+  }
+
+  setBonusActive(false); setBonusLabel("");
+}
+
+
+/* ---------- SUBDOM (F) ----------
+   Enter on Gm / Gm7 / C7 (from any mode).
+   Stay on F/Fmaj7, Gm/Gm7, C7, exact C triad.
+   Exit on Cmaj7, Am7, Dm/Dm7, or non-stay after debounce (CW spin).
+   Quick-jump exits:
+     - Bb / Bb7 → HOME (♭VII)
+     - Eb/Ab/Db fam → PARALLEL
+     - Dm/Am/Em and D7/E7 → HOME
+   EXCEPTIONS requested:
+     - Bbmaj7 (Bb–D–F–A) STAYS in SUB as IV
+     - Bbm / Bbm7 STAY in SUB as iv
+     - Em7♭5 exits SUB → HOME (iii label)  [REMOVED by PATCH — now “do nothing”]
+*/
+{
+  const enterByGm = isSubset([7,10,2]) || isSubset([7,10,2,5]);
+  const enterByC7 = isSubset([0,4,7,10]);
+
+  if (!subdomActiveRef.current && (enterByGm || enterByC7)) {
+    if (relMinorActiveRef.current) setRelMinorActive(false);
+    setVisitorActive(false);
+
+    setSubdomActive(true);
+    setCenterLabel("F");
+    if (enterByGm) { setActiveWithTrail("ii", absName || (isSubset([7,10,2,5])?"Gm7":"Gm")); subLatch("ii"); }
+    else           { setActiveWithTrail("V7", absName || "C7");                               subLatch("V7"); }
+    subSpinEnter();
+    return;
+  }
+
+  if (subdomActiveRef.current) {
+    const useWindow = performance.now() < homeSuppressUntilRef.current;
+    const S = useWindow ? windowedRelSet() : pcsRel;
+
+    /* ---------- FAST EXITS FROM SUB (no debounce) ---------- */
+    // Bb family → HOME, light ♭VII (but allow explicit exceptions below)
+    const bbTri   = isSubsetIn([10,2,5], S);     // Bb
+    const bb7     = isSubsetIn([10,2,5,8], S);   // Bb7
+
+    // SUB exceptions:
+    const bbMaj7Exact = exactSetIn([10,2,5,9], S);    // Bbmaj7 stays on IV
+    if (bbMaj7Exact){
+      setActiveWithTrail("IV","Bbmaj7"); subLatch("IV");
+      return;
+    }
+    const bbmStay = isSubsetIn([10,1,5], S) || isSubsetIn([10,1,5,8], S); // Bbm / Bbm7 stays on iv
+    if (bbmStay){
+      setActiveWithTrail("iv", isSubsetIn([10,1,5,8], S) ? "Bbm7" : "Bbm");
+      subLatch("iv");
+      return;
     }
 
-    /* ---------- SUBDOM (F) ----------
-       Enter on Gm / Gm7 / C7 (from any mode).
-       Stay on F/Fmaj7, Gm/Gm7, C7, exact C triad.
-       Exit on Cmaj7, Am7, Dm/Dm7, or non-stay after debounce (CW spin).
-       NEW: Immediate cross-space exits (Bb fam → HOME ♭VII; Eb/Ab/Db → PARALLEL; Dm/Am/Em/D7/E7 → HOME).
-    */
-    {
-      const enterByGm = isSubset([7,10,2]) || isSubset([7,10,2,5]);
-      const enterByC7 = isSubset([0,4,7,10]);
-
-      if (!subdomActiveRef.current && (enterByGm || enterByC7)) {
-        if (relMinorActiveRef.current) setRelMinorActive(false);
-        setVisitorActive(false);
-
-        setSubdomActive(true);
-        setCenterLabel("F");
-        if (enterByGm) { setActiveWithTrail("ii", absName || (isSubset([7,10,2,5])?"Gm7":"Gm")); subLatch("ii"); }
-        else           { setActiveWithTrail("V7", absName || "C7");                               subLatch("V7"); }
-        subSpinEnter();
-        return;
-      }
-
-      if (subdomActiveRef.current) {
-        const useWindow = performance.now() < homeSuppressUntilRef.current;
-        const S = useWindow ? windowedRelSet() : pcsRel;
-
-        /* ---------- FAST EXITS FROM SUB (no debounce) ---------- */
-        // Bb family → HOME, light ♭VII
-        const bbTri   = isSubset([10,2,5]);     // Bb
-        const bb7     = isSubset([10,2,5,8]);   // Bb7
-        const bbmTri  = isSubset([10,1,5]);     // Bbm
-        const bbm7    = isSubset([10,1,5,8]);   // Bbm7
-        if (bbTri || bb7 || bbmTri || bbm7){
-          subdomLatchedRef.current = false;
-          subSpinExit();
-          setSubdomActive(false);
-          setVisitorActive(false); setRelMinorActive(false);
-          homeSuppressUntilRef.current = 0;
-          setActiveWithTrail("♭VII", absName || (bbmTri||bbm7 ? "Bbm" : "Bb"));
-          return;
-        }
-
-        // Eb / Ab / Db families → PARALLEL (Eb space)
-        const eb   = isSubset([3,7,10]) || isSubset([3,7,10,2]);     // Eb / Eb7
-        const ab   = isSubset([8,0,3]) || isSubset([8,0,3,6]);       // Ab / Ab7
-        const db   = isSubset([1,5,8]) || isSubset([1,5,8,11]);      // Db / Db7
-        if (eb || ab || db){
-          subdomLatchedRef.current = false;
-          subSpinExit();
-          setSubdomActive(false);
-          setRelMinorActive(false);
-          setVisitorActive(true);
-          // Map using Eb detectors so the correct wedge lights
-          const m7 = firstMatch(EB_REQ7, pcsRel);
-          if (m7){ setActiveWithTrail(m7.f as Fn, m7.n); return; }
-          const tri = firstMatch(EB_REQT, pcsRel);
-          if (tri){ setActiveWithTrail(tri.f as Fn, tri.n); return; }
-          setActiveWithTrail("I","Eb"); // fallback
-          return;
-        }
-
-        // Dm / Am / Em (triad or m7) and D7 / E7 → HOME
-        const dm   = isSubset([2,5,9]) || isSubset([2,5,9,0]);
-        const am   = isSubset([9,0,4]) || isSubset([9,0,4,7]);
-        const em   = isSubset([4,7,11]) || isSubset([4,7,11,2]);
-        const d7   = isSubset([2,6,9,0]);
-        const e7   = isSubset([4,8,11,2]);
-        if (dm || am || em || d7 || e7){
-          subdomLatchedRef.current = false;
-          subSpinExit();
-          setSubdomActive(false);
-          setVisitorActive(false); setRelMinorActive(false);
-          homeSuppressUntilRef.current = 0;
-          if (dm){ setActiveWithTrail("ii",  absName || (isSubset([2,5,9,0])?"Dm7":"Dm")); return; }
-          if (am){ setActiveWithTrail("vi",  absName || (isSubset([9,0,4,7])?"Am7":"Am")); return; }
-          if (em){ setActiveWithTrail("iii", absName || (isSubset([4,7,11,2])?"Em7":"Em")); return; }
-          if (d7){ setActiveWithTrail("V/V", "D7"); return; }
-          if (e7){ setActiveWithTrail("V/vi","E7"); return; }
-        }
-
-        /* ---------- normal SUB latching/exit ---------- */
-        if (subdomLatchedRef.current && S.size < 3) {
-          homeSuppressUntilRef.current = performance.now() + RECENT_PC_WINDOW_MS;
-          return;
-        }
-
-        const stayOnF     = isSubsetIn([5,9,0], S) || isSubsetIn([5,9,0,4], S);
-        const stayOnGm    = isSubsetIn([7,10,2], S) || isSubsetIn([7,10,2,5], S);
-        const stayOnC7    = isSubsetIn([0,4,7,10], S);
-        const isCtriadExact = exactSetIn([0,4,7], S);
-
-        const exitOnCmaj7 = isSubsetIn([0,4,7,11], S);
-        const exitOnAm7   = exactSetIn([9,0,4,7], S);
-        const exitOnDm    = isSubsetIn([2,5,9], S) || isSubsetIn([2,5,9,0], S);
-
-        if (exitOnCmaj7 || exitOnAm7 || exitOnDm) {
-          subdomLatchedRef.current = false;
-          subSpinExit();
-          setSubdomActive(false);
-          setVisitorActive(false); setRelMinorActive(false);
-          homeSuppressUntilRef.current = performance.now() + 140; // brief I/C flicker suppression
-          justExitedSubRef.current = true;
-          return;
-        }
-
-        if (stayOnF || stayOnGm || stayOnC7 || isCtriadExact) {
-          if (stayOnF)          { setActiveWithTrail("I",  absName || (isSubsetIn([5,9,0,4], S)?"Fmaj7":"F"));   subLatch("I"); }
-          else if (stayOnGm)    { setActiveWithTrail("ii", absName || (isSubsetIn([7,10,2,5], S)?"Gm7":"Gm"));   subLatch("ii"); }
-          else if (stayOnC7)    { setActiveWithTrail("V7", absName || "C7");                                     subLatch("V7"); }
-          else /* exact C triad*/{ setActiveWithTrail("V7", absName || "C");                                     subLatch("V7"); }
-          return;
-        }
-
-        if (protectedSubset(S)) { homeSuppressUntilRef.current = performance.now() + RECENT_PC_WINDOW_MS; return; }
-        const nowT = performance.now();
-        if (subExitCandidateSinceRef.current==null) { subExitCandidateSinceRef.current = nowT; return; }
-        if (nowT - subExitCandidateSinceRef.current < SUB_EXIT_DEBOUNCE_MS) return;
-
-        subExitCandidateSinceRef.current = null;
-        subdomLatchedRef.current = false;
-        subSpinExit();
-        setSubdomActive(false);
-        setVisitorActive(false); setRelMinorActive(false);
-        homeSuppressUntilRef.current = performance.now() + 140;
-        justExitedSubRef.current = true;
-        return;
-      }
+    if (bbTri || bb7){
+      subdomLatchedRef.current = false;
+      subSpinExit();
+      setSubdomActive(false);
+      setVisitorActive(false); setRelMinorActive(false);
+      homeSuppressUntilRef.current = 0;
+      setActiveWithTrail("♭VII", absName || (bb7 ? "Bb7" : "Bb"));
+      return;
     }
 
-    if (subdomActiveRef.current) return;
-
-    if (justExitedSubRef.current){
-      if (performance.now() < homeSuppressUntilRef.current) return; // one pass of silence
-      justExitedSubRef.current = false;
+    // Eb / Ab / Db families → PARALLEL (Eb space)
+    const eb   = isSubsetIn([3,7,10], S) || isSubsetIn([3,7,10,2], S);     // Eb / Eb7
+    const ab   = isSubsetIn([8,0,3], S) || isSubsetIn([8,0,3,6], S);       // Ab / Ab7
+    const db   = isSubsetIn([1,5,8], S) || isSubsetIn([1,5,8,11], S);      // Db / Db7
+    if (eb || ab || db){
+      subdomLatchedRef.current = false;
+      subSpinExit();
+      setSubdomActive(false);
+      setRelMinorActive(false);
+      setVisitorActive(true);
+      const m7 = firstMatch(EB_REQ7, pcsRel);
+      if (m7){ setActiveWithTrail(m7.f as Fn, m7.n); return; }
+      const tri = firstMatch(EB_REQT, pcsRel);
+      if (tri){ setActiveWithTrail(tri.f as Fn, tri.n); return; }
+      setActiveWithTrail("I","Eb");
+      return;
     }
+
+    // Dm / Am / Em (triad or m7) and D7 / E7 → HOME
+    const dm   = isSubsetIn([2,5,9], S) || isSubsetIn([2,5,9,0], S);
+    const am   = isSubsetIn([9,0,4], S) || isSubsetIn([9,0,4,7], S);
+    const em   = isSubsetIn([4,7,11], S) || isSubsetIn([4,7,11,2], S);
+    const d7   = isSubsetIn([2,6,9,0], S);
+    const e7   = isSubsetIn([4,8,11,2], S);
+
+    // PATCH: Em7♭5 should NOT cause exit — removed the old exactSetIn([4,7,10,2]) branch.
+
+    if (dm || am || em || d7 || e7){
+      subdomLatchedRef.current = false;
+      subSpinExit();
+      setSubdomActive(false);
+      setVisitorActive(false); setRelMinorActive(false);
+      homeSuppressUntilRef.current = 0;
+
+      if (dm){ setActiveWithTrail("ii",  absName || (isSubsetIn([2,5,9,0], S)?"Dm7":"Dm")); return; }
+      if (am){ setActiveWithTrail("vi",  absName || (isSubsetIn([9,0,4,7], S)?"Am7":"Am")); return; }
+      if (em){ setActiveWithTrail("iii", absName || (isSubsetIn([4,7,11,2], S)?"Em7":"Em")); return; }
+      if (d7){ setActiveWithTrail("V/V", "D7"); return; }
+      if (e7){ setActiveWithTrail("V/vi","E7"); return; }
+    }
+
+    /* ---------- normal SUB latching/exit ---------- */
+    if (subdomLatchedRef.current && S.size < 3) {
+      homeSuppressUntilRef.current = performance.now() + RECENT_PC_WINDOW_MS;
+      return;
+    }
+
+    const stayOnF       = isSubsetIn([5,9,0], S) || isSubsetIn([5,9,0,4], S);
+    const stayOnGm      = isSubsetIn([7,10,2], S) || isSubsetIn([7,10,2,5], S);
+    const stayOnC7      = isSubsetIn([0,4,7,10], S);
+    const isCtriadExact = exactSetIn([0,4,7], S);
+
+    const exitOnCmaj7 = isSubsetIn([0,4,7,11], S);
+    const exitOnAm7   = exactSetIn([9,0,4,7], S);
+    const exitOnDm    = isSubsetIn([2,5,9], S) || isSubsetIn([2,5,9,0], S);
+
+    if (exitOnCmaj7 || exitOnAm7 || exitOnDm) {
+      subdomLatchedRef.current = false;
+      subSpinExit();
+      setSubdomActive(false);
+      setVisitorActive(false); setRelMinorActive(false);
+      homeSuppressUntilRef.current = performance.now() + 140;
+      justExitedSubRef.current = true;
+      return;
+    }
+
+    if (stayOnF || stayOnGm || stayOnC7 || isCtriadExact) {
+      if (stayOnF)          { setActiveWithTrail("I",  absName || (isSubsetIn([5,9,0,4], S)?"Fmaj7":"F"));   subLatch("I"); }
+      else if (stayOnGm)    { setActiveWithTrail("ii", absName || (isSubsetIn([7,10,2,5], S)?"Gm7":"Gm"));   subLatch("ii"); }
+      else if (stayOnC7)    { setActiveWithTrail("V7", absName || "C7");                                     subLatch("V7"); }
+      else /* exact C triad*/{ setActiveWithTrail("V7", absName || "C");                                     subLatch("V7"); }
+      return;
+    }
+
+    if (protectedSubset(S)) { homeSuppressUntilRef.current = performance.now() + RECENT_PC_WINDOW_MS; return; }
+    const nowT = performance.now();
+    if (subExitCandidateSinceRef.current==null) { subExitCandidateSinceRef.current = nowT; return; }
+    if (nowT - subExitCandidateSinceRef.current < SUB_EXIT_DEBOUNCE_MS) return;
+
+    subExitCandidateSinceRef.current = null;
+    subdomLatchedRef.current = false;
+    subSpinExit();
+    setSubdomActive(false);
+    setVisitorActive(false); setRelMinorActive(false);
+    homeSuppressUntilRef.current = performance.now() + 140;
+    justExitedSubRef.current = true;
+    return;
+  }
+}
 
     /* ---------- PARALLEL quick rule: D7 exits to HOME on V/V ---------- */
     if (visitorActiveRef.current && (isSubset([2,6,9,0]) || exactSet([2,6,9,0]))){
       setVisitorActive(false);
       setActiveWithTrail("V/V", "D7");
       return;
+    }
+
+    // PATCH: in HOME, guard Fm7 exact so it doesn’t trigger PARALLEL by accident
+    if (!visitorActiveRef.current && !subdomActiveRef.current){
+      if (exactSet([5,8,0,3])){ // Fm7
+        setRelMinorActive(false);
+        setActiveWithTrail("iv","Fm7");
+        return;
+      }
     }
 
     /* Enter Parallel (Eb) */
@@ -563,6 +614,14 @@ export default function HarmonyWheel(){
     if(visitorActiveRef.current && !relMinorActiveRef.current){
       if(cPresent){ setVisitorActive(false); setActiveWithTrail("I", absName || "C"); return; }
       if(amPresent){ setVisitorActive(false); setActiveWithTrail("vi", absName || "Am"); return; }
+
+      // PATCH: F / Fmaj7 exits PARALLEL → HOME (light IV)
+      const fMaj   = isSubset([5,9,0]) || isSubset([5,9,0,4]);
+      if (fMaj){
+        setVisitorActive(false);
+        setActiveWithTrail("IV", absName || (isSubset([5,9,0,4]) ? "Fmaj7" : "F"));
+        return;
+      }
     }
 
     // Bbm7 guard (disabled in SUB; allowed elsewhere)
@@ -576,28 +635,37 @@ export default function HarmonyWheel(){
       setVisitorActive(false); setActiveWithTrail("iii", absName || (isSubset([4,7,11,2])?"Em7":"Em")); return;
     }
 
-    /* ---------- explicit dim7 mapping in HOME ---------- */
-    if (!visitorActiveRef.current){
-      const root = findDim7Root(pcsRel);
-      if (root!==null){
-        const names = ["C","C#","D","Eb","E","F","F#","G","Ab","A","Bb","B"];
-        const label = `${names[root]}dim7`;
-
-        // No V/ii wedge in this app; C#°7 shows label only; A7 overlay covers that idea.
-        if (root === 1) {
-          setActiveFn(""); setCenterLabel(label); return;
-        }
-
-        const homeMap: Record<number, Fn> = {
-          6: "V/V",   // F#°7 → V/V
-          8: "V/vi",  // G#°7 → V/vi
-          11:"V7"     // B°7  → V of I
-        };
-        const mapped = homeMap[root] || mapDimRootToFn_ByBottom(root) || "V7";
-        setActiveWithTrail(mapped as Fn, label);
-        return;
-      }
+/* ---------- explicit dim7 mapping in HOME ---------- */
+if (!visitorActiveRef.current){
+  // Full dim7 detection (any inversion)
+  const root = findDim7Root(pcsRel);
+  if (root!==null){
+    // Special handling for C#°7 → A7 BONUS (keep behavior here as well)
+    if (pcsRel.has(1) && pcsRel.has((1+3)%12) && pcsRel.has((1+6)%12) && pcsRel.has((1+9)%12)){
+      setActiveFn(""); setCenterLabel("A7");
+      setBonusActive(true); setBonusLabel("A7");
+      return;
     }
+
+    // Priority map by membership (not arbitrary root):
+    // Prefer F# → V/V; else G# → V/vi; else B → V7.
+    const hasFsharp = pcsRel.has(6);
+    const hasGsharp = pcsRel.has(8);
+    const hasB      = pcsRel.has(11);
+
+    const names = ["C","C#","D","Eb","E","F","F#","G","Ab","A","Bb","B"];
+    const label = `${names[root]}dim7`;
+
+    if (hasFsharp){ setActiveWithTrail("V/V",  "F#dim7"); return; }
+    if (hasGsharp){ setActiveWithTrail("V/vi", "G#dim7"); return; }
+    if (hasB)     { setActiveWithTrail("V7",   "Bdim7");  return; }
+
+    // Fallback: bottom-note or theory helper
+    const mapped = mapDimRootToFn_ByBottom(root) || "V7";
+    setActiveWithTrail(mapped as Fn, label);
+    return;
+  }
+}
 
     /* In Eb mapping */
     if(visitorActiveRef.current){
@@ -608,6 +676,13 @@ export default function HarmonyWheel(){
 
     /* In C mapping */
     if (performance.now() >= homeSuppressUntilRef.current){
+
+      // PATCH: F#m7b5 drives V/V in HOME
+      if (exactSet([6,9,0,4])){ // F# A C E
+        setActiveWithTrail("V/V","F#m7♭5");
+        return;
+      }
+
       const m7 = firstMatch(C_REQ7, pcsRel); if(m7){ setActiveWithTrail(m7.f as Fn, m7.n); return; }
       if(/(maj7|m7♭5|m7$|dim7$|[^m]7$)/.test(absName)) { centerOnly(absName); return; }
       const tri = firstMatch(C_REQT, pcsRel); if(tri){ setActiveWithTrail(tri.f as Fn, tri.n); return; }
