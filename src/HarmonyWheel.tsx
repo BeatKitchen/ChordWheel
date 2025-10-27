@@ -1,0 +1,857 @@
+// HarmonyWheel.tsx
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import type { Fn, KeyName } from "./lib/types";
+import {
+  FN_COLORS, FN_LABEL_COLORS, HUB_RADIUS, HUB_FILL, HUB_STROKE, HUB_STROKE_W,
+  CENTER_FONT_FAMILY, CENTER_FONT_SIZE, CENTER_FILL,
+  WHEEL_W, WHEEL_H, VISITOR_ROTATE_DEG, ROTATION_ANIM_MS,
+  NEGATIVE_ON_VISITOR, EPS_DEG, BONUS_OVERLAY, BONUS_CENTER_ANCHOR_DEG,
+  BONUS_OUTER_R, BONUS_OUTER_OVER, BONUS_INNER_R, BONUS_FILL, BONUS_STROKE,
+  BONUS_TEXT_FILL, BONUS_TEXT_SIZE, BONUS_FUNCTION_BY_LABEL, SHOW_WEDGE_LABELS,
+  SHOW_CENTER_LABEL, LATCH_PREVIEW, PREVIEW_USE_SEVENTHS, MIDI_SUPPORTED,
+  RING_FADE_MS, UI_SCALE_DEFAULT, KBD_WIDTH_FRACTION, KBD_HEIGHT_FACTOR_DEFAULT,
+  IV_ROTATE_DEG
+} from "./lib/config";
+import { computeLayout, annulusTopDegree } from "./lib/geometry";
+import {
+  pcFromMidi, pcNameForKey, FLAT_NAMES, NAME_TO_PC, T, subsetOf,
+  internalAbsoluteName, mapDimRootToFn_ByBottom, mapDim7_EbVisitor, add12,
+  realizeFunction
+} from "./lib/theory";
+import {
+  VISITOR_SHAPES, C_REQ7, C_REQT, EB_REQ7, EB_REQT, firstMatch
+} from "./lib/modes";
+import { BonusDebouncer } from "./lib/overlays";
+import * as preview from "./lib/preview";
+
+export default function HarmonyWheel(){
+  /* ----- core state ----- */
+  const [baseKey,setBaseKey]=useState<KeyName>("C");
+  const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey;},[baseKey]);
+
+  const [activeFn,setActiveFn]=useState<Fn|"">("I");
+  const activeFnRef=useRef<Fn|"">("I"); useEffect(()=>{activeFnRef.current=activeFn;},[activeFn]);
+
+  const [centerLabel,setCenterLabel]=useState("C");
+
+  const [visitorActive,_setVisitorActive]=useState(false);
+  const visitorActiveRef=useRef(false);
+  const setVisitorActive=(v:boolean)=>{ visitorActiveRef.current=v; _setVisitorActive(v); };
+
+  const [relMinorActive,_setRelMinorActive]=useState(false);
+  const relMinorActiveRef=useRef(false);
+  const setRelMinorActive=(v:boolean)=>{ relMinorActiveRef.current=v; _setRelMinorActive(v); };
+
+  // SUB (F keyspace illusion)
+  const [subdomActive,_setSubdomActive]=useState(false);
+  const subdomActiveRef=useRef(false);
+  const setSubdomActive=(v:boolean)=>{ subdomActiveRef.current=v; _setSubdomActive(v); };
+
+  const subdomLatchedRef = useRef(false);
+  const subLastSeenFnRef = useRef<Fn>("I");
+  const subExitCandidateSinceRef = useRef<number | null>(null);
+  const subHasSpunRef = useRef(false);
+
+  // windows/suppression
+  const RECENT_PC_WINDOW_MS = 280;
+  const recentRelMapRef = useRef<Map<number, number>>(new Map());
+  const lastPcsRelSizeRef = useRef<number>(0);
+  const homeSuppressUntilRef = useRef(0);
+  const justExitedSubRef = useRef(false);
+
+  const [rotationOffset,setRotationOffset]=useState(0);
+  const [targetRotation,setTargetRotation]=useState(0);
+
+  /* rotation animation */
+  const animRef=useRef<{from:number;to:number;start:number;dur:number;raf:number|null}|null>(null);
+  const ease=(t:number)=> t<0.5?2*t*t:-1+(4-2*t)*t;
+  useEffect(()=>{ if(animRef.current?.raf) cancelAnimationFrame(animRef.current.raf);},[]);
+  useEffect(()=>{
+    if(animRef.current?.raf) cancelAnimationFrame(animRef.current.raf);
+    const from = rotationOffset, to = targetRotation;
+    if(Math.abs(from - to) < EPS_DEG){ setRotationOffset(to); animRef.current = null; return; }
+    const a = { from, to, start: performance.now(), dur: ROTATION_ANIM_MS, raf: 0 as unknown as number };
+    animRef.current = a as any;
+    const tick=()=>{ const k=Math.min(1,(performance.now()-a.start)/a.dur);
+      setRotationOffset(a.from + (a.to - a.from) * ease(k));
+      if(k<1){ a.raf=requestAnimationFrame(tick);} else { animRef.current=null; setRotationOffset(to); }
+    };
+    a.raf=requestAnimationFrame(tick);
+    return ()=>{ if(a.raf) cancelAnimationFrame(a.raf); };
+  },[targetRotation]);
+
+  // Regular rotation (parallel/relative). SUB doesn’t set a persistent rotation.
+  useEffect(()=>{
+    if(relMinorActive || visitorActive) setTargetRotation(VISITOR_ROTATE_DEG);
+    else if(!subdomActive) setTargetRotation(0);
+  },[relMinorActive, visitorActive, subdomActive]);
+
+  /* bonus + trails */
+  const [bonusActive,setBonusActive]=useState(false);
+  const [bonusLabel,setBonusLabel]=useState("");
+  const bonusDeb = useRef(new BonusDebouncer()).current;
+
+  const [trailFn, setTrailFn] = useState<Fn|"">("");
+  const [trailTick, setTrailTick] = useState(0);
+  const [trailOn] = useState(true);
+  useEffect(()=>{ if(!trailFn) return;
+    let raf:number; const start=performance.now();
+    const loop=()=>{ const dt=performance.now()-start;
+      if(dt<RING_FADE_MS){ setTrailTick(dt); raf=requestAnimationFrame(loop); }
+      else { setTrailFn(""); setTrailTick(0);}
+    };
+    raf=requestAnimationFrame(loop);
+    return ()=>{ if(raf) cancelAnimationFrame(raf); };
+  },[trailFn]);
+
+  const [bonusTrailOn, setBonusTrailOn] = useState(false);
+  const [bonusTrailTick, setBonusTrailTick] = useState(0);
+  const lastBonusGeomRef = useRef<{a0Top:number;a1Top:number}|null>(null);
+
+  /* midi */
+  const midiAccessRef=useRef<any>(null);
+  const [inputs, setInputs] = useState<any[]>([]);
+  const [selectedId, setSelectedId] = useState<string>("");
+
+  const rightHeld=useRef<Set<number>>(new Set());
+  const rightSus=useRef<Set<number>>(new Set());
+  const leftHeld=useRef<Set<number>>(new Set());
+  const sustainOn=useRef(false);
+
+  const [midiConnected, setMidiConnected] = useState(false);
+  const [midiName, setMidiName] = useState("");
+
+  const [latchedAbsNotes, setLatchedAbsNotes] = useState<number[]>([]);
+  const lastInputWasPreviewRef = useRef(false);
+
+  const bindToInput=(id:string, acc:any)=>{
+    acc.inputs.forEach((i:any)=>{ i.onmidimessage=null; });
+    const dev = acc.inputs.get(id);
+    if(!dev){ setSelectedId(""); setMidiConnected(false); setMidiName(""); return; }
+    dev.onmidimessage=(e:any)=>{
+      setMidiConnected(true); setMidiName(dev.name||"MIDI");
+      lastInputWasPreviewRef.current = false;
+      const [st,d1,d2]=e.data, type=st&0xf0;
+      if(type===0x90 && d2>0){
+        if(d1<=48){
+          leftHeld.current.add(d1);
+          const lowest=Math.min(...leftHeld.current);
+          const k=pcNameForKey(pcFromMidi(lowest), "C") as KeyName;
+          setBaseKey(k);
+        } else { rightHeld.current.add(d1); if(sustainOn.current) rightSus.current.add(d1); }
+        detect();
+      } else if(type===0x80 || (type===0x90 && d2===0)){
+        if(d1<=48) leftHeld.current.delete(d1);
+        else { rightHeld.current.delete(d1); rightSus.current.delete(d1); }
+        detect();
+      } else if(type===0xB0 && d1===64){
+        const on=d2>=64;
+        if(!on && sustainOn.current){
+          for(const n of Array.from(rightSus.current)) if(!rightHeld.current.has(n)) rightSus.current.delete(n);
+          sustainOn.current=false; detect();
+        } else if(on && !sustainOn.current){
+          sustainOn.current=true; for(const n of rightHeld.current) rightSus.current.add(n);
+        }
+      }
+    };
+    setSelectedId(id); setMidiConnected(true); setMidiName(dev.name||"MIDI");
+  };
+
+  useEffect(()=>{ if(!MIDI_SUPPORTED || midiAccessRef.current) return;
+    (async()=>{
+      try{
+        const acc:any=await (navigator as any).requestMIDIAccess({sysex:false});
+        midiAccessRef.current=acc;
+        const list=Array.from(acc.inputs.values());
+        setInputs(list as any[]);
+        if(list.length>0){ bindToInput((list[0] as any).id, acc); } else { setMidiConnected(false); setMidiName(""); }
+        acc.onstatechange=()=>{
+          const fresh=Array.from(acc.inputs.values());
+          setInputs(fresh as any[]);
+          if(selectedId && !fresh.find((i:any)=>i.id===selectedId)){
+            if(fresh[0]) bindToInput((fresh[0] as any).id, acc);
+            else { setSelectedId(""); setMidiConnected(false); setMidiName(""); }
+          }
+        };
+      }catch{/* ignore */}
+    })();
+  },[selectedId]);
+
+  /* layout & bonus geometry */
+  const cx=260, cy=260, r=220;
+  const layout = useMemo(()=> computeLayout(cx,cy,r,rotationOffset), [rotationOffset]);
+
+  const bonusArcGeom = useMemo(()=>{
+    const segI = layout.find(s=>s.fn==="I");
+    const segB7 = layout.find(s=>s.fn==="♭VII");
+    if(!segI || !segB7) return null;
+    const g = rotationOffset, norm=(d:number)=>(d%360+360)%360;
+    const startGap = norm(segB7.endTop);
+    const endGap = norm(segI.startTop);
+    const gapCW = norm(endGap - startGap);
+    const centerTop = (BONUS_OVERLAY && BONUS_CENTER_ANCHOR_DEG != null) ? norm(BONUS_CENTER_ANCHOR_DEG) : norm(startGap + gapCW/2);
+    const span = 15, half = span/2;
+    const a0Top = norm(centerTop - half + g);
+    const a1Top = norm(centerTop + half + g);
+    const midTop = norm(centerTop + g);
+    const outerAbs = Math.max(r*BONUS_OUTER_R, r*BONUS_OUTER_OVER);
+    const innerAbs = r*BONUS_INNER_R;
+    const rMid=(outerAbs+innerAbs)/2, rad=((midTop-90)*Math.PI)/180;
+    const labelPos={x:cx + rMid*Math.cos(rad), y: cy + rMid*Math.sin(rad)};
+    return { a0Top, a1Top, labelPos };
+  },[layout, rotationOffset]);
+
+  useEffect(()=>{ if(bonusActive && bonusArcGeom){
+    lastBonusGeomRef.current = { a0Top: bonusArcGeom.a0Top, a1Top: bonusArcGeom.a1Top };
+  }}, [bonusActive, bonusArcGeom]);
+
+  useEffect(()=>{ if(!bonusActive && lastBonusGeomRef.current){
+    let raf:number; const start=performance.now();
+    setBonusTrailOn(true);
+    const loop=()=>{ const dt=performance.now()-start;
+      if(dt<RING_FADE_MS){ setBonusTrailTick(dt); raf=requestAnimationFrame(loop); }
+      else { setBonusTrailOn(false); setBonusTrailTick(0); }
+    };
+    raf=requestAnimationFrame(loop);
+    return ()=>{ if(raf) cancelAnimationFrame(raf); };
+  }}, [bonusActive]);
+
+  /* taps */
+  const TAP_MS = 1500, TRIPLE_COUNT = 3;
+  const TAP_LOG_REF = { current: {} as Record<string, number[]> } as const;
+  const TAP_STATE_REF = { current: { REL_Am:false, REL_C:false, VIS_G:false } as Record<string, boolean> } as const;
+  const pushTap = (name:string)=>{ const now=performance.now(); const arr=(TAP_LOG_REF.current[name] ||= []); arr.push(now); while(arr.length && now-arr[0]>TAP_MS) arr.shift(); return arr.length; };
+  const setTapEdge = (name:string, present:boolean)=>{ const prev=!!TAP_STATE_REF.current[name]; if(present && !prev){ const n=pushTap(name); TAP_STATE_REF.current[name]=true; return n; } if(!present && prev){ TAP_STATE_REF.current[name]=false; } return 0; };
+
+  const makeTrail=()=>{ if(activeFnRef.current){ setTrailFn(activeFnRef.current as Fn); } };
+  const setActiveWithTrail=(fn:Fn,label:string)=>{ if(activeFnRef.current && activeFnRef.current!==fn){ makeTrail(); } setActiveFn(fn); setCenterLabel(SHOW_CENTER_LABEL?label:"" ); setBonusActive(false); setBonusLabel(""); };
+  const centerOnly=(t:string)=>{ makeTrail(); setActiveFn(""); setCenterLabel(SHOW_CENTER_LABEL?t:""); setBonusActive(false); setBonusLabel(""); };
+
+  const hardClearGhostIfIdle = ()=>{
+    if(rightHeld.current.size===0 && rightSus.current.size===0){
+      if(!lastInputWasPreviewRef.current) setLatchedAbsNotes([]);
+    }
+  };
+  const clear=()=>{ makeTrail(); hardClearGhostIfIdle(); setBonusActive(false); setBonusLabel(""); setCenterLabel(""); };
+
+  /* ---------- SUB spin helpers ---------- */
+  const subSpinTimerRef = useRef<number | null>(null);
+  const clearSubSpinTimer = ()=>{ if(subSpinTimerRef.current!=null){ window.clearTimeout(subSpinTimerRef.current); subSpinTimerRef.current=null; } };
+  const SUB_SPIN_DEG = Math.abs(IV_ROTATE_DEG || 168);
+
+  const subSpinEnter = ()=>{
+    if (subHasSpunRef.current) return;
+    clearSubSpinTimer();
+    setTargetRotation(IV_ROTATE_DEG ?? -168);
+    subSpinTimerRef.current = window.setTimeout(()=>{
+      setRotationOffset(0); setTargetRotation(0);
+      subSpinTimerRef.current = null; subHasSpunRef.current = true;
+    }, ROTATION_ANIM_MS + 20) as unknown as number;
+  };
+  const subSpinExit = ()=>{
+    clearSubSpinTimer();
+    setTargetRotation(SUB_SPIN_DEG);
+    subSpinTimerRef.current = window.setTimeout(()=>{
+      setRotationOffset(0); setTargetRotation(0);
+      subSpinTimerRef.current = null; subHasSpunRef.current = false;
+    }, ROTATION_ANIM_MS + 20) as unknown as number;
+  };
+  const subLatch = (fn: Fn)=>{
+    subdomLatchedRef.current = true;
+    subExitCandidateSinceRef.current = null;
+    subLastSeenFnRef.current = fn;
+    homeSuppressUntilRef.current = performance.now() + RECENT_PC_WINDOW_MS;
+  };
+
+  /* ---------- window helpers (SUB only) ---------- */
+  const updateRecentRel = (pcsRel:Set<number>)=>{
+    const now = performance.now();
+    const delta = Math.abs((pcsRel.size || 0) - (lastPcsRelSizeRef.current || 0));
+    if (delta >= 2) recentRelMapRef.current.clear();
+    lastPcsRelSizeRef.current = pcsRel.size;
+
+    for(const [pc,ts] of recentRelMapRef.current){
+      if(now - ts > RECENT_PC_WINDOW_MS) recentRelMapRef.current.delete(pc);
+    }
+    pcsRel.forEach(pc => recentRelMapRef.current.set(pc, now));
+  };
+  const windowedRelSet = ():Set<number>=>{
+    const now = performance.now();
+    const out = new Set<number>();
+    for(const [pc,ts] of recentRelMapRef.current){
+      if(now - ts <= RECENT_PC_WINDOW_MS) out.add(pc);
+    }
+    return out;
+  };
+  const isSubsetIn = (need:number[], pool:Set<number>) => subsetOf(T(need), pool);
+  const exactSetIn = (need:number[], pool:Set<number>) => {
+    const needSet = T(need); if(!subsetOf(needSet, pool)) return false;
+    for(const p of pool) if(!needSet.has(p)) return false;
+    return true;
+  };
+
+  /* ---------- detection ---------- */
+  const SUB_EXIT_DEBOUNCE_MS = 300;
+
+  // protect C7 / Fmaj7 / Gm7 while in SUB from release-order bounces
+  const PROTECT_SUPERSETS: Array<Set<number>> = [
+    T([5,9,0,4]),    // Fmaj7
+    T([0,4,7,10]),   // C7
+    T([7,10,2,5]),   // Gm7
+  ];
+  const within = (pool:Set<number>, sup:Set<number>)=>{
+    for(const p of pool) if(!sup.has(p)) return false;
+    return true;
+  };
+  const protectedSubset = (current:Set<number>)=>{
+    if(current.size < 3) return false;
+    for(const sup of PROTECT_SUPERSETS) if(within(current, sup)) return true;
+    return false;
+  };
+
+  // helper: detect any fully dim7 and its “root” pc (mod 12)
+  const findDim7Root = (S:Set<number>): number | null => {
+    for (let pc=0; pc<12; pc++){
+      if (S.has(pc) && S.has((pc+3)%12) && S.has((pc+6)%12) && S.has((pc+9)%12)) return pc;
+    }
+    return null;
+  };
+
+  function detect(){
+    const phys=[...rightHeld.current], sus=sustainOn.current?[...rightSus.current]:[], merged=new Set<number>([...phys,...sus]);
+    const absHeld=[...merged];
+    const pcsAbs=new Set(absHeld.map(pcFromMidi));
+
+    if(pcsAbs.size===0){
+      setTapEdge("REL_Am", false); setTapEdge("REL_C", false); setTapEdge("VIS_G", false);
+      bonusDeb.reset();
+
+      if (subdomActiveRef.current && subdomLatchedRef.current) {
+        if (!centerLabel) setCenterLabel("F");
+        if (!activeFnRef.current) setActiveFn(subLastSeenFnRef.current || "I");
+        hardClearGhostIfIdle();
+        return;
+      }
+      hardClearGhostIfIdle();
+      return clear();
+    }
+
+    setLatchedAbsNotes(absHeld);
+
+    const toRel=(n:number)=>((n-NAME_TO_PC["C"]+12)%12);
+    const pcsRel=new Set([...pcsAbs].map(toRel));
+    const absName=internalAbsoluteName(pcsAbs, baseKeyRef.current);
+
+    updateRecentRel(pcsRel);
+
+    const isSubset = (need:number[])=> subsetOf(T(need), pcsRel);
+    const exactSet=(need:number[])=>{
+      const needSet=T(need); if(!subsetOf(needSet, pcsRel)) return false;
+      for(const p of pcsRel) if(!needSet.has(p)) return false;
+      return true;
+    };
+
+    const amPresent = isSubset([9,0,4]) || isSubset([9,0,4,2]);
+    const cPresent  = isSubset([0,4,7]) || isSubset([0,4,7,11]);
+
+    // ---------- triple-taps (always live) ----------
+    if(setTapEdge("REL_Am", amPresent) >= 3){
+      if(subdomActiveRef.current) subSpinExit();
+      setSubdomActive(false); subdomLatchedRef.current=false; subHasSpunRef.current=false;
+      homeSuppressUntilRef.current = 0; justExitedSubRef.current = false;
+      setRelMinorActive(true); setVisitorActive(false);
+      setActiveWithTrail("vi", absName || "Am"); return;
+    }
+    if(setTapEdge("REL_C", cPresent) >= 3){
+      if(subdomActiveRef.current) subSpinExit();
+      setSubdomActive(false); subdomLatchedRef.current=false; subHasSpunRef.current=false;
+      homeSuppressUntilRef.current = 0; justExitedSubRef.current = false;
+      setRelMinorActive(false); setVisitorActive(false);
+      setActiveWithTrail("I", absName || "C"); setCenterLabel("C"); return;
+    }
+    const gPresentTap = visitorActiveRef.current && (isSubset([7,11,2]) || isSubset([7,11,2,5]));
+    if(setTapEdge("VIS_G", gPresentTap) >= 3){
+      if(subdomActiveRef.current) subSpinExit();
+      setSubdomActive(false); subdomLatchedRef.current=false; subHasSpunRef.current=false;
+      homeSuppressUntilRef.current = 0; justExitedSubRef.current = false;
+      setVisitorActive(false); setRelMinorActive(false);
+      setActiveWithTrail("V7", absName || "G/G7"); return;
+    }
+
+    /* ---------- BONUS OVERLAYS (subset-tolerant) ---------- */
+    {
+      const inParallel = visitorActiveRef.current;
+
+      // Bdim / Bm7b5 overlay — SUPPRESSED in PARALLEL
+      const hasBDF   = isSubset([11,2,5]);
+      const hasBDFG  = isSubset([11,2,5,9]);
+      if (!inParallel && (hasBDF || hasBDFG)){
+        const hub = hasBDFG ? "Bm7♭5" : "Bdim";
+        setActiveFn(""); setCenterLabel(hub);
+        setBonusActive(true); setBonusLabel(hub);
+        return;
+      }
+
+      // A7 overlay
+      const hasA7tri = isSubset([9,1,4]);            // A C# E
+      const hasA7    = hasA7tri || isSubset([9,1,4,7]); // + optional G
+      if (hasA7){
+        setActiveFn(""); setCenterLabel("A7");
+        setBonusActive(true); setBonusLabel("A7");
+        return;
+      }
+
+      setBonusActive(false); setBonusLabel("");
+    }
+
+    /* ---------- SUBDOM (F) ----------
+       Enter on Gm / Gm7 / C7 (from any mode).
+       Stay on F/Fmaj7, Gm/Gm7, C7, exact C triad.
+       Exit on Cmaj7, Am7, Dm/Dm7, or non-stay after debounce (CW spin).
+    */
+    {
+      const enterByGm = isSubset([7,10,2]) || isSubset([7,10,2,5]);
+      const enterByC7 = isSubset([0,4,7,10]);
+
+      if (!subdomActiveRef.current && (enterByGm || enterByC7)) {
+        if (relMinorActiveRef.current) setRelMinorActive(false);
+        setVisitorActive(false);
+
+        setSubdomActive(true);
+        setCenterLabel("F");
+        if (enterByGm) { setActiveWithTrail("ii", absName || (isSubset([7,10,2,5])?"Gm7":"Gm")); subLatch("ii"); }
+        else           { setActiveWithTrail("V7", absName || "C7");                               subLatch("V7"); }
+        subSpinEnter();
+        return;
+      }
+
+      if (subdomActiveRef.current) {
+        const useWindow = performance.now() < homeSuppressUntilRef.current;
+        const S = useWindow ? windowedRelSet() : pcsRel;
+
+        if (subdomLatchedRef.current && S.size < 3) {
+          homeSuppressUntilRef.current = performance.now() + RECENT_PC_WINDOW_MS;
+          return;
+        }
+
+        const stayOnF     = isSubsetIn([5,9,0], S) || isSubsetIn([5,9,0,4], S);
+        const stayOnGm    = isSubsetIn([7,10,2], S) || isSubsetIn([7,10,2,5], S);
+        const stayOnC7    = isSubsetIn([0,4,7,10], S);
+        const isCtriadExact = exactSetIn([0,4,7], S);
+
+        const exitOnCmaj7 = isSubsetIn([0,4,7,11], S);
+        const exitOnAm7   = exactSetIn([9,0,4,7], S);
+        const exitOnDm    = isSubsetIn([2,5,9], S) || isSubsetIn([2,5,9,0], S);
+
+        if (exitOnCmaj7 || exitOnAm7 || exitOnDm) {
+          subdomLatchedRef.current = false;
+          subSpinExit();
+          setSubdomActive(false);
+          setVisitorActive(false); setRelMinorActive(false);
+          homeSuppressUntilRef.current = performance.now() + 140; // suppress I/C blip
+          justExitedSubRef.current = true;
+          return;
+        }
+
+        if (stayOnF || stayOnGm || stayOnC7 || isCtriadExact) {
+          if (stayOnF)          { setActiveWithTrail("I",  absName || (isSubsetIn([5,9,0,4], S)?"Fmaj7":"F"));   subLatch("I"); }
+          else if (stayOnGm)    { setActiveWithTrail("ii", absName || (isSubsetIn([7,10,2,5], S)?"Gm7":"Gm"));   subLatch("ii"); }
+          else if (stayOnC7)    { setActiveWithTrail("V7", absName || "C7");                                     subLatch("V7"); }
+          else /* exact C triad*/{ setActiveWithTrail("V7", absName || "C");                                     subLatch("V7"); }
+          return;
+        }
+
+        if (protectedSubset(S)) { homeSuppressUntilRef.current = performance.now() + RECENT_PC_WINDOW_MS; return; }
+        const nowT = performance.now();
+        if (subExitCandidateSinceRef.current==null) { subExitCandidateSinceRef.current = nowT; return; }
+        if (nowT - subExitCandidateSinceRef.current < SUB_EXIT_DEBOUNCE_MS) return;
+
+        subExitCandidateSinceRef.current = null;
+        subdomLatchedRef.current = false;
+        subSpinExit();
+        setSubdomActive(false);
+        setVisitorActive(false); setRelMinorActive(false);
+        homeSuppressUntilRef.current = performance.now() + 140;
+        justExitedSubRef.current = true;
+        return;
+      }
+    }
+
+    if (subdomActiveRef.current) return;
+
+    if (justExitedSubRef.current){
+      if (performance.now() < homeSuppressUntilRef.current) return; // one pass of silence
+      justExitedSubRef.current = false;
+    }
+
+    /* ---------- PARALLEL quick rule: D7 exits to HOME on V/V ---------- */
+    if (visitorActiveRef.current && (isSubset([2,6,9,0]) || exactSet([2,6,9,0]))){
+      setVisitorActive(false);
+      setActiveWithTrail("V/V", "D7");
+      return;
+    }
+
+    /* Enter Parallel (Eb) */
+    if(!visitorActiveRef.current && !subdomActiveRef.current){
+      const vHit = VISITOR_SHAPES.find(v=>subsetOf(v.pcs, pcsRel)) || null;
+      if(vHit){
+        if(relMinorActiveRef.current) setRelMinorActive(false);
+        setSubdomActive(false); subdomLatchedRef.current=false; subHasSpunRef.current=false;
+        setVisitorActive(true);
+        setActiveWithTrail(vHit.fn, vHit.name);
+        return;
+      }
+    }
+
+    /* Parallel exits (Eb) */
+    if(visitorActiveRef.current && !relMinorActiveRef.current){
+      if(cPresent){ setVisitorActive(false); setActiveWithTrail("I", absName || "C"); return; }
+      if(amPresent){ setVisitorActive(false); setActiveWithTrail("vi", absName || "Am"); return; }
+    }
+
+    // Bbm7 guard
+    if(exactSet([10,1,5,8])){ centerOnly("Bbm7"); return; }
+
+    // Eb quick exits
+    if(visitorActiveRef.current && (isSubset([2,5,9]) || isSubset([2,5,9,0]))){
+      setVisitorActive(false); setActiveWithTrail("ii", absName || (isSubset([2,5,9,0])?"Dm7":"Dm")); return;
+    }
+    if(visitorActiveRef.current && (isSubset([4,7,11]) || isSubset([4,7,11,2]))){
+      setVisitorActive(false); setActiveWithTrail("iii", absName || (isSubset([4,7,11,2])?"Em7":"Em")); return;
+    }
+
+  /* ---------- explicit dim7 mapping in HOME ---------- */
+if (!visitorActiveRef.current){
+  const root = findDim7Root(pcsRel);
+  if (root!==null){
+    const names = ["C","C#","D","Eb","E","F","F#","G","Ab","A","Bb","B"];
+    const label = `${names[root]}dim7`;
+
+    // Only pick wedges that exist in Fn: V/V, V/vi, V7. No V/ii wedge in this app.
+    if (root === 1) {
+      // C#°7 (leading tone to ii) → show label only; the V/ii idea is handled by the A7 bonus overlay.
+      setActiveFn("");
+      setCenterLabel(label);
+      return;
+    }
+
+    const homeMap: Record<number, Fn> = {
+      6: "V/V",   // F#°7 → V/V
+      8: "V/vi",  // G#°7 → V/vi
+      11: "V7"    // B°7  → V of I
+    };
+    const mapped = homeMap[root] || mapDimRootToFn_ByBottom(root) || "V7";
+    setActiveWithTrail(mapped as Fn, label);
+    return;
+  }
+}
+
+
+    /* In Eb mapping */
+    if(visitorActiveRef.current){
+      const m7 = firstMatch(EB_REQ7, pcsRel); if(m7){ setActiveWithTrail(m7.f as Fn, m7.n); return; }
+      if(/(maj7|m7♭5|m7$|dim7$|[^m]7$)/.test(absName)) { centerOnly(absName); return; }
+      const tri = firstMatch(EB_REQT, pcsRel); if(tri){ setActiveWithTrail(tri.f as Fn, tri.n); return; }
+    }
+
+    /* In C mapping */
+    // (suppress I/C flicker right after SUB exit)
+    if (performance.now() >= homeSuppressUntilRef.current){
+      const m7 = firstMatch(C_REQ7, pcsRel); if(m7){ setActiveWithTrail(m7.f as Fn, m7.n); return; }
+      if(/(maj7|m7♭5|m7$|dim7$|[^m]7$)/.test(absName)) { centerOnly(absName); return; }
+      const tri = firstMatch(C_REQT, pcsRel); if(tri){ setActiveWithTrail(tri.f as Fn, tri.n); return; }
+    }
+
+    /* diminished → wedge via bottom note (fallback) */
+    const rhs=absHeld.filter(n=>n>=48).sort((a,b)=>a-b);
+    if(rhs.length>=3){
+      const bottom=rhs[0], rootPc=pcFromMidi(bottom);
+      const tri=T([rootPc, add12(rootPc,3), add12(rootPc,6)]);
+      const sev=T([rootPc, add12(rootPc,3), add12(rootPc,6), add12(rootPc,9)]);
+      const pcsRH=new Set(rhs.map(pcFromMidi));
+      const has7=subsetOf(sev, pcsRH) , hasTri=subsetOf(tri, pcsRH);
+      if(has7 || hasTri){
+        const names = ["C","C#","D","Eb","E","F","F#","G","Ab","A","Bb","B"];
+        const label=has7?`${names[rootPc]}dim7`:`${names[rootPc]}dim`;
+        const mapped = visitorActiveRef.current ? (mapDim7_EbVisitor(pcsRel) || mapDimRootToFn_ByBottom(rootPc)) : mapDimRootToFn_ByBottom(rootPc);
+        if(mapped){ setActiveWithTrail(mapped, label); return; }
+        centerOnly(label); return;
+      }
+    }
+
+    centerOnly(absName);
+  }
+
+  /* controls */
+  const goHome = ()=>{
+    if(subdomActiveRef.current) subSpinExit();
+    setRelMinorActive(false);
+    setVisitorActive(false);
+    setSubdomActive(false); subdomLatchedRef.current=false; subHasSpunRef.current=false;
+    homeSuppressUntilRef.current = 0; justExitedSubRef.current = false;
+    setTargetRotation(0);
+    setActiveFn("I");
+    setCenterLabel("C");
+  };
+  const toggleVisitor = ()=>{
+    const on = !visitorActiveRef.current;
+    if(on && subdomActiveRef.current){ subSpinExit(); setSubdomActive(false); subdomLatchedRef.current=false; subHasSpunRef.current=false; }
+    if(on && relMinorActiveRef.current) setRelMinorActive(false);
+    setVisitorActive(on);
+    if(on){ setActiveFn("I"); setCenterLabel("Eb"); }
+  };
+  const toggleRelMinor = ()=>{
+    const on = !relMinorActiveRef.current;
+    if(on && subdomActiveRef.current){ subSpinExit(); setSubdomActive(false); subdomLatchedRef.current=false; subHasSpunRef.current=false; }
+    if(on && visitorActiveRef.current) setVisitorActive(false);
+    setRelMinorActive(on);
+    if(on){ setActiveFn("vi"); setCenterLabel("Am"); }
+  };
+  const toggleSubdom = ()=>{
+    const on = !subdomActiveRef.current;
+    if(on){
+      setVisitorActive(false); setRelMinorActive(false);
+      setSubdomActive(true);
+      subdomLatchedRef.current = true;
+      subExitCandidateSinceRef.current = null;
+      subLastSeenFnRef.current = "I";
+      homeSuppressUntilRef.current = performance.now() + RECENT_PC_WINDOW_MS;
+      setActiveFn("I"); setCenterLabel("F");
+      subSpinEnter();
+    } else {
+      subdomLatchedRef.current = false;
+      subExitCandidateSinceRef.current = null;
+      subSpinExit();
+      setSubdomActive(false);
+      homeSuppressUntilRef.current = performance.now() + 140;
+      justExitedSubRef.current = true;
+      setActiveFn("I"); setCenterLabel("C");
+    }
+  };
+
+  const wrapperStyle: React.CSSProperties = ((visitorActive || relMinorActive) && NEGATIVE_ON_VISITOR)
+    ? { filter:"invert(1) hue-rotate(180deg)" } : {};
+
+  // Relative cue: paint V/V with IV color
+  const fnFillColor = (fn: Fn) =>
+    (relMinorActive && fn === "V/V") ? FN_COLORS["IV"] : FN_COLORS[fn];
+
+  /* keyboard helpers */
+  const KBD_LOW=48, KBD_HIGH=71;
+  const rhDisplaySet = ()=>{ 
+    const phys=[...rightHeld.current], sus=sustainOn.current?[...rightSus.current]:[], merged=new Set<number>([...phys,...sus]);
+    let src = Array.from(new Set(Array.from(merged))).sort((a,b)=>a-b);
+    if(src.length===0 && LATCH_PREVIEW && lastInputWasPreviewRef.current && latchedAbsNotes.length){
+      src = [...new Set(latchedAbsNotes)].sort((a,b)=>a-b);
+    }
+    if(src.length===0) return new Set<number>();
+    const fitted = preview.fitNotesToWindowPreserveInversion(src, KBD_LOW, KBD_HIGH);
+    return new Set(fitted);
+  };
+
+  // PREVIEW should use the same spelling as the wedge label:
+  // Eb in PARALLEL, F in SUB, tonic otherwise.
+  const previewFn = (fn:Fn)=>{
+    lastInputWasPreviewRef.current = true;
+    const renderKey:KeyName = visitorActiveRef.current
+      ? "Eb"
+      : (subdomActiveRef.current ? "F" : baseKeyRef.current);
+    const with7th = PREVIEW_USE_SEVENTHS || fn === "V7" || fn === "V/V" || fn === "V/vi";
+    const pcs = preview.chordPcsForFn(fn, renderKey, with7th);
+    const rootPc = pcs[0];
+    const absRootPos = preview.absChordRootPositionFromPcs(pcs, rootPc);
+    const fitted = preview.fitNotesToWindowPreserveInversion(absRootPos, KBD_LOW, KBD_HIGH);
+    setLatchedAbsNotes(fitted);
+    setActiveWithTrail(fn, realizeFunction(fn, renderKey));
+  };
+
+  /* label key for display (SUB shows F, PARALLEL shows Eb) */
+  const labelKey = (visitorActive ? "Eb" : (subdomActive ? "F" : baseKey)) as KeyName;
+
+  /* wedges */
+  const wedgeNodes = useMemo(()=>{
+    const renderKey:KeyName = visitorActive ? "Eb" : baseKey; // logic labels (tonic for SUB)
+    return layout.map(({fn,path,labelPos})=>{
+      const isActive = activeFn===fn;
+      const isTrailing = trailOn && (trailFn===fn);
+      const k = isTrailing ? Math.min(1, Math.max(0, trailTick / RING_FADE_MS)) : 0;
+      const globalActive = activeFn!==""; 
+      const fillOpacity = isActive ? 1 : (globalActive ? 0.5 : 1);
+      const ringTrailOpacity = 1 - 0.9*k; const ringTrailWidth = 5 - 3*k;
+      return (
+        <g key={fn} onMouseDown={()=>previewFn(fn)} style={{cursor:"pointer"}}>
+          <path d={path} fill={fnFillColor(fn)} opacity={fillOpacity} stroke="#ffffff" strokeWidth={2}/>
+          {isActive && <path d={path} fill="none" stroke="#39FF14" strokeWidth={5} opacity={1} />}
+          {isTrailing && !isActive && <path d={path} fill="none" stroke="#39FF14" strokeWidth={ringTrailWidth} opacity={ringTrailOpacity} />}
+          {SHOW_WEDGE_LABELS && (
+            <text x={labelPos.x} y={labelPos.y-6} textAnchor="middle" fontSize={16}
+              style={{ fill: FN_LABEL_COLORS[fn], fontWeight:600, paintOrder:"stroke", stroke:'#000', strokeWidth:0.9 }}>
+              <tspan x={labelPos.x} dy={0}>{fn}</tspan>
+              {/* Use display-only label key so SUB reads in F, PARALLEL in Eb */}
+              <tspan x={labelPos.x} dy={17} fontSize={13}>{realizeFunction(fn, labelKey)}</tspan>
+            </text>
+          )}
+        </g>
+      );
+    });
+  // include subdomActive so labels switch immediately on enter/exit SUB
+  },[layout, activeFn, trailFn, trailTick, trailOn, baseKey, visitorActive, relMinorActive, subdomActive, labelKey]);
+
+  const activeBtnStyle = (on:boolean): React.CSSProperties =>
+    ({padding:"6px 10px", border:"2px solid "+(on?"#39FF14":"#374151"), borderRadius:8, background:"#111", color:"#fff", cursor:"pointer"});
+
+  /* render */
+  return (
+    <div style={{background:'#111', color:'#fff', minHeight:'100vh', padding:16, fontFamily:'ui-sans-serif, system-ui'}}>
+      <div style={{maxWidth:960, margin:'0 auto', border:'1px solid #374151', borderRadius:12, padding:16}}>
+
+        {/* Controls */}
+        <div style={{display:'flex', gap:8, flexWrap:'nowrap', alignItems:'center', justifyContent:'space-between', overflowX:'auto'}}>
+          <div style={{display:'flex', gap:8, flexWrap:'nowrap', overflowX:'auto'}}>
+            <button onClick={goHome}        style={activeBtnStyle(!(visitorActive||relMinorActive||subdomActive))}>HOME</button>
+            <button onClick={toggleVisitor} style={activeBtnStyle(visitorActive)}>PARALLEL</button>
+            <button onClick={toggleRelMinor}style={activeBtnStyle(relMinorActive)}>RELATIVE</button>
+            <button onClick={toggleSubdom}  style={activeBtnStyle(subdomActive)}>SUBDOM</button>
+          </div>
+
+          <div style={{display:'flex', gap:10, alignItems:'center'}}>
+            <label style={{fontSize:12}}>Key</label>
+            <select value={baseKey} onChange={(e)=>setBaseKey(e.target.value as KeyName)}
+              style={{padding:"4px 6px", border:"1px solid #374151", borderRadius:6, background:"#111", color:"#fff"}}>
+              {FLAT_NAMES.map(k=> <option key={k} value={k}>{k}</option>)}
+            </select>
+
+            {MIDI_SUPPORTED && (
+              <select value={selectedId} onChange={(e)=>{ const acc=midiAccessRef.current; if(acc) bindToInput(e.target.value, acc); }}
+                style={{padding:"4px 6px", border:"1px solid #374151", borderRadius:6, background:"#111", color:"#fff"}}>
+                {inputs.length===0 && <option value="">No MIDI inputs</option>}
+                {inputs.map((i:any)=>(<option key={i.id} value={i.id}>{i.name || `Input ${i.id}`}</option>))}
+              </select>
+            )}
+          </div>
+        </div>
+
+        {/* Status */}
+        <div style={{marginTop:8}}>
+          <span style={{fontSize:12, padding:'2px 6px', border:'1px solid #ffffff22', background:'#ffffff18', borderRadius:6}}>
+            {visitorActive ? 'mode: Parallel (Eb)'
+              : relMinorActive ? 'mode: Relative minor (Am)'
+              : subdomActive ? 'mode: Subdominant (F)'
+              : (midiConnected ? `MIDI: ${midiName||'Connected'}` : 'MIDI: none')}
+          </span>
+        </div>
+
+        {/* Wheel */}
+        <div className="relative"
+             style={{width:WHEEL_W,height:WHEEL_H, margin:'16px auto',
+                     transform:`scale(${UI_SCALE_DEFAULT})`, transformOrigin:'center top'}}>
+          <div style={wrapperStyle}>
+            <svg width={WHEEL_W} height={WHEEL_H} viewBox={`0 0 ${WHEEL_W} ${WHEEL_H}`} className="select-none" style={{display:'block'}}>
+              {wedgeNodes}
+
+              {/* Hub */}
+              <circle cx={260} cy={260} r={220*HUB_RADIUS} fill={HUB_FILL} stroke={HUB_STROKE} strokeWidth={HUB_STROKE_W}/>
+              {SHOW_CENTER_LABEL && centerLabel && (
+                <text x={260} y={260+8} textAnchor="middle" style={{fontFamily:CENTER_FONT_FAMILY}} fontSize={CENTER_FONT_SIZE} fill={CENTER_FILL}>
+                  {centerLabel}
+                </text>
+              )}
+
+              {/* Bonus overlay + trailing */}
+              {bonusArcGeom && bonusActive && (
+                <>
+                  <path d={annulusTopDegree(260,260, Math.max(220*BONUS_OUTER_R, 220*BONUS_OUTER_OVER), 220*BONUS_INNER_R, bonusArcGeom.a0Top, bonusArcGeom.a1Top)}
+                        fill={BONUS_FILL} stroke={BONUS_STROKE} strokeWidth={2}/>
+                  <path d={annulusTopDegree(260,260, Math.max(220*BONUS_OUTER_R, 220*BONUS_OUTER_OVER), 220*BONUS_INNER_R, bonusArcGeom.a0Top, bonusArcGeom.a1Top)}
+                        fill="none" stroke="#39FF14" strokeWidth={5} opacity={1}/>
+                  <text x={bonusArcGeom.labelPos.x} y={bonusArcGeom.labelPos.y - 6} textAnchor="middle"
+                        style={{ fill: BONUS_TEXT_FILL, fontWeight:600, paintOrder:"stroke", stroke:'#000', strokeWidth:0.9 }}>
+                    <tspan x={bonusArcGeom.labelPos.x} dy={0} fontSize={BONUS_TEXT_SIZE + 2}>
+                      {BONUS_FUNCTION_BY_LABEL[bonusLabel] ?? "bonus"}
+                    </tspan>
+                    <tspan x={bonusArcGeom.labelPos.x} dy={16} fontSize={BONUS_TEXT_SIZE}>{bonusLabel}</tspan>
+                  </text>
+                </>
+              )}
+
+              {(!bonusActive && bonusTrailOn && lastBonusGeomRef.current) && (() => {
+                const k = Math.min(1, Math.max(0, bonusTrailTick / RING_FADE_MS));
+                const op = 1 - 0.9 * k;
+                const w = 5 - 3 * k;
+                const g = lastBonusGeomRef.current!;
+                return (
+                  <g>
+                    <path d={annulusTopDegree(260,260, Math.max(220*BONUS_OUTER_R, 220*BONUS_OUTER_OVER), 220*BONUS_INNER_R, g.a0Top, g.a1Top)} fill={BONUS_FILL} opacity={op} />
+                    <path d={annulusTopDegree(260,260, Math.max(220*BONUS_OUTER_R, 220*BONUS_OUTER_OVER), 220*BONUS_INNER_R, g.a0Top, g.a1Top)} fill="none" stroke="#39FF14" strokeWidth={w} opacity={op} />
+                  </g>
+                );
+              })()}
+            </svg>
+          </div>
+        </div>
+
+        {/* Keyboard */}
+        {(()=>{ const KBD_LOW=48, KBD_HIGH=71;
+          const whites:number[]=[], blacks:number[]=[];
+          for(let m=KBD_LOW;m<=KBD_HIGH;m++){ ([1,3,6,8,10].includes(pcFromMidi(m))?blacks:whites).push(m); }
+
+          const whiteCount = whites.length;
+          const totalW = (WHEEL_W * KBD_WIDTH_FRACTION);
+          const WW = totalW / whiteCount;
+          const HW = WW * 4.0 * KBD_HEIGHT_FACTOR_DEFAULT;
+          const WB = WW * 0.68;
+          const HB = HW * 0.62;
+
+          const whitePos:Record<number,number>={}, blackPos:Record<number,number>={};
+          let x=0; for(const m of whites){ whitePos[m]=x; x+=WW; }
+          for(const m of blacks){
+            const L=m-1,R=m+1; const hasL=whitePos[L]!=null, hasR=whitePos[R]!=null;
+            if(hasL&&hasR){ const xL=whitePos[L], xR=whitePos[R]; blackPos[m]=xL+(xR-xL)-(WB/2); }
+            else if(hasL){ blackPos[m]=whitePos[L]+WW-(WB/2);} else if(hasR){ blackPos[m]=whitePos[R]-(WB/2);}
+          }
+
+          const disp = rhDisplaySet();
+
+          return (
+            <div style={{width:totalW, margin:'0 auto', transform:`scale(${UI_SCALE_DEFAULT})`, transformOrigin:'center top'}}>
+              <svg viewBox={`0 0 ${totalW} ${HW+18}`} className="select-none"
+                   style={{display:'block', border:'1px solid #374151', borderRadius:8, background:'#0f172a'}}>
+                {/* Whites */}
+                {Object.entries(whitePos).map(([mStr,x])=>{
+                  const m=+mStr; const held=disp.has(m);
+                  return (
+                    <g key={`w-${m}`}>
+                      <rect
+                        x={x}
+                        y={0}
+                        width={WW}
+                        height={HW}
+                        fill={held?"#AEC9FF":"#f9fafb"}
+                        stroke="#1f2937"
+                        onMouseDown={()=>{rightHeld.current.add(m); detect();}}
+                        onMouseUp={()=>{rightHeld.current.delete(m); rightSus.current.delete(m); detect();}}
+                        onMouseLeave={()=>{rightHeld.current.delete(m); rightSus.current.delete(m); detect();}}
+                      />
+                      {pcFromMidi(m)===0 && (<text x={Number(x)+3} y={HW+13} fontSize={10} fill="#9CA3AF">C{Math.floor(m/12)-1}</text>)}
+                    </g>
+                  );
+                })}
+                {/* Blacks */}
+                {Object.entries(blackPos).map(([mStr,x])=>{
+                  const m=+mStr; const held=disp.has(m);
+                  return (
+                    <rect key={`b-${m}`} x={x} y={0} width={WB} height={HB} rx={2} ry={2}
+                      fill={held?"#2448B8":"#111827"} stroke={held?"#5A90FF":"#374151"}
+                      onMouseDown={()=>{rightHeld.current.add(m); detect();}}
+                      onMouseUp={()=>{rightHeld.current.delete(m); rightSus.current.delete(m); detect();}}
+                      onMouseLeave={()=>{rightHeld.current.delete(m); rightSus.current.delete(m); detect();}} />
+                  );
+                })}
+              </svg>
+            </div>
+          );
+        })()}
+      </div>
+    </div>
+  );
+}
