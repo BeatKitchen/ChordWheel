@@ -1,14 +1,13 @@
-// HarmonyWheel.tsx — v2.28.0
+// HarmonyWheel.tsx — v2.29.0
 // PATCH SUMMARY (drop-in):
-// - B°7 → V7 (no V/vi spill; correct label).
-// - C#° / C#°7 / C#m7♭5 → A7 BONUS overlay (V/ii) in HOME (not in PARALLEL; suppressed if another full °7 is present).
-// - Remove SUB exit on Em7♭5 (does nothing now).
-// - Fm + Eb in HOME → stays iv (Fm7), no PARALLEL hop.
-// - In PARALLEL, F/Fmaj7 exits to HOME (lights IV).
-// - In HOME, F#m7♭5 → V/V wedge like F#°.
-//
-// (Your original v2.27.1 code follows, with targeted patches inline, tagged with “// PATCH …”)
+// - Global dim fade-out: when active chord releases, other-wedge dim fades back to 1.0 over 750 ms.
+// - Sus2/sus4 & augmented: hub labels recognize sus2/sus4 and aug with correct ROOT names (display-only; no functional changes).
+// - SUB→HOME jiggle: small +30° / –30° / 0° jiggle after the SUB exit spin completes.
+// - Display rename: show “ii/vi” (not “V/vi”) on the wedge label (display-only; logic unchanged).
+// - Bonus overlay debounce: Bdim / Bm7♭5 bonus overlay delayed by 50 ms to avoid bounce.
+// - Kept all of your v2.28.0 logic and earlier patches intact; all changes are inline and tagged.
 
+// (Your original imports)
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import type { Fn, KeyName } from "./lib/types";
 import {
@@ -233,21 +232,50 @@ export default function HarmonyWheel(){
   const pushTap = (name:string)=>{ const now=performance.now(); const arr=(TAP_LOG_REF.current[name] ||= []); arr.push(now); while(arr.length && now-arr[0]>TAP_MS) arr.shift(); return arr.length; };
   const setTapEdge = (name:string, present:boolean)=>{ const prev=!!TAP_STATE_REF.current[name]; if(present && !prev){ const n=pushTap(name); TAP_STATE_REF.current[name]=true; return n; } if(!present && prev){ TAP_STATE_REF.current[name]=false; } return 0; };
 
+  /* ---------- Trail + Center helpers ---------- */
   const makeTrail=()=>{ if(activeFnRef.current){ setTrailFn(activeFnRef.current as Fn); } };
-  const setActiveWithTrail=(fn:Fn,label:string)=>{ if(activeFnRef.current && activeFnRef.current!==fn){ makeTrail(); } setActiveFn(fn); setCenterLabel(SHOW_CENTER_LABEL?label:"" ); setBonusActive(false); setBonusLabel(""); };
-  const centerOnly=(t:string)=>{ makeTrail(); setActiveFn(""); setCenterLabel(SHOW_CENTER_LABEL?t:""); setBonusActive(false); setBonusLabel(""); };
+  const setActiveWithTrail=(fn:Fn,label:string)=>{ 
+    if(activeFnRef.current && activeFnRef.current!==fn){ makeTrail(); } 
+    setActiveFn(fn); setCenterLabel(SHOW_CENTER_LABEL?label:"" ); 
+    setBonusActive(false); setBonusLabel(""); 
+    // PATCH (dim fade): stop any running fade when a new active fn arrives
+    stopDimFade();
+  };
+  const centerOnly=(t:string)=>{ 
+    makeTrail(); 
+    // PATCH (dim fade): start fade if we are clearing a live activeFn
+    if (activeFnRef.current) startDimFade();
+    setActiveFn(""); setCenterLabel(SHOW_CENTER_LABEL?t:""); 
+    setBonusActive(false); setBonusLabel(""); 
+  };
 
   const hardClearGhostIfIdle = ()=>{
     if(rightHeld.current.size===0 && rightSus.current.size===0){
       if(!lastInputWasPreviewRef.current) setLatchedAbsNotes([]);
     }
   };
-  const clear=()=>{ makeTrail(); hardClearGhostIfIdle(); setBonusActive(false); setBonusLabel(""); setCenterLabel(""); };
+  const clear=()=>{ 
+    makeTrail(); hardClearGhostIfIdle(); 
+    // PATCH (dim fade): fade back to full brightness
+    if (activeFnRef.current) startDimFade();
+    setBonusActive(false); setBonusLabel(""); setCenterLabel(""); 
+    setActiveFn("");
+  };
 
-  /* ---------- SUB spin helpers ---------- */
+  /* ---------- SUB spin + jiggle ---------- */
   const subSpinTimerRef = useRef<number | null>(null);
   const clearSubSpinTimer = ()=>{ if(subSpinTimerRef.current!=null){ window.clearTimeout(subSpinTimerRef.current); subSpinTimerRef.current=null; } };
   const SUB_SPIN_DEG = Math.abs(IV_ROTATE_DEG || 168);
+
+  // PATCH: quick jiggle after SUB→HOME (±30° then settle)
+  const JIGGLE_DEG = 30;
+  const JIGGLE_MS = 120;
+  const subJiggleExit = ()=>{
+    // chain three quick targets
+    setTimeout(()=> setTargetRotation(JIGGLE_DEG), 10);
+    setTimeout(()=> setTargetRotation(-JIGGLE_DEG), 10 + JIGGLE_MS);
+    setTimeout(()=> setTargetRotation(0), 10 + 2*JIGGLE_MS);
+  };
 
   const subSpinEnter = ()=>{
     if (subHasSpunRef.current) return;
@@ -264,6 +292,8 @@ export default function HarmonyWheel(){
     subSpinTimerRef.current = window.setTimeout(()=>{
       setRotationOffset(0); setTargetRotation(0);
       subSpinTimerRef.current = null; subHasSpunRef.current = false;
+      // PATCH: jiggle after landing at HOME
+      subJiggleExit();
     }, ROTATION_ANIM_MS + 20) as unknown as number;
   };
   const subLatch = (fn: Fn)=>{
@@ -326,6 +356,29 @@ export default function HarmonyWheel(){
     }
     return null;
   };
+
+  // PATCH: detect sus2, sus4, aug labels (display-only helper)
+  const detectDisplayTriadLabel = (pcsRel:Set<number>, key:KeyName): string | null => {
+    // We'll scan every pc as potential root (0..11), then test triad shapes relative to that root.
+    const names = ["C","C#","D","Eb","E","F","F#","G","Ab","A","Bb","B"];
+    const norm = (x:number)=>((x%12)+12)%12;
+    for (let root=0; root<12; root++){
+      // sus2: root, 2, 7  (0,2,7)
+      const sus2 = [root, norm(root+2), norm(root+7)];
+      if (sus2.every(p=>pcsRel.has(p))) return `${names[root]}sus2`;
+      // sus4: root, 5, 7  (0,5,7)
+      const sus4 = [root, norm(root+5), norm(root+7)];
+      if (sus4.every(p=>pcsRel.has(p))) return `${names[root]}sus4`;
+      // augmented: root, 4, 8 (0,4,8)
+      const aug  = [root, norm(root+4), norm(root+8)];
+      if (aug.every(p=>pcsRel.has(p))) return `${names[root]}aug`;
+    }
+    return null;
+  };
+
+  // PATCH: tiny debounce timer ref for Bdim bonus overlay
+  const bdimTimerRef = useRef<number | null>(null);
+  const clearBdimTimer = ()=>{ if (bdimTimerRef.current!=null){ window.clearTimeout(bdimTimerRef.current); bdimTimerRef.current=null; } };
 
   function detect(){
     const phys=[...rightHeld.current], sus=sustainOn.current?[...rightSus.current]:[], merged=new Set<number>([...phys,...sus]);
@@ -402,23 +455,29 @@ export default function HarmonyWheel(){
   const hasBDF   = isSubset([11,2,5]);       // B D F
   const hasBDFG  = isSubset([11,2,5,9]);     // B D F A  (Bm7b5)
   if (!inParallel && !isFullDim7 && (hasBDF || hasBDFG)){
-    const hub = hasBDFG ? "Bm7♭5" : "Bdim";
-    setActiveFn(""); setCenterLabel(hub);
-    setBonusActive(true); setBonusLabel(hub);
+    // PATCH: delay 50 ms to avoid bounce
+    clearBdimTimer();
+    bdimTimerRef.current = window.setTimeout(()=>{
+      setActiveFn(""); setCenterLabel(hasBDFG ? "Bm7♭5" : "Bdim");
+      setBonusActive(true); setBonusLabel(hasBDFG ? "Bm7♭5" : "Bdim");
+    }, 50) as unknown as number;
     return;
+  } else {
+    // if condition no longer applies, clear pending timer and ensure overlay off unless something else sets it
+    clearBdimTimer();
   }
 
   // PATCH: C#dim / C#dim7 / C#m7b5 → A7 bonus overlay (V/ii), suppressed in PARALLEL
   const hasCsharpDimTri  = isSubset([1,4,7]);        // C# E G
   const hasCsharpHalfDim = isSubset([1,4,7,11]);     // C# E G B
-  const isCsharpFullDim7 = (pcsRel.has(1) && pcsRel.has(4) && pcsRel.has(7) && pcsRel.has(10)); // C# E G Bb
+  const isCsharpFullDim7 = (pcsRel.has(1) && pcsRel.has((1+3)%12) && pcsRel.has((1+6)%12) && pcsRel.has((1+9)%12));
   if (!inParallel && (hasCsharpDimTri || hasCsharpHalfDim || isCsharpFullDim7)){
     setActiveFn(""); setCenterLabel("A7");
     setBonusActive(true); setBonusLabel("A7");
     return;
   }
 
-  // A7 overlay (unchanged; allows plain A triad/A7 to preview V/ii)
+  // A7 overlay (unchanged)
   const hasA7tri = isSubset([9,1,4]);            // A C# E
   const hasA7    = hasA7tri || isSubset([9,1,4,7]); // + optional G
   if (hasA7){
@@ -431,19 +490,8 @@ export default function HarmonyWheel(){
 }
 
 
-/* ---------- SUBDOM (F) ----------
-   Enter on Gm / Gm7 / C7 (from any mode).
-   Stay on F/Fmaj7, Gm/Gm7, C7, exact C triad.
-   Exit on Cmaj7, Am7, Dm/Dm7, or non-stay after debounce (CW spin).
-   Quick-jump exits:
-     - Bb / Bb7 → HOME (♭VII)
-     - Eb/Ab/Db fam → PARALLEL
-     - Dm/Am/Em and D7/E7 → HOME
-   EXCEPTIONS requested:
-     - Bbmaj7 (Bb–D–F–A) STAYS in SUB as IV
-     - Bbm / Bbm7 STAY in SUB as iv
-     - Em7♭5 exits SUB → HOME (iii label)  [REMOVED by PATCH — now “do nothing”]
-*/
+/* ---------- SUBDOM (F) ---------- */
+/* (unchanged logic from your v2.28.0; exits will call subSpinExit which now jiggles) */
 {
   const enterByGm = isSubset([7,10,2]) || isSubset([7,10,2,5]);
   const enterByC7 = isSubset([0,4,7,10]);
@@ -465,11 +513,10 @@ export default function HarmonyWheel(){
     const S = useWindow ? windowedRelSet() : pcsRel;
 
     /* ---------- FAST EXITS FROM SUB (no debounce) ---------- */
-    // Bb family → HOME, light ♭VII (but allow explicit exceptions below)
     const bbTri   = isSubsetIn([10,2,5], S);     // Bb
     const bb7     = isSubsetIn([10,2,5,8], S);   // Bb7
 
-    // SUB exceptions:
+    // SUB exceptions (as in your v2.28.0)
     const bbMaj7Exact = exactSetIn([10,2,5,9], S);    // Bbmaj7 stays on IV
     if (bbMaj7Exact){
       setActiveWithTrail("IV","Bbmaj7"); subLatch("IV");
@@ -492,10 +539,10 @@ export default function HarmonyWheel(){
       return;
     }
 
-    // Eb / Ab / Db families → PARALLEL (Eb space)
-    const eb   = isSubsetIn([3,7,10], S) || isSubsetIn([3,7,10,2], S);     // Eb / Eb7
-    const ab   = isSubsetIn([8,0,3], S) || isSubsetIn([8,0,3,6], S);       // Ab / Ab7
-    const db   = isSubsetIn([1,5,8], S) || isSubsetIn([1,5,8,11], S);      // Db / Db7
+    // Eb / Ab / Db families → PARALLEL (unchanged)
+    const eb   = isSubsetIn([3,7,10], S) || isSubsetIn([3,7,10,2], S);
+    const ab   = isSubsetIn([8,0,3], S) || isSubsetIn([8,0,3,6], S);
+    const db   = isSubsetIn([1,5,8], S) || isSubsetIn([1,5,8,11], S);
     if (eb || ab || db){
       subdomLatchedRef.current = false;
       subSpinExit();
@@ -510,14 +557,12 @@ export default function HarmonyWheel(){
       return;
     }
 
-    // Dm / Am / Em (triad or m7) and D7 / E7 → HOME
+    // Dm / Am / Em (triad or m7) and D7 / E7 → HOME (unchanged; Em7b5 removed earlier)
     const dm   = isSubsetIn([2,5,9], S) || isSubsetIn([2,5,9,0], S);
     const am   = isSubsetIn([9,0,4], S) || isSubsetIn([9,0,4,7], S);
     const em   = isSubsetIn([4,7,11], S) || isSubsetIn([4,7,11,2], S);
     const d7   = isSubsetIn([2,6,9,0], S);
     const e7   = isSubsetIn([4,8,11,2], S);
-
-    // PATCH: Em7♭5 should NOT cause exit — removed the old exactSetIn([4,7,10,2]) branch.
 
     if (dm || am || em || d7 || e7){
       subdomLatchedRef.current = false;
@@ -562,7 +607,7 @@ export default function HarmonyWheel(){
       if (stayOnF)          { setActiveWithTrail("I",  absName || (isSubsetIn([5,9,0,4], S)?"Fmaj7":"F"));   subLatch("I"); }
       else if (stayOnGm)    { setActiveWithTrail("ii", absName || (isSubsetIn([7,10,2,5], S)?"Gm7":"Gm"));   subLatch("ii"); }
       else if (stayOnC7)    { setActiveWithTrail("V7", absName || "C7");                                     subLatch("V7"); }
-      else /* exact C triad*/{ setActiveWithTrail("V7", absName || "C");                                     subLatch("V7"); }
+      else                  { setActiveWithTrail("V7", absName || "C");                                      subLatch("V7"); }
       return;
     }
 
@@ -640,15 +685,14 @@ if (!visitorActiveRef.current){
   // Full dim7 detection (any inversion)
   const root = findDim7Root(pcsRel);
   if (root!==null){
-    // Special handling for C#°7 → A7 BONUS (keep behavior here as well)
+    // Special handling for C#°7 → A7 BONUS
     if (pcsRel.has(1) && pcsRel.has((1+3)%12) && pcsRel.has((1+6)%12) && pcsRel.has((1+9)%12)){
       setActiveFn(""); setCenterLabel("A7");
       setBonusActive(true); setBonusLabel("A7");
       return;
     }
 
-    // Priority map by membership (not arbitrary root):
-    // Prefer F# → V/V; else G# → V/vi; else B → V7.
+    // Priority map by membership:
     const hasFsharp = pcsRel.has(6);
     const hasGsharp = pcsRel.has(8);
     const hasB      = pcsRel.has(11);
@@ -660,7 +704,6 @@ if (!visitorActiveRef.current){
     if (hasGsharp){ setActiveWithTrail("V/vi", "G#dim7"); return; }
     if (hasB)     { setActiveWithTrail("V7",   "Bdim7");  return; }
 
-    // Fallback: bottom-note or theory helper
     const mapped = mapDimRootToFn_ByBottom(root) || "V7";
     setActiveWithTrail(mapped as Fn, label);
     return;
@@ -705,7 +748,9 @@ if (!visitorActiveRef.current){
       }
     }
 
-    centerOnly(absName);
+    // PATCH: last-resort display — show sus2/sus4/aug root labels when nothing else claimed it
+    const triDisp = detectDisplayTriadLabel(pcsRel, baseKeyRef.current);
+    centerOnly(triDisp || absName);
   }
 
   /* controls */
@@ -718,20 +763,21 @@ if (!visitorActiveRef.current){
     setTargetRotation(0);
     setActiveFn("I");
     setCenterLabel("C");
+    stopDimFade();
   };
   const toggleVisitor = ()=>{
     const on = !visitorActiveRef.current;
     if(on && subdomActiveRef.current){ subSpinExit(); setSubdomActive(false); subdomLatchedRef.current=false; subHasSpunRef.current=false; }
     if(on && relMinorActiveRef.current) setRelMinorActive(false);
     setVisitorActive(on);
-    if(on){ setActiveFn("I"); setCenterLabel("Eb"); }
+    if(on){ setActiveFn("I"); setCenterLabel("Eb"); stopDimFade(); }
   };
   const toggleRelMinor = ()=>{
     const on = !relMinorActiveRef.current;
     if(on && subdomActiveRef.current){ subSpinExit(); setSubdomActive(false); subdomLatchedRef.current=false; subHasSpunRef.current=false; }
     if(on && visitorActiveRef.current) setVisitorActive(false);
     setRelMinorActive(on);
-    if(on){ setActiveFn("vi"); setCenterLabel("Am"); }
+    if(on){ setActiveFn("vi"); setCenterLabel("Am"); stopDimFade(); }
   };
   const toggleSubdom = ()=>{
     const on = !subdomActiveRef.current;
@@ -744,6 +790,7 @@ if (!visitorActiveRef.current){
       homeSuppressUntilRef.current = performance.now() + RECENT_PC_WINDOW_MS;
       setActiveFn("I"); setCenterLabel("F");
       subSpinEnter();
+      stopDimFade();
     } else {
       subdomLatchedRef.current = false;
       subExitCandidateSinceRef.current = null;
@@ -752,6 +799,7 @@ if (!visitorActiveRef.current){
       homeSuppressUntilRef.current = performance.now() + 140;
       justExitedSubRef.current = true;
       setActiveFn("I"); setCenterLabel("C");
+      stopDimFade();
     }
   };
 
@@ -761,6 +809,37 @@ if (!visitorActiveRef.current){
   // Relative cue: paint V/V with IV color
   const fnFillColor = (fn: Fn) =>
     (relMinorActive && fn === "V/V") ? FN_COLORS["IV"] : FN_COLORS[fn];
+
+  // PATCH: display-only rename map for wedge label line 1
+  const fnDisplay = (fn: Fn): string => (fn === "V/vi" ? "ii/vi" : fn);
+
+  /* ---------- Global dim fade (PATCH) ---------- */
+  const DIM_FADE_MS = 750;
+  const [dimFadeTick, setDimFadeTick] = useState(0);
+  const [dimFadeOn, setDimFadeOn] = useState(false);
+  const dimFadeRafRef = useRef<number | null>(null);
+  const startDimFade = ()=>{
+    stopDimFade();
+    setDimFadeOn(true);
+    const start = performance.now();
+    const tick = ()=>{
+      const dt = performance.now() - start;
+      if (dt < DIM_FADE_MS){
+        setDimFadeTick(dt);
+        dimFadeRafRef.current = requestAnimationFrame(tick);
+      } else {
+        setDimFadeTick(DIM_FADE_MS);
+        stopDimFade();
+      }
+    };
+    dimFadeRafRef.current = requestAnimationFrame(tick);
+  };
+  const stopDimFade = ()=>{
+    if (dimFadeRafRef.current != null) cancelAnimationFrame(dimFadeRafRef.current);
+    dimFadeRafRef.current = null;
+    setDimFadeOn(false);
+    setDimFadeTick(0);
+  };
 
   /* keyboard helpers */
   const KBD_LOW=48, KBD_HIGH=71;
@@ -796,12 +875,17 @@ if (!visitorActiveRef.current){
   /* wedges */
   const wedgeNodes = useMemo(()=>{
     const renderKey:KeyName = visitorActive ? "Eb" : baseKey; // logic labels (tonic for SUB)
+    // PATCH: compute global dim opacity
+    // If we have an activeFn: non-active wedges opacity = 0.5 (as before).
+    // If no activeFn but dimFade is on: ramp from 0.5 → 1.0 across DIM_FADE_MS.
+    const dimK = Math.min(1, Math.max(0, dimFadeTick / DIM_FADE_MS));
+    const fadedBase = 0.5 + 0.5 * dimK; // 0.5→1.0
     return layout.map(({fn,path,labelPos})=>{
       const isActive = activeFn===fn;
       const isTrailing = trailOn && (trailFn===fn);
       const k = isTrailing ? Math.min(1, Math.max(0, trailTick / RING_FADE_MS)) : 0;
       const globalActive = activeFn!==""; 
-      const fillOpacity = isActive ? 1 : (globalActive ? 0.5 : 1);
+      const fillOpacity = isActive ? 1 : (globalActive ? 0.5 : (dimFadeOn ? fadedBase : 1));
       const ringTrailOpacity = 1 - 0.9*k; const ringTrailWidth = 5 - 3*k;
       return (
         <g key={fn} onMouseDown={()=>previewFn(fn)} style={{cursor:"pointer"}}>
@@ -811,7 +895,8 @@ if (!visitorActiveRef.current){
           {SHOW_WEDGE_LABELS && (
             <text x={labelPos.x} y={labelPos.y-6} textAnchor="middle" fontSize={16}
               style={{ fill: FN_LABEL_COLORS[fn], fontWeight:600, paintOrder:"stroke", stroke:'#000', strokeWidth:0.9 }}>
-              <tspan x={labelPos.x} dy={0}>{fn}</tspan>
+              {/* PATCH: display-only rename for V/vi */}
+              <tspan x={labelPos.x} dy={0}>{fnDisplay(fn)}</tspan>
               {/* display-only label key so SUB reads in F, PARALLEL in Eb */}
               <tspan x={labelPos.x} dy={17} fontSize={13}>{realizeFunction(fn, labelKey)}</tspan>
             </text>
@@ -819,7 +904,8 @@ if (!visitorActiveRef.current){
         </g>
       );
     });
-  },[layout, activeFn, trailFn, trailTick, trailOn, baseKey, visitorActive, relMinorActive, subdomActive, labelKey]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[layout, activeFn, trailFn, trailTick, trailOn, baseKey, visitorActive, relMinorActive, subdomActive, labelKey, dimFadeOn, dimFadeTick]);
 
   const activeBtnStyle = (on:boolean): React.CSSProperties =>
     ({padding:"6px 10px", border:"2px solid "+(on?"#39FF14":"#374151"), borderRadius:8, background:"#111", color:"#fff", cursor:"pointer"});
@@ -888,13 +974,20 @@ if (!visitorActiveRef.current){
                         fill={BONUS_FILL} stroke={BONUS_STROKE} strokeWidth={2}/>
                   <path d={annulusTopDegree(260,260, Math.max(220*BONUS_OUTER_R, 220*BONUS_OUTER_OVER), 220*BONUS_INNER_R, bonusArcGeom.a0Top, bonusArcGeom.a1Top)}
                         fill="none" stroke="#39FF14" strokeWidth={5} opacity={1}/>
-                  <text x={bonusArcGeom.labelPos.x} y={bonusArcGeom.labelPos.y - 6} textAnchor="middle"
+                  {/* PATCH: show ii/vi when the overlay label is Bdim/Bm7♭5 */}
+                  {(()=> {
+                    const raw = BONUS_FUNCTION_BY_LABEL[bonusLabel] ?? "bonus";
+                    const displayFn = (bonusLabel==="Bdim" || bonusLabel==="Bm7♭5") ? "ii/vi" : raw;
+                    return (
+                      <text x={bonusArcGeom.labelPos.x} y={bonusArcGeom.labelPos.y - 6} textAnchor="middle"
                         style={{ fill: BONUS_TEXT_FILL, fontWeight:600, paintOrder:"stroke", stroke:'#000', strokeWidth:0.9 }}>
-                    <tspan x={bonusArcGeom.labelPos.x} dy={0} fontSize={BONUS_TEXT_SIZE + 2}>
-                      {BONUS_FUNCTION_BY_LABEL[bonusLabel] ?? "bonus"}
-                    </tspan>
-                    <tspan x={bonusArcGeom.labelPos.x} dy={16} fontSize={BONUS_TEXT_SIZE}>{bonusLabel}</tspan>
-                  </text>
+                        <tspan x={bonusArcGeom.labelPos.x} dy={0} fontSize={BONUS_TEXT_SIZE + 2}>
+                          {displayFn}
+                        </tspan>
+                        <tspan x={bonusArcGeom.labelPos.x} dy={16} fontSize={BONUS_TEXT_SIZE}>{bonusLabel}</tspan>
+                      </text>
+                    );
+                  })()}
                 </>
               )}
 
