@@ -19,8 +19,14 @@ import {
   BONUS_TEXT_FILL, BONUS_TEXT_SIZE, BONUS_FUNCTION_BY_LABEL, SHOW_WEDGE_LABELS,
   SHOW_CENTER_LABEL, LATCH_PREVIEW, PREVIEW_USE_SEVENTHS, MIDI_SUPPORTED,
   RING_FADE_MS, UI_SCALE_DEFAULT, KBD_WIDTH_FRACTION, KBD_HEIGHT_FACTOR_DEFAULT,
-  IV_ROTATE_DEG
+  IV_ROTATE_DEG,
+  // v3.0.0 additions:
+  DIM_FADE_MS, JIGGLE_DEG, JIGGLE_MS, BONUS_DEBOUNCE_MS,
+  KEYBOARD_WIDTH_FRACTION, GUITAR_TAB_WIDTH_FRACTION
 } from "./lib/config";
+
+import GuitarTab from "./components/GuitarTab";
+
 import { computeLayout, annulusTopDegree } from "./lib/geometry";
 import {
   pcFromMidi, pcNameForKey, FLAT_NAMES, NAME_TO_PC, T, subsetOf,
@@ -186,6 +192,78 @@ export default function HarmonyWheel(){
     })();
   },[selectedId]);
 
+
+// v3 input & sequence state
+const [inputText, setInputText] = useState("");
+type SeqItem = { kind: "chord" | "modifier" | "comment"; raw: string; chord?: string; comment?: string; };
+const [sequence, setSequence] = useState<SeqItem[]>([]);
+const [seqIndex, setSeqIndex] = useState(-1);
+const activeComment = (seqIndex>=0 && sequence[seqIndex]?.comment) ? sequence[seqIndex]!.comment! : "";
+
+// Simple token parser: commas separate tokens.
+//   @SUB F, @REL Am, @PAR Eb, @KEY D (KEY reserved for future)
+//   # anything = comment token
+const parseAndLoadSequence = ()=>{
+  const tokens = inputText.split(",").map(t=>t.trim()).filter(Boolean);
+  const items: SeqItem[] = tokens.map(tok=>{
+    if (tok.startsWith("#")) return { kind:"comment", raw:tok, comment: tok.slice(1).trim() };
+    if (tok.startsWith("@")) {
+      const [cmd, ...rest] = tok.slice(1).trim().split(/\s+/);
+      const arg = rest.join(" ");
+      const upper = (cmd||"").toUpperCase();
+      if (upper==="SUB" || upper==="REL" || upper==="PAR" || upper==="KEY"){
+        return { kind:"modifier", raw:tok, chord: `${upper}:${arg}` };
+      }
+      return { kind:"modifier", raw:tok, chord: `${upper}:${arg}` }; // unknown modifier tolerated
+    }
+    // basic chord token
+    return { kind:"chord", raw:tok, chord: tok };
+  });
+  setSequence(items);
+  setSeqIndex(items.length ? 0 : -1);
+  // immediately apply first actionable token
+  if (items.length) applySeqItem(items[0]);
+};
+
+// navigate
+const stepPrev = ()=>{
+  if (!sequence.length) return;
+  const i = Math.max(0, (seqIndex<=0 ? 0 : seqIndex-1));
+  setSeqIndex(i); applySeqItem(sequence[i]);
+};
+const stepNext = ()=>{
+  if (!sequence.length) return;
+  const i = Math.min(sequence.length-1, (seqIndex<0 ? 0 : seqIndex+1));
+  setSeqIndex(i); applySeqItem(sequence[i]);
+};
+const handleInputKeyNav: React.KeyboardEventHandler<HTMLTextAreaElement> = (e)=>{
+  if (e.key==="ArrowLeft"){ e.preventDefault(); stepPrev(); }
+  if (e.key==="ArrowRight"){ e.preventDefault(); stepNext(); }
+};
+
+// Apply a sequence item: comments update only the comment box.
+// modifiers toggle modes; chords preview via existing logic.
+const applySeqItem = (it: SeqItem)=>{
+  if (it.kind==="comment") return; // comment just displays
+  if (it.kind==="modifier" && it.chord){
+    const m = it.chord.split(":")[0];
+    const arg = it.chord.split(":").slice(1).join(":").trim();
+    if (m==="SUB"){ if(!subdomActiveRef.current) toggleSubdom(); }
+    else if (m==="REL"){ if(!relMinorActiveRef.current) toggleRelMinor(); }
+    else if (m==="PAR"){ if(!visitorActiveRef.current) toggleVisitor(); }
+    else if (m==="KEY"){ /* reserved for future key-center change */ }
+    return;
+  }
+  if (it.kind==="chord" && it.chord){
+    // shove the label into center and let existing pathways take over:
+    centerOnly(it.chord);
+    // optional: we could map raw chord label to a fn and call previewFn(fn)
+    // but for now we keep it display-only so we don’t disturb your routing.
+  }
+};
+
+
+
   /* layout & bonus geometry */
   const cx=260, cy=260, r=220;
   const layout = useMemo(()=> computeLayout(cx,cy,r,rotationOffset), [rotationOffset]);
@@ -268,8 +346,7 @@ export default function HarmonyWheel(){
   const SUB_SPIN_DEG = Math.abs(IV_ROTATE_DEG || 168);
 
   // PATCH: quick jiggle after SUB→HOME (±30° then settle)
-  const JIGGLE_DEG = 30;
-  const JIGGLE_MS = 120;
+
   const subJiggleExit = ()=>{
     // chain three quick targets
     setTimeout(()=> setTargetRotation(JIGGLE_DEG), 10);
@@ -460,7 +537,7 @@ export default function HarmonyWheel(){
     bdimTimerRef.current = window.setTimeout(()=>{
       setActiveFn(""); setCenterLabel(hasBDFG ? "Bm7♭5" : "Bdim");
       setBonusActive(true); setBonusLabel(hasBDFG ? "Bm7♭5" : "Bdim");
-    }, 50) as unknown as number;
+    }, BONUS_DEBOUNCE_MS) as unknown as number;
     return;
   } else {
     // if condition no longer applies, clear pending timer and ensure overlay off unless something else sets it
@@ -814,7 +891,6 @@ if (!visitorActiveRef.current){
   const fnDisplay = (fn: Fn): string => (fn === "V/vi" ? "ii/vi" : fn);
 
   /* ---------- Global dim fade (PATCH) ---------- */
-  const DIM_FADE_MS = 750;
   const [dimFadeTick, setDimFadeTick] = useState(0);
   const [dimFadeOn, setDimFadeOn] = useState(false);
   const dimFadeRafRef = useRef<number | null>(null);
@@ -915,31 +991,30 @@ if (!visitorActiveRef.current){
     <div style={{background:'#111', color:'#fff', minHeight:'100vh', padding:16, fontFamily:'ui-sans-serif, system-ui'}}>
       <div style={{maxWidth:960, margin:'0 auto', border:'1px solid #374151', borderRadius:12, padding:16}}>
 
-        {/* Controls */}
-        <div style={{display:'flex', gap:8, flexWrap:'nowrap', alignItems:'center', justifyContent:'space-between', overflowX:'auto'}}>
-          <div style={{display:'flex', gap:8, flexWrap:'nowrap', overflowX:'auto'}}>
-            <button onClick={goHome}        style={activeBtnStyle(!(visitorActive||relMinorActive||subdomActive))}>HOME</button>
-            <button onClick={toggleVisitor} style={activeBtnStyle(visitorActive)}>PARALLEL</button>
-            <button onClick={toggleRelMinor}style={activeBtnStyle(relMinorActive)}>RELATIVE</button>
-            <button onClick={toggleSubdom}  style={activeBtnStyle(subdomActive)}>SUBDOM</button>
-          </div>
+{/* Controls */}
+<div style={{display:'flex', gap:8, flexWrap:'nowrap', alignItems:'center', justifyContent:'space-between', overflowX:'auto'}}>
+  <div style={{display:'flex', gap:8, flexWrap:'nowrap', overflowX:'auto'}}>
+    <button onClick={goHome}         style={activeBtnStyle(!(visitorActive||relMinorActive||subdomActive))}>HOME</button>
+    <button onClick={toggleRelMinor} style={activeBtnStyle(relMinorActive)}>RELATIVE</button>
+    <button onClick={toggleSubdom}   style={activeBtnStyle(subdomActive)}>SUBDOM</button>
+    <button onClick={toggleVisitor}  style={activeBtnStyle(visitorActive)}>PARALLEL</button>
+  </div>
+  <div style={{display:'flex', gap:10, alignItems:'center'}}>
+    <label style={{fontSize:12}}>Key</label>
+    <select value={baseKey} onChange={(e)=>setBaseKey(e.target.value as KeyName)}
+      style={{padding:"4px 6px", border:"1px solid #374151", borderRadius:6, background:"#111", color:"#fff"}}>
+      {FLAT_NAMES.map(k=> <option key={k} value={k}>{k}</option>)}
+    </select>
 
-          <div style={{display:'flex', gap:10, alignItems:'center'}}>
-            <label style={{fontSize:12}}>Key</label>
-            <select value={baseKey} onChange={(e)=>setBaseKey(e.target.value as KeyName)}
-              style={{padding:"4px 6px", border:"1px solid #374151", borderRadius:6, background:"#111", color:"#fff"}}>
-              {FLAT_NAMES.map(k=> <option key={k} value={k}>{k}</option>)}
-            </select>
-
-            {MIDI_SUPPORTED && (
-              <select value={selectedId} onChange={(e)=>{ const acc=midiAccessRef.current; if(acc) bindToInput(e.target.value, acc); }}
-                style={{padding:"4px 6px", border:"1px solid #374151", borderRadius:6, background:"#111", color:"#fff"}}>
-                {inputs.length===0 && <option value="">No MIDI inputs</option>}
-                {inputs.map((i:any)=>(<option key={i.id} value={i.id}>{i.name || `Input ${i.id}`}</option>))}
-              </select>
-            )}
-          </div>
-        </div>
+    {MIDI_SUPPORTED && (
+      <select value={selectedId} onChange={(e)=>{ const acc=midiAccessRef.current; if(acc) bindToInput(e.target.value, acc); }}
+        style={{padding:"4px 6px", border:"1px solid #374151", borderRadius:6, background:"#111", color:"#fff"}}>
+        {inputs.length===0 && <option value="">No MIDI inputs</option>}
+        {inputs.map((i:any)=>(<option key={i.id} value={i.id}>{i.name || `Input ${i.id}`}</option>))}
+      </select>
+    )}
+  </div>
+</div>
 
         {/* Status */}
         <div style={{marginTop:8}}>
@@ -1007,67 +1082,134 @@ if (!visitorActiveRef.current){
           </div>
         </div>
 
-        {/* Keyboard */}
-        {(()=>{ const KBD_LOW=48, KBD_HIGH=71;
-          const whites:number[]=[], blacks:number[]=[];
-          for(let m=KBD_LOW;m<=KBD_HIGH;m++){ ([1,3,6,8,10].includes(pcFromMidi(m))?blacks:whites).push(m); }
 
-          const whiteCount = whites.length;
-          const totalW = (WHEEL_W * KBD_WIDTH_FRACTION);
-          const WW = totalW / whiteCount;
-          const HW = WW * 4.0 * KBD_HEIGHT_FACTOR_DEFAULT;
-          const WB = WW * 0.68;
-          const HB = HW * 0.62;
+{/* Chord Input (v3) */}
+<div style={{maxWidth:960, margin:'12px auto 0', display:'flex', gap:8, alignItems:'stretch'}}>
+  <textarea
+    placeholder={'Type chords, modifiers, and comments...\nExamples:\nC, Am7, F, G7\n@SUB F, Bb, C7\n# Verse: lyrics or theory note'}
+    rows={3}
+    style={{
+      flex:1,
+      padding:'10px 12px',
+      border:'1px solid #374151',
+      background:'#0f172a',
+      color:'#e5e7eb',
+      borderRadius:8,
+      fontFamily:'ui-sans-serif, system-ui',
+      resize:'vertical'
+    }}
+    value={inputText}
+    onChange={(e)=>setInputText(e.target.value)}
+    onKeyDown={handleInputKeyNav}
+  />
+  <div style={{display:'flex', flexDirection:'column', gap:8}}>
+    <button onClick={parseAndLoadSequence} style={activeBtnStyle(true)}>Load</button>
+    <div style={{display:'flex', gap:8}}>
+      <button onClick={stepPrev} style={activeBtnStyle(true)}>{'◀︎ Prev'}</button>
+      <button onClick={stepNext} style={activeBtnStyle(true)}>{'Next ▶︎'}</button>
+    </div>
+  </div>
+</div>
 
-          const whitePos:Record<number,number>={}, blackPos:Record<number,number>={};
-          let x=0; for(const m of whites){ whitePos[m]=x; x+=WW; }
-          for(const m of blacks){
-            const L=m-1,R=m+1; const hasL=whitePos[L]!=null, hasR=whitePos[R]!=null;
-            if(hasL&&hasR){ const xL=whitePos[L], xR=whitePos[R]; blackPos[m]=xL+(xR-xL)-(WB/2); }
-            else if(hasL){ blackPos[m]=whitePos[L]+WW-(WB/2);} else if(hasR){ blackPos[m]=whitePos[R]-(WB/2);}
-          }
+{/* Active Comment (v3) */}
+{activeComment && (
+  <div style={{maxWidth:960, margin:'8px auto 0', padding:'8px 12px', border:'1px solid #384152', background:'#111827', color:'#e5e7eb', borderRadius:8, whiteSpace:'pre-wrap'}}>
+    {activeComment}
+  </div>
+)}
 
-          const disp = rhDisplaySet();
 
-          return (
-            <div style={{width:totalW, margin:'0 auto', transform:`scale(${UI_SCALE_DEFAULT})`, transformOrigin:'center top'}}>
-              <svg viewBox={`0 0 ${totalW} ${HW+18}`} className="select-none"
-                   style={{display:'block', border:'1px solid #374151', borderRadius:8, background:'#0f172a'}}>
-                {/* Whites */}
-                {Object.entries(whitePos).map(([mStr,x])=>{
-                  const m=+mStr; const held=disp.has(m);
-                  return (
-                    <g key={`w-${m}`}>
-                      <rect
-                        x={x}
-                        y={0}
-                        width={WW}
-                        height={HW}
-                        fill={held?"#AEC9FF":"#f9fafb"}
-                        stroke="#1f2937"
-                        onMouseDown={()=>{rightHeld.current.add(m); detect();}}
-                        onMouseUp={()=>{rightHeld.current.delete(m); rightSus.current.delete(m); detect();}}
-                        onMouseLeave={()=>{rightHeld.current.delete(m); rightSus.current.delete(m); detect();}}
-                      />
-                      {pcFromMidi(m)===0 && (<text x={Number(x)+3} y={HW+13} fontSize={10} fill="#9CA3AF">C{Math.floor(m/12)-1}</text>)}
-                    </g>
-                  );
-                })}
-                {/* Blacks */}
-                {Object.entries(blackPos).map(([mStr,x])=>{
-                  const m=+mStr; const held=disp.has(m);
-                  return (
-                    <rect key={`b-${m}`} x={x} y={0} width={WB} height={HB} rx={2} ry={2}
-                      fill={held?"#2448B8":"#111827"} stroke={held?"#5A90FF":"#374151"}
-                      onMouseDown={()=>{rightHeld.current.add(m); detect();}}
-                      onMouseUp={()=>{rightHeld.current.delete(m); rightSus.current.delete(m); detect();}}
-                      onMouseLeave={()=>{rightHeld.current.delete(m); rightSus.current.delete(m); detect();}} />
-                  );
-                })}
-              </svg>
-            </div>
-          );
-        })()}
+
+
+{/* Bottom Panel: Keyboard (left) + Guitar Tab (right) */}
+{(()=>{ const KBD_LOW=48, KBD_HIGH=71;
+  const whites:number[]=[], blacks:number[]=[];
+  for(let m=KBD_LOW;m<=KBD_HIGH;m++){ ([1,3,6,8,10].includes(pcFromMidi(m))?blacks:whites).push(m); }
+
+  const whiteCount = whites.length;
+  const totalW = (WHEEL_W * KBD_WIDTH_FRACTION);
+  const WW = totalW / whiteCount;
+  const HW = WW * 4.0 * KBD_HEIGHT_FACTOR_DEFAULT; // total keyboard height
+  const WB = WW * 0.68;
+  const HB = HW * 0.62;
+
+  const whitePos:Record<number,number>={}, blackPos:Record<number,number>={};
+  let x=0; for(const m of whites){ whitePos[m]=x; x+=WW; }
+  for(const m of blacks){
+    const L=m-1,R=m+1; const hasL=whitePos[L]!=null, hasR=whitePos[R]!=null;
+    if(hasL&&hasR){ const xL=whitePos[L], xR=whitePos[R]; blackPos[m]=xL+(xR-xL)-(WB/2); }
+    else if(hasL){ blackPos[m]=whitePos[L]+WW-(WB/2);} else if(hasR){ blackPos[m]=whitePos[R]-(WB/2);}
+  }
+
+  const rhDisplaySet = ()=>{ 
+    const phys=[...rightHeld.current], sus=sustainOn.current?[...rightSus.current]:[], merged=new Set<number>([...phys,...sus]);
+    let src = Array.from(new Set(Array.from(merged))).sort((a,b)=>a-b);
+    if(src.length===0 && LATCH_PREVIEW && lastInputWasPreviewRef.current && latchedAbsNotes.length){
+      src = [...new Set(latchedAbsNotes)].sort((a,b)=>a-b);
+    }
+    if(src.length===0) return new Set<number>();
+    const fitted = preview.fitNotesToWindowPreserveInversion(src, KBD_LOW, KBD_HIGH);
+    return new Set(fitted);
+  };
+  const disp = rhDisplaySet();
+
+  // Right-side Guitar Tab panel sizing
+  const rightW = WHEEL_W * GUITAR_TAB_WIDTH_FRACTION;
+  const rightH = HW; // make it a square of equal height by constraining width to min(height, rightW)
+  const tabSize = Math.min(rightW, rightH);
+  // Use centerLabel (display) for now — later we’ll feed detected/preview fn-resolved chord name.
+  const guitarChordLabel = centerLabel || null;
+
+  return (
+    <div style={{maxWidth: WHEEL_W, margin:'12px auto 0', display:'grid', gap:12,
+                 gridTemplateColumns:`${KEYBOARD_WIDTH_FRACTION*100}% ${GUITAR_TAB_WIDTH_FRACTION*100}%`,
+                 alignItems:'start'}}>
+      {/* Keyboard */}
+      <div style={{width:'100%', transform:`scale(${UI_SCALE_DEFAULT})`, transformOrigin:'left top'}}>
+        <svg viewBox={`0 0 ${totalW} ${HW+18}`} className="select-none"
+             style={{display:'block', width:'100%', height:'auto', border:'1px solid #374151', borderRadius:8, background:'#0f172a'}}>
+          {/* Whites */}
+          {Object.entries(whitePos).map(([mStr,x])=>{
+            const m=+mStr; const held=disp.has(m);
+            return (
+              <g key={`w-${m}`}>
+                <rect
+                  x={x}
+                  y={0}
+                  width={WW}
+                  height={HW}
+                  fill={held?"#AEC9FF":"#f9fafb"}
+                  stroke="#1f2937"
+                  onMouseDown={()=>{rightHeld.current.add(m); detect();}}
+                  onMouseUp={()=>{rightHeld.current.delete(m); rightSus.current.delete(m); detect();}}
+                  onMouseLeave={()=>{rightHeld.current.delete(m); rightSus.current.delete(m); detect();}}
+                />
+                {pcFromMidi(m)===0 && (<text x={Number(x)+3} y={HW+13} fontSize={10} fill="#9CA3AF">C{Math.floor(m/12)-1}</text>)}
+              </g>
+            );
+          })}
+          {/* Blacks */}
+          {Object.entries(blackPos).map(([mStr,x])=>{
+            const m=+mStr; const held=disp.has(m);
+            return (
+              <rect key={`b-${m}`} x={x} y={0} width={WB} height={HB} rx={2} ry={2}
+                fill={held?"#2448B8":"#111827"} stroke={held?"#5A90FF":"#374151"}
+                onMouseDown={()=>{rightHeld.current.add(m); detect();}}
+                onMouseUp={()=>{rightHeld.current.delete(m); rightSus.current.delete(m); detect();}}
+                onMouseLeave={()=>{rightHeld.current.delete(m); rightSus.current.delete(m); detect();}} />
+            );
+          })}
+        </svg>
+      </div>
+
+      {/* Guitar Tab (square) */}
+      <div style={{display:'flex', justifyContent:'center', alignItems:'start', transform:`scale(${UI_SCALE_DEFAULT})`, transformOrigin:'left top'}}>
+        <GuitarTab chordLabel={guitarChordLabel} width={tabSize} height={tabSize} />
+      </div>
+    </div>
+  );
+})()}
+
       </div>
     </div>
   );

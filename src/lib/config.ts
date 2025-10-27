@@ -144,3 +144,18 @@ export const LATCH_PREVIEW = true;         // keep showing last preview if no ke
 export const UI_SCALE_DEFAULT = 1.0;       // wheel + keyboard global CSS scale
 export const KBD_WIDTH_FRACTION = 0.86;    // keyboard width as fraction of WHEEL_W
 export const KBD_HEIGHT_FACTOR_DEFAULT = 1.0;
+
+// =========================
+// HARMONYWHEEL V3 ADDITIONS
+// =========================
+
+// Visual transitions
+export const DIM_FADE_MS = 750;      // fade duration (ms) for de-dimming other wedges
+export const JIGGLE_DEG = 30;        // ±degrees for SUB→HOME jiggle
+export const JIGGLE_MS = 120;        // duration of each jiggle phase (ms)
+export const BONUS_DEBOUNCE_MS = 50; // debounce for Bdim/Bm7b5 overlay (ms)
+
+// Layout / UI sizing (bottom panel split)
+export const KEYBOARD_WIDTH_FRACTION = 0.75;   // left: keyboard width share (0..1)
+export const GUITAR_TAB_WIDTH_FRACTION = 0.25; // right: guitar tab width share (0..1)
+
