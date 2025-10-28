@@ -36,6 +36,20 @@ import {
 import { BonusDebouncer } from "./lib/overlays";
 import * as preview from "./lib/preview";
 
+/* ---------- GuitarTab label normalizer (module-scope) ---------- */
+const normalizeForTab = (s: string | null): string | null => {
+  if (!s) return s;
+  let t = s;
+  t = t.replace(/♭/g, "b").replace(/♯/g, "#").replace(/–/g, "-");
+  t = t.replace(/\bmaj\s*7\b/ig, "maj7").replace(/\bmaj\b/ig, "maj");
+  t = t.replace(/\bminor\b/ig, "m").replace(/\bmin(?!or)?\b/ig, "m");
+  t = t.replace(/\bm-?7\b/ig, "m7").replace(/\bm-?6\b/ig, "m6");
+  t = t.replace(/\bdim\s*7\b/ig, "dim7").replace(/[°º]/g, "dim");
+  t = t.replace(/^A\s*major\b/i, "A").replace(/^B\s*flat\b/i, "Bb").replace(/^E\s*flat\b/i, "Eb");
+  t = t.replace(/\s+/g, " ").trim();
+  return t;
+};
+
 export default function HarmonyWheel(){
   /* ---------- Core state ---------- */
   const [baseKey,setBaseKey]=useState<KeyName>("C");
@@ -413,12 +427,14 @@ if (type===0x90 && d2>0) {
   /* ---------- detection ---------- */
   const SUB_EXIT_DEBOUNCE_MS = 420;
 
+  
   // protect C7 / Fmaj7 / Gm7 while in SUB from release-order bounces
   const PROTECT_SUPERSETS: Array<Set<number>> = [
-    T([5,9,0,4]),    // Fmaj7
-    T([0,4,7,10]),   // C7
-    T([7,10,2,5]),   // Gm7
+    T([0,4,7,10]),   // C7: C E G Bb
+    T([5,9,0,4]),    // Fmaj7: F A C E
+    T([7,10,2])      // Gm: G Bb D
   ];
+
   const within = (pool:Set<number>, sup:Set<number>)=>{
     for(const p of pool) if(!sup.has(p)) return false;
     return true;
@@ -988,13 +1004,68 @@ if (type===0x90 && d2>0) {
 
               {/* Bonus overlay + trailing */}
               {/* (kept exactly as in your v2.30.0 block) */}
-              {/* -------- BEGIN BONUS BLOCK -------- */}
-              {/* Bonus overlay */}
-              {/* The full block is long; keep your existing code from bonusArcGeom render and the trail render exactly here */}
-              {/* -------- END BONUS BLOCK -------- */}
+              { /* -------- BEGIN BONUS BLOCK -------- */
+  (()=>{
+    if(!bonusArcGeom) return null;
+    const deg2rad = (d:number)=> (Math.PI/180)*(d-90);
+    const arcPath = (cx:number, cy:number, rInner:number, rOuter:number, a0Top:number, a1Top:number)=>{
+      const a0 = deg2rad(a0Top), a1 = deg2rad(a1Top);
+      const large = (Math.abs(((a1Top - a0Top + 360)%360)) > 180) ? 1 : 0;
+      const x0o = cx + rOuter*Math.cos(a0), y0o = cy + rOuter*Math.sin(a0);
+      const x1o = cx + rOuter*Math.cos(a1), y1o = cy + rOuter*Math.sin(a1);
+      const x1i = cx + rInner*Math.cos(a1), y1i = cy + rInner*Math.sin(a1);
+      const x0i = cx + rInner*Math.cos(a0), y0i = cy + rInner*Math.sin(a0);
+      return [
+        `M ${x0o} ${y0o}`,
+        `A ${rOuter} ${rOuter} 0 ${large} 1 ${x1o} ${y1o}`,
+        `L ${x1i} ${y1i}`,
+        `A ${rInner} ${rInner} 0 ${large} 0 ${x0i} ${y0i}`,
+        "Z"
+      ].join(" ");
+    };
+
+    const outerAbs = Math.max(220*BONUS_OUTER_R, 220*BONUS_OUTER_OVER);
+    const innerAbs = 220*BONUS_INNER_R;
+    const pathD = arcPath(260,260, innerAbs, outerAbs, bonusArcGeom.a0Top, bonusArcGeom.a1Top);
+
+    return (
+      <g style={{pointerEvents:'none'}}>
+        {bonusActive && (
+          <path d={pathD} fill={BONUS_FILL} stroke={BONUS_STROKE} strokeWidth={1.5} opacity={0.95} />
+        )}
+        {!bonusActive && lastBonusGeomRef.current && (
+          <path
+            d={arcPath(260,260, innerAbs, outerAbs, lastBonusGeomRef.current.a0Top, lastBonusGeomRef.current.a1Top)}
+            fill={BONUS_FILL} stroke={BONUS_STROKE} strokeWidth={1.2} opacity={0.20}
+          />
+        )}
+        {bonusActive && (
+          <text
+            x={bonusArcGeom.labelPos.x}
+            y={bonusArcGeom.labelPos.y+4}
+            textAnchor="middle"
+            fontSize={BONUS_TEXT_SIZE}
+            style={{ fill: BONUS_TEXT_FILL, fontWeight:700, paintOrder:"stroke", stroke:"#000", strokeWidth:1.2 as any }}
+          >
+            {bonusLabel}
+          </text>
+        )}
+      </g>
+    );
+  })()
+/* -------- END BONUS BLOCK -------- */}
             </svg>
           </div>
         </div>
+      {/* Active Comment (between wheel and input) */}
+      {activeComment && (
+        <div style={{margin:'10px auto 6px auto', maxWidth:780}}>
+          <div style={{padding:'8px 12px', border:'1px dashed #6b7280', borderRadius:8, background:'#0b1220', color:'#e5e7eb'}}>
+            {activeComment}
+          </div>
+        </div>
+      )}
+    
 
         {/* Bottom Grid: input + keyboard (left), buttons + guitar tab (right) */}
         {(()=>{
@@ -1073,7 +1144,7 @@ if (type===0x90 && d2>0) {
                                 onMouseDown={()=>{rightHeld.current.add(m); detect();}}
                                 onMouseUp={()=>{rightHeld.current.delete(m); rightSus.current.delete(m); detect();}}
                                 onMouseLeave={()=>{rightHeld.current.delete(m); rightSus.current.delete(m); detect();}}/>
-                          {pcFromMidi(m)===0 && (<text x={Number(x)+3} y={HW+13} fontSize={10} fill="#9CA3AF">C{Math.floor(m/12)-1}</text>)}
+                          
                         </g>
                       );
                     })}
@@ -1099,7 +1170,7 @@ if (type===0x90 && d2>0) {
                   <button onClick={stepNext} style={{padding:'8px 12px', border:'2px solid #39FF14', borderRadius:8, background:'#111', color:'#fff', cursor:'pointer'}}>▶</button>
                 </div>
                 <div style={{display:'flex', justifyContent:'center'}}>
-                  <GuitarTab chordLabel={currentGuitarLabel} width={tabSize} height={tabSize} />
+                  <GuitarTab chordLabel={normalizeForTab(currentGuitarLabel)} width={tabSize} height={tabSize} />
                 </div>
               </div>
             </div>
