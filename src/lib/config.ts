@@ -143,7 +143,6 @@ export const LATCH_PREVIEW = true;         // keep showing last preview if no ke
 /** Global UI scale + keyboard sizing (no UI sliders; change here only) */
 export const UI_SCALE_DEFAULT = 1.0;       // wheel + keyboard global CSS scale
 export const KBD_WIDTH_FRACTION = 0.86;    // keyboard width as fraction of WHEEL_W
-export const KBD_HEIGHT_FACTOR_DEFAULT = 1.0;
 
 // =========================
 // HARMONYWHEEL V3 ADDITIONS
@@ -159,3 +158,17 @@ export const BONUS_DEBOUNCE_MS = 50; // debounce for Bdim/Bm7b5 overlay (ms)
 export const KEYBOARD_WIDTH_FRACTION = 0.75;   // left: keyboard width share (0..1)
 export const GUITAR_TAB_WIDTH_FRACTION = 0.25; // right: guitar tab width share (0..1)
 
+// >>> PATCH START — lib/config.ts guitar theme + (optional) shorter keyboard
+export const GUITAR_THEME = {
+  bg:     "#0b1220",
+  border: "#334155",
+  fg:     "#e5e7eb",
+  stroke: "#94a3b8",
+  string: "#64748b",
+  fret:   "#64748b",
+};
+
+// (optional) make the keyboard a touch shorter to free vertical space
+// Replace your existing export for KBD_HEIGHT_FACTOR_DEFAULT with this line:
+export const KBD_HEIGHT_FACTOR_DEFAULT = 1;
+// >>> PATCH END — lib/config.ts guitar theme + (optional) shorter keyboard
