@@ -4,6 +4,9 @@ import type { Fn, SizeSpec } from "./types";
 export const ACTIVE_STROKE = "#39FF14";
 export const INACTIVE_WEDGE_OPACITY = 0.35;
 
+export const DIM_OPACITY = 0.28; // 0..1 (lower = darker). Tweak to taste.
+
+
 export const WHEEL_W = 520;
 export const WHEEL_H = 560;
 

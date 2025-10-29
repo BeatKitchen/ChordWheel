@@ -5,6 +5,8 @@ function preferIiOverFlatVII(S: Set<number>): boolean {
   const hasBbTriad = hasAll([10, 2, 5]);   // Bb–D–F
   const hasGm      = hasAll([7, 10, 2]);   // G–Bb–D
   const hasG       = S.has(7);             // G present
+  const DIM_OPACITY = 0.32;  // tweak 0..1
+
   return hasBbTriad && (hasGm || hasG);
 }
 // HarmonyWheel.tsx — v2.37.7 (drop-in)
@@ -44,12 +46,37 @@ import {
 } from "./lib/modes";
 import { BonusDebouncer } from "./lib/overlays";
 import * as preview from "./lib/preview";
-const HW_VERSION = 'HarmonyWheel v2.37.7b';
+const HW_VERSION = 'HarmonyWheel v2.37.8';
+const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
+
+import { DIM_OPACITY } from "./lib/config";
+
+
 
 export default function HarmonyWheel(){
   /* ---------- Core state ---------- */
   const [baseKey,setBaseKey]=useState<KeyName>("C");
-  const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey;},[baseKey]);
+  
+
+// --- Auto-clear bonus overlays so base wedges return to full color on release
+useEffect(() => {
+  const clear = () => {
+    try {
+      setBonusActive(false); setBonusLabel && setBonusLabel("");
+    } catch {}
+  };
+  window.addEventListener("keyup", clear);
+  window.addEventListener("pointerup", clear);
+  window.addEventListener("mouseup", clear);
+  window.addEventListener("touchend", clear);
+  return () => {
+    window.removeEventListener("keyup", clear);
+    window.removeEventListener("pointerup", clear);
+    window.removeEventListener("mouseup", clear);
+    window.removeEventListener("touchend", clear);
+  };
+}, []);
+const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey;},[baseKey]);
 
   const [activeFn,setActiveFn]=useState<Fn|"">("I");
   const activeFnRef=useRef<Fn|"">("I"); useEffect(()=>{activeFnRef.current=activeFn;},[activeFn]);
@@ -1050,7 +1077,7 @@ if (type===0x90 && d2>0) {
   };
   const cx = 260, cy = 260;
   const r0 = 220*BONUS_INNER_R;
-  const r1 = 220*BONUS_OUTER_R;
+  const r1 = 220*BONUS_OUTER_R*1.06; // extend a hair past rim
   const span = 16; // degrees
   const base = (typeof BONUS_CENTER_ANCHOR_DEG === 'number' ? BONUS_CENTER_ANCHOR_DEG : 0);
   // Space the two bonuses so they never overlap; pick anchor by current bonus label.
@@ -1061,16 +1088,20 @@ if (type===0x90 && d2>0) {
   const a1 = anchor + span/2 + rotationOffset;
   const pathD = ring(cx,cy,r0,r1,a0,a1);
   const textR = (r0+r1)/2;
+      const funcLabel = (bonusLabel === 'A7') ? 'V/ii' : 'ii/vi';
   const mid = (a0+a1)/2;
   const tx = cx + textR * Math.cos(toRad(mid));
   const ty = cy + textR * Math.sin(toRad(mid));
   return (
     <g key="bonus">
-      <path d={pathD} fill={BONUS_FILL} stroke={BONUS_STROKE} strokeWidth={1.5 as any}/>
+      <path d={pathD} fill={BONUS_FILL} stroke={PALETTE_ACCENT_GREEN} strokeWidth={1.5 as any}/>
       <text x={tx} y={ty} textAnchor="middle" fontSize={BONUS_TEXT_SIZE}
             style={{ fill: BONUS_TEXT_FILL, fontWeight: 700, paintOrder:'stroke', stroke:'#000', strokeWidth:1 as any }}>
-        {bonusLabel}
-      </text>
+        {funcLabel}
+      </text>\n          <text x={tx} y={ty+12} textAnchor="middle" fontSize={BONUS_TEXT_SIZE}
+                style={{ fill: BONUS_TEXT_FILL, fontWeight: 700, paintOrder:'stroke', stroke:'#000', strokeWidth:1 as any }}>
+            {bonusLabel}
+          </text>
     </g>
   );
 })()}
