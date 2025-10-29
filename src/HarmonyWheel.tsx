@@ -1,37 +1,19 @@
 /*
- * HarmonyWheel.tsx — v2.37.13
+ * HarmonyWheel.tsx — v2.37.16
  * 
- * CHANGES FROM v2.37.12:
- * - Adjusted label position further (moved up and left to avoid wedge overlap)
- * - Position changed from x=50, y=148/162 to x=30, y=120/134
+ * CHANGES FROM v2.37.15:
+ * - Moved labels outside wheel container to align with buttons and status bar
+ * - Labels now sit between status bar and wheel (left-aligned with HOME button)
+ * - Cleaner visual hierarchy and alignment
  * 
- * CHANGES FROM v2.37.11:
- * - Moved "Beat Kitchen" and version label inside circle (upper left area)
- * - Repositioned from x=20, y=18/34 to x=50, y=148/162 for better visibility
- * 
- * CHANGES FROM v2.37.10:
- * - FIXED: All dim7 chords now use lowest-note naming from theory.ts
- * - Removed hardcoded "F#dim7", "G#dim7", "Bdim7" (lines 865-867)
- * - ALL dim7 chords now correctly display using absName (Ddim7, Adim7, etc.)
- * - C#dim7 family still uses A7 bonus overlay but displays correct chord name
- * 
- * CHANGES FROM v2.37.9:
- * - Fixed C#dim family showing as "A7" in hub (now shows correct chord names)
- * - C#dim, C#dim7, C#m7♭5 now display their actual names while still lighting A7 wedge
- * - Works with strengthened dim7 detection in theory.ts v2.37.10
- * 
- * CHANGES FROM v2.37.8:
- * - Fixed Bdim7 identification bug (was showing as "G#dim7")
- * - Added Bdim7 → V (G7) wedge mapping (special case exception)
- * - Updated internalAbsoluteName() call to pass MIDI notes array
- * - Hub now correctly displays "Bdim7" when B-D-F-Ab is played
- * 
- * PREVIOUS (v2.37.7):
- * - Keeps your v2.29.x behavior, SUB Gm7 debounce, bonus overlays, etc.
- * - Fixes: center label legibility; guitar tab now updates from active wedge;
- *          input/keyboard/guitar are aligned; buttons stack above tab.
- * - Adds: arrow-key nav for the input; consistent layout grid.
- * - Relies on your existing ./lib/* and ./components/GuitarTab files.
+ * CHANGES FROM v2.37.14:
+ * - FIXED: Moved labels from SVG to HTML overlay (absolute positioning)
+ * - Labels now positioned at top:10, left:10 in HTML - much more predictable!
+ * - FIXED: Added missing comment display field (was calculated but never shown)
+ * - FIXED: @HOME modifier now works (returns to HOME space)
+ * - IMPROVED: @ modifiers more forgiving (@SUB, @SUBDOM, @ SUB all work)
+ * - IMPROVED: Support 3-letter abbreviations (REL, SUB, PAR, HOME)
+ * - IMPROVED: Updated placeholder text to show new syntax examples
  * 
  * MODIFIED BY: Claude AI for Nathan Rosenberg / Beat Kitchen
  * DATE: October 29, 2025
@@ -84,7 +66,7 @@ import {
 } from "./lib/modes";
 import { BonusDebouncer } from "./lib/overlays";
 import * as preview from "./lib/preview";
-const HW_VERSION = 'HarmonyWheel v2.37.13'; // Adjusted label position + comprehensive guitar tab chords
+const HW_VERSION = 'v2.37.16'; // Labels aligned with buttons/status
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -293,10 +275,20 @@ if (type===0x90 && d2>0) {
     const items: SeqItem[] = tokens.map(tok=>{
       if (tok.startsWith("#")) return { kind:"comment", raw:tok, comment: tok.slice(1).trim() };
       if (tok.startsWith("@")) {
-        const [cmd, ...rest] = tok.slice(1).trim().split(/\s+/);
+        // More forgiving parsing: @SUB, @SUBDOM, @ SUB, @ SUBDOM all work
+        const remainder = tok.slice(1).trim(); // Remove @ and trim
+        const [cmd, ...rest] = remainder.split(/\s+/);
         const arg = rest.join(" ");
         const upper = (cmd||"").toUpperCase();
-        return { kind:"modifier", raw:tok, chord: `${upper}:${arg}` };
+        
+        // Normalize abbreviations: REL, SUB, PAR, HOME (and full names)
+        let normalized = upper;
+        if (upper === "SUBDOM" || upper === "SUB") normalized = "SUB";
+        else if (upper === "RELATIVE" || upper === "REL") normalized = "REL";
+        else if (upper === "PARALLEL" || upper === "PAR") normalized = "PAR";
+        else if (upper === "HOME" || upper === "HOM") normalized = "HOME";
+        
+        return { kind:"modifier", raw:tok, chord: `${normalized}:${arg}` };
       }
       return { kind:"chord", raw:tok, chord: tok };
     });
@@ -324,10 +316,11 @@ if (type===0x90 && d2>0) {
     if (it.kind==="comment") return;
     if (it.kind==="modifier" && it.chord){
       const m = it.chord.split(":")[0];
-      if (m==="SUB"){ if(!subdomActiveRef.current) toggleSubdom(); }
+      if (m==="HOME"){ goHome(); } // Return to HOME space
+      else if (m==="SUB"){ if(!subdomActiveRef.current) toggleSubdom(); }
       else if (m==="REL"){ if(!relMinorActiveRef.current) toggleRelMinor(); }
       else if (m==="PAR"){ if(!visitorActiveRef.current) toggleVisitor(); }
-      else if (m==="KEY"){ /* reserved */ }
+      else if (m==="KEY"){ /* reserved for future key changes */ }
       return;
     }
     if (it.kind==="chord" && it.chord){
@@ -1086,17 +1079,19 @@ if (type===0x90 && d2>0) {
           </span>
         </div>
 
+        {/* Labels - aligned with buttons and status */}
+        <div style={{marginTop:12, marginBottom:-8}}>
+          <div style={{fontSize:11, fontWeight:600, color:'#9CA3AF'}}>Beat Kitchen</div>
+          <div style={{fontSize:10, fontWeight:500, color:'#7B7B7B', marginTop:2}}>HarmonyWheel v2.37.15</div>
+        </div>
+
         {/* Wheel */}
         <div className="relative"
              style={{width:WHEEL_W,height:WHEEL_H, margin:'16px auto',
                      transform:`scale(${UI_SCALE_DEFAULT})`, transformOrigin:'center top'}}>
           <div style={wrapperStyle}>
             <svg width={WHEEL_W} height={WHEEL_H} viewBox={`0 0 ${WHEEL_W} ${WHEEL_H}`} className="select-none" style={{display:'block'}}>
-  {/* TOP-LEFT LABELS (inside circle, moved up and left) */}
-  <text x={30} y={120} textAnchor="start" fontSize={11}
-        style={{ fill:'#9CA3AF', fontWeight:600 }}>Beat Kitchen</text>
-  <text x={30} y={134} textAnchor="start" fontSize={10}
-        style={{ fill:'#7B7B7B', fontWeight:500 }}>{HW_VERSION}</text>
+  {/* Labels moved outside wheel container to align with buttons/status */}
 
   {wedgeNodes}
 
@@ -1213,7 +1208,7 @@ if (type===0x90 && d2>0) {
               {/* Left column: input above keyboard */}
               <div style={{display:'grid', gridTemplateRows:'auto auto', rowGap:10}}>
                 <textarea
-                  placeholder={'Type chords, modifiers, and comments...\nExamples:\nC, Am7, F, G7\n@SUB F, Bb, C7\n# Verse: lyrics or theory note'}
+                  placeholder={'Type chords, modifiers, and comments...\nExamples:\nC, Am7, F, G7\n@SUB F, Bb, C7, @HOME\n@REL Em, Am, @PAR Cm, Fm\n# Verse: lyrics or theory note'}
                   rows={3}
                   value={inputText}
                   onChange={(e)=>setInputText(e.target.value)}
@@ -1261,13 +1256,30 @@ if (type===0x90 && d2>0) {
                 </div>
               </div>
 
-              {/* Right column: buttons above guitar tab */}
-              <div style={{display:'grid', gridTemplateRows:'auto auto', rowGap:10, justifyItems:'stretch'}}>
+              {/* Right column: comment display, buttons, and guitar tab */}
+              <div style={{display:'grid', gridTemplateRows:'auto auto auto', rowGap:10, justifyItems:'stretch'}}>
+                {/* Comment Display */}
+                {activeComment && (
+                  <div style={{
+                    padding:'8px 12px',
+                    border:'1px solid #374151',
+                    borderRadius:8,
+                    background:'#0f172a',
+                    color:'#e5e7eb',
+                    fontSize:12,
+                    minHeight:24,
+                    fontStyle:'italic'
+                  }}>
+                    {activeComment}
+                  </div>
+                )}
+                {/* Navigation Buttons */}
                 <div style={{display:'flex', gap:8}}>
                   <button onClick={parseAndLoadSequence} style={{padding:'8px 12px', border:'2px solid #39FF14', borderRadius:8, background:'#111', color:'#fff', cursor:'pointer', flex:1}}>Load</button>
                   <button onClick={stepPrev} style={{padding:'8px 12px', border:'2px solid #39FF14', borderRadius:8, background:'#111', color:'#fff', cursor:'pointer'}}>◀</button>
                   <button onClick={stepNext} style={{padding:'8px 12px', border:'2px solid #39FF14', borderRadius:8, background:'#111', color:'#fff', cursor:'pointer'}}>▶</button>
                 </div>
+                {/* Guitar Tab */}
                 <div style={{display:'flex', justifyContent:'center'}}>
                   <GuitarTab chordLabel={currentGuitarLabel} width={tabSize} height={tabSize} />
                 </div>
@@ -1281,4 +1293,4 @@ if (type===0x90 && d2>0) {
   );
 }
 
-// EOF - HarmonyWheel.tsx v2.37.13
+// EOF - HarmonyWheel.tsx v2.37.16
