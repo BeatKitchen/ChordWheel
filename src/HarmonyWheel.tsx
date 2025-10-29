@@ -1,4 +1,13 @@
-// HarmonyWheel.tsx — v2.30.0 (drop-in)
+
+// Prefer ii (Gm/Gm7) over ♭VII (Bb) when Bb triad co-occurs with G/Gm context
+function preferIiOverFlatVII(S: Set<number>): boolean {
+  const hasAll = (ns: number[]) => ns.every(n => S.has(n));
+  const hasBbTriad = hasAll([10, 2, 5]);   // Bb–D–F
+  const hasGm      = hasAll([7, 10, 2]);   // G–Bb–D
+  const hasG       = S.has(7);             // G present
+  return hasBbTriad && (hasGm || hasG);
+}
+// HarmonyWheel.tsx — v2.37.7 (drop-in)
 // - Keeps your v2.29.x behavior, SUB Gm7 debounce, bonus overlays, etc.
 // - Fixes: center label legibility; guitar tab now updates from active wedge;
 //          input/keyboard/guitar are aligned; buttons stack above tab.
@@ -35,6 +44,7 @@ import {
 } from "./lib/modes";
 import { BonusDebouncer } from "./lib/overlays";
 import * as preview from "./lib/preview";
+const HW_VERSION = 'HarmonyWheel v2.37.7b';
 
 export default function HarmonyWheel(){
   /* ---------- Core state ---------- */
@@ -68,6 +78,7 @@ export default function HarmonyWheel(){
   const recentRelMapRef = useRef<Map<number, number>>(new Map());
   const lastPcsRelSizeRef = useRef<number>(0);
   const homeSuppressUntilRef = useRef(0);
+  const subHoldUntilRef = useRef<number>(0);
   const justExitedSubRef = useRef(false);
 
   const [rotationOffset,setRotationOffset]=useState(0);
@@ -599,6 +610,20 @@ if (type===0x90 && d2>0) {
             }
         const useWindow = performance.now() < homeSuppressUntilRef.current;
         const S = useWindow ? windowedRelSet() : pcsRel;
+        // Strong jiggle guard: brief hold + prioritize ii(Gm/Gm7) over bVII(Bb)
+        const now = performance.now();
+        if (now < subHoldUntilRef.current) {
+          // During hold window, refuse to exit SUB
+          return;
+        }
+        // If Bb triad present alongside G (i.e., Gm/Gm7 context), stay on ii
+        if (preferIiOverFlatVII(S) || isSubsetIn([7,10,2], S) || isSubsetIn([7,10,2,5], S)) {
+          subLatch("ii");
+          setActiveWithTrail("ii", isSubsetIn([7,10,2,5], S) ? "Gm7" : "Gm");
+          subHoldUntilRef.current = now + 220; // short anti-bounce hold
+          return;
+        }
+
 
         const bbTri   = isSubsetIn([10,2,5], S);
         const bb7     = isSubsetIn([10,2,5,8], S);
@@ -891,7 +916,7 @@ if (type===0x90 && d2>0) {
       const isActive = activeFn===fn;
       const isTrailing = trailOn && (trailFn===fn);
       const k = isTrailing ? Math.min(1, Math.max(0, trailTick / RING_FADE_MS)) : 0;
-      const globalActive = activeFn!==""; 
+      const globalActive = (activeFn!=="" || bonusActive); 
       const fillOpacity = isActive ? 1 : (globalActive ? 0.5 : (dimFadeOn ? fadedBase : 1));
       const ringTrailOpacity = 1 - 0.9*k; const ringTrailWidth = 5 - 3*k;
       return (
@@ -985,7 +1010,13 @@ if (type===0x90 && d2>0) {
                      transform:`scale(${UI_SCALE_DEFAULT})`, transformOrigin:'center top'}}>
           <div style={wrapperStyle}>
             <svg width={WHEEL_W} height={WHEEL_H} viewBox={`0 0 ${WHEEL_W} ${WHEEL_H}`} className="select-none" style={{display:'block'}}>
-              {wedgeNodes}
+  {/* TOP-LEFT LABELS */}
+  <text x={20} y={18} textAnchor="start" fontSize={12}
+        style={{ fill:'#9CA3AF', fontWeight:700 }}>Beat Kitchen</text>
+  <text x={20} y={34} textAnchor="start" fontSize={12}
+        style={{ fill:'#9CA3AF', fontWeight:600 }}>{HW_VERSION}</text>
+
+  {wedgeNodes}
 
               {/* Hub */}
               <circle cx={260} cy={260} r={220*HUB_RADIUS} fill={HUB_FILL} stroke={HUB_STROKE} strokeWidth={HUB_STROKE_W}/>
@@ -997,10 +1028,54 @@ if (type===0x90 && d2>0) {
 
               {/* Bonus overlay + trailing */}
               {/* (kept exactly as in your v2.30.0 block) */}
+              {/* 
               {/* -------- BEGIN BONUS BLOCK -------- */}
-              {/* Bonus overlay */}
-              {/* The full block is long; keep your existing code from bonusArcGeom render and the trail render exactly here */}
-              {/* -------- END BONUS BLOCK -------- */}
+{bonusActive && (() => {
+  // Basic arc ring between inner/outer radii
+  const toRad = (deg:number) => (deg - 90) * Math.PI/180; // 0° at 12 o'clock
+  const arc = (cx:number, cy:number, r:number, a0:number, a1:number) => {
+    const x0 = cx + r * Math.cos(toRad(a0));
+    const y0 = cy + r * Math.sin(toRad(a0));
+    const x1 = cx + r * Math.cos(toRad(a1));
+    const y1 = cy + r * Math.sin(toRad(a1));
+    const large = Math.abs(a1-a0) > 180 ? 1 : 0;
+    const sweep = a1 > a0 ? 1 : 0;
+    return {x0,y0,x1,y1,large,sweep};
+  };
+  const ring = (cx:number, cy:number, r0:number, r1:number, a0:number, a1:number) => {
+    const o = arc(cx,cy,r1,a0,a1);
+    const i = arc(cx,cy,r0,a1,a0);
+    return `M ${o.x0},${o.y0} A ${r1},${r1} 0 ${o.large} ${o.sweep} ${o.x1},${o.y1}`
+         + ` L ${i.x0},${i.y0} A ${r0},${r0} 0 ${i.large} ${i.sweep} ${i.x1},${i.y1} Z`;
+  };
+  const cx = 260, cy = 260;
+  const r0 = 220*BONUS_INNER_R;
+  const r1 = 220*BONUS_OUTER_R;
+  const span = 16; // degrees
+  const base = (typeof BONUS_CENTER_ANCHOR_DEG === 'number' ? BONUS_CENTER_ANCHOR_DEG : 0);
+  // Space the two bonuses so they never overlap; pick anchor by current bonus label.
+  const anchorA7   = base - 30;
+  const anchorBdim = base + 30;
+  const anchor = (bonusLabel === 'A7') ? anchorA7 : anchorBdim;
+  const a0 = anchor - span/2 + rotationOffset;
+  const a1 = anchor + span/2 + rotationOffset;
+  const pathD = ring(cx,cy,r0,r1,a0,a1);
+  const textR = (r0+r1)/2;
+  const mid = (a0+a1)/2;
+  const tx = cx + textR * Math.cos(toRad(mid));
+  const ty = cy + textR * Math.sin(toRad(mid));
+  return (
+    <g key="bonus">
+      <path d={pathD} fill={BONUS_FILL} stroke={BONUS_STROKE} strokeWidth={1.5 as any}/>
+      <text x={tx} y={ty} textAnchor="middle" fontSize={BONUS_TEXT_SIZE}
+            style={{ fill: BONUS_TEXT_FILL, fontWeight: 700, paintOrder:'stroke', stroke:'#000', strokeWidth:1 as any }}>
+        {bonusLabel}
+      </text>
+    </g>
+  );
+})()}
+{/* -------- END BONUS BLOCK -------- */}
+
             </svg>
           </div>
         </div>
