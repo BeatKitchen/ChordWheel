@@ -1,3 +1,27 @@
+/*
+ * HarmonyWheel.tsx — v2.37.10
+ * 
+ * CHANGES FROM v2.37.9:
+ * - Fixed C#dim family showing as "A7" in hub (now shows correct chord names)
+ * - C#dim, C#dim7, C#m7♭5 now display their actual names while still lighting A7 wedge
+ * - Works with strengthened dim7 detection in theory.ts v2.37.10
+ * 
+ * CHANGES FROM v2.37.8:
+ * - Fixed Bdim7 identification bug (was showing as "G#dim7")
+ * - Added Bdim7 → V (G7) wedge mapping (special case exception)
+ * - Updated internalAbsoluteName() call to pass MIDI notes array
+ * - Hub now correctly displays "Bdim7" when B-D-F-Ab is played
+ * 
+ * PREVIOUS (v2.37.7):
+ * - Keeps your v2.29.x behavior, SUB Gm7 debounce, bonus overlays, etc.
+ * - Fixes: center label legibility; guitar tab now updates from active wedge;
+ *          input/keyboard/guitar are aligned; buttons stack above tab.
+ * - Adds: arrow-key nav for the input; consistent layout grid.
+ * - Relies on your existing ./lib/* and ./components/GuitarTab files.
+ * 
+ * MODIFIED BY: Claude AI for Nathan Rosenberg / Beat Kitchen
+ * DATE: October 29, 2025
+ */
 
 // Prefer ii (Gm/Gm7) over ♭VII (Bb) when Bb triad co-occurs with G/Gm context
 function preferIiOverFlatVII(S: Set<number>): boolean {
@@ -46,7 +70,7 @@ import {
 } from "./lib/modes";
 import { BonusDebouncer } from "./lib/overlays";
 import * as preview from "./lib/preview";
-const HW_VERSION = 'HarmonyWheel v2.37.8';
+const HW_VERSION = 'HarmonyWheel v2.37.10'; // Fixed all dim7 naming + C#dim family labels
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -519,7 +543,8 @@ if (type===0x90 && d2>0) {
 
     const toRel=(n:number)=>((n-NAME_TO_PC["C"]+12)%12);
     const pcsRel=new Set([...pcsAbs].map(toRel));
-    const absName=internalAbsoluteName(pcsAbs, baseKeyRef.current);
+    // MODIFIED v2.37.9: Pass absHeld array to internalAbsoluteName for dim7 root disambiguation
+    const absName=internalAbsoluteName(pcsAbs, baseKeyRef.current, absHeld);
 
     updateRecentRel(pcsRel);
 
@@ -577,6 +602,19 @@ if (type===0x90 && d2>0) {
         return r !== null;
       })();
 
+      // ========== NEW v2.37.9: Bdim7 special case ==========
+      // Bdim7 (B-D-F-Ab) should map to V (G7) wedge, NOT to ii/vi bonus overlay
+      // This is a functional exception: Bdim7 acts as dominant substitute
+      const hasBdim7 = isSubset([11,2,5,8]) && pcsRel.size === 4 && isFullDim7;
+      if (!inParallel && hasBdim7 && absName === "Bdim7") {
+        // Light the V7 wedge, display "Bdim7" in hub
+        setActiveFn("V7"); 
+        setCenterLabel("Bdim7");
+        setBonusActive(false);  // Don't use bonus overlay
+        return;
+      }
+      // ========== END NEW v2.37.9 ==========
+
       const hasBDF   = isSubset([11,2,5]);
       const hasBDFG  = isSubset([11,2,5,9]);
       if (!inParallel && !isFullDim7 && (hasBDF || hasBDFG)){
@@ -594,8 +632,13 @@ if (type===0x90 && d2>0) {
       const hasCsharpHalfDim = isSubset([1,4,7,11]);
       const isCsharpFullDim7 = (pcsRel.has(1) && pcsRel.has((1+3)%12) && pcsRel.has((1+6)%12) && pcsRel.has((1+9)%12));
       if (!inParallel && (hasCsharpDimTri || hasCsharpHalfDim || isCsharpFullDim7)){
-        setActiveFn(""); setCenterLabel("A7");
-        setBonusActive(true); setBonusLabel("A7");
+        // MODIFIED v2.37.10: Use actual chord name instead of hardcoding "A7"
+        // The chord identifier now correctly names these (C#dim, C#dim7, C#m7♭5)
+        // They still light the A7 bonus wedge (correct functional behavior)
+        setActiveFn(""); 
+        setCenterLabel(absName || "A7");  // Use absName, fallback to A7 if needed
+        setBonusActive(true); 
+        setBonusLabel("A7");  // Wedge label stays "A7" (functional label)
         return;
       }
 
@@ -1225,3 +1268,5 @@ if (type===0x90 && d2>0) {
     </div>
   );
 }
+
+// EOF - HarmonyWheel.tsx v2.37.10
