@@ -1,5 +1,14 @@
 /*
- * HarmonyWheel.tsx — v2.37.16
+ * HarmonyWheel.tsx — v2.37.17
+ * 
+ * CHANGES FROM v2.37.16:
+ * - FIXED: Label position adjusted (marginLeft:4px, tighter lineHeight, wheel margin reduced)
+ * - Wheel vertical position restored to previous height
+ * - FIXED: Comment field now spans full width between wheel and input (fixed position)
+ * - Comment no longer pushes down buttons/tab when present
+ * - FIXED: Removed C3/C4 octave labels from keyboard (unnecessary)
+ * - FIXED: Keyboard now highlights notes of current chord (yellow tint)
+ * - Blue = held/played notes, Yellow = current chord notes, White/Black = default
  * 
  * CHANGES FROM v2.37.15:
  * - Moved labels outside wheel container to align with buttons and status bar
@@ -8,12 +17,10 @@
  * 
  * CHANGES FROM v2.37.14:
  * - FIXED: Moved labels from SVG to HTML overlay (absolute positioning)
- * - Labels now positioned at top:10, left:10 in HTML - much more predictable!
  * - FIXED: Added missing comment display field (was calculated but never shown)
  * - FIXED: @HOME modifier now works (returns to HOME space)
  * - IMPROVED: @ modifiers more forgiving (@SUB, @SUBDOM, @ SUB all work)
  * - IMPROVED: Support 3-letter abbreviations (REL, SUB, PAR, HOME)
- * - IMPROVED: Updated placeholder text to show new syntax examples
  * 
  * MODIFIED BY: Claude AI for Nathan Rosenberg / Beat Kitchen
  * DATE: October 29, 2025
@@ -66,7 +73,7 @@ import {
 } from "./lib/modes";
 import { BonusDebouncer } from "./lib/overlays";
 import * as preview from "./lib/preview";
-const HW_VERSION = 'v2.37.16'; // Labels aligned with buttons/status
+const HW_VERSION = 'v2.37.17'; // Comment layout + keyboard highlighting + label adjustments
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -1040,6 +1047,23 @@ if (type===0x90 && d2>0) {
     return centerLabel || null;
   })();
 
+  // Calculate notes to highlight on keyboard for current chord
+  const keyboardHighlightNotes = (() => {
+    if (latchedAbsNotes.length > 0) {
+      // If we have latched notes, use those
+      return new Set(latchedAbsNotes.map(n => n % 12)); // Convert to pitch classes
+    }
+    if (activeFnRef.current) {
+      // Otherwise highlight based on active function
+      const dispKey = (visitorActiveRef.current ? "Eb" : (subdomActiveRef.current ? "F" : baseKeyRef.current)) as KeyName;
+      const fn = activeFnRef.current as Fn;
+      const with7th = PREVIEW_USE_SEVENTHS || fn === "V7" || fn === "V/V" || fn === "V/vi";
+      const pcs = preview.chordPcsForFn(fn, dispKey, with7th);
+      return new Set(pcs);
+    }
+    return new Set<number>();
+  })();
+
   return (
     <div style={{background:'#111', color:'#fff', minHeight:'100vh', padding:16, fontFamily:'ui-sans-serif, system-ui'}}>
       <div style={{maxWidth:960, margin:'0 auto', border:'1px solid #374151', borderRadius:12, padding:16}}>
@@ -1080,14 +1104,14 @@ if (type===0x90 && d2>0) {
         </div>
 
         {/* Labels - aligned with buttons and status */}
-        <div style={{marginTop:12, marginBottom:-8}}>
-          <div style={{fontSize:11, fontWeight:600, color:'#9CA3AF'}}>Beat Kitchen</div>
-          <div style={{fontSize:10, fontWeight:500, color:'#7B7B7B', marginTop:2}}>HarmonyWheel v2.37.15</div>
+        <div style={{marginTop:8, marginLeft:4}}>
+          <div style={{fontSize:11, fontWeight:600, color:'#9CA3AF', lineHeight:1.3}}>Beat Kitchen</div>
+          <div style={{fontSize:10, fontWeight:500, color:'#7B7B7B', lineHeight:1.3}}>HarmonyWheel v2.37.17</div>
         </div>
 
         {/* Wheel */}
         <div className="relative"
-             style={{width:WHEEL_W,height:WHEEL_H, margin:'16px auto',
+             style={{width:WHEEL_W,height:WHEEL_H, margin:'8px auto 16px',
                      transform:`scale(${UI_SCALE_DEFAULT})`, transformOrigin:'center top'}}>
           <div style={wrapperStyle}>
             <svg width={WHEEL_W} height={WHEEL_H} viewBox={`0 0 ${WHEEL_W} ${WHEEL_H}`} className="select-none" style={{display:'block'}}>
@@ -1201,9 +1225,28 @@ if (type===0x90 && d2>0) {
           const tabSize = Math.min(rightW, HW);
 
           return (
-            <div style={{maxWidth: WHEEL_W, margin:'12px auto 0', display:'grid',
-                        gridTemplateColumns:`${KEYBOARD_WIDTH_FRACTION*100}% ${GUITAR_TAB_WIDTH_FRACTION*100}%`,
-                        columnGap:12, rowGap:10, alignItems:'start'}}>
+            <div style={{maxWidth: WHEEL_W, margin:'12px auto 0'}}>
+              {/* Comment Display - spans full width between wheel and input */}
+              {activeComment && (
+                <div style={{
+                  padding:'8px 12px',
+                  border:'1px solid #374151',
+                  borderRadius:8,
+                  background:'#0f172a',
+                  color:'#e5e7eb',
+                  fontSize:12,
+                  minHeight:24,
+                  fontStyle:'italic',
+                  marginBottom:10
+                }}>
+                  {activeComment}
+                </div>
+              )}
+
+              {/* Grid: input + keyboard (left), buttons + guitar tab (right) */}
+              <div style={{display:'grid',
+                          gridTemplateColumns:`${KEYBOARD_WIDTH_FRACTION*100}% ${GUITAR_TAB_WIDTH_FRACTION*100}%`,
+                          columnGap:12, rowGap:10, alignItems:'start'}}>
 
               {/* Left column: input above keyboard */}
               <div style={{display:'grid', gridTemplateRows:'auto auto', rowGap:10}}>
@@ -1227,26 +1270,32 @@ if (type===0x90 && d2>0) {
 
                 {/* Keyboard */}
                 <div style={{width:'100%'}}>
-                  <svg viewBox={`0 0 ${totalW} ${HW+18}`} className="select-none"
+                  <svg viewBox={`0 0 ${totalW} ${HW}`} className="select-none"
                       style={{display:'block', width:'100%', height:'auto', border:'1px solid #374151', borderRadius:8, background:'#0f172a'}}>
                     {Object.entries(whitePos).map(([mStr,x])=>{
-                      const m=+mStr; const held=disp.has(m);
+                      const m=+mStr; 
+                      const held=disp.has(m);
+                      const highlighted = keyboardHighlightNotes.has(m % 12);
+                      const fillColor = held ? "#AEC9FF" : (highlighted ? "#FFE999" : "#f9fafb");
                       return (
                         <g key={`w-${m}`}>
                           <rect x={x} y={0} width={WW} height={HW}
-                                fill={held?"#AEC9FF":"#f9fafb"} stroke="#1f2937"
+                                fill={fillColor} stroke="#1f2937"
                                 onMouseDown={()=>{rightHeld.current.add(m); detect();}}
                                 onMouseUp={()=>{rightHeld.current.delete(m); rightSus.current.delete(m); detect();}}
                                 onMouseLeave={()=>{rightHeld.current.delete(m); rightSus.current.delete(m); detect();}}/>
-                          {pcFromMidi(m)===0 && (<text x={Number(x)+3} y={HW+13} fontSize={10} fill="#9CA3AF">C{Math.floor(m/12)-1}</text>)}
                         </g>
                       );
                     })}
                     {Object.entries(blackPos).map(([mStr,x])=>{
-                      const m=+mStr; const held=disp.has(m);
+                      const m=+mStr; 
+                      const held=disp.has(m);
+                      const highlighted = keyboardHighlightNotes.has(m % 12);
+                      const fillColor = held ? "#2448B8" : (highlighted ? "#C4A000" : "#111827");
+                      const strokeColor = held ? "#5A90FF" : (highlighted ? "#FFE999" : "#374151");
                       return (
                         <rect key={`b-${m}`} x={x} y={0} width={WB} height={HB} rx={2} ry={2}
-                              fill={held?"#2448B8":"#111827"} stroke={held?"#5A90FF":"#374151"}
+                              fill={fillColor} stroke={strokeColor}
                               onMouseDown={()=>{rightHeld.current.add(m); detect();}}
                               onMouseUp={()=>{rightHeld.current.delete(m); rightSus.current.delete(m); detect();}}
                               onMouseLeave={()=>{rightHeld.current.delete(m); rightSus.current.delete(m); detect();}} />
@@ -1256,23 +1305,8 @@ if (type===0x90 && d2>0) {
                 </div>
               </div>
 
-              {/* Right column: comment display, buttons, and guitar tab */}
-              <div style={{display:'grid', gridTemplateRows:'auto auto auto', rowGap:10, justifyItems:'stretch'}}>
-                {/* Comment Display */}
-                {activeComment && (
-                  <div style={{
-                    padding:'8px 12px',
-                    border:'1px solid #374151',
-                    borderRadius:8,
-                    background:'#0f172a',
-                    color:'#e5e7eb',
-                    fontSize:12,
-                    minHeight:24,
-                    fontStyle:'italic'
-                  }}>
-                    {activeComment}
-                  </div>
-                )}
+              {/* Right column: buttons and guitar tab */}
+              <div style={{display:'grid', gridTemplateRows:'auto auto', rowGap:10, justifyItems:'stretch'}}>
                 {/* Navigation Buttons */}
                 <div style={{display:'flex', gap:8}}>
                   <button onClick={parseAndLoadSequence} style={{padding:'8px 12px', border:'2px solid #39FF14', borderRadius:8, background:'#111', color:'#fff', cursor:'pointer', flex:1}}>Load</button>
@@ -1285,6 +1319,7 @@ if (type===0x90 && d2>0) {
                 </div>
               </div>
             </div>
+          </div>
           );
         })()}
 
@@ -1293,4 +1328,4 @@ if (type===0x90 && d2>0) {
   );
 }
 
-// EOF - HarmonyWheel.tsx v2.37.16
+// EOF - HarmonyWheel.tsx v2.37.17
