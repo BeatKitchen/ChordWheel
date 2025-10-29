@@ -1,5 +1,19 @@
 /*
- * HarmonyWheel.tsx — v2.37.10
+ * HarmonyWheel.tsx — v2.37.13
+ * 
+ * CHANGES FROM v2.37.12:
+ * - Adjusted label position further (moved up and left to avoid wedge overlap)
+ * - Position changed from x=50, y=148/162 to x=30, y=120/134
+ * 
+ * CHANGES FROM v2.37.11:
+ * - Moved "Beat Kitchen" and version label inside circle (upper left area)
+ * - Repositioned from x=20, y=18/34 to x=50, y=148/162 for better visibility
+ * 
+ * CHANGES FROM v2.37.10:
+ * - FIXED: All dim7 chords now use lowest-note naming from theory.ts
+ * - Removed hardcoded "F#dim7", "G#dim7", "Bdim7" (lines 865-867)
+ * - ALL dim7 chords now correctly display using absName (Ddim7, Adim7, etc.)
+ * - C#dim7 family still uses A7 bonus overlay but displays correct chord name
  * 
  * CHANGES FROM v2.37.9:
  * - Fixed C#dim family showing as "A7" in hub (now shows correct chord names)
@@ -70,7 +84,7 @@ import {
 } from "./lib/modes";
 import { BonusDebouncer } from "./lib/overlays";
 import * as preview from "./lib/preview";
-const HW_VERSION = 'HarmonyWheel v2.37.10'; // Fixed all dim7 naming + C#dim family labels
+const HW_VERSION = 'HarmonyWheel v2.37.13'; // Adjusted label position + comprehensive guitar tab chords
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -854,22 +868,20 @@ if (type===0x90 && d2>0) {
     if (!visitorActiveRef.current){
       const root = findDim7Root(pcsRel);
       if (root!==null){
+        // ========== NEW v2.37.11: Use absName from theory.ts for ALL dim7 chords ==========
+        // Previously hardcoded F#dim7, G#dim7, Bdim7 - now all use proper lowest-note naming
+        
+        // Special case: C#dim7 family uses A7 bonus overlay (not wedge)
         if (pcsRel.has(1) && pcsRel.has((1+3)%12) && pcsRel.has((1+6)%12) && pcsRel.has((1+9)%12)){
-          setActiveFn(""); setCenterLabel("A7");
+          setActiveFn(""); setCenterLabel(absName || "C#dim7"); // Use absName, not hardcoded "A7"
           setBonusActive(true); setBonusLabel("A7");
           return;
         }
-        const hasFsharp = pcsRel.has(6);
-        const hasGsharp = pcsRel.has(8);
-        const hasB      = pcsRel.has(11);
-        if (hasFsharp){ setActiveWithTrail("V/V",  "F#dim7"); return; }
-        if (hasGsharp){ setActiveWithTrail("V/vi", "G#dim7"); return; }
-        if (hasB)     { setActiveWithTrail("V7",   "Bdim7");  return; }
-
-        const names = ["C","C#","D","Eb","E","F","F#","G","Ab","A","Bb","B"];
-        const label = `${names[root]}dim7`;
+        
+        // All other dim7 chords: use absName from theory.ts (which uses lowest note)
+        const dimLabel = absName || `${["C","C#","D","Eb","E","F","F#","G","Ab","A","Bb","B"][root]}dim7`;
         const mapped = mapDimRootToFn_ByBottom(root) || "V7";
-        setActiveWithTrail(mapped as Fn, label);
+        setActiveWithTrail(mapped as Fn, dimLabel);
         return;
       }
     }
@@ -1080,11 +1092,11 @@ if (type===0x90 && d2>0) {
                      transform:`scale(${UI_SCALE_DEFAULT})`, transformOrigin:'center top'}}>
           <div style={wrapperStyle}>
             <svg width={WHEEL_W} height={WHEEL_H} viewBox={`0 0 ${WHEEL_W} ${WHEEL_H}`} className="select-none" style={{display:'block'}}>
-  {/* TOP-LEFT LABELS */}
-  <text x={20} y={18} textAnchor="start" fontSize={12}
-        style={{ fill:'#9CA3AF', fontWeight:700 }}>Beat Kitchen</text>
-  <text x={20} y={34} textAnchor="start" fontSize={12}
-        style={{ fill:'#9CA3AF', fontWeight:600 }}>{HW_VERSION}</text>
+  {/* TOP-LEFT LABELS (inside circle, moved up and left) */}
+  <text x={30} y={120} textAnchor="start" fontSize={11}
+        style={{ fill:'#9CA3AF', fontWeight:600 }}>Beat Kitchen</text>
+  <text x={30} y={134} textAnchor="start" fontSize={10}
+        style={{ fill:'#7B7B7B', fontWeight:500 }}>{HW_VERSION}</text>
 
   {wedgeNodes}
 
@@ -1269,4 +1281,4 @@ if (type===0x90 && d2>0) {
   );
 }
 
-// EOF - HarmonyWheel.tsx v2.37.10
+// EOF - HarmonyWheel.tsx v2.37.13
