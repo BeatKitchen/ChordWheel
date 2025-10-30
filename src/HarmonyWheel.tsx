@@ -1,18 +1,16 @@
 /*
- * HarmonyWheel.tsx — v2.37.28
+ * HarmonyWheel.tsx — v2.37.29
  * 
- * CHANGES FROM v2.37.27:
- * - Button text: "Wedge to Playlist" (clearer than emoji)
- * - FIXED: Extra yellow keys bug (A triad shows only A notes now)
- *   - Priority logic: manual play > preview > function
- * - FIXED: Tab height jumping (fixed height container)
- *   - Tab container has minHeight/maxHeight = HW
- *   - Border and background show extent
- *   - NO MORE SHIFTING!
- * - Editor always visible (no collapse/expand)
- *   - Simpler, more predictable UX
- *   - Button: "LOAD PLAYLIST" / "RELOAD PLAYLIST"
- * - Demo song location: Line ~284 (easy to find/change)
+ * CHANGES FROM v2.37.28:
+ * - TIGHTENED VERTICAL SPACING - Fits in window!
+ * - Wheel margin: 12px→4px top, 6px→2px bottom
+ * - Playlist height: 40px→28px, padding reduced
+ * - Editor padding: 10px→8px
+ * - Keyboard/Tab margin: 10px→6px
+ * - Button gap: 8px→6px, padding reduced
+ * - Main container padding: 16px→12px
+ * - Beat Kitchen spacing tighter
+ * - Everything closer together, more compact
  * 
  * MODIFIED BY: Claude AI for Nathan Rosenberg / Beat Kitchen
  * DATE: October 29, 2025
@@ -65,7 +63,7 @@ import {
 } from "./lib/modes";
 import { BonusDebouncer } from "./lib/overlays";
 import * as preview from "./lib/preview";
-const HW_VERSION = 'v2.37.28'; // Fixed: button label, extra yellow keys, tab height, editor always open
+const HW_VERSION = 'v2.37.29'; // Tightened vertical spacing - fits in window better
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -1342,8 +1340,8 @@ if (type===0x90 && d2>0) {
   })();
 
   return (
-    <div style={{background:'#111', color:'#fff', minHeight:'100vh', padding:16, fontFamily:'ui-sans-serif, system-ui'}}>
-      <div style={{maxWidth:960, margin:'0 auto', border:'1px solid #374151', borderRadius:12, padding:16}}>
+    <div style={{background:'#111', color:'#fff', minHeight:'100vh', padding:12, fontFamily:'ui-sans-serif, system-ui'}}>
+      <div style={{maxWidth:960, margin:'0 auto', border:'1px solid #374151', borderRadius:12, padding:12}}>
 
         {/* Controls */}
         <div style={{display:'flex', gap:8, flexWrap:'nowrap', alignItems:'center', justifyContent:'space-between', overflowX:'auto'}}>
@@ -1381,14 +1379,14 @@ if (type===0x90 && d2>0) {
         </div>
 
         {/* Labels - below MIDI status, aligned with MIDI text */}
-        <div style={{marginTop:3, marginBottom:-10, paddingLeft:8}}>
+        <div style={{marginTop:2, marginBottom:-8, paddingLeft:8}}>
           <div style={{fontSize:11, fontWeight:600, color:'#9CA3AF', lineHeight:1.2}}>Beat Kitchen</div>
-          <div style={{fontSize:10, fontWeight:500, color:'#7B7B7B', lineHeight:1.2}}>HarmonyWheel v2.37.28</div>
+          <div style={{fontSize:10, fontWeight:500, color:'#7B7B7B', lineHeight:1.2}}>HarmonyWheel v2.37.29</div>
         </div>
 
         {/* Wheel */}
         <div className="relative"
-             style={{width:WHEEL_W,height:WHEEL_H, margin:'12px auto 6px',
+             style={{width:WHEEL_W,height:WHEEL_H, margin:'4px auto 2px',
                      transform:`scale(${UI_SCALE_DEFAULT})`, transformOrigin:'center top'}}>
           <div style={wrapperStyle}>
             <svg width={WHEEL_W} height={WHEEL_H} viewBox={`0 0 ${WHEEL_W} ${WHEEL_H}`} className="select-none" style={{display:'block'}}>
@@ -1599,12 +1597,12 @@ if (type===0x90 && d2>0) {
                   borderRadius:8,
                   background:'#0f172a',
                   overflow:'hidden',
-                  marginBottom: 10
+                  marginBottom: 6
                 }}>
                   {/* Song Title */}
                   {songTitle && (
                     <div style={{
-                      padding:'6px 12px',
+                      padding:'4px 10px',
                       borderBottom:'1px solid #374151',
                       fontSize:11,
                       fontWeight:600,
@@ -1617,10 +1615,10 @@ if (type===0x90 && d2>0) {
                   
                   {/* Windowed sequence view */}
                   <div style={{
-                    padding:'8px 12px',
+                    padding:'6px 10px',
                     color:'#e5e7eb',
                     fontSize:12,
-                    minHeight:40,
+                    minHeight:28,
                     display:'flex',
                     alignItems:'center',
                     justifyContent:'center',
@@ -1666,7 +1664,7 @@ if (type===0x90 && d2>0) {
               )}
               
               {/* Row 2: Editor - ALWAYS VISIBLE */}
-              <div style={{marginBottom: 10}}>
+              <div style={{marginBottom: 6}}>
                 <textarea
                   ref={textareaRef}
                   placeholder={'Type chords, modifiers, and comments...\nExamples:\nC, Am7, F, G7\n@TITLE Song Name\n@SUB F, Bb, C7, @HOME\n@REL Em, Am, @PAR Cm, Fm\n# Verse: lyrics or theory note'}
@@ -1676,19 +1674,20 @@ if (type===0x90 && d2>0) {
                   onKeyDown={handleInputKeyNav}
                   style={{
                     width: "100%",
-                    padding:'10px 12px',
+                    padding:'8px 10px',
                     border:'1px solid #374151',
                     background:'#0f172a',
                     color:'#e5e7eb',
                     borderRadius:8,
                     fontFamily:'ui-sans-serif, system-ui',
-                    resize:'vertical'
+                    resize:'vertical',
+                    fontSize:12
                   }}
                 />
               </div>
               
               {/* Row 3: Keyboard + Tab (side by side, SAME HEIGHT) - ALWAYS SAME POSITION */}
-              <div style={{display:'grid', gridTemplateColumns:'65% 35%', columnGap:12, marginBottom:10}}>
+              <div style={{display:'grid', gridTemplateColumns:'65% 35%', columnGap:12, marginBottom:6}}>
                 {/* Keyboard */}
                 <div style={{width:'100%'}}>
                   <svg viewBox={`0 0 ${totalW} ${HW}`} className="select-none"
@@ -1742,17 +1741,17 @@ if (type===0x90 && d2>0) {
               </div>
               
               {/* Row 4: Buttons - ALWAYS SAME POSITION */}
-              <div style={{display:'flex', flexDirection:'column', gap:8}}>
+              <div style={{display:'flex', flexDirection:'column', gap:6}}>
                 {/* Navigation Buttons */}
                 <div style={{display:'flex', gap:8}}>
                   <button 
                     onClick={() => parseAndLoadSequence()} 
-                    style={{padding:'8px 12px', border:'2px solid #39FF14', borderRadius:8, background:'#111', color:'#fff', cursor:'pointer', flex:1}}
+                    style={{padding:'6px 10px', border:'2px solid #39FF14', borderRadius:8, background:'#111', color:'#fff', cursor:'pointer', flex:1, fontSize:12}}
                   >
                     {sequence.length > 0 ? 'RELOAD PLAYLIST' : 'LOAD PLAYLIST'}
                   </button>
-                  <button onClick={stepPrev} style={{padding:'8px 12px', border:'2px solid #39FF14', borderRadius:8, background:'#111', color:'#fff', cursor:'pointer'}}>◀</button>
-                  <button onClick={stepNext} style={{padding:'8px 12px', border:'2px solid #39FF14', borderRadius:8, background:'#111', color:'#fff', cursor:'pointer'}}>▶</button>
+                  <button onClick={stepPrev} style={{padding:'6px 10px', border:'2px solid #39FF14', borderRadius:8, background:'#111', color:'#fff', cursor:'pointer', fontSize:12}}>◀</button>
+                  <button onClick={stepNext} style={{padding:'6px 10px', border:'2px solid #39FF14', borderRadius:8, background:'#111', color:'#fff', cursor:'pointer', fontSize:12}}>▶</button>
                 </div>
                 
                 {/* Insert and Utility Buttons */}
@@ -1802,4 +1801,4 @@ if (type===0x90 && d2>0) {
   );
 }
 
-// EOF - HarmonyWheel.tsx v2.37.28
+// EOF - HarmonyWheel.tsx v2.37.29
