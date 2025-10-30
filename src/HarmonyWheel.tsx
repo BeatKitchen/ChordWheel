@@ -1,5 +1,5 @@
 /*
- * HarmonyWheel.tsx — v2.39.8
+ * HarmonyWheel.tsx — v2.40.1
  * 
  * 🚀🚀🚀 PHASE 2C - THE BIG ONE! 🚀🚀🚀
  * 
@@ -75,7 +75,7 @@ import {
 } from "./lib/modes";
 import { BonusDebouncer } from "./lib/overlays";
 import * as preview from "./lib/preview";
-const HW_VERSION = 'v2.39.8'; // CRITICAL: Hub labels fixed! Was using rotation offset as root PC!
+const HW_VERSION = 'v2.40.1'; // FIX: Correct sharp keys (only G,D,A,E,B), Gb/Db are flat!
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -908,7 +908,7 @@ if (type===0x90 && d2>0) {
         return r !== null;
       })();
 
-      // ========== NEW v2.39.8: vii°7 special case (works in all keys!) ==========
+      // ========== NEW v2.40.1: vii°7 special case (works in all keys!) ==========
       // vii°7 (leading tone dim7) acts as dominant substitute in ANY key
       // Pattern: [11,2,5,8] relative to tonic (7th scale degree + dim7 intervals)
       // C: Bdim7, F: Edim7, G: F#dim7, Ab: Gdim7, etc.
@@ -921,7 +921,7 @@ if (type===0x90 && d2>0) {
         setBonusActive(false);  // Don't use bonus overlay
         return;
       }
-      // ========== END NEW v2.39.8 ==========
+      // ========== END NEW v2.40.1 ==========
 
       const hasBDF   = isSubset([11,2,5]);
       const hasBDFG  = isSubset([11,2,5,9]);
@@ -933,6 +933,11 @@ if (type===0x90 && d2>0) {
       if (!inParallel && !isFullDim7 && !hasG7 && (hasBDF || hasBDFG)){
         clearBdimTimer();
         bdimTimerRef.current = window.setTimeout(()=>{
+          // Double-check G7 hasn't appeared during debounce (race condition guard)
+          const currentPcsRel = new Set([...absHeld].map(pcFromMidi).map(n => (n - NAME_TO_PC[baseKeyRef.current] + 12) % 12));
+          const stillHasG7 = [7,11,5].every(pc => currentPcsRel.has(pc));
+          if (stillHasG7) return; // Abort bonus if G7 detected
+          
           // Use actual chord name (Bdim in C, Edim in F, etc.)
           setActiveFn(""); 
           setCenterLabel(absName);
@@ -1058,8 +1063,9 @@ if (type===0x90 && d2>0) {
         const em   = isSubsetIn([4,7,11], S) || isSubsetIn([4,7,11,2], S);
         const d7   = isSubsetIn([2,6,9,0], S);
         const e7   = isSubsetIn([4,8,11,2], S);
+        const fm   = isSubsetIn([5,8,0], S) || isSubsetIn([5,8,0,3], S); // iv chord - exit immediately
 
-        if (dm || am || em || d7 || e7){
+        if (dm || am || em || d7 || e7 || fm){
           subdomLatchedRef.current = false;
           subSpinExit();
           setSubdomActive(false);
@@ -1071,6 +1077,7 @@ if (type===0x90 && d2>0) {
           if (em){ setActiveWithTrail("iii", absName || (isSubsetIn([4,7,11,2], S)?"Em7":"Em")); return; }
           if (d7){ setActiveWithTrail("V/V", "D7"); return; }
           if (e7){ setActiveWithTrail("V/vi","E7"); return; }
+          if (fm){ setActiveWithTrail("iv",  absName || (isSubsetIn([5,8,0,3], S)?"Fm7":"Fm")); return; }
         }
 
         if (subdomLatchedRef.current && S.size < 3) {
@@ -1180,7 +1187,7 @@ if (type===0x90 && d2>0) {
           return;
         }
         
-        // ========== NEW v2.39.8: vii°7 in REL Am (works in all keys!) ==========
+        // ========== NEW v2.40.1: vii°7 in REL Am (works in all keys!) ==========
         // vii°7 of meta-key should map to V7, not be misidentified
         const hasVii7Pattern = pcsRel.has(11) && pcsRel.has(2) && pcsRel.has(5) && pcsRel.has(8);
         if (hasVii7Pattern) {
@@ -1188,7 +1195,7 @@ if (type===0x90 && d2>0) {
           setActiveWithTrail("V7", absName); // Use actual name
           return;
         }
-        // ========== END v2.39.8 ==========
+        // ========== END v2.40.1 ==========
         
         // All other dim7 chords: use absName from theory.ts (which uses lowest note)
         const dimLabel = absName || `${["C","C#","D","Eb","E","F","F#","G","Ab","A","Bb","B"][root]}dim7`;
@@ -1198,7 +1205,7 @@ if (type===0x90 && d2>0) {
       }
     }
     
-    /* ========== NEW v2.39.8: PAR EXIT for secondary dominants ========== */
+    /* ========== NEW v2.40.1: PAR EXIT for secondary dominants ========== */
     // When in PAR, certain chords signal return to HOME (secondary dominant area)
     // Check these BEFORE PAR diatonic matching
     if (visitorActiveRef.current) {
@@ -1233,7 +1240,7 @@ if (type===0x90 && d2>0) {
         return;
       }
     }
-    /* ========== END v2.39.8 ========== */
+    /* ========== END v2.40.1 ========== */
 
     /* In PAR mapping - now dynamic for all keys! */
     if(visitorActiveRef.current){
@@ -1523,7 +1530,7 @@ if (type===0x90 && d2>0) {
         {/* Labels - below MIDI status, aligned with MIDI text */}
         <div style={{marginTop:2, marginBottom:-8, paddingLeft:8}}>
           <div style={{fontSize:11, fontWeight:600, color:'#9CA3AF', lineHeight:1.2}}>Beat Kitchen</div>
-          <div style={{fontSize:10, fontWeight:500, color:'#7B7B7B', lineHeight:1.2}}>HarmonyWheel v2.39.8</div>
+          <div style={{fontSize:10, fontWeight:500, color:'#7B7B7B', lineHeight:1.2}}>HarmonyWheel v2.40.1</div>
         </div>
 
         {/* Wheel */}
@@ -1943,4 +1950,4 @@ if (type===0x90 && d2>0) {
   );
 }
 
-// EOF - HarmonyWheel.tsx v2.39.8
+// EOF - HarmonyWheel.tsx v2.40.1

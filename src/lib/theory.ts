@@ -27,7 +27,7 @@ export const DEG = {1:0,2:2,3:4,4:5,5:7,6:9,7:11} as const;
 export const pcFromMidi = (n:number)=> ((n%12)+12)%12;
 export const add12=(x:number,y:number)=>((x+y)%12+12)%12;
 
-const SHARP_KEY_CENTERS = new Set<KeyName>(["G","D","A","E","B","Gb","Db"]);
+const SHARP_KEY_CENTERS = new Set<KeyName>(["G","D","A","E","B"]);
 export function pcNameForKey(pc:number, key: KeyName){
   return (SHARP_KEY_CENTERS.has(key)? SHARP_NAMES:FLAT_NAMES)[((pc%12)+12)%12];
 }
