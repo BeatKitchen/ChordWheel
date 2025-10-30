@@ -1,5 +1,5 @@
 /*
- * HarmonyWheel.tsx — v2.41.1
+ * HarmonyWheel.tsx — v2.42.0
  * 
  * 🚀🚀🚀 PHASE 2C - THE BIG ONE! 🚀🚀🚀
  * 
@@ -75,7 +75,7 @@ import {
 } from "./lib/modes";
 import { BonusDebouncer } from "./lib/overlays";
 import * as preview from "./lib/preview";
-const HW_VERSION = 'v2.41.1'; // FIX: Transpose octave now A0-C2 (was C3-C4)
+const HW_VERSION = 'v2.42.0'; // UI: Space not Mode, status borders, playlist padding, BKS left
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -909,7 +909,7 @@ if (type===0x90 && d2>0) {
         return r !== null;
       })();
 
-      // ========== NEW v2.41.1: vii°7 special case (works in all keys!) ==========
+      // ========== NEW v2.42.0: vii°7 special case (works in all keys!) ==========
       // vii°7 (leading tone dim7) acts as dominant substitute in ANY key
       // Pattern: [11,2,5,8] relative to tonic (7th scale degree + dim7 intervals)
       // C: Bdim7, F: Edim7, G: F#dim7, Ab: Gdim7, etc.
@@ -922,7 +922,7 @@ if (type===0x90 && d2>0) {
         setBonusActive(false);  // Don't use bonus overlay
         return;
       }
-      // ========== END NEW v2.41.1 ==========
+      // ========== END NEW v2.42.0 ==========
 
       const hasBDF   = isSubset([11,2,5]);
       const hasBDFG  = isSubset([11,2,5,9]);
@@ -1188,7 +1188,7 @@ if (type===0x90 && d2>0) {
           return;
         }
         
-        // ========== NEW v2.41.1: vii°7 in REL Am (works in all keys!) ==========
+        // ========== NEW v2.42.0: vii°7 in REL Am (works in all keys!) ==========
         // vii°7 of meta-key should map to V7, not be misidentified
         const hasVii7Pattern = pcsRel.has(11) && pcsRel.has(2) && pcsRel.has(5) && pcsRel.has(8);
         if (hasVii7Pattern) {
@@ -1196,7 +1196,7 @@ if (type===0x90 && d2>0) {
           setActiveWithTrail("V7", absName); // Use actual name
           return;
         }
-        // ========== END v2.41.1 ==========
+        // ========== END v2.42.0 ==========
         
         // All other dim7 chords: use absName from theory.ts (which uses lowest note)
         const dimLabel = absName || `${["C","C#","D","Eb","E","F","F#","G","Ab","A","Bb","B"][root]}dim7`;
@@ -1206,7 +1206,7 @@ if (type===0x90 && d2>0) {
       }
     }
     
-    /* ========== NEW v2.41.1: PAR EXIT for secondary dominants ========== */
+    /* ========== NEW v2.42.0: PAR EXIT for secondary dominants ========== */
     // When in PAR, certain chords signal return to HOME (secondary dominant area)
     // Check these BEFORE PAR diatonic matching
     if (visitorActiveRef.current) {
@@ -1241,7 +1241,7 @@ if (type===0x90 && d2>0) {
         return;
       }
     }
-    /* ========== END v2.41.1 ========== */
+    /* ========== END v2.42.0 ========== */
 
     /* In PAR mapping - now dynamic for all keys! */
     if(visitorActiveRef.current){
@@ -1524,18 +1524,24 @@ if (type===0x90 && d2>0) {
 
         {/* Status */}
         <div style={{marginTop:8}}>
-          <span style={{fontSize:12, padding:'2px 6px', border:'1px solid #ffffff22', background:'#ffffff18', borderRadius:6}}>
-            {visitorActive ? 'mode: Parallel (Eb)'
-              : relMinorActive ? 'mode: Relative minor (Am)'
-              : subdomActive ? 'mode: Subdominant (F)'
+          <span style={{
+            fontSize:12, 
+            padding:'2px 6px', 
+            border: `2px solid ${visitorActive ? '#9333ea' : relMinorActive ? '#3b82f6' : subdomActive ? '#f59e0b' : '#ffffff22'}`,
+            background:'#ffffff18', 
+            borderRadius:6
+          }}>
+            {visitorActive ? `space: Parallel (${parKey})`
+              : relMinorActive ? 'space: Relative minor (Am)'
+              : subdomActive ? `space: Subdominant (${subKey})`
               : (midiConnected ? `MIDI: ${midiName||'Connected'}` : 'MIDI: none')}
           </span>
         </div>
 
         {/* Labels - below MIDI status, aligned with MIDI text */}
-        <div style={{marginTop:2, marginBottom:-8, paddingLeft:8}}>
+        <div style={{marginTop:2, marginBottom:-8, paddingLeft:2}}>
           <div style={{fontSize:11, fontWeight:600, color:'#9CA3AF', lineHeight:1.2}}>Beat Kitchen</div>
-          <div style={{fontSize:10, fontWeight:500, color:'#7B7B7B', lineHeight:1.2}}>HarmonyWheel v2.41.1</div>
+          <div style={{fontSize:10, fontWeight:500, color:'#7B7B7B', lineHeight:1.2}}>HarmonyWheel {HW_VERSION}</div>
         </div>
 
         {/* Wheel */}
@@ -1756,8 +1762,7 @@ if (type===0x90 && d2>0) {
                   {/* Song Title */}
                   {songTitle && (
                     <div style={{
-                      padding:'4px 10px',
-                      borderBottom:'1px solid #374151',
+                      padding:'2px 8px',
                       fontSize:11,
                       fontWeight:600,
                       color:'#39FF14',
@@ -1769,10 +1774,10 @@ if (type===0x90 && d2>0) {
                   
                   {/* Windowed sequence view */}
                   <div style={{
-                    padding:'6px 10px',
+                    padding:'4px 8px',
                     color:'#e5e7eb',
                     fontSize:12,
-                    minHeight:28,
+                    minHeight:24,
                     display:'flex',
                     alignItems:'center',
                     justifyContent:'center',
@@ -1955,4 +1960,4 @@ if (type===0x90 && d2>0) {
   );
 }
 
-// EOF - HarmonyWheel.tsx v2.41.1
+// EOF - HarmonyWheel.tsx v2.42.0
