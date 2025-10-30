@@ -1,19 +1,20 @@
 /*
- * HarmonyWheel.tsx — v2.37.29
+ * HarmonyWheel.tsx — v2.37.30
  * 
- * CHANGES FROM v2.37.28:
- * - TIGHTENED VERTICAL SPACING - Fits in window!
- * - Wheel margin: 12px→4px top, 6px→2px bottom
- * - Playlist height: 40px→28px, padding reduced
- * - Editor padding: 10px→8px
- * - Keyboard/Tab margin: 10px→6px
- * - Button gap: 8px→6px, padding reduced
- * - Main container padding: 16px→12px
- * - Beat Kitchen spacing tighter
- * - Everything closer together, more compact
+ * PHASE 2A - BUG FIX #1: Bm7♭5 Immediate Recognition
+ * 
+ * CHANGES FROM v2.37.29:
+ * - FIXED: Bm7♭5 no longer triggers Dm7 first
+ * - Bonus chords (Bm7♭5, A7) now checked BEFORE diatonic chords in HOME
+ * - Priority logic in HOME diatonic detection (line ~1165):
+ *   1. Check Bm7♭5/Bdim [11,2,5,9]
+ *   2. Check A7 [9,1,4,7]
+ *   3. Then check diatonic (Dm7, etc.)
+ * - No debounce needed - immediate activation
+ * - Works in HOME space only (PAR/REL/SUB handled separately)
  * 
  * MODIFIED BY: Claude AI for Nathan Rosenberg / Beat Kitchen
- * DATE: October 29, 2025
+ * DATE: October 30, 2025
  */
 
 // Prefer ii (Gm/Gm7) over ♭VII (Bb) when Bb triad co-occurs with G/Gm context
@@ -63,7 +64,7 @@ import {
 } from "./lib/modes";
 import { BonusDebouncer } from "./lib/overlays";
 import * as preview from "./lib/preview";
-const HW_VERSION = 'v2.37.29'; // Tightened vertical spacing - fits in window better
+const HW_VERSION = 'v2.37.30'; // FIX: Bm7♭5 now immediate (not Dm7 first) - bonus chords priority
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -1163,6 +1164,30 @@ if (type===0x90 && d2>0) {
 
     /* In C mapping */
     if (performance.now() >= homeSuppressUntilRef.current){
+      // PRIORITY: Check bonus chords BEFORE diatonic chords
+      // This prevents Bm7♭5 [11,2,5,9] from being misidentified as Dm7 [2,5,9,0]
+      const hasBDF   = isSubset([11,2,5]);
+      const hasBDFG  = isSubset([11,2,5,9]);
+      if (!visitorActiveRef.current && (hasBDF || hasBDFG)) {
+        // This is a bonus chord - activate immediately (no debounce needed here)
+        setActiveFn(""); 
+        setCenterLabel(hasBDFG ? "Bm7♭5" : "Bdim");
+        setBonusActive(true); 
+        setBonusLabel(hasBDFG ? "Bm7♭5" : "Bdim");
+        return;
+      }
+      
+      // Also check A7 before diatonic
+      const hasA7tri = isSubset([9,1,4]);
+      const hasA7    = hasA7tri || isSubset([9,1,4,7]);
+      if (!visitorActiveRef.current && hasA7) {
+        setActiveFn(""); 
+        setCenterLabel("A7");
+        setBonusActive(true); 
+        setBonusLabel("A7");
+        return;
+      }
+      
       if (exactSet([6,9,0,4])){ setActiveWithTrail("V/V","F#m7♭5"); return; }
       const m7 = firstMatch(C_REQ7, pcsRel); if(m7){ setActiveWithTrail(m7.f as Fn, m7.n); return; }
       if(/(maj7|m7♭5|m7$|dim7$|[^m]7$)/.test(absName)) { centerOnly(absName); return; }
@@ -1381,7 +1406,7 @@ if (type===0x90 && d2>0) {
         {/* Labels - below MIDI status, aligned with MIDI text */}
         <div style={{marginTop:2, marginBottom:-8, paddingLeft:8}}>
           <div style={{fontSize:11, fontWeight:600, color:'#9CA3AF', lineHeight:1.2}}>Beat Kitchen</div>
-          <div style={{fontSize:10, fontWeight:500, color:'#7B7B7B', lineHeight:1.2}}>HarmonyWheel v2.37.29</div>
+          <div style={{fontSize:10, fontWeight:500, color:'#7B7B7B', lineHeight:1.2}}>HarmonyWheel v2.37.30</div>
         </div>
 
         {/* Wheel */}
@@ -1801,4 +1826,4 @@ if (type===0x90 && d2>0) {
   );
 }
 
-// EOF - HarmonyWheel.tsx v2.37.29
+// EOF - HarmonyWheel.tsx v2.37.30
