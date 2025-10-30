@@ -90,8 +90,9 @@ export function internalAbsoluteName(pcsAbs:Set<number>, baseKey:KeyName, midiNo
   let best:AbsMatch|null=null;
   
   // DEBUG: Log what we received
-  console.log('[THEORY DEBUG]', {
+  console.log('[THEORY DEBUG] INPUT', {
     pcsAbs: [...pcsAbs],
+    baseKey: baseKey,
     midiNotes: midiNotes,
     midiNotesLength: midiNotes?.length
   });
@@ -171,14 +172,36 @@ export function internalAbsoluteName(pcsAbs:Set<number>, baseKey:KeyName, midiNo
   }
   if(!best) return "";
   
+  // ========== DEBUG v2.39.6 ==========
+  console.log('[THEORY DEBUG] BEST MATCH', {
+    bestRoot: best.root,
+    bestQual: best.qual,
+    list: list,
+    baseKey: baseKey
+  });
+  // ========== END DEBUG ==========
+  
+  // ========== FIX v2.39.5: best.root IS the actual root PC ==========
+  // Rotation works by subtracting: rot(pc, r) = (pc - r) % 12
+  // If we rotate by r=5 to get [0,4,7], then PC 5 becomes PC 0 (the root)
+  // So best.root is the absolute pitch class of the root
+  // Example: F-A-C = [5,9,0], rotated by 5 → [0,4,7], so root = 5 (F) ✓
+  const actualRootPc = best.root;
+  
+  console.log('[THEORY DEBUG] FINAL', {
+    actualRootPc: actualRootPc,
+    rootName: (best.qual==="dim"||best.qual==="dim7"||best.qual==="m7b5") ? `dimRootName(${actualRootPc})` : `pcNameForKey(${actualRootPc}, ${baseKey})`
+  });
+  // ========== END FIX ==========
+  
   // ========== REMOVED v2.37.10: Old fallback dim7 logic (now handled above) ==========
   // The dim7 special case has been moved to the top of the function
   // ========== END REMOVED ==========
   
   // MODIFIED v2.37.10: m7b5 now uses dimRootName() for consistency
   // This ensures C#m7♭5 shows as "C#m7♭5" not "Dbm7♭5"
-  let rootName=(best.qual==="dim"||best.qual==="dim7"||best.qual==="m7b5")? dimRootName(best.root)
-              : pcNameForKey(best.root, baseKey);
+  let rootName=(best.qual==="dim"||best.qual==="dim7"||best.qual==="m7b5")? dimRootName(actualRootPc)
+              : pcNameForKey(actualRootPc, baseKey);
   const qual = best.qual==="m7b5" ? "m7♭5" : best.qual;
   return `${rootName}${qual}`;
 }

@@ -1,6 +1,6 @@
 // src/lib/modes.ts
 import type { Fn } from "./types";
-import { T, subsetOf } from "./theory";
+import { T, subsetOf, NAME_TO_PC, add12 } from "./theory";
 
 /** ---------- Parallel (Eb) entry shapes, used from C space ---------- */
 export const VISITOR_SHAPES: Array<{name:string; pcs:Set<number>; fn:Fn}> = [
@@ -13,6 +13,21 @@ export const VISITOR_SHAPES: Array<{name:string; pcs:Set<number>; fn:Fn}> = [
   { name:"Dbmaj7", pcs:T([1,5,8,0]),  fn:"♭VII" },
   { name:"Db",     pcs:T([1,5,8]),    fn:"♭VII" },
 ];
+
+/**
+ * Generate VISITOR_SHAPES transposed for a given baseKey
+ * VISITOR_SHAPES are hardcoded for C (PAR = Eb), so we transpose them
+ * Example: G major → PAR = Bb, so transpose +7 semitones
+ */
+export function getVisitorShapesFor(baseKey: string): Array<{name:string; pcs:Set<number>; fn:Fn}> {
+  const basePc = NAME_TO_PC[baseKey as keyof typeof NAME_TO_PC] || 0;
+  const offset = basePc; // Offset from C
+  
+  return VISITOR_SHAPES.map(shape => ({
+    ...shape,
+    pcs: new Set([...shape.pcs].map(pc => add12(pc, offset)))
+  }));
+}
 
 /** Utility to grab the first match from a spec list */
 export function firstMatch<
@@ -118,3 +133,32 @@ export function shouldStaySubdom(
 ): boolean {
   return isFmajOrF(isSubset) || isGmOrGm7(isSubset) || isC7(isSubset) || isCTriad(isSubset);
 }
+
+/**
+ * Generate dynamic diatonic matching tables for any key
+ * Returns { req7, reqt } transposed from C to the given key
+ */
+export function getDiatonicTablesFor(key: string): {
+  req7: Array<{n: string, s: Set<number>, f: string}>,
+  reqt: Array<{n: string, s: Set<number>, f: string}>
+} {
+  const basePc = NAME_TO_PC[key as keyof typeof NAME_TO_PC] || 0;
+  const offset = basePc; // Offset from C
+  
+  // Transpose C_REQ7 and C_REQT pitch classes
+  const req7 = C_REQ7.map(item => ({
+    n: item.n, // Keep original name (not used, but required by type)
+    s: new Set([...item.s].map(pc => add12(pc, offset))),
+    f: item.f
+  }));
+  
+  const reqt = C_REQT.map(item => ({
+    n: item.n, // Keep original name (not used, but required by type)
+    s: new Set([...item.s].map(pc => add12(pc, offset))),
+    f: item.f
+  }));
+  
+  return { req7, reqt };
+}
+
+// EOF - modes.ts v2.38.2
