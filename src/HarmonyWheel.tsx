@@ -1,5 +1,17 @@
 /*
- * HarmonyWheel.tsx — v2.37.17
+ * HarmonyWheel.tsx — v2.37.18
+ * 
+ * CHANGES FROM v2.37.17:
+ * - FIXED: Keyboard highlighting now shows exact notes (not repeated across octaves)
+ * - Preserves voicing for played chords, uses root position for wheel chords
+ * - FIXED: Labels moved to status bar (right-aligned, doesn't push wheel down)
+ * - FIXED: Comment field has fixed height (doesn't push content down)
+ * - FIXED: Global arrow keys work when NOT in textarea (opposite before)
+ * - FIXED: Enter key loads sequence when not editing textarea
+ * - ADDED: "Insert current chord" button to add displayed chord to text
+ * - ADDED: Current item in sequence is highlighted (selected) in textarea
+ * - FIXED: Filtered # and @ from hub center label
+ * - FIXED: Guitar tab container has fixed height (no vertical jumping)
  * 
  * CHANGES FROM v2.37.16:
  * - FIXED: Label position adjusted (marginLeft:4px, tighter lineHeight, wheel margin reduced)
@@ -9,18 +21,6 @@
  * - FIXED: Removed C3/C4 octave labels from keyboard (unnecessary)
  * - FIXED: Keyboard now highlights notes of current chord (yellow tint)
  * - Blue = held/played notes, Yellow = current chord notes, White/Black = default
- * 
- * CHANGES FROM v2.37.15:
- * - Moved labels outside wheel container to align with buttons and status bar
- * - Labels now sit between status bar and wheel (left-aligned with HOME button)
- * - Cleaner visual hierarchy and alignment
- * 
- * CHANGES FROM v2.37.14:
- * - FIXED: Moved labels from SVG to HTML overlay (absolute positioning)
- * - FIXED: Added missing comment display field (was calculated but never shown)
- * - FIXED: @HOME modifier now works (returns to HOME space)
- * - IMPROVED: @ modifiers more forgiving (@SUB, @SUBDOM, @ SUB all work)
- * - IMPROVED: Support 3-letter abbreviations (REL, SUB, PAR, HOME)
  * 
  * MODIFIED BY: Claude AI for Nathan Rosenberg / Beat Kitchen
  * DATE: October 29, 2025
@@ -73,7 +73,7 @@ import {
 } from "./lib/modes";
 import { BonusDebouncer } from "./lib/overlays";
 import * as preview from "./lib/preview";
-const HW_VERSION = 'v2.37.17'; // Comment layout + keyboard highlighting + label adjustments
+const HW_VERSION = 'v2.37.18'; // Keyboard fix + UI improvements + insert chord
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -276,6 +276,60 @@ if (type===0x90 && d2>0) {
   const [sequence, setSequence] = useState<SeqItem[]>([]);
   const [seqIndex, setSeqIndex] = useState(-1);
   const activeComment = (seqIndex>=0 && sequence[seqIndex]?.comment) ? sequence[seqIndex]!.comment! : "";
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Helper to select current item in textarea (highlight with yellow)
+  const selectCurrentItem = () => {
+    if (!textareaRef.current || seqIndex < 0 || !sequence[seqIndex]) return;
+    
+    // Find the position of the current item in the text
+    const currentRaw = sequence[seqIndex].raw;
+    const tokens = inputText.split(",");
+    let charPos = 0;
+    
+    for (let i = 0; i < tokens.length; i++) {
+      const trimmed = tokens[i].trim();
+      if (i === seqIndex) {
+        // Found it - find the actual position in original text
+        const startInToken = tokens[i].indexOf(trimmed);
+        const start = charPos + startInToken;
+        const end = start + trimmed.length;
+        
+        textareaRef.current.setSelectionRange(start, end);
+        textareaRef.current.focus();
+        break;
+      }
+      charPos += tokens[i].length + 1; // +1 for comma
+    }
+  };
+
+  // Insert current chord at cursor position in textarea
+  const insertCurrentChord = () => {
+    if (!textareaRef.current || !currentGuitarLabel) return;
+    
+    const start = textareaRef.current.selectionStart;
+    const end = textareaRef.current.selectionEnd;
+    const before = inputText.substring(0, start);
+    const after = inputText.substring(end);
+    
+    // Add comma before if needed (not at start and previous char isn't comma or space)
+    const needsCommaBefore = start > 0 && before[before.length - 1] !== ',' && before[before.length - 1] !== ' ';
+    // Add comma after if needed (not at end and next char isn't comma)
+    const needsCommaAfter = end < inputText.length && after[0] !== ',';
+    
+    const insertion = (needsCommaBefore ? ', ' : '') + currentGuitarLabel + (needsCommaAfter ? ', ' : '');
+    const newText = before + insertion + after;
+    setInputText(newText);
+    
+    // Move cursor to after inserted text
+    const newCursorPos = start + insertion.length;
+    setTimeout(() => {
+      if (textareaRef.current) {
+        textareaRef.current.setSelectionRange(newCursorPos, newCursorPos);
+        textareaRef.current.focus();
+      }
+    }, 0);
+  };
 
   const parseAndLoadSequence = ()=>{
     const tokens = inputText.split(",").map(t=>t.trim()).filter(Boolean);
@@ -307,12 +361,16 @@ if (type===0x90 && d2>0) {
   const stepPrev = ()=>{
     if (!sequence.length) return;
     const i = Math.max(0, (seqIndex<=0 ? 0 : seqIndex-1));
-    setSeqIndex(i); applySeqItem(sequence[i]);
+    setSeqIndex(i); 
+    applySeqItem(sequence[i]);
+    setTimeout(() => selectCurrentItem(), 0); // Delay to ensure state updated
   };
   const stepNext = ()=>{
     if (!sequence.length) return;
     const i = Math.min(sequence.length-1, (seqIndex<0 ? 0 : seqIndex+1));
-    setSeqIndex(i); applySeqItem(sequence[i]);
+    setSeqIndex(i); 
+    applySeqItem(sequence[i]);
+    setTimeout(() => selectCurrentItem(), 0); // Delay to ensure state updated
   };
   const handleInputKeyNav: React.KeyboardEventHandler<HTMLTextAreaElement> = (e)=>{
     if (e.key==="ArrowLeft"){ e.preventDefault(); stepPrev(); }
@@ -334,6 +392,28 @@ if (type===0x90 && d2>0) {
       centerOnly(it.chord);
     }
   };
+
+  // Global keyboard handler for arrow keys and Enter (when not in textarea)
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      // Only handle if NOT in textarea
+      if (document.activeElement?.tagName === 'TEXTAREA') return;
+      
+      if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        stepPrev();
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        stepNext();
+      } else if (e.key === 'Enter' && inputText.trim()) {
+        e.preventDefault();
+        parseAndLoadSequence();
+      }
+    };
+    
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+  }, [inputText, sequence, seqIndex]); // Re-attach when these change
 
   /* ---------- layout & bonus geometry ---------- */
   const cx=260, cy=260, r=220;
@@ -407,7 +487,9 @@ if (type===0x90 && d2>0) {
   const centerOnly=(t:string)=>{ 
     makeTrail(); 
     if (activeFnRef.current) startDimFade();
-    setActiveFn(""); setCenterLabel(SHOW_CENTER_LABEL?t:""); 
+    // Filter out comment and modifier markers
+    const cleaned = t.replace(/^[#@]\s*/, '').trim();
+    setCenterLabel(SHOW_CENTER_LABEL ? cleaned : ""); 
     setBonusActive(false); setBonusLabel(""); 
   };
 
@@ -1050,16 +1132,19 @@ if (type===0x90 && d2>0) {
   // Calculate notes to highlight on keyboard for current chord
   const keyboardHighlightNotes = (() => {
     if (latchedAbsNotes.length > 0) {
-      // If we have latched notes, use those
-      return new Set(latchedAbsNotes.map(n => n % 12)); // Convert to pitch classes
+      // If we have latched notes, show exactly those notes (preserve voicing)
+      return new Set(latchedAbsNotes);
     }
     if (activeFnRef.current) {
-      // Otherwise highlight based on active function
+      // For wheel-generated chords, show root position within keyboard range
       const dispKey = (visitorActiveRef.current ? "Eb" : (subdomActiveRef.current ? "F" : baseKeyRef.current)) as KeyName;
       const fn = activeFnRef.current as Fn;
       const with7th = PREVIEW_USE_SEVENTHS || fn === "V7" || fn === "V/V" || fn === "V/vi";
       const pcs = preview.chordPcsForFn(fn, dispKey, with7th);
-      return new Set(pcs);
+      const rootPc = pcs[0];
+      const absRootPos = preview.absChordRootPositionFromPcs(pcs, rootPc);
+      const fitted = preview.fitNotesToWindowPreserveInversion(absRootPos, KBD_LOW, KBD_HIGH);
+      return new Set(fitted);
     }
     return new Set<number>();
   })();
@@ -1093,29 +1178,28 @@ if (type===0x90 && d2>0) {
           </div>
         </div>
 
-        {/* Status */}
-        <div style={{marginTop:8}}>
+        {/* Status and Labels */}
+        <div style={{marginTop:8, position:'relative'}}>
           <span style={{fontSize:12, padding:'2px 6px', border:'1px solid #ffffff22', background:'#ffffff18', borderRadius:6}}>
             {visitorActive ? 'mode: Parallel (Eb)'
               : relMinorActive ? 'mode: Relative minor (Am)'
               : subdomActive ? 'mode: Subdominant (F)'
               : (midiConnected ? `MIDI: ${midiName||'Connected'}` : 'MIDI: none')}
           </span>
-        </div>
-
-        {/* Labels - aligned with buttons and status */}
-        <div style={{marginTop:8, marginLeft:4}}>
-          <div style={{fontSize:11, fontWeight:600, color:'#9CA3AF', lineHeight:1.3}}>Beat Kitchen</div>
-          <div style={{fontSize:10, fontWeight:500, color:'#7B7B7B', lineHeight:1.3}}>HarmonyWheel v2.37.17</div>
+          {/* Labels positioned absolute on same line as status */}
+          <div style={{position:'absolute', right:0, top:0, textAlign:'right'}}>
+            <div style={{fontSize:11, fontWeight:600, color:'#9CA3AF', lineHeight:1.2}}>Beat Kitchen</div>
+            <div style={{fontSize:10, fontWeight:500, color:'#7B7B7B', lineHeight:1.2}}>HarmonyWheel v2.37.18</div>
+          </div>
         </div>
 
         {/* Wheel */}
         <div className="relative"
-             style={{width:WHEEL_W,height:WHEEL_H, margin:'8px auto 16px',
+             style={{width:WHEEL_W,height:WHEEL_H, margin:'16px auto',
                      transform:`scale(${UI_SCALE_DEFAULT})`, transformOrigin:'center top'}}>
           <div style={wrapperStyle}>
             <svg width={WHEEL_W} height={WHEEL_H} viewBox={`0 0 ${WHEEL_W} ${WHEEL_H}`} className="select-none" style={{display:'block'}}>
-  {/* Labels moved outside wheel container to align with buttons/status */}
+  {/* Labels moved to status bar area */}
 
   {wedgeNodes}
 
@@ -1226,22 +1310,22 @@ if (type===0x90 && d2>0) {
 
           return (
             <div style={{maxWidth: WHEEL_W, margin:'12px auto 0'}}>
-              {/* Comment Display - spans full width between wheel and input */}
-              {activeComment && (
-                <div style={{
-                  padding:'8px 12px',
-                  border:'1px solid #374151',
-                  borderRadius:8,
-                  background:'#0f172a',
-                  color:'#e5e7eb',
-                  fontSize:12,
-                  minHeight:24,
-                  fontStyle:'italic',
-                  marginBottom:10
-                }}>
-                  {activeComment}
-                </div>
-              )}
+              {/* Comment Display - fixed height, always reserves space */}
+              <div style={{
+                padding:'8px 12px',
+                border:'1px solid #374151',
+                borderRadius:8,
+                background:'#0f172a',
+                color:'#e5e7eb',
+                fontSize:12,
+                minHeight:40,
+                fontStyle:'italic',
+                marginBottom:10,
+                display:'flex',
+                alignItems:'center'
+              }}>
+                {activeComment || '\u00A0'} {/* Non-breaking space to maintain height */}
+              </div>
 
               {/* Grid: input + keyboard (left), buttons + guitar tab (right) */}
               <div style={{display:'grid',
@@ -1251,6 +1335,7 @@ if (type===0x90 && d2>0) {
               {/* Left column: input above keyboard */}
               <div style={{display:'grid', gridTemplateRows:'auto auto', rowGap:10}}>
                 <textarea
+                  ref={textareaRef}
                   placeholder={'Type chords, modifiers, and comments...\nExamples:\nC, Am7, F, G7\n@SUB F, Bb, C7, @HOME\n@REL Em, Am, @PAR Cm, Fm\n# Verse: lyrics or theory note'}
                   rows={3}
                   value={inputText}
@@ -1275,7 +1360,7 @@ if (type===0x90 && d2>0) {
                     {Object.entries(whitePos).map(([mStr,x])=>{
                       const m=+mStr; 
                       const held=disp.has(m);
-                      const highlighted = keyboardHighlightNotes.has(m % 12);
+                      const highlighted = keyboardHighlightNotes.has(m);
                       const fillColor = held ? "#AEC9FF" : (highlighted ? "#FFE999" : "#f9fafb");
                       return (
                         <g key={`w-${m}`}>
@@ -1290,7 +1375,7 @@ if (type===0x90 && d2>0) {
                     {Object.entries(blackPos).map(([mStr,x])=>{
                       const m=+mStr; 
                       const held=disp.has(m);
-                      const highlighted = keyboardHighlightNotes.has(m % 12);
+                      const highlighted = keyboardHighlightNotes.has(m);
                       const fillColor = held ? "#2448B8" : (highlighted ? "#C4A000" : "#111827");
                       const strokeColor = held ? "#5A90FF" : (highlighted ? "#FFE999" : "#374151");
                       return (
@@ -1306,15 +1391,31 @@ if (type===0x90 && d2>0) {
               </div>
 
               {/* Right column: buttons and guitar tab */}
-              <div style={{display:'grid', gridTemplateRows:'auto auto', rowGap:10, justifyItems:'stretch'}}>
+              <div style={{display:'grid', gridTemplateRows:'auto auto auto', rowGap:10, justifyItems:'stretch'}}>
                 {/* Navigation Buttons */}
                 <div style={{display:'flex', gap:8}}>
                   <button onClick={parseAndLoadSequence} style={{padding:'8px 12px', border:'2px solid #39FF14', borderRadius:8, background:'#111', color:'#fff', cursor:'pointer', flex:1}}>Load</button>
                   <button onClick={stepPrev} style={{padding:'8px 12px', border:'2px solid #39FF14', borderRadius:8, background:'#111', color:'#fff', cursor:'pointer'}}>◀</button>
                   <button onClick={stepNext} style={{padding:'8px 12px', border:'2px solid #39FF14', borderRadius:8, background:'#111', color:'#fff', cursor:'pointer'}}>▶</button>
                 </div>
+                {/* Insert Current Chord Button */}
+                <button 
+                  onClick={insertCurrentChord} 
+                  disabled={!currentGuitarLabel}
+                  style={{
+                    padding:'6px 10px', 
+                    border:'1px solid #374151', 
+                    borderRadius:6, 
+                    background: currentGuitarLabel ? '#1f2937' : '#111', 
+                    color: currentGuitarLabel ? '#e5e7eb' : '#6b7280', 
+                    cursor: currentGuitarLabel ? 'pointer' : 'not-allowed',
+                    fontSize:11
+                  }}
+                >
+                  Insert "{currentGuitarLabel || '—'}"
+                </button>
                 {/* Guitar Tab */}
-                <div style={{display:'flex', justifyContent:'center'}}>
+                <div style={{display:'flex', justifyContent:'center', alignItems:'center', minHeight:tabSize}}>
                   <GuitarTab chordLabel={currentGuitarLabel} width={tabSize} height={tabSize} />
                 </div>
               </div>
@@ -1328,4 +1429,4 @@ if (type===0x90 && d2>0) {
   );
 }
 
-// EOF - HarmonyWheel.tsx v2.37.17
+// EOF - HarmonyWheel.tsx v2.37.18
