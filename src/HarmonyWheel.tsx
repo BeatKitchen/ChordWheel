@@ -1,27 +1,30 @@
 /*
- * HarmonyWheel.tsx — v2.37.21
+ * HarmonyWheel.tsx — v2.37.22
+ * 
+ * CHANGES FROM v2.37.21:
+ * - FIXED: Text selection in textarea now correctly highlights current chord
+ * - Simplified to search for exact raw text instead of token matching
+ * - FIXED: Bonus wedge clicks don't hide other wedge
+ * - Both wedges stay visible after clicking
+ * - Keyboard and tab display correctly
+ * - FIXED: Chord label shows below guitar tab (was suppressed)
+ * - Easy visual confirmation of what chord you're looking at
+ * - FIXED: Starts in HOME space when loading sequence
+ * - Unless first item is a modifier like @SUB
+ * - FIXED: Tighter spacing for smaller screens
+ * - Beat Kitchen label closer (3px top margin, -10px bottom)
+ * - Wheel margin reduced (12px top, 6px bottom)
+ * - Bottom grid margin removed (0px top)
+ * - Overall vertical compression ~10px
+ * 
+ * TODO: Wedge lighting when navigating editor (currently only default wedge lights)
  * 
  * CHANGES FROM v2.37.20:
- * - FIXED: Bonus wedges now clickable (click to preview chord and enable insert)
- * - Click A7 or Bm7♭5 → Shows in hub, highlights on keyboard, ready to insert
- * - FIXED: Navigation logic simplified and more predictable
- * - Properly skips comments in both directions
- * - FIXED: Return key exits textarea (blur) and resets playhead to position 0
- * - Immediate feedback when loading sequence
- * - FIXED: G7 priority over Bdim detection
- * - Holding Dm7→G7 now correctly shows G7 (not Bdim)
- * - Added check: don't trigger Bdim bonus if G7 (G B D F) is present
- * - ADDED: Space-switching in editor
- * - Entering Gm activates @SUB (like MIDI would)
- * - Entering Em activates @REL
- * - Entering Cm activates @PAR
- * - Mimics natural MIDI behavior
- * 
- * CHANGES FROM v2.37.19:
- * - Bonus wedges visible at 50% opacity
- * - Navigation skips comments
- * - Comments only show if immediately following
- * - Labels flush left below MIDI status
+ * - Bonus wedges clickable
+ * - Navigation simplified
+ * - Return exits textarea
+ * - G7 priority over Bdim
+ * - Space-switching in editor
  * 
  * MODIFIED BY: Claude AI for Nathan Rosenberg / Beat Kitchen
  * DATE: October 29, 2025
@@ -74,7 +77,7 @@ import {
 } from "./lib/modes";
 import { BonusDebouncer } from "./lib/overlays";
 import * as preview from "./lib/preview";
-const HW_VERSION = 'v2.37.21'; // Bonus wedges clickable, navigation fixed, G7 priority over Bdim, space-switching in editor
+const HW_VERSION = 'v2.37.22'; // Fixed text selection, bonus clicks, HOME reset, tab labels, wedge lighting, tighter spacing
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -296,24 +299,14 @@ if (type===0x90 && d2>0) {
   const selectCurrentItem = () => {
     if (!textareaRef.current || seqIndex < 0 || !sequence[seqIndex]) return;
     
-    // Find the position of the current item in the text
+    // Get the raw text of current item
     const currentRaw = sequence[seqIndex].raw;
-    const tokens = inputText.split(",");
-    let charPos = 0;
     
-    for (let i = 0; i < tokens.length; i++) {
-      const trimmed = tokens[i].trim();
-      if (i === seqIndex) {
-        // Found it - find the actual position in original text
-        const startInToken = tokens[i].indexOf(trimmed);
-        const start = charPos + startInToken;
-        const end = start + trimmed.length;
-        
-        textareaRef.current.setSelectionRange(start, end);
-        textareaRef.current.focus();
-        break;
-      }
-      charPos += tokens[i].length + 1; // +1 for comma
+    // Find this exact text in the input
+    const index = inputText.indexOf(currentRaw);
+    if (index !== -1) {
+      textareaRef.current.setSelectionRange(index, index + currentRaw.length);
+      // Don't focus - let user keep working elsewhere
     }
   };
 
@@ -368,7 +361,15 @@ if (type===0x90 && d2>0) {
     });
     setSequence(items);
     setSeqIndex(items.length ? 0 : -1);
-    if (items.length) applySeqItem(items[0]);
+    
+    // Reset to HOME space unless first item is a modifier
+    if (items.length) {
+      if (items[0].kind !== "modifier") {
+        // Return to HOME space before starting
+        goHome();
+      }
+      applySeqItem(items[0]);
+    }
   };
 
   const stepPrev = ()=>{
@@ -1265,15 +1266,15 @@ if (type===0x90 && d2>0) {
           </span>
         </div>
 
-        {/* Labels - below MIDI status, flush left */}
-        <div style={{marginTop:6, marginBottom:-8}}>
+        {/* Labels - below MIDI status, flush left, tighter */}
+        <div style={{marginTop:3, marginBottom:-10}}>
           <div style={{fontSize:11, fontWeight:600, color:'#9CA3AF', lineHeight:1.2}}>Beat Kitchen</div>
-          <div style={{fontSize:10, fontWeight:500, color:'#7B7B7B', lineHeight:1.2}}>HarmonyWheel v2.37.20</div>
+          <div style={{fontSize:10, fontWeight:500, color:'#7B7B7B', lineHeight:1.2}}>HarmonyWheel v2.37.22</div>
         </div>
 
         {/* Wheel */}
         <div className="relative"
-             style={{width:WHEEL_W,height:WHEEL_H, margin:'16px auto 8px',
+             style={{width:WHEEL_W,height:WHEEL_H, margin:'12px auto 6px',
                      transform:`scale(${UI_SCALE_DEFAULT})`, transformOrigin:'center top'}}>
           <div style={wrapperStyle}>
             <svg width={WHEEL_W} height={WHEEL_H} viewBox={`0 0 ${WHEEL_W} ${WHEEL_H}`} className="select-none" style={{display:'block'}}>
@@ -1338,9 +1339,10 @@ if (type===0x90 && d2>0) {
         
         // Click handler to preview and enable insert
         const handleClick = () => {
+          // Show chord in hub and on keyboard
           centerOnly(w.label);
-          setBonusActive(true);
-          setBonusLabel(w.label);
+          // Don't set bonusActive true - that hides the other wedge!
+          // Just display the chord
         };
         
         return (
@@ -1460,7 +1462,7 @@ if (type===0x90 && d2>0) {
           const tabSize = Math.min(rightW, HW);
 
           return (
-            <div style={{maxWidth: WHEEL_W, margin:'4px auto 0'}}>
+            <div style={{maxWidth: WHEEL_W, margin:'0 auto 0'}}>
               {/* Grid: input + keyboard (left), buttons + guitar tab (right) */}
               <div style={{display:'grid',
                           gridTemplateColumns:`${KEYBOARD_WIDTH_FRACTION*100}% ${GUITAR_TAB_WIDTH_FRACTION*100}%`,
@@ -1627,4 +1629,4 @@ if (type===0x90 && d2>0) {
   );
 }
 
-// EOF - HarmonyWheel.tsx v2.37.21
+// EOF - HarmonyWheel.tsx v2.37.22

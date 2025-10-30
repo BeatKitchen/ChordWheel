@@ -218,23 +218,36 @@ export default function GuitarTab({ chordLabel, width, height }: Props) {
   }, [chordLabel, width, height]);
 
   return (
-    <div
-      ref={hostRef}
-      style={{
-        width,
-        height,
-        padding: 10,
-        border: `1px solid ${THEME.panelBorder}`,
-        borderRadius: 10,
-        background: THEME.panelBg,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        color: THEME.title,
-        fontFamily: "ui-sans-serif, system-ui",
-        overflow: "hidden",
-      }}
-    />
+    <div style={{display:'flex', flexDirection:'column', alignItems:'center', gap:4}}>
+      <div
+        ref={hostRef}
+        style={{
+          width,
+          height,
+          padding: 10,
+          border: `1px solid ${THEME.panelBorder}`,
+          borderRadius: 10,
+          background: THEME.panelBg,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          color: THEME.title,
+          fontFamily: "ui-sans-serif, system-ui",
+          overflow: "hidden",
+        }}
+      />
+      {/* Chord label below tab */}
+      {chordLabel && (
+        <div style={{
+          fontSize: 11,
+          fontWeight: 600,
+          color: THEME.title,
+          fontFamily: "ui-sans-serif, system-ui",
+        }}>
+          {chordLabel}
+        </div>
+      )}
+    </div>
   );
 }
 // >>> FILE END: src/components/GuitarTab.tsx
