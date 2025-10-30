@@ -1,14 +1,21 @@
 /*
- * HarmonyWheel.tsx — v2.37.35
+ * HarmonyWheel.tsx — v2.38.0
  * 
- * PHASE 2A - Bdim7 Function Fix (V/vi not V7!)
+ * 🚀 PHASE 2B - ALL KEYS REFACTOR! 🚀
  * 
- * CHANGES FROM v2.37.34:
- * - FIXED: Bdim7 in PAR lights V/vi wedge (G7), not V7 (Bb7)
- * - In C meta-space, Bdim7 acts as V chord for C/Cm
- * - In PAR (Eb space), V of C = V/vi in Eb (G7 wedge)
- * - Hub displays "Bdim7", wedge lights at G7 position
- * - Bdim7 drives to Cm, same function as G7
+ * CHANGES FROM v2.38.0:
+ * - SUB (subdominant) now works in ALL 12 KEYS!
+ *   - Dynamic calculation: SUB = IV of meta-key
+ *   - C → F, Ab → Db, E → A, etc.
+ * - PAR (parallel) now works in ALL 12 KEYS!
+ *   - Dynamic calculation: PAR = ♭VI of meta-key
+ *   - C → Eb, Ab → Cb, E → G, etc.
+ * - Added helper functions: getSubKey(), getParKey()
+ * - Replaced all hardcoded "F" and "Eb" references
+ * - Used useMemo for efficient recalculation
+ * - Display keys, center labels, render keys all dynamic
+ * 
+ * NEXT: Dynamic sticky chord detection (currently still hardcoded to C)
  * 
  * MODIFIED BY: Claude AI for Nathan Rosenberg / Beat Kitchen
  * DATE: October 30, 2025
@@ -54,14 +61,14 @@ import { computeLayout, annulusTopDegree } from "./lib/geometry";
 import {
   pcFromMidi, pcNameForKey, FLAT_NAMES, NAME_TO_PC, T, subsetOf,
   internalAbsoluteName, mapDimRootToFn_ByBottom, mapDim7_EbVisitor, add12,
-  realizeFunction
+  realizeFunction, getSubKey, getParKey
 } from "./lib/theory";
 import {
   VISITOR_SHAPES, C_REQ7, C_REQT, EB_REQ7, EB_REQT, firstMatch
 } from "./lib/modes";
 import { BonusDebouncer } from "./lib/overlays";
 import * as preview from "./lib/preview";
-const HW_VERSION = 'v2.37.35'; // FIX: Bdim7 in PAR lights V/vi (G7), not V7 (Bb7)
+const HW_VERSION = 'v2.38.0'; // PHASE 2B: SUB/PAR work in all 12 keys!
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -92,6 +99,12 @@ useEffect(() => {
   };
 }, []);
 const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey;},[baseKey]);
+
+  // PHASE 2B: Dynamic SUB and PAR keys (not hardcoded!)
+  // SUB = IV of baseKey (F when base=C, Db when base=Ab, A when base=E, etc.)
+  // PAR = ♭VI of baseKey (Eb when base=C, Cb when base=Ab, G when base=E, etc.)
+  const subKey = useMemo(() => getSubKey(baseKey), [baseKey]);
+  const parKey = useMemo(() => getParKey(baseKey), [baseKey]);
 
   const [activeFn,setActiveFn]=useState<Fn|"">("I");
   const activeFnRef=useRef<Fn|"">("I"); useEffect(()=>{activeFnRef.current=activeFn;},[activeFn]);
@@ -587,8 +600,8 @@ if (type===0x90 && d2>0) {
   const previewChordByName = (chordName: string) => {
     lastInputWasPreviewRef.current = true;
     const renderKey: KeyName = visitorActiveRef.current
-      ? "Eb"
-      : (subdomActiveRef.current ? "F" : baseKeyRef.current);
+      ? parKey
+      : (subdomActiveRef.current ? subKey : baseKeyRef.current);
     
     // Map chord name to function (I, ii, iii, IV, V, vi, etc.)
     // This activates the correct wedge!
@@ -807,7 +820,7 @@ if (type===0x90 && d2>0) {
       bonusDeb.reset();
 
       if (subdomActiveRef.current && subdomLatchedRef.current) {
-        if (!centerLabel) setCenterLabel("F");
+        if (!centerLabel) setCenterLabel(subKey);
         if (!activeFnRef.current) setActiveFn(subLastSeenFnRef.current || "I");
         hardClearGhostIfIdle();
         return;
@@ -944,7 +957,7 @@ if (type===0x90 && d2>0) {
         setVisitorActive(false);
 
         setSubdomActive(true);
-        setCenterLabel("F");
+        setCenterLabel(subKey);
         if (enterByGm) { setActiveWithTrail("ii", absName || (isSubset([7,10,2,5])?"Gm7":"Gm")); subLatch("ii"); }
         else           { setActiveWithTrail("V7", absName || "C7");                               subLatch("V7"); }
         subSpinEnter();
@@ -1251,7 +1264,7 @@ if (type===0x90 && d2>0) {
     if(on && subdomActiveRef.current){ subSpinExit(); setSubdomActive(false); subdomLatchedRef.current=false; subHasSpunRef.current=false; }
     if(on && relMinorActiveRef.current) setRelMinorActive(false);
     setVisitorActive(on);
-    if(on){ setActiveFn("I"); setCenterLabel("Eb"); stopDimFade(); }
+    if(on){ setActiveFn("I"); setCenterLabel(parKey); stopDimFade(); }
   };
   const toggleRelMinor = ()=>{
     const on = !relMinorActiveRef.current;
@@ -1269,7 +1282,7 @@ if (type===0x90 && d2>0) {
       subExitCandidateSinceRef.current = null;
       subLastSeenFnRef.current = "I";
       homeSuppressUntilRef.current = performance.now() + RECENT_PC_WINDOW_MS;
-      setActiveFn("I"); setCenterLabel("F");
+      setActiveFn("I"); setCenterLabel(subKey);
       subSpinEnter();
       stopDimFade();
     } else {
@@ -1304,7 +1317,7 @@ if (type===0x90 && d2>0) {
 
   /* ---------- wedges ---------- */
   const wedgeNodes = useMemo(()=>{
-    const renderKey:KeyName = visitorActive ? "Eb" : baseKey;
+    const renderKey:KeyName = visitorActive ? parKey : baseKey;
     const dimK = Math.min(1, Math.max(0, dimFadeTick / DIM_FADE_MS));
     const fadedBase = 0.5 + 0.5 * dimK; // 0.5→1.0
     return layout.map(({fn,path,labelPos})=>{
@@ -1340,8 +1353,8 @@ if (type===0x90 && d2>0) {
   const previewFn = (fn:Fn)=>{
     lastInputWasPreviewRef.current = true;
     const renderKey:KeyName = visitorActiveRef.current
-      ? "Eb"
-      : (subdomActiveRef.current ? "F" : baseKeyRef.current);
+      ? parKey
+      : (subdomActiveRef.current ? subKey : baseKeyRef.current);
     const with7th = PREVIEW_USE_SEVENTHS || fn === "V7" || fn === "V/V" || fn === "V/vi";
     const pcs = preview.chordPcsForFn(fn, renderKey, with7th);
     const rootPc = pcs[0];
@@ -1354,7 +1367,7 @@ if (type===0x90 && d2>0) {
   /* ---------- Render ---------- */
   const currentGuitarLabel = (() => {
     if (activeFnRef.current){
-      const dispKey = (visitorActiveRef.current ? "Eb" : (subdomActiveRef.current ? "F" : baseKeyRef.current)) as KeyName;
+      const dispKey = (visitorActiveRef.current ? parKey : (subdomActiveRef.current ? subKey : baseKeyRef.current)) as KeyName;
       return realizeFunction(activeFnRef.current as Fn, dispKey);
     }
     return centerLabel || null;
@@ -1368,7 +1381,7 @@ if (type===0x90 && d2>0) {
     }
     // Priority 2: If active function but no manual play, calculate root position  
     if (activeFnRef.current && rightHeld.current.size === 0) {
-      const dispKey = (visitorActiveRef.current ? "Eb" : (subdomActiveRef.current ? "F" : baseKeyRef.current)) as KeyName;
+      const dispKey = (visitorActiveRef.current ? parKey : (subdomActiveRef.current ? subKey : baseKeyRef.current)) as KeyName;
       const fn = activeFnRef.current as Fn;
       const with7th = PREVIEW_USE_SEVENTHS || fn === "V7" || fn === "V/V" || fn === "V/vi";
       const pcs = preview.chordPcsForFn(fn, dispKey, with7th);
@@ -1423,7 +1436,7 @@ if (type===0x90 && d2>0) {
         {/* Labels - below MIDI status, aligned with MIDI text */}
         <div style={{marginTop:2, marginBottom:-8, paddingLeft:8}}>
           <div style={{fontSize:11, fontWeight:600, color:'#9CA3AF', lineHeight:1.2}}>Beat Kitchen</div>
-          <div style={{fontSize:10, fontWeight:500, color:'#7B7B7B', lineHeight:1.2}}>HarmonyWheel v2.37.35</div>
+          <div style={{fontSize:10, fontWeight:500, color:'#7B7B7B', lineHeight:1.2}}>HarmonyWheel v2.38.0</div>
         </div>
 
         {/* Wheel */}
@@ -1843,4 +1856,4 @@ if (type===0x90 && d2>0) {
   );
 }
 
-// EOF - HarmonyWheel.tsx v2.37.35
+// EOF - HarmonyWheel.tsx v2.38.0

@@ -208,4 +208,27 @@ export function realizeFunction(fn:Fn, key: KeyName){
   }
 }
 
-// EOF - theory.ts v2.37.10
+/**
+ * Calculate SUB (subdominant) key for a given meta-key
+ * SUB = IV of meta-key
+ * Example: C → F, Ab → Db, E → A
+ */
+export function getSubKey(metaKey: KeyName): KeyName {
+  const metaPc = NAME_TO_PC[metaKey];
+  const subPc = add12(metaPc, 5); // IV = +5 semitones
+  return FLAT_NAMES[subPc]; // Always use flat names (KeyName type)
+}
+
+/**
+ * Calculate PAR (parallel minor) key for a given meta-key
+ * PAR = ♭VI of meta-key (major mode perspective)
+ * Or: relative major of parallel minor
+ * Example: C → Eb (relative major of Cm), Ab → Cb, E → G
+ */
+export function getParKey(metaKey: KeyName): KeyName {
+  const metaPc = NAME_TO_PC[metaKey];
+  const parPc = add12(metaPc, 3); // ♭VI = +3 semitones (Eb from C)
+  return FLAT_NAMES[parPc]; // Always use flat names (KeyName type)
+}
+
+// EOF - theory.ts v2.38.0
