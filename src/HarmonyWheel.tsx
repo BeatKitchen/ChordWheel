@@ -1,17 +1,14 @@
 /*
- * HarmonyWheel.tsx — v2.37.30
+ * HarmonyWheel.tsx — v2.37.35
  * 
- * PHASE 2A - BUG FIX #1: Bm7♭5 Immediate Recognition
+ * PHASE 2A - Bdim7 Function Fix (V/vi not V7!)
  * 
- * CHANGES FROM v2.37.29:
- * - FIXED: Bm7♭5 no longer triggers Dm7 first
- * - Bonus chords (Bm7♭5, A7) now checked BEFORE diatonic chords in HOME
- * - Priority logic in HOME diatonic detection (line ~1165):
- *   1. Check Bm7♭5/Bdim [11,2,5,9]
- *   2. Check A7 [9,1,4,7]
- *   3. Then check diatonic (Dm7, etc.)
- * - No debounce needed - immediate activation
- * - Works in HOME space only (PAR/REL/SUB handled separately)
+ * CHANGES FROM v2.37.34:
+ * - FIXED: Bdim7 in PAR lights V/vi wedge (G7), not V7 (Bb7)
+ * - In C meta-space, Bdim7 acts as V chord for C/Cm
+ * - In PAR (Eb space), V of C = V/vi in Eb (G7 wedge)
+ * - Hub displays "Bdim7", wedge lights at G7 position
+ * - Bdim7 drives to Cm, same function as G7
  * 
  * MODIFIED BY: Claude AI for Nathan Rosenberg / Beat Kitchen
  * DATE: October 30, 2025
@@ -64,7 +61,7 @@ import {
 } from "./lib/modes";
 import { BonusDebouncer } from "./lib/overlays";
 import * as preview from "./lib/preview";
-const HW_VERSION = 'v2.37.30'; // FIX: Bm7♭5 now immediate (not Dm7 first) - bonus chords priority
+const HW_VERSION = 'v2.37.35'; // FIX: Bdim7 in PAR lights V/vi (G7), not V7 (Bb7)
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -1147,6 +1144,17 @@ if (type===0x90 && d2>0) {
           return;
         }
         
+        // ========== NEW v2.37.31: Bdim7 special case for C meta-space ==========
+        // In PAR space (Eb), Bdim7 was being mapped to Bb7 (V of Eb)
+        // But in C meta-space, Bdim7 should ALWAYS be vii°7 (dominant function of C)
+        const hasBdim7 = pcsRel.has(11) && pcsRel.has(2) && pcsRel.has(5) && pcsRel.has(8);
+        if (hasBdim7 && absName === "Bdim7") {
+          // Always map to V7 (dominant function) regardless of current space
+          setActiveWithTrail("V7", "Bdim7");
+          return;
+        }
+        // ========== END v2.37.31 ==========
+        
         // All other dim7 chords: use absName from theory.ts (which uses lowest note)
         const dimLabel = absName || `${["C","C#","D","Eb","E","F","F#","G","Ab","A","Bb","B"][root]}dim7`;
         const mapped = mapDimRootToFn_ByBottom(root) || "V7";
@@ -1157,6 +1165,18 @@ if (type===0x90 && d2>0) {
 
     /* In Eb mapping */
     if(visitorActiveRef.current){
+      // CRITICAL: Bdim7 acts as V chord for C meta-key
+      // In PAR (Eb space), this means V/vi function (G7), NOT V7 (Bb7)
+      // Bdim7 = [11,2,5,8] (B-D-F-Ab) drives to Cm, same as G7
+      const hasBdim7 = isSubset([11,2,5,8]) && pcsRel.size === 4;
+      if (hasBdim7 && absName === "Bdim7") {
+        // Light V/vi wedge (G7 position), display "Bdim7"
+        setActiveFn("V/vi"); 
+        setCenterLabel("Bdim7");
+        setBonusActive(false);
+        return;
+      }
+      
       const m7 = firstMatch(EB_REQ7, pcsRel); if(m7){ setActiveWithTrail(m7.f as Fn, m7.n); return; }
       if(/(maj7|m7♭5|m7$|dim7$|[^m]7$)/.test(absName)) { centerOnly(absName); return; }
       const tri = firstMatch(EB_REQT, pcsRel); if(tri){ setActiveWithTrail(tri.f as Fn, tri.n); return; }
@@ -1342,16 +1362,12 @@ if (type===0x90 && d2>0) {
 
   // Calculate notes to highlight on keyboard for current chord
   const keyboardHighlightNotes = (() => {
-    // Priority 1: If we have manually played notes (not from preview), show ONLY those
-    if (latchedAbsNotes.length > 0 && !lastInputWasPreviewRef.current) {
-      return new Set(latchedAbsNotes);
-    }
-    // Priority 2: If from preview (playlist), show those notes
+    // Priority 1: If from preview/playlist, show yellow highlights
     if (latchedAbsNotes.length > 0 && lastInputWasPreviewRef.current) {
       return new Set(latchedAbsNotes);
     }
-    // Priority 3: If active function (wedge clicked), show root position
-    if (activeFnRef.current) {
+    // Priority 2: If active function but no manual play, calculate root position  
+    if (activeFnRef.current && rightHeld.current.size === 0) {
       const dispKey = (visitorActiveRef.current ? "Eb" : (subdomActiveRef.current ? "F" : baseKeyRef.current)) as KeyName;
       const fn = activeFnRef.current as Fn;
       const with7th = PREVIEW_USE_SEVENTHS || fn === "V7" || fn === "V/V" || fn === "V/vi";
@@ -1361,6 +1377,7 @@ if (type===0x90 && d2>0) {
       const fitted = preview.fitNotesToWindowPreserveInversion(absRootPos, KBD_LOW, KBD_HIGH);
       return new Set(fitted);
     }
+    // Don't show yellow highlights for manual MIDI play - only blue (disp) handles that
     return new Set<number>();
   })();
 
@@ -1406,7 +1423,7 @@ if (type===0x90 && d2>0) {
         {/* Labels - below MIDI status, aligned with MIDI text */}
         <div style={{marginTop:2, marginBottom:-8, paddingLeft:8}}>
           <div style={{fontSize:11, fontWeight:600, color:'#9CA3AF', lineHeight:1.2}}>Beat Kitchen</div>
-          <div style={{fontSize:10, fontWeight:500, color:'#7B7B7B', lineHeight:1.2}}>HarmonyWheel v2.37.30</div>
+          <div style={{fontSize:10, fontWeight:500, color:'#7B7B7B', lineHeight:1.2}}>HarmonyWheel v2.37.35</div>
         </div>
 
         {/* Wheel */}
@@ -1726,7 +1743,7 @@ if (type===0x90 && d2>0) {
                         <g key={`w-${m}`}>
                           <rect x={x} y={0} width={WW} height={HW}
                                 fill={fillColor} stroke="#1f2937"
-                                onMouseDown={()=>{rightHeld.current.add(m); detect();}}
+                                onMouseDown={()=>{lastInputWasPreviewRef.current = false; rightHeld.current.add(m); detect();}}
                                 onMouseUp={()=>{rightHeld.current.delete(m); rightSus.current.delete(m); detect();}}
                                 onMouseLeave={()=>{rightHeld.current.delete(m); rightSus.current.delete(m); detect();}} />
                         </g>
@@ -1741,7 +1758,7 @@ if (type===0x90 && d2>0) {
                       return (
                           <rect key={`b-${m}`} x={x} y={0} width={WB} height={HB}
                                 fill={fillColor} stroke={strokeColor}
-                                onMouseDown={()=>{rightHeld.current.add(m); detect();}}
+                                onMouseDown={()=>{lastInputWasPreviewRef.current = false; rightHeld.current.add(m); detect();}}
                                 onMouseUp={()=>{rightHeld.current.delete(m); rightSus.current.delete(m); detect();}}
                                 onMouseLeave={()=>{rightHeld.current.delete(m); rightSus.current.delete(m); detect();}} />
                       );
@@ -1826,4 +1843,4 @@ if (type===0x90 && d2>0) {
   );
 }
 
-// EOF - HarmonyWheel.tsx v2.37.30
+// EOF - HarmonyWheel.tsx v2.37.35
