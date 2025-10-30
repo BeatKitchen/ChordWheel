@@ -1,5 +1,5 @@
 /*
- * HarmonyWheel.tsx — v2.41.0
+ * HarmonyWheel.tsx — v2.41.1
  * 
  * 🚀🚀🚀 PHASE 2C - THE BIG ONE! 🚀🚀🚀
  * 
@@ -75,7 +75,7 @@ import {
 } from "./lib/modes";
 import { BonusDebouncer } from "./lib/overlays";
 import * as preview from "./lib/preview";
-const HW_VERSION = 'v2.41.0'; // FIX: 7th chords show correctly (Em7 not Em)!
+const HW_VERSION = 'v2.41.1'; // FIX: Transpose octave now A0-C2 (was C3-C4)
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -239,7 +239,8 @@ if (type===0x90 && d2>0) {
     setShowBonusWedges(false);
   }
   
-  if (d1<=48){
+  // Transpose octave: A0 to C2 (MIDI 21-36)
+  if (d1<=36){
     leftHeld.current.add(d1);
     const lowest = Math.min(...leftHeld.current);
     const k = pcNameForKey(pcFromMidi(lowest), "C") as KeyName;
@@ -251,7 +252,7 @@ if (type===0x90 && d2>0) {
   detect();
 } else if (type===0x80 || (type===0x90 && d2===0)) {
   lastMidiEventRef.current = "off";
-  if (d1<=48) leftHeld.current.delete(d1);
+  if (d1<=36) leftHeld.current.delete(d1);
   else { rightHeld.current.delete(d1); rightSus.current.delete(d1); }
   detect();
 } else if (type===0xB0 && d1===64) {
@@ -908,7 +909,7 @@ if (type===0x90 && d2>0) {
         return r !== null;
       })();
 
-      // ========== NEW v2.41.0: vii°7 special case (works in all keys!) ==========
+      // ========== NEW v2.41.1: vii°7 special case (works in all keys!) ==========
       // vii°7 (leading tone dim7) acts as dominant substitute in ANY key
       // Pattern: [11,2,5,8] relative to tonic (7th scale degree + dim7 intervals)
       // C: Bdim7, F: Edim7, G: F#dim7, Ab: Gdim7, etc.
@@ -921,7 +922,7 @@ if (type===0x90 && d2>0) {
         setBonusActive(false);  // Don't use bonus overlay
         return;
       }
-      // ========== END NEW v2.41.0 ==========
+      // ========== END NEW v2.41.1 ==========
 
       const hasBDF   = isSubset([11,2,5]);
       const hasBDFG  = isSubset([11,2,5,9]);
@@ -1187,7 +1188,7 @@ if (type===0x90 && d2>0) {
           return;
         }
         
-        // ========== NEW v2.41.0: vii°7 in REL Am (works in all keys!) ==========
+        // ========== NEW v2.41.1: vii°7 in REL Am (works in all keys!) ==========
         // vii°7 of meta-key should map to V7, not be misidentified
         const hasVii7Pattern = pcsRel.has(11) && pcsRel.has(2) && pcsRel.has(5) && pcsRel.has(8);
         if (hasVii7Pattern) {
@@ -1195,7 +1196,7 @@ if (type===0x90 && d2>0) {
           setActiveWithTrail("V7", absName); // Use actual name
           return;
         }
-        // ========== END v2.41.0 ==========
+        // ========== END v2.41.1 ==========
         
         // All other dim7 chords: use absName from theory.ts (which uses lowest note)
         const dimLabel = absName || `${["C","C#","D","Eb","E","F","F#","G","Ab","A","Bb","B"][root]}dim7`;
@@ -1205,7 +1206,7 @@ if (type===0x90 && d2>0) {
       }
     }
     
-    /* ========== NEW v2.41.0: PAR EXIT for secondary dominants ========== */
+    /* ========== NEW v2.41.1: PAR EXIT for secondary dominants ========== */
     // When in PAR, certain chords signal return to HOME (secondary dominant area)
     // Check these BEFORE PAR diatonic matching
     if (visitorActiveRef.current) {
@@ -1240,7 +1241,7 @@ if (type===0x90 && d2>0) {
         return;
       }
     }
-    /* ========== END v2.41.0 ========== */
+    /* ========== END v2.41.1 ========== */
 
     /* In PAR mapping - now dynamic for all keys! */
     if(visitorActiveRef.current){
@@ -1325,7 +1326,7 @@ if (type===0x90 && d2>0) {
     }
 
     // diminished fallback by bottom note
-    const rhs=absHeld.filter(n=>n>=48).sort((a,b)=>a-b);
+    const rhs=absHeld.filter(n=>n>36).sort((a,b)=>a-b);
     if(rhs.length>=3){
       const bottom=rhs[0], rootPc=pcFromMidi(bottom);
       const tri=T([rootPc, add12(rootPc,3), add12(rootPc,6)]);
@@ -1534,7 +1535,7 @@ if (type===0x90 && d2>0) {
         {/* Labels - below MIDI status, aligned with MIDI text */}
         <div style={{marginTop:2, marginBottom:-8, paddingLeft:8}}>
           <div style={{fontSize:11, fontWeight:600, color:'#9CA3AF', lineHeight:1.2}}>Beat Kitchen</div>
-          <div style={{fontSize:10, fontWeight:500, color:'#7B7B7B', lineHeight:1.2}}>HarmonyWheel v2.41.0</div>
+          <div style={{fontSize:10, fontWeight:500, color:'#7B7B7B', lineHeight:1.2}}>HarmonyWheel v2.41.1</div>
         </div>
 
         {/* Wheel */}
@@ -1954,4 +1955,4 @@ if (type===0x90 && d2>0) {
   );
 }
 
-// EOF - HarmonyWheel.tsx v2.41.0
+// EOF - HarmonyWheel.tsx v2.41.1
