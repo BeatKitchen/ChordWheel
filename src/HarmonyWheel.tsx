@@ -1,26 +1,27 @@
 /*
- * HarmonyWheel.tsx — v2.37.18
+ * HarmonyWheel.tsx — v2.37.21
  * 
- * CHANGES FROM v2.37.17:
- * - FIXED: Keyboard highlighting now shows exact notes (not repeated across octaves)
- * - Preserves voicing for played chords, uses root position for wheel chords
- * - FIXED: Labels moved to status bar (right-aligned, doesn't push wheel down)
- * - FIXED: Comment field has fixed height (doesn't push content down)
- * - FIXED: Global arrow keys work when NOT in textarea (opposite before)
- * - FIXED: Enter key loads sequence when not editing textarea
- * - ADDED: "Insert current chord" button to add displayed chord to text
- * - ADDED: Current item in sequence is highlighted (selected) in textarea
- * - FIXED: Filtered # and @ from hub center label
- * - FIXED: Guitar tab container has fixed height (no vertical jumping)
+ * CHANGES FROM v2.37.20:
+ * - FIXED: Bonus wedges now clickable (click to preview chord and enable insert)
+ * - Click A7 or Bm7♭5 → Shows in hub, highlights on keyboard, ready to insert
+ * - FIXED: Navigation logic simplified and more predictable
+ * - Properly skips comments in both directions
+ * - FIXED: Return key exits textarea (blur) and resets playhead to position 0
+ * - Immediate feedback when loading sequence
+ * - FIXED: G7 priority over Bdim detection
+ * - Holding Dm7→G7 now correctly shows G7 (not Bdim)
+ * - Added check: don't trigger Bdim bonus if G7 (G B D F) is present
+ * - ADDED: Space-switching in editor
+ * - Entering Gm activates @SUB (like MIDI would)
+ * - Entering Em activates @REL
+ * - Entering Cm activates @PAR
+ * - Mimics natural MIDI behavior
  * 
- * CHANGES FROM v2.37.16:
- * - FIXED: Label position adjusted (marginLeft:4px, tighter lineHeight, wheel margin reduced)
- * - Wheel vertical position restored to previous height
- * - FIXED: Comment field now spans full width between wheel and input (fixed position)
- * - Comment no longer pushes down buttons/tab when present
- * - FIXED: Removed C3/C4 octave labels from keyboard (unnecessary)
- * - FIXED: Keyboard now highlights notes of current chord (yellow tint)
- * - Blue = held/played notes, Yellow = current chord notes, White/Black = default
+ * CHANGES FROM v2.37.19:
+ * - Bonus wedges visible at 50% opacity
+ * - Navigation skips comments
+ * - Comments only show if immediately following
+ * - Labels flush left below MIDI status
  * 
  * MODIFIED BY: Claude AI for Nathan Rosenberg / Beat Kitchen
  * DATE: October 29, 2025
@@ -73,7 +74,7 @@ import {
 } from "./lib/modes";
 import { BonusDebouncer } from "./lib/overlays";
 import * as preview from "./lib/preview";
-const HW_VERSION = 'v2.37.18'; // Keyboard fix + UI improvements + insert chord
+const HW_VERSION = 'v2.37.21'; // Bonus wedges clickable, navigation fixed, G7 priority over Bdim, space-switching in editor
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -166,6 +167,7 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
   const [bonusActive,setBonusActive]=useState(false);
   const [bonusLabel,setBonusLabel]=useState("");
   const bonusDeb = useRef(new BonusDebouncer()).current;
+  const [showBonusWedges, setShowBonusWedges] = useState(false); // Toggle for bonus wedge visibility
 
   const [trailFn, setTrailFn] = useState<Fn|"">("");
   const [trailTick, setTrailTick] = useState(0);
@@ -275,7 +277,19 @@ if (type===0x90 && d2>0) {
   type SeqItem = { kind: "chord" | "modifier" | "comment"; raw: string; chord?: string; comment?: string; };
   const [sequence, setSequence] = useState<SeqItem[]>([]);
   const [seqIndex, setSeqIndex] = useState(-1);
-  const activeComment = (seqIndex>=0 && sequence[seqIndex]?.comment) ? sequence[seqIndex]!.comment! : "";
+  
+  // Comment only shows if immediately following current chord
+  const activeComment = (() => {
+    if (seqIndex < 0 || seqIndex >= sequence.length - 1) return ""; // No comment if at end or invalid
+    
+    // Check if next item is a comment
+    const nextItem = sequence[seqIndex + 1];
+    if (nextItem && nextItem.kind === "comment") {
+      return nextItem.comment || "";
+    }
+    return "";
+  })();
+  
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Helper to select current item in textarea (highlight with yellow)
@@ -314,10 +328,9 @@ if (type===0x90 && d2>0) {
     
     // Add comma before if needed (not at start and previous char isn't comma or space)
     const needsCommaBefore = start > 0 && before[before.length - 1] !== ',' && before[before.length - 1] !== ' ';
-    // Add comma after if needed (not at end and next char isn't comma)
-    const needsCommaAfter = end < inputText.length && after[0] !== ',';
     
-    const insertion = (needsCommaBefore ? ', ' : '') + currentGuitarLabel + (needsCommaAfter ? ', ' : '');
+    // Always add comma and space after
+    const insertion = (needsCommaBefore ? ', ' : '') + currentGuitarLabel + ', ';
     const newText = before + insertion + after;
     setInputText(newText);
     
@@ -360,21 +373,51 @@ if (type===0x90 && d2>0) {
 
   const stepPrev = ()=>{
     if (!sequence.length) return;
-    const i = Math.max(0, (seqIndex<=0 ? 0 : seqIndex-1));
+    let i = seqIndex - 1;
+    if (i < 0) i = 0; // Stay at beginning
+    
+    // Skip backwards over comments
+    while (i > 0 && sequence[i]?.kind === "comment") {
+      i--;
+    }
+    
     setSeqIndex(i); 
     applySeqItem(sequence[i]);
-    setTimeout(() => selectCurrentItem(), 0); // Delay to ensure state updated
+    setTimeout(() => selectCurrentItem(), 0);
   };
+  
   const stepNext = ()=>{
     if (!sequence.length) return;
-    const i = Math.min(sequence.length-1, (seqIndex<0 ? 0 : seqIndex+1));
+    let i = seqIndex + 1;
+    if (i >= sequence.length) i = sequence.length - 1; // Stay at end
+    
+    // Skip forward over comments
+    while (i < sequence.length - 1 && sequence[i]?.kind === "comment") {
+      i++;
+    }
+    
     setSeqIndex(i); 
     applySeqItem(sequence[i]);
-    setTimeout(() => selectCurrentItem(), 0); // Delay to ensure state updated
+    setTimeout(() => selectCurrentItem(), 0);
   };
   const handleInputKeyNav: React.KeyboardEventHandler<HTMLTextAreaElement> = (e)=>{
+    // Arrow keys for navigation
     if (e.key==="ArrowLeft"){ e.preventDefault(); stepPrev(); }
-    if (e.key==="ArrowRight"){ e.preventDefault(); stepNext(); }
+    else if (e.key==="ArrowRight"){ e.preventDefault(); stepNext(); }
+    // Return/Enter loads sequence (no line breaks supported)
+    else if (e.key==="Enter"){ 
+      e.preventDefault(); 
+      parseAndLoadSequence();
+      // Blur textarea to exit edit mode
+      if (textareaRef.current) {
+        textareaRef.current.blur();
+      }
+    }
+    // Ctrl+I or Cmd+I inserts current chord
+    else if ((e.ctrlKey || e.metaKey) && e.key === 'i'){
+      e.preventDefault();
+      insertCurrentChord();
+    }
   };
 
   const applySeqItem = (it: SeqItem)=>{
@@ -389,6 +432,34 @@ if (type===0x90 && d2>0) {
       return;
     }
     if (it.kind==="chord" && it.chord){
+      // Space-switching logic: automatically activate appropriate space for chord
+      const chordName = it.chord.trim();
+      const baseKey = baseKeyRef.current;
+      
+      // Check if chord belongs to SUB space (e.g., Gm in C major)
+      // SUB space chords: IV (F), ii (Dm), vi (Am), ♭VII (Bb), IVM7 (FM7), iim7 (Dm7), vim7 (Am7), ♭VIIM7 (BbM7)
+      const subChords = ['F', 'Dm', 'Am', 'Bb', 'FM7', 'Dm7', 'Am7', 'BbM7', 'Gm', 'Gm7'];
+      
+      // Check if chord belongs to REL space (e.g., Em in C major)
+      // REL space chords: based on relative minor (Am in C major)
+      const relChords = ['Em', 'Em7', 'G', 'G7', 'Am', 'Am7'];
+      
+      // Determine space based on chord name
+      // Note: This is a simplified heuristic. Full implementation would parse chord roots and qualities.
+      if (chordName.includes('m') && !chordName.startsWith('M')) {
+        // Minor chord - check if it's Gm (subdominant minor in C)
+        if (chordName.startsWith('G') && !visitorActiveRef.current && !relMinorActiveRef.current) {
+          // Gm → activate SUB space
+          if (!subdomActiveRef.current) toggleSubdom();
+        } else if (chordName.startsWith('E') && !visitorActiveRef.current && !subdomActiveRef.current) {
+          // Em → activate REL space
+          if (!relMinorActiveRef.current) toggleRelMinor();
+        } else if (chordName.startsWith('C') && !subdomActiveRef.current && !relMinorActiveRef.current) {
+          // Cm → activate PAR space
+          if (!visitorActiveRef.current) toggleVisitor();
+        }
+      }
+      
       centerOnly(it.chord);
     }
   };
@@ -408,6 +479,9 @@ if (type===0x90 && d2>0) {
       } else if (e.key === 'Enter' && inputText.trim()) {
         e.preventDefault();
         parseAndLoadSequence();
+      } else if ((e.ctrlKey || e.metaKey) && e.key === 'i') {
+        e.preventDefault();
+        insertCurrentChord();
       }
     };
     
@@ -713,7 +787,10 @@ if (type===0x90 && d2>0) {
 
       const hasBDF   = isSubset([11,2,5]);
       const hasBDFG  = isSubset([11,2,5,9]);
-      if (!inParallel && !isFullDim7 && (hasBDF || hasBDFG)){
+      const hasG7 = isSubset([7,11,2,5]); // G B D F = G7
+      
+      // Don't trigger Bdim bonus if G7 is present (G7 takes priority)
+      if (!inParallel && !isFullDim7 && !hasG7 && (hasBDF || hasBDFG)){
         clearBdimTimer();
         bdimTimerRef.current = window.setTimeout(()=>{
           setActiveFn(""); setCenterLabel(hasBDFG ? "Bm7♭5" : "Bdim");
@@ -1178,24 +1255,25 @@ if (type===0x90 && d2>0) {
           </div>
         </div>
 
-        {/* Status and Labels */}
-        <div style={{marginTop:8, position:'relative'}}>
+        {/* Status */}
+        <div style={{marginTop:8}}>
           <span style={{fontSize:12, padding:'2px 6px', border:'1px solid #ffffff22', background:'#ffffff18', borderRadius:6}}>
             {visitorActive ? 'mode: Parallel (Eb)'
               : relMinorActive ? 'mode: Relative minor (Am)'
               : subdomActive ? 'mode: Subdominant (F)'
               : (midiConnected ? `MIDI: ${midiName||'Connected'}` : 'MIDI: none')}
           </span>
-          {/* Labels positioned absolute on same line as status */}
-          <div style={{position:'absolute', right:0, top:0, textAlign:'right'}}>
-            <div style={{fontSize:11, fontWeight:600, color:'#9CA3AF', lineHeight:1.2}}>Beat Kitchen</div>
-            <div style={{fontSize:10, fontWeight:500, color:'#7B7B7B', lineHeight:1.2}}>HarmonyWheel v2.37.18</div>
-          </div>
+        </div>
+
+        {/* Labels - below MIDI status, flush left */}
+        <div style={{marginTop:6, marginBottom:-8}}>
+          <div style={{fontSize:11, fontWeight:600, color:'#9CA3AF', lineHeight:1.2}}>Beat Kitchen</div>
+          <div style={{fontSize:10, fontWeight:500, color:'#7B7B7B', lineHeight:1.2}}>HarmonyWheel v2.37.20</div>
         </div>
 
         {/* Wheel */}
         <div className="relative"
-             style={{width:WHEEL_W,height:WHEEL_H, margin:'16px auto',
+             style={{width:WHEEL_W,height:WHEEL_H, margin:'16px auto 8px',
                      transform:`scale(${UI_SCALE_DEFAULT})`, transformOrigin:'center top'}}>
           <div style={wrapperStyle}>
             <svg width={WHEEL_W} height={WHEEL_H} viewBox={`0 0 ${WHEEL_W} ${WHEEL_H}`} className="select-none" style={{display:'block'}}>
@@ -1215,6 +1293,79 @@ if (type===0x90 && d2>0) {
               {/* (kept exactly as in your v2.30.0 block) */}
               {/* 
               {/* -------- BEGIN BONUS BLOCK -------- */}
+{/* Persistent bonus wedges when toggle is on (50% opacity) */}
+{showBonusWedges && !bonusActive && (() => {
+  const toRad = (deg:number) => (deg - 90) * Math.PI/180;
+  const arc = (cx:number, cy:number, r:number, a0:number, a1:number) => {
+    const x0 = cx + r * Math.cos(toRad(a0));
+    const y0 = cy + r * Math.sin(toRad(a0));
+    const x1 = cx + r * Math.cos(toRad(a1));
+    const y1 = cy + r * Math.sin(toRad(a1));
+    const large = Math.abs(a1-a0) > 180 ? 1 : 0;
+    const sweep = a1 > a0 ? 1 : 0;
+    return {x0,y0,x1,y1,large,sweep};
+  };
+  const ring = (cx:number, cy:number, r0:number, r1:number, a0:number, a1:number) => {
+    const o = arc(cx,cy,r1,a0,a1);
+    const i = arc(cx,cy,r0,a1,a0);
+    return `M ${o.x0},${o.y0} A ${r1},${r1} 0 ${o.large} ${o.sweep} ${o.x1},${o.y1}`
+         + ` L ${i.x0},${i.y0} A ${r0},${r0} 0 ${i.large} ${i.sweep} ${i.x1},${i.y1} Z`;
+  };
+  const cx = 260, cy = 260;
+  const r0 = 220*BONUS_INNER_R;
+  const r1 = 220*BONUS_OUTER_R*1.06;
+  const span = 16;
+  const base = (typeof BONUS_CENTER_ANCHOR_DEG === 'number' ? BONUS_CENTER_ANCHOR_DEG : 0);
+  const anchorA7 = base - 30;
+  const anchorBdim = base + 30;
+  
+  // Render both wedges
+  const wedges = [
+    { label: 'A7', funcLabel: 'V/ii', anchor: anchorA7 },
+    { label: 'Bm7♭5', funcLabel: 'ii/vi', anchor: anchorBdim }
+  ];
+  
+  return (
+    <g key="bonus-persistent" opacity={0.5}>
+      {wedges.map(w => {
+        const a0 = w.anchor - span/2 + rotationOffset;
+        const a1 = w.anchor + span/2 + rotationOffset;
+        const pathD = ring(cx,cy,r0,r1,a0,a1);
+        const textR = (r0+r1)/2;
+        const mid = (a0+a1)/2;
+        const tx = cx + textR * Math.cos(toRad(mid));
+        const ty = cy + textR * Math.sin(toRad(mid));
+        
+        // Click handler to preview and enable insert
+        const handleClick = () => {
+          centerOnly(w.label);
+          setBonusActive(true);
+          setBonusLabel(w.label);
+        };
+        
+        return (
+          <g 
+            key={w.label} 
+            onClick={handleClick}
+            style={{cursor: 'pointer'}}
+          >
+            <path d={pathD} fill={BONUS_FILL} stroke={PALETTE_ACCENT_GREEN} strokeWidth={1.5 as any}/>
+            <text x={tx} y={ty} textAnchor="middle" fontSize={BONUS_TEXT_SIZE}
+                  style={{ fill: BONUS_TEXT_FILL, fontWeight: 700, paintOrder:'stroke', stroke:'#000', strokeWidth:1 as any, pointerEvents: 'none' }}>
+              {w.funcLabel}
+            </text>
+            <text x={tx} y={ty+12} textAnchor="middle" fontSize={BONUS_TEXT_SIZE}
+                  style={{ fill: BONUS_TEXT_FILL, fontWeight: 700, paintOrder:'stroke', stroke:'#000', strokeWidth:1 as any, pointerEvents: 'none' }}>
+              {w.label}
+            </text>
+          </g>
+        );
+      })}
+    </g>
+  );
+})()}
+
+{/* Active bonus wedge (full opacity when clicked) */}
 {bonusActive && (() => {
   // Basic arc ring between inner/outer radii
   const toRad = (deg:number) => (deg - 90) * Math.PI/180; // 0° at 12 o'clock
@@ -1309,31 +1460,30 @@ if (type===0x90 && d2>0) {
           const tabSize = Math.min(rightW, HW);
 
           return (
-            <div style={{maxWidth: WHEEL_W, margin:'12px auto 0'}}>
-              {/* Comment Display - fixed height, always reserves space */}
-              <div style={{
-                padding:'8px 12px',
-                border:'1px solid #374151',
-                borderRadius:8,
-                background:'#0f172a',
-                color:'#e5e7eb',
-                fontSize:12,
-                minHeight:40,
-                fontStyle:'italic',
-                marginBottom:10,
-                display:'flex',
-                alignItems:'center'
-              }}>
-                {activeComment || '\u00A0'} {/* Non-breaking space to maintain height */}
-              </div>
-
+            <div style={{maxWidth: WHEEL_W, margin:'4px auto 0'}}>
               {/* Grid: input + keyboard (left), buttons + guitar tab (right) */}
               <div style={{display:'grid',
                           gridTemplateColumns:`${KEYBOARD_WIDTH_FRACTION*100}% ${GUITAR_TAB_WIDTH_FRACTION*100}%`,
                           columnGap:12, rowGap:10, alignItems:'start'}}>
 
-              {/* Left column: input above keyboard */}
-              <div style={{display:'grid', gridTemplateRows:'auto auto', rowGap:10}}>
+              {/* Left column: comment, input, keyboard */}
+              <div style={{display:'grid', gridTemplateRows:'auto auto auto', rowGap:10}}>
+                {/* Comment Display - matches text input width */}
+                <div style={{
+                  padding:'8px 12px',
+                  border:'1px solid #374151',
+                  borderRadius:8,
+                  background:'#0f172a',
+                  color:'#e5e7eb',
+                  fontSize:12,
+                  minHeight:40,
+                  fontStyle:'italic',
+                  display:'flex',
+                  alignItems:'center'
+                }}>
+                  {activeComment || '\u00A0'} {/* Non-breaking space to maintain height */}
+                </div>
+
                 <textarea
                   ref={textareaRef}
                   placeholder={'Type chords, modifiers, and comments...\nExamples:\nC, Am7, F, G7\n@SUB F, Bb, C7, @HOME\n@REL Em, Am, @PAR Cm, Fm\n# Verse: lyrics or theory note'}
@@ -1391,17 +1541,19 @@ if (type===0x90 && d2>0) {
               </div>
 
               {/* Right column: buttons and guitar tab */}
-              <div style={{display:'grid', gridTemplateRows:'auto auto auto', rowGap:10, justifyItems:'stretch'}}>
+              <div style={{display:'grid', gridTemplateRows:'auto auto auto auto', rowGap:10, justifyItems:'stretch'}}>
                 {/* Navigation Buttons */}
                 <div style={{display:'flex', gap:8}}>
                   <button onClick={parseAndLoadSequence} style={{padding:'8px 12px', border:'2px solid #39FF14', borderRadius:8, background:'#111', color:'#fff', cursor:'pointer', flex:1}}>Load</button>
                   <button onClick={stepPrev} style={{padding:'8px 12px', border:'2px solid #39FF14', borderRadius:8, background:'#111', color:'#fff', cursor:'pointer'}}>◀</button>
                   <button onClick={stepNext} style={{padding:'8px 12px', border:'2px solid #39FF14', borderRadius:8, background:'#111', color:'#fff', cursor:'pointer'}}>▶</button>
                 </div>
+                
                 {/* Insert Current Chord Button */}
                 <button 
                   onClick={insertCurrentChord} 
                   disabled={!currentGuitarLabel}
+                  title="Keyboard shortcut: Ctrl+I (or Cmd+I)"
                   style={{
                     padding:'6px 10px', 
                     border:'1px solid #374151', 
@@ -1412,8 +1564,54 @@ if (type===0x90 && d2>0) {
                     fontSize:11
                   }}
                 >
-                  Insert "{currentGuitarLabel || '—'}"
+                  Insert "{currentGuitarLabel || '—'}" (⌘I)
                 </button>
+                
+                {/* Utility Buttons */}
+                <div style={{display:'flex', gap:8}}>
+                  <button 
+                    onClick={() => {
+                      const newKey = prompt(`Set new key (current: ${baseKey}):`, baseKey);
+                      if (newKey && newKey.trim()) {
+                        const cleaned = newKey.trim();
+                        // Basic validation - accept any reasonable key name
+                        if (/^[A-G][#b]?m?$/.test(cleaned)) {
+                          setBaseKey(cleaned as KeyName);
+                        } else {
+                          alert("Invalid key format. Use: C, D, E, F, G, A, B (with optional # or b)");
+                        }
+                      }
+                    }}
+                    style={{
+                      padding:'6px 10px',
+                      border:'1px solid #374151',
+                      borderRadius:6,
+                      background:'#1f2937',
+                      color:'#9CA3AF',
+                      cursor:'pointer',
+                      fontSize:10,
+                      flex:1
+                    }}
+                  >
+                    Set Key
+                  </button>
+                  <button 
+                    onClick={() => setShowBonusWedges(!showBonusWedges)}
+                    style={{
+                      padding:'6px 10px',
+                      border:`1px solid ${showBonusWedges ? '#39FF14' : '#374151'}`,
+                      borderRadius:6,
+                      background: showBonusWedges ? '#1a3310' : '#1f2937',
+                      color: showBonusWedges ? '#39FF14' : '#9CA3AF',
+                      cursor:'pointer',
+                      fontSize:10,
+                      flex:1
+                    }}
+                  >
+                    Bonus {showBonusWedges ? '✓' : ''}
+                  </button>
+                </div>
+                
                 {/* Guitar Tab */}
                 <div style={{display:'flex', justifyContent:'center', alignItems:'center', minHeight:tabSize}}>
                   <GuitarTab chordLabel={currentGuitarLabel} width={tabSize} height={tabSize} />
@@ -1429,4 +1627,4 @@ if (type===0x90 && d2>0) {
   );
 }
 
-// EOF - HarmonyWheel.tsx v2.37.18
+// EOF - HarmonyWheel.tsx v2.37.21
