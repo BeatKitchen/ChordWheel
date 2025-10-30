@@ -1,30 +1,18 @@
 /*
- * HarmonyWheel.tsx — v2.37.22
+ * HarmonyWheel.tsx — v2.37.28
  * 
- * CHANGES FROM v2.37.21:
- * - FIXED: Text selection in textarea now correctly highlights current chord
- * - Simplified to search for exact raw text instead of token matching
- * - FIXED: Bonus wedge clicks don't hide other wedge
- * - Both wedges stay visible after clicking
- * - Keyboard and tab display correctly
- * - FIXED: Chord label shows below guitar tab (was suppressed)
- * - Easy visual confirmation of what chord you're looking at
- * - FIXED: Starts in HOME space when loading sequence
- * - Unless first item is a modifier like @SUB
- * - FIXED: Tighter spacing for smaller screens
- * - Beat Kitchen label closer (3px top margin, -10px bottom)
- * - Wheel margin reduced (12px top, 6px bottom)
- * - Bottom grid margin removed (0px top)
- * - Overall vertical compression ~10px
- * 
- * TODO: Wedge lighting when navigating editor (currently only default wedge lights)
- * 
- * CHANGES FROM v2.37.20:
- * - Bonus wedges clickable
- * - Navigation simplified
- * - Return exits textarea
- * - G7 priority over Bdim
- * - Space-switching in editor
+ * CHANGES FROM v2.37.27:
+ * - Button text: "Wedge to Playlist" (clearer than emoji)
+ * - FIXED: Extra yellow keys bug (A triad shows only A notes now)
+ *   - Priority logic: manual play > preview > function
+ * - FIXED: Tab height jumping (fixed height container)
+ *   - Tab container has minHeight/maxHeight = HW
+ *   - Border and background show extent
+ *   - NO MORE SHIFTING!
+ * - Editor always visible (no collapse/expand)
+ *   - Simpler, more predictable UX
+ *   - Button: "LOAD PLAYLIST" / "RELOAD PLAYLIST"
+ * - Demo song location: Line ~284 (easy to find/change)
  * 
  * MODIFIED BY: Claude AI for Nathan Rosenberg / Beat Kitchen
  * DATE: October 29, 2025
@@ -77,7 +65,7 @@ import {
 } from "./lib/modes";
 import { BonusDebouncer } from "./lib/overlays";
 import * as preview from "./lib/preview";
-const HW_VERSION = 'v2.37.22'; // Fixed text selection, bonus clicks, HOME reset, tab labels, wedge lighting, tighter spacing
+const HW_VERSION = 'v2.37.28'; // Fixed: button label, extra yellow keys, tab height, editor always open
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -171,7 +159,9 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
   const [bonusLabel,setBonusLabel]=useState("");
   const bonusDeb = useRef(new BonusDebouncer()).current;
   const [showBonusWedges, setShowBonusWedges] = useState(false); // Toggle for bonus wedge visibility
-
+  const showBonusWedgesRef = useRef(false);
+  useEffect(() => { showBonusWedgesRef.current = showBonusWedges; }, [showBonusWedges]);
+  
   const [trailFn, setTrailFn] = useState<Fn|"">("");
   const [trailTick, setTrailTick] = useState(0);
   const [trailOn] = useState(true);
@@ -220,6 +210,12 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
 
 if (type===0x90 && d2>0) {
   lastMidiEventRef.current = "on";
+  
+  // Hide bonus wedges on any MIDI note input
+  if (showBonusWedgesRef.current) {
+    setShowBonusWedges(false);
+  }
+  
   if (d1<=48){
     leftHeld.current.add(d1);
     const lowest = Math.min(...leftHeld.current);
@@ -276,10 +272,18 @@ if (type===0x90 && d2>0) {
   },[selectedId]);
 
   /* ---------- v3: Sequence / input ---------- */
-  const [inputText, setInputText] = useState("");
-  type SeqItem = { kind: "chord" | "modifier" | "comment"; raw: string; chord?: string; comment?: string; };
+  const [inputText, setInputText] = useState("@TITLE Let It Be, # Intro, F, C, Bb, F, C, # When I find myself in, G, # times of trouble, Am, # Mother Mary, F, # comes to me, C, # Speaking words of, G, # wisdom. Let it, F, # be..., C");
+  type SeqItem = { kind: "chord" | "modifier" | "comment" | "title"; raw: string; chord?: string; comment?: string; title?: string; };
   const [sequence, setSequence] = useState<SeqItem[]>([]);
   const [seqIndex, setSeqIndex] = useState(-1);
+  const [songTitle, setSongTitle] = useState(""); // Static song title from @TITLE
+  
+  // Autoload preloaded playlist on mount
+  useEffect(() => {
+    if (inputText && sequence.length === 0) {
+      parseAndLoadSequence();
+    }
+  }, []); // Run once on mount
   
   // Comment only shows if immediately following current chord
   const activeComment = (() => {
@@ -339,16 +343,26 @@ if (type===0x90 && d2>0) {
 
   const parseAndLoadSequence = ()=>{
     const tokens = inputText.split(",").map(t=>t.trim()).filter(Boolean);
+    let title = "";
+    
     const items: SeqItem[] = tokens.map(tok=>{
+      // Comments start with #
       if (tok.startsWith("#")) return { kind:"comment", raw:tok, comment: tok.slice(1).trim() };
+      
+      // Modifiers start with @
       if (tok.startsWith("@")) {
-        // More forgiving parsing: @SUB, @SUBDOM, @ SUB, @ SUBDOM all work
-        const remainder = tok.slice(1).trim(); // Remove @ and trim
+        const remainder = tok.slice(1).trim();
         const [cmd, ...rest] = remainder.split(/\s+/);
         const arg = rest.join(" ");
         const upper = (cmd||"").toUpperCase();
         
-        // Normalize abbreviations: REL, SUB, PAR, HOME (and full names)
+        // Check for TITLE
+        if (upper === "TITLE" || upper === "TI") {
+          title = arg;
+          return { kind:"title", raw:tok, title: arg };
+        }
+        
+        // Normalize abbreviations: REL, SUB, PAR, HOME
         let normalized = upper;
         if (upper === "SUBDOM" || upper === "SUB") normalized = "SUB";
         else if (upper === "RELATIVE" || upper === "REL") normalized = "REL";
@@ -357,8 +371,12 @@ if (type===0x90 && d2>0) {
         
         return { kind:"modifier", raw:tok, chord: `${normalized}:${arg}` };
       }
+      
+      // Everything else is a chord (hardened - no special handling needed)
       return { kind:"chord", raw:tok, chord: tok };
     });
+    
+    setSongTitle(title);
     setSequence(items);
     setSeqIndex(items.length ? 0 : -1);
     
@@ -377,8 +395,8 @@ if (type===0x90 && d2>0) {
     let i = seqIndex - 1;
     if (i < 0) i = 0; // Stay at beginning
     
-    // Skip backwards over comments
-    while (i > 0 && sequence[i]?.kind === "comment") {
+    // Skip backwards over comments and titles to find previous chord/modifier
+    while (i > 0 && (sequence[i]?.kind === "comment" || sequence[i]?.kind === "title")) {
       i--;
     }
     
@@ -392,8 +410,8 @@ if (type===0x90 && d2>0) {
     let i = seqIndex + 1;
     if (i >= sequence.length) i = sequence.length - 1; // Stay at end
     
-    // Skip forward over comments
-    while (i < sequence.length - 1 && sequence[i]?.kind === "comment") {
+    // Skip forward over comments and titles to find next chord/modifier
+    while (i < sequence.length - 1 && (sequence[i]?.kind === "comment" || sequence[i]?.kind === "title")) {
       i++;
     }
     
@@ -402,11 +420,11 @@ if (type===0x90 && d2>0) {
     setTimeout(() => selectCurrentItem(), 0);
   };
   const handleInputKeyNav: React.KeyboardEventHandler<HTMLTextAreaElement> = (e)=>{
-    // Arrow keys for navigation
-    if (e.key==="ArrowLeft"){ e.preventDefault(); stepPrev(); }
-    else if (e.key==="ArrowRight"){ e.preventDefault(); stepNext(); }
+    // Only handle Return/Enter and Ctrl+I in textarea
+    // Arrow keys work normally for cursor movement
+    
     // Return/Enter loads sequence (no line breaks supported)
-    else if (e.key==="Enter"){ 
+    if (e.key==="Enter"){ 
       e.preventDefault(); 
       parseAndLoadSequence();
       // Blur textarea to exit edit mode
@@ -422,7 +440,7 @@ if (type===0x90 && d2>0) {
   };
 
   const applySeqItem = (it: SeqItem)=>{
-    if (it.kind==="comment") return;
+    if (it.kind==="comment" || it.kind==="title") return; // Skip comments and titles
     if (it.kind==="modifier" && it.chord){
       const m = it.chord.split(":")[0];
       if (m==="HOME"){ goHome(); } // Return to HOME space
@@ -461,7 +479,8 @@ if (type===0x90 && d2>0) {
         }
       }
       
-      centerOnly(it.chord);
+      // Use previewChordByName to show chord on keyboard and light wedge
+      previewChordByName(it.chord);
     }
   };
 
@@ -566,6 +585,97 @@ if (type===0x90 && d2>0) {
     const cleaned = t.replace(/^[#@]\s*/, '').trim();
     setCenterLabel(SHOW_CENTER_LABEL ? cleaned : ""); 
     setBonusActive(false); setBonusLabel(""); 
+  };
+  
+  // Helper to preview a chord by name (for playlist navigation)
+  const previewChordByName = (chordName: string) => {
+    lastInputWasPreviewRef.current = true;
+    const renderKey: KeyName = visitorActiveRef.current
+      ? "Eb"
+      : (subdomActiveRef.current ? "F" : baseKeyRef.current);
+    
+    // Map chord name to function (I, ii, iii, IV, V, vi, etc.)
+    // This activates the correct wedge!
+    const chordToFunction = (chord: string, key: KeyName): Fn | null => {
+      const baseKey = key;
+      const chordRoot = chord.match(/^([A-G][#b]?)/)?.[1];
+      if (!chordRoot) return null;
+      
+      // Map chord roots to scale degrees in C major
+      const degreeMap: Record<string, number> = {
+        'C': 0, 'Db': 1, 'D': 2, 'Eb': 3, 'E': 4, 'F': 5, 'Gb': 6, 'G': 7, 'Ab': 8, 'A': 9, 'Bb': 10, 'B': 11,
+        'C#': 1, 'D#': 3, 'F#': 6, 'G#': 8, 'A#': 10
+      };
+      
+      const keyDegree = degreeMap[baseKey] || 0;
+      const chordDegree = degreeMap[chordRoot];
+      if (chordDegree === undefined) return null;
+      
+      // Calculate relative degree (0-11)
+      const relativeDegree = (chordDegree - keyDegree + 12) % 12;
+      
+      // Map to function based on degree and quality
+      const isMinor = chord.includes('m') && !chord.includes('maj') && !chord.includes('M');
+      const is7th = chord.includes('7');
+      
+      // Diatonic functions
+      if (relativeDegree === 0) return "I";       // I (C in C)
+      if (relativeDegree === 2) return isMinor ? "ii" : null;    // ii (Dm in C)
+      if (relativeDegree === 4) return isMinor ? "iii" : null;   // iii (Em in C)
+      if (relativeDegree === 5) return isMinor ? "iv" : "IV";    // IV (F in C) or iv (Fm in C)
+      if (relativeDegree === 7) return "V7";      // V (G in C)
+      if (relativeDegree === 9) return isMinor ? "vi" : null;    // vi (Am in C)
+      if (relativeDegree === 10) return "♭VII";   // ♭VII (Bb in C)
+      
+      return null;
+    };
+    
+    const fn = chordToFunction(chordName, renderKey);
+    
+    if (fn) {
+      // Use previewFn logic to activate wedge
+      const with7th = PREVIEW_USE_SEVENTHS || fn === "V7" || fn === "V/V" || fn === "V/vi";
+      const pcs = preview.chordPcsForFn(fn, renderKey, with7th);
+      const rootPc = pcs[0];
+      const absRootPos = preview.absChordRootPositionFromPcs(pcs, rootPc);
+      const fitted = preview.fitNotesToWindowPreserveInversion(absRootPos, KBD_LOW, KBD_HIGH);
+      setLatchedAbsNotes(fitted);
+      setActiveWithTrail(fn, realizeFunction(fn, renderKey));
+    } else {
+      // Fallback: parse chord manually for keyboard display only
+      try {
+        const match = chordName.match(/^([A-G][#b]?)(.*)?$/);
+        if (match) {
+          const root = match[1];
+          const quality = match[2] || '';
+          
+          const rootPc = NAME_TO_PC[root as KeyName];
+          let intervals: number[] = [0, 4, 7];
+          
+          if (quality.includes('m') && !quality.includes('maj') && !quality.includes('M')) {
+            intervals = [0, 3, 7];
+          }
+          if (quality.includes('7')) {
+            if (quality.includes('maj') || quality.includes('M')) {
+              intervals.push(11);
+            } else if (quality.includes('m')) {
+              intervals.push(10);
+            } else {
+              intervals.push(10);
+            }
+          }
+          
+          const baseMidi = 60;
+          let midiNotes = intervals.map(interval => baseMidi + rootPc + interval);
+          const fitted = preview.fitNotesToWindowPreserveInversion(midiNotes, KBD_LOW, KBD_HIGH);
+          setLatchedAbsNotes(fitted);
+        }
+      } catch (e) {
+        console.warn('Could not parse chord:', chordName);
+      }
+      
+      centerOnly(chordName);
+    }
   };
 
   const hardClearGhostIfIdle = ()=>{
@@ -1209,12 +1319,16 @@ if (type===0x90 && d2>0) {
 
   // Calculate notes to highlight on keyboard for current chord
   const keyboardHighlightNotes = (() => {
-    if (latchedAbsNotes.length > 0) {
-      // If we have latched notes, show exactly those notes (preserve voicing)
+    // Priority 1: If we have manually played notes (not from preview), show ONLY those
+    if (latchedAbsNotes.length > 0 && !lastInputWasPreviewRef.current) {
       return new Set(latchedAbsNotes);
     }
+    // Priority 2: If from preview (playlist), show those notes
+    if (latchedAbsNotes.length > 0 && lastInputWasPreviewRef.current) {
+      return new Set(latchedAbsNotes);
+    }
+    // Priority 3: If active function (wedge clicked), show root position
     if (activeFnRef.current) {
-      // For wheel-generated chords, show root position within keyboard range
       const dispKey = (visitorActiveRef.current ? "Eb" : (subdomActiveRef.current ? "F" : baseKeyRef.current)) as KeyName;
       const fn = activeFnRef.current as Fn;
       const with7th = PREVIEW_USE_SEVENTHS || fn === "V7" || fn === "V/V" || fn === "V/vi";
@@ -1266,10 +1380,10 @@ if (type===0x90 && d2>0) {
           </span>
         </div>
 
-        {/* Labels - below MIDI status, flush left, tighter */}
-        <div style={{marginTop:3, marginBottom:-10}}>
+        {/* Labels - below MIDI status, aligned with MIDI text */}
+        <div style={{marginTop:3, marginBottom:-10, paddingLeft:8}}>
           <div style={{fontSize:11, fontWeight:600, color:'#9CA3AF', lineHeight:1.2}}>Beat Kitchen</div>
-          <div style={{fontSize:10, fontWeight:500, color:'#7B7B7B', lineHeight:1.2}}>HarmonyWheel v2.37.22</div>
+          <div style={{fontSize:10, fontWeight:500, color:'#7B7B7B', lineHeight:1.2}}>HarmonyWheel v2.37.28</div>
         </div>
 
         {/* Wheel */}
@@ -1327,7 +1441,7 @@ if (type===0x90 && d2>0) {
   ];
   
   return (
-    <g key="bonus-persistent" opacity={0.5}>
+    <g key="bonus-persistent">
       {wedges.map(w => {
         const a0 = w.anchor - span/2 + rotationOffset;
         const a1 = w.anchor + span/2 + rotationOffset;
@@ -1339,10 +1453,23 @@ if (type===0x90 && d2>0) {
         
         // Click handler to preview and enable insert
         const handleClick = () => {
-          // Show chord in hub and on keyboard
+          // Show chord in hub and trigger keyboard/tab display
+          lastInputWasPreviewRef.current = true;
           centerOnly(w.label);
-          // Don't set bonusActive true - that hides the other wedge!
-          // Just display the chord
+          
+          // Manually highlight keyboard by parsing chord name
+          // For bonus chords, we need to figure out the notes
+          const chordName = w.label;
+          
+          // A7 = A C# E G, Bm7♭5 = B D F A
+          const chordNotes: Record<string, number[]> = {
+            'A7': [57, 61, 64, 67],       // A3 C#4 E4 G4
+            'Bm7♭5': [59, 62, 65, 69]     // B3 D4 F4 A4
+          };
+          
+          if (chordNotes[chordName]) {
+            setLatchedAbsNotes(chordNotes[chordName]);
+          }
         };
         
         return (
@@ -1463,38 +1590,92 @@ if (type===0x90 && d2>0) {
 
           return (
             <div style={{maxWidth: WHEEL_W, margin:'0 auto 0'}}>
-              {/* Grid: input + keyboard (left), buttons + guitar tab (right) */}
-              <div style={{display:'grid',
-                          gridTemplateColumns:`${KEYBOARD_WIDTH_FRACTION*100}% ${GUITAR_TAB_WIDTH_FRACTION*100}%`,
-                          columnGap:12, rowGap:10, alignItems:'start'}}>
-
-              {/* Left column: comment, input, keyboard */}
-              <div style={{display:'grid', gridTemplateRows:'auto auto auto', rowGap:10}}>
-                {/* Comment Display - matches text input width */}
+              {/* UNIFIED LAYOUT - Same structure always, no shifting */}
+              
+              {/* Row 1: Playlist display (always visible when loaded) */}
+              {sequence.length > 0 && (
                 <div style={{
-                  padding:'8px 12px',
                   border:'1px solid #374151',
                   borderRadius:8,
                   background:'#0f172a',
-                  color:'#e5e7eb',
-                  fontSize:12,
-                  minHeight:40,
-                  fontStyle:'italic',
-                  display:'flex',
-                  alignItems:'center'
+                  overflow:'hidden',
+                  marginBottom: 10
                 }}>
-                  {activeComment || '\u00A0'} {/* Non-breaking space to maintain height */}
+                  {/* Song Title */}
+                  {songTitle && (
+                    <div style={{
+                      padding:'6px 12px',
+                      borderBottom:'1px solid #374151',
+                      fontSize:11,
+                      fontWeight:600,
+                      color:'#39FF14',
+                      textAlign:'left'
+                    }}>
+                      {songTitle}
+                    </div>
+                  )}
+                  
+                  {/* Windowed sequence view */}
+                  <div style={{
+                    padding:'8px 12px',
+                    color:'#e5e7eb',
+                    fontSize:12,
+                    minHeight:40,
+                    display:'flex',
+                    alignItems:'center',
+                    justifyContent:'center',
+                    whiteSpace:'nowrap'
+                  }}>
+                    {(() => {
+                      const WINDOW_SIZE = 3;
+                      const start = Math.max(0, seqIndex - WINDOW_SIZE);
+                      const end = Math.min(sequence.length, seqIndex + WINDOW_SIZE + 1);
+                      const visibleItems = sequence.slice(start, end);
+                      
+                      return (
+                        <>
+                          {start > 0 && <span style={{marginRight:8, color:'#6b7280'}}>...</span>}
+                          {visibleItems.map((item, localIdx) => {
+                            const globalIdx = start + localIdx;
+                            const isCurrent = globalIdx === seqIndex;
+                            const isComment = item.kind === "comment";
+                            const isTitle = item.kind === "title";
+                            
+                            if (isTitle) return null;
+                            
+                            return (
+                              <span key={globalIdx} style={{
+                                marginRight: 8,
+                                padding: '2px 6px',
+                                borderRadius: 4,
+                                background: isCurrent ? '#374151' : 'transparent',
+                                fontWeight: isCurrent ? 600 : 400,
+                                fontStyle: isComment ? 'italic' : 'normal',
+                                color: isCurrent ? '#39FF14' : (isComment ? '#9CA3AF' : '#e5e7eb')
+                              }}>
+                                {isComment ? item.raw.replace(/^#\s*/, '') : item.raw}
+                              </span>
+                            );
+                          })}
+                          {end < sequence.length && <span style={{marginLeft:0, color:'#6b7280'}}>...</span>}
+                        </>
+                      );
+                    })()}
+                  </div>
                 </div>
-
+              )}
+              
+              {/* Row 2: Editor - ALWAYS VISIBLE */}
+              <div style={{marginBottom: 10}}>
                 <textarea
                   ref={textareaRef}
-                  placeholder={'Type chords, modifiers, and comments...\nExamples:\nC, Am7, F, G7\n@SUB F, Bb, C7, @HOME\n@REL Em, Am, @PAR Cm, Fm\n# Verse: lyrics or theory note'}
+                  placeholder={'Type chords, modifiers, and comments...\nExamples:\nC, Am7, F, G7\n@TITLE Song Name\n@SUB F, Bb, C7, @HOME\n@REL Em, Am, @PAR Cm, Fm\n# Verse: lyrics or theory note'}
                   rows={3}
                   value={inputText}
                   onChange={(e)=>setInputText(e.target.value)}
                   onKeyDown={handleInputKeyNav}
                   style={{
-                    width: "calc(100% - 25px)", // was "100%" — pulls in the right edge a touch
+                    width: "100%",
                     padding:'10px 12px',
                     border:'1px solid #374151',
                     background:'#0f172a',
@@ -1504,7 +1685,10 @@ if (type===0x90 && d2>0) {
                     resize:'vertical'
                   }}
                 />
-
+              </div>
+              
+              {/* Row 3: Keyboard + Tab (side by side, SAME HEIGHT) - ALWAYS SAME POSITION */}
+              <div style={{display:'grid', gridTemplateColumns:'65% 35%', columnGap:12, marginBottom:10}}>
                 {/* Keyboard */}
                 <div style={{width:'100%'}}>
                   <svg viewBox={`0 0 ${totalW} ${HW}`} className="select-none"
@@ -1520,7 +1704,7 @@ if (type===0x90 && d2>0) {
                                 fill={fillColor} stroke="#1f2937"
                                 onMouseDown={()=>{rightHeld.current.add(m); detect();}}
                                 onMouseUp={()=>{rightHeld.current.delete(m); rightSus.current.delete(m); detect();}}
-                                onMouseLeave={()=>{rightHeld.current.delete(m); rightSus.current.delete(m); detect();}}/>
+                                onMouseLeave={()=>{rightHeld.current.delete(m); rightSus.current.delete(m); detect();}} />
                         </g>
                       );
                     })}
@@ -1528,99 +1712,88 @@ if (type===0x90 && d2>0) {
                       const m=+mStr; 
                       const held=disp.has(m);
                       const highlighted = keyboardHighlightNotes.has(m);
-                      const fillColor = held ? "#2448B8" : (highlighted ? "#C4A000" : "#111827");
-                      const strokeColor = held ? "#5A90FF" : (highlighted ? "#FFE999" : "#374151");
+                      const fillColor = held ? "#6B93D6" : (highlighted ? "#D4B560" : "#1f2937");
+                      const strokeColor = held ? "#4A7BC0" : (highlighted ? "#B8972D" : "#0a0a0a");
                       return (
-                        <rect key={`b-${m}`} x={x} y={0} width={WB} height={HB} rx={2} ry={2}
-                              fill={fillColor} stroke={strokeColor}
-                              onMouseDown={()=>{rightHeld.current.add(m); detect();}}
-                              onMouseUp={()=>{rightHeld.current.delete(m); rightSus.current.delete(m); detect();}}
-                              onMouseLeave={()=>{rightHeld.current.delete(m); rightSus.current.delete(m); detect();}} />
+                          <rect key={`b-${m}`} x={x} y={0} width={WB} height={HB}
+                                fill={fillColor} stroke={strokeColor}
+                                onMouseDown={()=>{rightHeld.current.add(m); detect();}}
+                                onMouseUp={()=>{rightHeld.current.delete(m); rightSus.current.delete(m); detect();}}
+                                onMouseLeave={()=>{rightHeld.current.delete(m); rightSus.current.delete(m); detect();}} />
                       );
                     })}
                   </svg>
                 </div>
+                
+                {/* Guitar Tab - FIXED HEIGHT matching keyboard, border and background to show extent */}
+                <div style={{
+                  border:'1px solid #374151',
+                  borderRadius:8,
+                  background:'#0f172a',
+                  display:'flex',
+                  alignItems:'center',
+                  justifyContent:'center',
+                  minHeight: HW,
+                  maxHeight: HW,
+                  overflow:'hidden'
+                }}>
+                  <GuitarTab chordLabel={currentGuitarLabel} width={totalW * 0.35} height={HW}/>
+                </div>
               </div>
-
-              {/* Right column: buttons and guitar tab */}
-              <div style={{display:'grid', gridTemplateRows:'auto auto auto auto', rowGap:10, justifyItems:'stretch'}}>
+              
+              {/* Row 4: Buttons - ALWAYS SAME POSITION */}
+              <div style={{display:'flex', flexDirection:'column', gap:8}}>
                 {/* Navigation Buttons */}
                 <div style={{display:'flex', gap:8}}>
-                  <button onClick={parseAndLoadSequence} style={{padding:'8px 12px', border:'2px solid #39FF14', borderRadius:8, background:'#111', color:'#fff', cursor:'pointer', flex:1}}>Load</button>
+                  <button 
+                    onClick={() => parseAndLoadSequence()} 
+                    style={{padding:'8px 12px', border:'2px solid #39FF14', borderRadius:8, background:'#111', color:'#fff', cursor:'pointer', flex:1}}
+                  >
+                    {sequence.length > 0 ? 'RELOAD PLAYLIST' : 'LOAD PLAYLIST'}
+                  </button>
                   <button onClick={stepPrev} style={{padding:'8px 12px', border:'2px solid #39FF14', borderRadius:8, background:'#111', color:'#fff', cursor:'pointer'}}>◀</button>
                   <button onClick={stepNext} style={{padding:'8px 12px', border:'2px solid #39FF14', borderRadius:8, background:'#111', color:'#fff', cursor:'pointer'}}>▶</button>
                 </div>
                 
-                {/* Insert Current Chord Button */}
-                <button 
-                  onClick={insertCurrentChord} 
-                  disabled={!currentGuitarLabel}
-                  title="Keyboard shortcut: Ctrl+I (or Cmd+I)"
-                  style={{
-                    padding:'6px 10px', 
-                    border:'1px solid #374151', 
-                    borderRadius:6, 
-                    background: currentGuitarLabel ? '#1f2937' : '#111', 
-                    color: currentGuitarLabel ? '#e5e7eb' : '#6b7280', 
-                    cursor: currentGuitarLabel ? 'pointer' : 'not-allowed',
-                    fontSize:11
-                  }}
-                >
-                  Insert "{currentGuitarLabel || '—'}" (⌘I)
-                </button>
-                
-                {/* Utility Buttons */}
+                {/* Insert and Utility Buttons */}
                 <div style={{display:'flex', gap:8}}>
                   <button 
-                    onClick={() => {
-                      const newKey = prompt(`Set new key (current: ${baseKey}):`, baseKey);
-                      if (newKey && newKey.trim()) {
-                        const cleaned = newKey.trim();
-                        // Basic validation - accept any reasonable key name
-                        if (/^[A-G][#b]?m?$/.test(cleaned)) {
-                          setBaseKey(cleaned as KeyName);
-                        } else {
-                          alert("Invalid key format. Use: C, D, E, F, G, A, B (with optional # or b)");
-                        }
-                      }
-                    }}
+                    onClick={insertCurrentChord} 
+                    disabled={!currentGuitarLabel}
+                    title="Keyboard shortcut: Ctrl+I (or Cmd+I)"
                     style={{
-                      padding:'6px 10px',
-                      border:'1px solid #374151',
-                      borderRadius:6,
-                      background:'#1f2937',
-                      color:'#9CA3AF',
-                      cursor:'pointer',
-                      fontSize:10,
-                      flex:1
+                      padding:'6px 10px', 
+                      border:'1px solid #374151', 
+                      borderRadius:6, 
+                      background: currentGuitarLabel ? '#1f2937' : '#111', 
+                      color: currentGuitarLabel ? '#e5e7eb' : '#6b7280', 
+                      cursor: currentGuitarLabel ? 'pointer' : 'not-allowed',
+                      fontSize:11,
+                      flex: 2
                     }}
                   >
-                    Set Key
+                    Wedge to Playlist: "{currentGuitarLabel || '—'}" (⌘I)
                   </button>
                   <button 
                     onClick={() => setShowBonusWedges(!showBonusWedges)}
+                    title="Toggle bonus wedges (A7 and Bm7♭5)"
                     style={{
-                      padding:'6px 10px',
-                      border:`1px solid ${showBonusWedges ? '#39FF14' : '#374151'}`,
-                      borderRadius:6,
-                      background: showBonusWedges ? '#1a3310' : '#1f2937',
-                      color: showBonusWedges ? '#39FF14' : '#9CA3AF',
+                      padding:'6px 10px', 
+                      border:`1px solid ${showBonusWedges ? '#39FF14' : '#374151'}`, 
+                      borderRadius:6, 
+                      background: showBonusWedges ? '#1a3310' : '#1f2937', 
+                      color: showBonusWedges ? '#39FF14' : '#9CA3AF', 
                       cursor:'pointer',
-                      fontSize:10,
-                      flex:1
+                      fontSize:11,
+                      fontWeight: showBonusWedges ? 600 : 400,
+                      flex: 1
                     }}
                   >
                     Bonus {showBonusWedges ? '✓' : ''}
                   </button>
                 </div>
-                
-                {/* Guitar Tab */}
-                <div style={{display:'flex', justifyContent:'center', alignItems:'center', minHeight:tabSize}}>
-                  <GuitarTab chordLabel={currentGuitarLabel} width={tabSize} height={tabSize} />
-                </div>
               </div>
             </div>
-          </div>
           );
         })()}
 
@@ -1629,4 +1802,4 @@ if (type===0x90 && d2>0) {
   );
 }
 
-// EOF - HarmonyWheel.tsx v2.37.22
+// EOF - HarmonyWheel.tsx v2.37.28
