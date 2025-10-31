@@ -75,7 +75,7 @@ import {
 } from "./lib/modes";
 import { BonusDebouncer } from "./lib/overlays";
 import * as preview from "./lib/preview";
-const HW_VERSION = 'v2.51.0'; // FIXES: Make My Key hub label, ♭VII symbol, skill levels work
+const HW_VERSION = 'v2.79.0'; // FIXED: Make My Key uses lastPlayedChord ref (not centerLabel)
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -88,7 +88,7 @@ export default function HarmonyWheel(){
   
   // Skill level system
   type SkillLevel = "ROOKIE" | "NOVICE" | "SOPHOMORE" | "INTERMEDIATE" | "ADVANCED" | "EXPERT";
-  const [skillLevel, setSkillLevel] = useState<SkillLevel>("ROOKIE");
+  const [skillLevel, setSkillLevel] = useState<SkillLevel>("EXPERT");
   
   // Define which functions are visible at each level (cumulative)
   const SKILL_LEVEL_FUNCTIONS: Record<SkillLevel, Fn[]> = {
@@ -146,6 +146,7 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
   const activeFnRef=useRef<Fn|"">("I"); useEffect(()=>{activeFnRef.current=activeFn;},[activeFn]);
 
   const [centerLabel,setCenterLabel]=useState("C");
+  const lastPlayedChordRef = useRef<string>("C"); // Track for Make My Key
 
   const [visitorActive,_setVisitorActive]=useState(false);
   const visitorActiveRef=useRef(false);
@@ -213,6 +214,72 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
     }
   }, [showBonusWedges, skillLevel]);
   
+  // Audio playback
+  const [audioEnabled, setAudioEnabled] = useState(true); // Start with audio enabled
+  const audioEnabledRef = useRef(true); // Ref for MIDI callback closure
+  const [audioReady, setAudioReady] = useState(false);
+  
+  // Initialize audio context on mount since we start with audio enabled
+  useEffect(() => {
+    if (audioEnabled) {
+      const ctx = initAudioContext();
+      if (ctx.state === 'suspended') {
+        // Will be resumed on first user interaction
+        const resumeAudio = async () => {
+          await ctx.resume();
+          setAudioReady(true);
+          document.removeEventListener('click', resumeAudio);
+        };
+        document.addEventListener('click', resumeAudio, { once: true });
+      } else {
+        setAudioReady(true);
+      }
+    }
+    
+    // Global mouseup to catch releases outside wedges (for drag)
+    const handleGlobalMouseUp = () => {
+      if (wedgeHeldRef.current) {
+        console.log('🛑 Global mouseup - releasing wedge');
+        wedgeHeldRef.current = false;
+        currentHeldFnRef.current = null;
+        lastPlayedWith7thRef.current = null;
+        
+        // Stop all active chord notes
+        const ctx = audioContextRef.current;
+        if (ctx) {
+          const now = ctx.currentTime;
+          const releaseTime = 0.4;
+          activeChordNoteIdsRef.current.forEach(noteId => {
+            const nodes = activeNotesRef.current.get(noteId);
+            if (nodes) {
+              nodes.gain.gain.cancelScheduledValues(now);
+              nodes.gain.gain.setValueAtTime(nodes.gain.gain.value, now);
+              nodes.gain.gain.linearRampToValueAtTime(0, now + releaseTime);
+              setTimeout(() => stopNoteById(noteId), (releaseTime * 1000) + 50);
+            }
+          });
+        }
+      }
+    };
+    
+    window.addEventListener('mouseup', handleGlobalMouseUp);
+    return () => window.removeEventListener('mouseup', handleGlobalMouseUp);
+  }, [audioEnabled]); // Run once on mount
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const activeNotesRef = useRef<Map<string, {osc1: OscillatorNode, osc2: OscillatorNode, osc3: OscillatorNode, gain: GainNode}>>(new Map());
+  let noteIdCounter = 0; // For generating unique note IDs
+  
+  // Voice leading for chord playback
+  const previousVoicingRef = useRef<number[]>([60, 64, 67]); // Default C major [C4, E4, G4]
+  const activeChordNoteIdsRef = useRef<Set<string>>(new Set()); // Track note IDs instead of MIDI numbers
+  const wedgeHeldRef = useRef(false); // Track if wedge is being held down
+  const keyboardHeldNotesRef = useRef<Set<number>>(new Set()); // Track which keyboard notes are held
+  const lastPlayedWith7thRef = useRef<boolean | null>(null); // Track if last chord had 7th
+  const currentHeldFnRef = useRef<Fn | null>(null); // Track which function is being held
+  
+  // Help overlay
+  const [showHelp, setShowHelp] = useState(false);
+  
   const [trailFn, setTrailFn] = useState<Fn|"">("");
   const [trailTick, setTrailTick] = useState(0);
   const [trailOn] = useState(true);
@@ -275,6 +342,16 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
         } else {
           rightHeld.current.add(d1);
           if (sustainOn.current) rightSus.current.add(d1);
+          
+          // Play audio for MIDI keyboard input
+          console.log('🎹 MIDI note-on:', d1, 'velocity:', d2, 'audioEnabled:', audioEnabledRef.current);
+          if (audioEnabledRef.current) {
+            const velocity = d2 / 127;
+            console.log('🎵 Calling playNote with velocity:', velocity);
+            playNote(d1, velocity, false);
+          } else {
+            console.log('❌ Audio not enabled, not playing');
+          }
         }
         detect();
       } else if (type===0x80 || (type===0x90 && d2===0)) {
@@ -283,6 +360,11 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
         else { 
           rightHeld.current.delete(d1); 
           rightSus.current.delete(d1);
+          
+          // Stop audio for MIDI keyboard note-off
+          if (audioEnabledRef.current) {
+            stopNote(d1);
+          }
         }
         // Don't call detect() immediately on note-off - keep chord visible
         // User can then click "Make This My Key" button
@@ -582,6 +664,9 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
       } else if (e.key === 'k' || e.key === 'K') {
         e.preventDefault();
         makeThisMyKey();
+      } else if (e.key === 'h' || e.key === 'H') {
+        e.preventDefault();
+        goHomeC(); // Return to HOME C
       }
     };
     
@@ -654,7 +739,9 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
 
   const setActiveWithTrail=(fn:Fn,label:string)=>{ 
     if(activeFnRef.current && activeFnRef.current!==fn){ makeTrail(); } 
-    setActiveFn(fn); setCenterLabel(SHOW_CENTER_LABEL?label:"" ); 
+    setActiveFn(fn); 
+    setCenterLabel(SHOW_CENTER_LABEL?label:""); 
+    lastPlayedChordRef.current = label; // Save for Make My Key
     setBonusActive(false); setBonusLabel(""); 
     stopDimFade();
   };
@@ -664,6 +751,7 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
     // Filter out comment and modifier markers
     const cleaned = t.replace(/^[#@]\s*/, '').trim();
     setCenterLabel(SHOW_CENTER_LABEL ? cleaned : ""); 
+    lastPlayedChordRef.current = cleaned; // Save for Make My Key
     setBonusActive(false); setBonusLabel(""); 
   };
   
@@ -1413,51 +1501,79 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
     setSubdomActive(false); subdomLatchedRef.current=false; subHasSpunRef.current=false;
     homeSuppressUntilRef.current = 0; justExitedSubRef.current = false;
     setTargetRotation(0);
+    // Don't reset to C - use current baseKey!
     setActiveFn("I");
-    setCenterLabel(baseKeyRef.current); // Use current base key, not hardcoded "C"
+    setCenterLabel(baseKeyRef.current); // Show current key in hub
     stopDimFade();
   };
   
+  const goHomeC = ()=>{
+    // Reset to C key and HOME space
+    setBaseKey("C");
+    setTimeout(() => goHome(), 20);
+  };
+  
   const makeThisMyKey = ()=>{
-    // Extract root from current chord name (centerLabel)
-    if (!centerLabel) return;
+    // Simple rule: Make the root of the chord the new key center
+    // UNLESS it's a minor chord, then use relative major + REL mode
     
-    // Parse chord name to extract root and quality
-    // Examples: "Cmaj7" -> C major, "F#m7" -> F# minor, "Fm" -> F minor, "Ab" -> Ab major
-    const match = centerLabel.match(/^([A-G][b#]?)(m|min|maj|M)?/);
+    // Use lastPlayedChordRef because centerLabel might have changed due to space switches
+    const chordToUse = lastPlayedChordRef.current;
+    if (!chordToUse) return;
+    
+    // Parse chord name to get root
+    const match = chordToUse.match(/^([A-G][b#]?)(m|min|maj|M)?/);
     if (!match) return;
     
     const rootName = match[1] as KeyName;
-    const quality = match[2] || ""; // Empty = major, "m"/"min" = minor
-    
+    const quality = match[2] || "";
     const isMinor = quality.startsWith("m") && !quality.startsWith("maj");
     
+    console.log('🔑 Make My Key:', chordToUse, '(lastPlayed) → root:', rootName, 'isMinor:', isMinor, 'currentLabel:', centerLabel);
+    
     if (isMinor) {
-      // For minor chords, go to relative major and switch to REL mode
-      // e.g., Fm -> Ab major, then toggle to REL (Fm)
+      // Minor chord - go to relative major and activate REL
       const rootPc = NAME_TO_PC[rootName];
       if (rootPc === undefined) return;
       
+      // Calculate relative major PC
       const relativeMajorPc = (rootPc + 3) % 12; // Minor 3rd up
-      const relativeMajorKey = pcNameForKey(relativeMajorPc, "C") as KeyName;
       
-      if (FLAT_NAMES.includes(relativeMajorKey)) {
-        setBaseKey(relativeMajorKey);
-        // Small delay then switch to REL mode
-        setTimeout(() => {
-          if (!relMinorActiveRef.current) {
-            toggleRelMinor();
-          }
-        }, 50);
+      // Get the key name directly from FLAT_NAMES (prefer flats for key centers)
+      const relativeMajorKey = FLAT_NAMES[relativeMajorPc] as KeyName;
+      
+      console.log('🔑 Minor:', rootName, '(pc:', rootPc, ') → relative major:', relativeMajorKey, '(pc:', relativeMajorPc, '), current baseKey:', baseKeyRef.current);
+      
+      // Check if we're already in the correct relative major
+      if (baseKeyRef.current === relativeMajorKey) {
+        console.log('🔑 Already in correct key, just activating REL');
+        // Just activate REL mode, don't change base key
+        if (!relMinorActiveRef.current) {
+          toggleRelMinor();
+        }
+      } else {
+        // Need to change base key
+        if (FLAT_NAMES.includes(relativeMajorKey)) {
+          console.log('🔑 Changing base key from', baseKeyRef.current, 'to', relativeMajorKey);
+          setBaseKey(relativeMajorKey);
+          goHome(); // Reset to home first
+          setTimeout(() => {
+            if (!relMinorActiveRef.current) {
+              toggleRelMinor();
+            }
+          }, 100);
+        }
       }
     } else {
-      // For major chords, just set as new key and go HOME
+      // Major chord (including 7ths, maj7s, etc.) - use root as new key
+      console.log('🔑 Major → new key:', rootName);
       if (FLAT_NAMES.includes(rootName)) {
         setBaseKey(rootName);
-        // Update center label after a brief delay to ensure baseKey is updated
+        // Force immediate state update
         setTimeout(() => {
           goHome();
-        }, 10);
+          console.log('🔑 Called goHome, should be in', rootName, 'now');
+        }, 50);
       }
     }
   };
@@ -1533,7 +1649,231 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
       const fillOpacity = isActive ? 1 : (globalActive ? 0.5 : (dimFadeOn ? fadedBase : 1));
       const ringTrailOpacity = 1 - 0.9*k; const ringTrailWidth = 5 - 3*k;
       return (
-        <g key={fn} onMouseDown={()=>previewFn(fn)} style={{cursor:"pointer"}}>
+        <g key={fn} 
+           onMouseDown={(e)=>{
+             wedgeHeldRef.current = true; // Mark wedge as held
+             currentHeldFnRef.current = fn; // Remember which function
+             
+             // Calculate click position relative to wheel center
+             const svg = e.currentTarget.ownerSVGElement;
+             if (!svg) { previewFn(fn); return; }
+             
+             const pt = svg.createSVGPoint();
+             pt.x = e.clientX;
+             pt.y = e.clientY;
+             const svgP = pt.matrixTransform(svg.getScreenCTM()?.inverse());
+             
+             const dx = svgP.x - cx;
+             const dy = svgP.y - cy;
+             const clickRadius = Math.sqrt(dx*dx + dy*dy);
+             const normalizedRadius = clickRadius / r; // 0 = center, 1 = outer edge
+             
+             // Inner zone (< threshold) = play with 7th
+             // Outer zone (>= threshold) = play triad only
+             const playWith7th = normalizedRadius < SEVENTH_RADIUS_THRESHOLD;
+             lastPlayedWith7thRef.current = playWith7th; // Remember what we played
+             
+             console.log('🖱️ Click radius:', normalizedRadius.toFixed(2), 'Play 7th:', playWith7th);
+             previewFn(fn, playWith7th);
+           }}
+           onMouseEnter={(e)=>{
+             // If dragging from another wedge, activate this wedge
+             console.log('🔍 onMouseEnter:', fn, 'buttons:', e.buttons, 'wedgeHeld:', wedgeHeldRef.current, 'currentFn:', currentHeldFnRef.current);
+             
+             if (e.buttons === 1 && wedgeHeldRef.current && currentHeldFnRef.current !== fn) {
+               console.log('🎯 Dragged to new wedge:', fn, 'from:', currentHeldFnRef.current);
+               
+               // Stop previous chord with quick fade
+               const ctx = audioContextRef.current;
+               if (ctx) {
+                 const now = ctx.currentTime;
+                 console.log('🔇 Stopping', activeChordNoteIdsRef.current.size, 'previous notes');
+                 activeChordNoteIdsRef.current.forEach(noteId => {
+                   const nodes = activeNotesRef.current.get(noteId);
+                   if (nodes) {
+                     nodes.gain.gain.cancelScheduledValues(now);
+                     nodes.gain.gain.setValueAtTime(nodes.gain.gain.value, now);
+                     nodes.gain.gain.linearRampToValueAtTime(0, now + 0.05); // Quick 50ms fade
+                     setTimeout(() => stopNoteById(noteId), 100);
+                   }
+                 });
+                 activeChordNoteIdsRef.current.clear();
+               }
+               
+               currentHeldFnRef.current = fn;
+               
+               // Calculate radius for 7th determination
+               const svg = e.currentTarget.ownerSVGElement;
+               if (!svg) return;
+               
+               const pt = svg.createSVGPoint();
+               pt.x = e.clientX;
+               pt.y = e.clientY;
+               const svgP = pt.matrixTransform(svg.getScreenCTM()?.inverse());
+               
+               const dx = svgP.x - cx;
+               const dy = svgP.y - cy;
+               const clickRadius = Math.sqrt(dx*dx + dy*dy);
+               const normalizedRadius = clickRadius / r;
+               
+               const playWith7th = normalizedRadius < SEVENTH_RADIUS_THRESHOLD;
+               lastPlayedWith7thRef.current = playWith7th;
+               
+               console.log('🎵 Playing new chord:', fn, 'with7th:', playWith7th);
+               // Play new chord
+               previewFn(fn, playWith7th);
+             }
+           }}
+           onMouseMove={(e)=>{
+             e.preventDefault(); // Prevent text selection
+             
+             // Only process if wedge is being held
+             if (!wedgeHeldRef.current || currentHeldFnRef.current !== fn) return;
+             
+             const svg = e.currentTarget.ownerSVGElement;
+             if (!svg) return;
+             
+             const pt = svg.createSVGPoint();
+             pt.x = e.clientX;
+             pt.y = e.clientY;
+             const svgP = pt.matrixTransform(svg.getScreenCTM()?.inverse());
+             
+             const dx = svgP.x - cx;
+             const dy = svgP.y - cy;
+             const clickRadius = Math.sqrt(dx*dx + dy*dy);
+             const normalizedRadius = clickRadius / r;
+             
+             const shouldHave7th = normalizedRadius < SEVENTH_RADIUS_THRESHOLD;
+             
+             // If 7th state changed, update hub label and audio
+             if (shouldHave7th !== lastPlayedWith7thRef.current) {
+               console.log('🎵 Drag changed 7th (hub update):', shouldHave7th);
+               lastPlayedWith7thRef.current = shouldHave7th;
+               
+               // Update hub label
+               const renderKey = visitorActiveRef.current ? parKey : (subdomActiveRef.current ? subKey : baseKeyRef.current);
+               const chordName = realizeFunction(fn, renderKey);
+               
+               // Add or remove appropriate 7th extension
+               if (shouldHave7th) {
+                 if (!chordName.includes('7')) {
+                   // Check if it's a major or dominant chord
+                   // I, IV = maj7, V7 = 7, ii, iii, vi = m7
+                   if (fn === "I" || fn === "IV") {
+                     setCenterLabel(chordName + 'maj7');
+                   } else if (fn === "V7") {
+                     // V7 already has 7 in the function name, but chord might show as "G"
+                     setCenterLabel(chordName.includes('7') ? chordName : chordName + '7');
+                   } else if (fn === "ii" || fn === "iii" || fn === "vi" || fn === "iv") {
+                     // Minor chords - check if already has 'm' to avoid "Amm7"
+                     if (chordName.includes('m')) {
+                       setCenterLabel(chordName + '7'); // Already has 'm', just add '7'
+                     } else {
+                       setCenterLabel(chordName + 'm7');
+                     }
+                   } else {
+                     setCenterLabel(chordName + '7');
+                   }
+                 }
+               } else {
+                 setCenterLabel(chordName.replace(/maj7|m7|7/g, ''));
+               }
+               
+               // Get the 7th note for this function
+               const chordDef = CHORD_DEFINITIONS[fn];
+               
+               if (chordDef && chordDef.seventh !== undefined && audioEnabledRef.current) {
+                 const keyPc = NAME_TO_PC[renderKey];
+                 const seventhPc = (chordDef.seventh + keyPc) % 12;
+                 
+                 // Special case: For minor tonic chords (vi, iv in minor contexts),
+                 // use root doubling instead of 7th for better harmonic minor sound
+                 const isMinorTonic = (relMinorActiveRef.current && fn === "vi") || 
+                                      (relMinorActiveRef.current && fn === "iv");
+                 
+                 if (shouldHave7th) {
+                   // Add the 4th note
+                   let fourthNoteMidi;
+                   
+                   if (isMinorTonic) {
+                     // Use root note an octave down
+                     const rootPc = chordDef.triad[0];
+                     const transposedRootPc = (rootPc + keyPc) % 12;
+                     fourthNoteMidi = 48; // Start at C3
+                     while ((fourthNoteMidi % 12) !== transposedRootPc) fourthNoteMidi++;
+                     console.log('🎵 Using root doubling for minor tonic:', fourthNoteMidi);
+                   } else {
+                     // Normal 7th
+                     fourthNoteMidi = 60;
+                     while ((fourthNoteMidi % 12) !== seventhPc) fourthNoteMidi++;
+                     while (fourthNoteMidi < 60) fourthNoteMidi += 12;
+                     while (fourthNoteMidi > 72) fourthNoteMidi -= 12;
+                   }
+                   
+                   console.log('➕ Adding 4th note:', fourthNoteMidi);
+                   const noteId = playNote(fourthNoteMidi, 0.6, true);
+                   if (noteId) {
+                     activeChordNoteIdsRef.current.add(noteId);
+                   }
+                 } else {
+                   // Remove the 4th note - replay triad
+                   console.log('➖ Removing 4th note');
+                   const triadPcs = chordDef.triad.map(pc => (pc + keyPc) % 12);
+                   playChordWithVoiceLeading(triadPcs);
+                 }
+               }
+             }
+           }}
+           onMouseUp={()=>{
+             console.log('🛑 Mouse up on wedge, releasing');
+             wedgeHeldRef.current = false; // Release wedge
+             currentHeldFnRef.current = null;
+             lastPlayedWith7thRef.current = null; // Reset
+             // Stop all active chord notes with fade
+             const ctx = audioContextRef.current;
+             if (ctx) {
+               const now = ctx.currentTime;
+               const releaseTime = 0.4; // Match keyboard release time
+               activeChordNoteIdsRef.current.forEach(noteId => {
+                 const nodes = activeNotesRef.current.get(noteId);
+                 if (nodes) {
+                   nodes.gain.gain.cancelScheduledValues(now);
+                   nodes.gain.gain.setValueAtTime(nodes.gain.gain.value, now);
+                   nodes.gain.gain.linearRampToValueAtTime(0, now + releaseTime);
+                   setTimeout(() => stopNoteById(noteId), (releaseTime * 1000) + 50);
+                 }
+               });
+             }
+           }}
+           onMouseLeave={(e)=>{
+             // If mouse button is still down, we're dragging - don't clear refs!
+             if (e.buttons === 1) {
+               console.log('🔄 Mouse button still down, keeping drag state');
+               return;
+             }
+             
+             // Mouse button released - actually leaving
+             console.log('👋 Mouse left wedge and button released');
+             wedgeHeldRef.current = false; // Release wedge
+             currentHeldFnRef.current = null;
+             lastPlayedWith7thRef.current = null; // Reset
+             // Stop all active chord notes with fade
+             const ctx = audioContextRef.current;
+             if (ctx) {
+               const now = ctx.currentTime;
+               const releaseTime = 0.4;
+               activeChordNoteIdsRef.current.forEach(noteId => {
+                 const nodes = activeNotesRef.current.get(noteId);
+                 if (nodes) {
+                   nodes.gain.gain.cancelScheduledValues(now);
+                   nodes.gain.gain.setValueAtTime(nodes.gain.gain.value, now);
+                   nodes.gain.gain.linearRampToValueAtTime(0, now + releaseTime);
+                   setTimeout(() => stopNoteById(noteId), (releaseTime * 1000) + 50);
+                 }
+               });
+             }
+           }}
+           style={{cursor:"pointer"}}>
           <path d={path} fill={fnFillColor(fn)} opacity={fillOpacity} stroke="#ffffff" strokeWidth={2}/>
           {isActive && <path d={path} fill="none" stroke="#39FF14" strokeWidth={5} opacity={1} />}
           {isTrailing && !isActive && <path d={path} fill="none" stroke="#39FF14" strokeWidth={ringTrailWidth} opacity={ringTrailOpacity} />}
@@ -1555,18 +1895,176 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
 
   /* ---------- Preview helper ---------- */
   const KBD_LOW=48, KBD_HIGH=71;
-  const previewFn = (fn:Fn)=>{
+  
+  // Configuration for radial click zones
+  const SEVENTH_RADIUS_THRESHOLD = 0.60; // Inner 60% = 7th chords, outer 40% = triads
+  
+  // Complete chord definitions for C major metaspace
+  // Format: [root_pc, third_pc, fifth_pc, seventh_pc (optional)]
+  const CHORD_DEFINITIONS: Record<Fn, {triad: number[], seventh?: number}> = {
+    "I":     {triad: [0, 4, 7],   seventh: 11},  // C-E-G (B)  = Cmaj7
+    "ii":    {triad: [2, 5, 9],   seventh: 0},   // D-F-A (C)  = Dm7
+    "iii":   {triad: [4, 7, 11],  seventh: 2},   // E-G-B (D)  = Em7
+    "IV":    {triad: [5, 9, 0],   seventh: 4},   // F-A-C (E)  = Fmaj7
+    "iv":    {triad: [5, 8, 0],   seventh: 3},   // F-Ab-C (Eb) = Fm7
+    "V7":    {triad: [7, 11, 2],  seventh: 5},   // G-B-D (F)  = G7
+    "vi":    {triad: [9, 0, 4],   seventh: 7},   // A-C-E (G)  = Am7
+    "♭VII":  {triad: [10, 2, 5]},             // Bb-D-F (no 7th)
+    "V/V":   {triad: [2, 6, 9],   seventh: 0},   // D-F#-A (C) = D7
+    "V/vi":  {triad: [4, 8, 11],  seventh: 2},   // E-G#-B (D) = E7
+  };
+  
+  // Bonus wedge definitions
+  const BONUS_CHORD_DEFINITIONS: Record<string, {triad: number[], seventh?: number}> = {
+    "A7":    {triad: [9, 1, 4],   seventh: 7},   // A-C#-E (G) = A7 (V/ii)
+    "Bm7♭5": {triad: [11, 2, 5],  seventh: 9},   // B-D-F (A)  = Bm7b5 (ii/vi, aka vii°)
+  };
+  
+  const previewFn = (fn:Fn, include7thOverride?: boolean)=>{
     lastInputWasPreviewRef.current = true;
     const renderKey:KeyName = visitorActiveRef.current
       ? parKey
       : (subdomActiveRef.current ? subKey : baseKeyRef.current);
-    const with7th = PREVIEW_USE_SEVENTHS || fn === "V7" || fn === "V/V" || fn === "V/vi";
-    const pcs = preview.chordPcsForFn(fn, renderKey, with7th);
+    
+    // Determine if we should include the 7th
+    let with7th: boolean;
+    if (include7thOverride !== undefined) {
+      with7th = include7thOverride; // From radial click zone
+    } else {
+      with7th = false; // Default to triads for now
+    }
+    
+    // Get chord definition from table (these are relative to C major)
+    const chordDef = CHORD_DEFINITIONS[fn];
+    let pcs: number[];
+    
+    if (chordDef) {
+      // Transpose the chord definition to the current key
+      const keyPc = NAME_TO_PC[renderKey];
+      const transposedTriad = chordDef.triad.map(pc => (pc + keyPc) % 12);
+      
+      if (with7th && chordDef.seventh !== undefined) {
+        const transposedSeventh = (chordDef.seventh + keyPc) % 12;
+        pcs = [...transposedTriad, transposedSeventh];
+      } else {
+        pcs = transposedTriad;
+      }
+      console.log('🎹 Preview:', fn, 'Key:', renderKey, 'with7th:', with7th, 'PCs:', pcs);
+    } else {
+      // Fallback to old method for any missing functions
+      console.warn('⚠️ Function not in chord table, using fallback:', fn);
+      pcs = preview.chordPcsForFn(fn, renderKey, with7th);
+    }
+    
     const rootPc = pcs[0];
     const absRootPos = preview.absChordRootPositionFromPcs(pcs, rootPc);
     const fitted = preview.fitNotesToWindowPreserveInversion(absRootPos, KBD_LOW, KBD_HIGH);
     setLatchedAbsNotes(fitted);
     setActiveWithTrail(fn, realizeFunction(fn, renderKey));
+    
+    if (audioEnabledRef.current) {
+      playChordWithVoiceLeading(pcs);
+    }
+    
+    // Check if this wedge click should trigger a space rotation (with 600ms delay)
+    console.log('🔍 previewFn called. fn:', fn, 'Space:', {
+      sub: subdomActiveRef.current,
+      rel: relMinorActiveRef.current, 
+      par: visitorActiveRef.current
+    });
+    
+    setTimeout(() => {
+      console.log('🔍 setTimeout fired after 600ms. fn:', fn);
+      
+      // === SUB SPACE EXITS ===
+      if (subdomActiveRef.current) {
+        // iii (Am in F) → HOME (vi in C)
+        if (fn === "iii") {
+          console.log('🔄 iii wedge in SUB → returning to HOME');
+          setSubdomActive(false);
+          subdomLatchedRef.current = false;
+          subExitCandidateSinceRef.current = null;
+          subSpinExit();
+          setTimeout(() => {
+            setActiveFn("vi");
+            console.log('✨ Highlighted vi wedge');
+          }, 400);
+        }
+        // I in SUB (F) → HOME (IV in C)
+        else if (fn === "I") {
+          console.log('🔄 I wedge in SUB → returning to HOME');
+          setSubdomActive(false);
+          subdomLatchedRef.current = false;
+          subExitCandidateSinceRef.current = null;
+          subSpinExit();
+          setTimeout(() => {
+            setActiveFn("IV");
+            console.log('✨ Highlighted IV wedge');
+          }, 400);
+        }
+        // V7 in SUB (C) → HOME (I in C)
+        else if (fn === "V7") {
+          console.log('🔄 V7 wedge in SUB → returning to HOME');
+          setSubdomActive(false);
+          subdomLatchedRef.current = false;
+          subExitCandidateSinceRef.current = null;
+          subSpinExit();
+          setTimeout(() => {
+            setActiveFn("I");
+            console.log('✨ Highlighted I wedge');
+          }, 400);
+        }
+      }
+      
+      // === REL SPACE EXITS ===
+      else if (relMinorActiveRef.current) {
+        // I in REL (Am) → HOME (vi in C)
+        if (fn === "I") {
+          console.log('🔄 I wedge in REL → returning to HOME');
+          setRelMinorActive(false);
+          setTimeout(() => {
+            setActiveFn("vi");
+            console.log('✨ Highlighted vi wedge');
+          }, 200);
+        }
+        // ♭VII in REL (G) → HOME (V7 in C)  
+        else if (fn === "♭VII") {
+          console.log('🔄 ♭VII wedge in REL → returning to HOME');
+          setRelMinorActive(false);
+          setTimeout(() => {
+            setActiveFn("V7");
+            console.log('✨ Highlighted V7 wedge');
+          }, 200);
+        }
+        // iv in REL (Dm) → HOME (ii in C)
+        else if (fn === "iv") {
+          console.log('🔄 iv wedge in REL → returning to HOME');
+          setRelMinorActive(false);
+          setTimeout(() => {
+            setActiveFn("ii");
+            console.log('✨ Highlighted ii wedge');
+          }, 200);
+        }
+      }
+      
+      // === PAR SPACE EXITS ===
+      else if (visitorActiveRef.current) {
+        // vi in PAR (Am in D) → HOME (vi in C) - would need to check current par key
+        // For now, simple case: I in PAR → HOME
+        if (fn === "I") {
+          console.log('🔄 I wedge in PAR → returning to HOME');
+          setVisitorActive(false);
+          setTimeout(() => {
+            // PAR is more complex - depends on what parKey is
+            // For now just highlight I
+            setActiveFn("I");
+            console.log('✨ Highlighted I wedge');
+          }, 200);
+        }
+      }
+      
+      // Other space rotation logic can be added here
+    }, 600); // 600ms delay so chord doesn't move under cursor
   };
 
   /* ---------- Render ---------- */
@@ -1583,6 +2081,211 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
     // Priority 3: Fall back to center label from MIDI/manual play
     return centerLabel || null;
   })();
+
+  /* ---------- Audio Synthesis (Vintage Rhodes) ---------- */
+  const initAudioContext = () => {
+    if (!audioContextRef.current) {
+      audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+    }
+    return audioContextRef.current;
+  };
+
+  const playNote = (midiNote: number, velocity: number = 0.5, isChordNote: boolean = false) => {
+    console.log('🎵 playNote START:', {midiNote, velocity, isChordNote, audioEnabledState: audioEnabled, audioEnabledRef: audioEnabledRef.current});
+    
+    if (!audioEnabledRef.current) {  // Use ref instead of state!
+      console.log('❌ Audio disabled, returning');
+      return;
+    }
+    
+    console.log('🔊 Initializing audio context...');
+    const ctx = initAudioContext();
+    console.log('🔊 Context state:', ctx.state, 'Sample rate:', ctx.sampleRate);
+    
+    if (ctx.state === 'suspended') {
+      console.log('⚠️ Context suspended, attempting resume...');
+      ctx.resume();
+    }
+    
+    // Generate unique ID for this note instance (allows same MIDI note multiple times)
+    const noteId = `${midiNote}-${Date.now()}-${Math.random()}`;
+    console.log('🆔 Generated note ID:', noteId);
+    
+    const freq = 440 * Math.pow(2, (midiNote - 69) / 12);
+    const now = ctx.currentTime;
+    console.log('📊 Frequency:', freq.toFixed(2), 'Hz, Time:', now.toFixed(3));
+    
+    // Simplified Rhodes - 2 oscillators for cleaner sound
+    console.log('🎹 Creating oscillators...');
+    const osc1 = ctx.createOscillator();
+    osc1.type = 'sine';
+    osc1.frequency.value = freq;
+    
+    const osc2 = ctx.createOscillator();
+    osc2.type = 'sine';
+    osc2.frequency.value = freq * 1.003;
+    
+    const gain1 = ctx.createGain();
+    const gain2 = ctx.createGain();
+    gain1.gain.value = 0.5 * velocity;
+    gain2.gain.value = 0.4 * velocity;
+    
+    const mainGain = ctx.createGain();
+    mainGain.gain.value = 0;
+    mainGain.gain.linearRampToValueAtTime(0.6 * velocity, now + 0.015);
+    mainGain.gain.linearRampToValueAtTime(0.45 * velocity, now + 0.08);
+    mainGain.gain.linearRampToValueAtTime(0.4 * velocity, now + 0.3);
+    
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.value = 8000 + (midiNote * 50); // Very bright - almost no filtering
+    filter.Q.value = 0.2; // Minimal resonance
+    
+    console.log('🔗 Connecting audio graph...');
+    osc1.connect(gain1);
+    osc2.connect(gain2);
+    gain1.connect(filter);
+    gain2.connect(filter);
+    filter.connect(mainGain);
+    mainGain.connect(ctx.destination);
+    
+    console.log('▶️ Starting oscillators...');
+    try {
+      osc1.start(now);
+      osc2.start(now);
+      console.log('✅ Oscillators started successfully!');
+    } catch(err) {
+      console.error('❌ Error starting oscillators:', err);
+      return;
+    }
+    
+    activeNotesRef.current.set(noteId, {osc1, osc2, osc3: osc1, gain: mainGain});
+    console.log('💾 Stored note. Active count:', activeNotesRef.current.size);
+    
+    // Shorter sustain times
+    if (isChordNote) {
+      // Chord notes: check if wedge is being held
+      if (wedgeHeldRef.current) {
+        // Don't auto-fade - will be stopped on mouse up
+        console.log('🎹 Wedge held - no auto-fade');
+      } else {
+        // Normal fade after 1.5 seconds
+        const fadeStart = now + 1.5;
+        mainGain.gain.linearRampToValueAtTime(0, fadeStart + 0.15);
+        setTimeout(() => stopNoteById(noteId), 1700);
+      }
+    } else {
+      // MIDI keyboard notes: sustain indefinitely until note-off
+      // Attack -> Decay -> Sustain (hold)
+      const decayTime = now + 0.05; // Quick decay
+      mainGain.gain.linearRampToValueAtTime(0.7 * velocity, decayTime); // Drop to sustain level
+      // No auto-fade! Will be stopped by MIDI note-off
+      console.log('🎹 MIDI note - sustaining until note-off');
+    }
+    
+    console.log('✅ playNote COMPLETE, returning ID:', noteId);
+    return noteId; // Return ID so we can stop this specific instance
+  };
+
+  const stopNoteById = (noteId: string) => {
+    const nodes = activeNotesRef.current.get(noteId);
+    if (nodes && audioContextRef.current) {
+      try {
+        const now = audioContextRef.current.currentTime;
+        nodes.gain.gain.cancelScheduledValues(now);
+        nodes.gain.gain.setValueAtTime(nodes.gain.gain.value, now);
+        nodes.gain.gain.linearRampToValueAtTime(0, now + 0.05);
+        
+        setTimeout(() => {
+          try {
+            nodes.osc1.stop();
+            nodes.osc2.stop();
+            nodes.osc3.stop();
+          } catch(e) { /* already stopped */ }
+          activeNotesRef.current.delete(noteId);
+        }, 60);
+      } catch(e) { /* ignore */ }
+    }
+  };
+
+  const stopNote = (midiNote: number) => {
+    // Stop all instances of this MIDI note
+    const noteIdsToStop: string[] = [];
+    activeNotesRef.current.forEach((_, noteId) => {
+      if (noteId.startsWith(`${midiNote}-`)) {
+        noteIdsToStop.push(noteId);
+      }
+    });
+    noteIdsToStop.forEach(id => stopNoteById(id));
+  };
+
+  const playChord = (midiNotes: number[]) => {
+    if (!audioEnabled) return;
+    midiNotes.forEach(note => playNote(note, 0.4));
+  };
+
+  const playChordWithVoiceLeading = (chordPitchClasses: number[]) => {
+    if (!audioEnabledRef.current) return;  // Use ref!
+    
+    console.log('🎼 Playing chord. PCs:', chordPitchClasses);
+    
+    // Simple approach: play each pitch class in a reasonable octave range
+    const BASE_OCTAVE = 60; // C4
+    const notesToPlay: number[] = [];
+    
+    // Convert pitch classes to actual MIDI notes in a comfortable range
+    chordPitchClasses.forEach(pc => {
+      // Find this pitch class near C4
+      let midiNote = BASE_OCTAVE;
+      while ((midiNote % 12) !== pc) {
+        midiNote++;
+        if (midiNote > BASE_OCTAVE + 12) {
+          // Wrapped around, start from below
+          midiNote = BASE_OCTAVE - 12;
+          while ((midiNote % 12) !== pc && midiNote < BASE_OCTAVE + 12) {
+            midiNote++;
+          }
+          break;
+        }
+      }
+      notesToPlay.push(midiNote);
+    });
+    
+    // Sort notes low to high
+    notesToPlay.sort((a, b) => a - b);
+    console.log('🎵 MIDI notes to play:', notesToPlay);
+    
+    const ctx = audioContextRef.current;
+    if (ctx) {
+      const now = ctx.currentTime;
+      const FAST_FADE = 0.1;
+      
+      // Stop ALL previous chord notes
+      console.log('🔇 Stopping', activeChordNoteIdsRef.current.size, 'previous notes');
+      activeChordNoteIdsRef.current.forEach(noteId => {
+        const nodes = activeNotesRef.current.get(noteId);
+        if (nodes) {
+          nodes.gain.gain.cancelScheduledValues(now);
+          nodes.gain.gain.setValueAtTime(nodes.gain.gain.value, now);
+          nodes.gain.gain.linearRampToValueAtTime(0, now + FAST_FADE);
+          setTimeout(() => stopNoteById(noteId), FAST_FADE * 1000 + 50);
+        }
+      });
+      
+      activeChordNoteIdsRef.current.clear();
+      
+      // Play all notes
+      console.log('🔊 Playing', notesToPlay.length, 'notes');
+      notesToPlay.forEach(note => {
+        const noteId = playNote(note, 0.6, true);
+        if (noteId) {
+          activeChordNoteIdsRef.current.add(noteId);
+        }
+      });
+    }
+    
+    previousVoicingRef.current = notesToPlay;
+  };
 
   // Calculate notes to highlight on keyboard for current chord
   const keyboardHighlightNotes = (() => {
@@ -1610,14 +2313,17 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
       <div style={{maxWidth:960, margin:'0 auto', border:'1px solid #374151', borderRadius:12, padding:12}}>
 
         {/* Controls */}
-        <div style={{display:'flex', gap:8, flexWrap:'nowrap', alignItems:'center', justifyContent:'space-between', overflowX:'auto'}}>
-          <div style={{display:'flex', gap:8, flexWrap:'nowrap', overflowX:'auto'}}>
+        <div style={{display:'flex', gap:8, flexWrap:'wrap', alignItems:'center', justifyContent:'space-between'}}>
+          {/* Left side: SPACE buttons (always visible) */}
+          <div style={{display:'flex', gap:8, flexWrap:'nowrap'}}>
             <button onClick={goHome}         style={activeBtnStyle(!(visitorActive||relMinorActive||subdomActive), '#F2D74B')}>HOME</button>
             <button onClick={toggleRelMinor} style={activeBtnStyle(relMinorActive, '#F0AD21')}>RELATIVE</button>
             <button onClick={toggleSubdom}   style={activeBtnStyle(subdomActive, '#0EA5E9')}>SUBDOM</button>
             <button onClick={toggleVisitor}  style={activeBtnStyle(visitorActive, '#9333ea')}>PARALLEL</button>
           </div>
-          <div style={{display:'flex', gap:10, alignItems:'center'}}>
+          
+          {/* Right side: Other controls (can wrap) */}
+          <div style={{display:'flex', gap:10, alignItems:'center', flexWrap:'wrap'}}>
             <button 
               onClick={makeThisMyKey}
               disabled={!centerLabel}
@@ -1650,6 +2356,55 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
               <option value="ADVANCED">ADVANCED</option>
               <option value="EXPERT">EXPERT</option>
             </select>
+            
+            <button 
+              onClick={async () => {
+                const newState = !audioEnabled;
+                setAudioEnabled(newState);
+                audioEnabledRef.current = newState; // Sync ref for MIDI handler
+                
+                if (newState) {
+                  const ctx = initAudioContext();
+                  if (ctx.state === 'suspended') {
+                    await ctx.resume();
+                  }
+                  // Small delay to ensure context is ready
+                  setTimeout(() => setAudioReady(true), 100);
+                } else {
+                  setAudioReady(false);
+                }
+              }}
+              title={audioEnabled ? "Audio enabled - click to mute" : "Click to enable audio (may take a moment)"}
+              style={{
+                padding:"4px 8px", 
+                border:`1px solid ${audioEnabled ? '#39FF14' : '#374151'}`, 
+                borderRadius:6, 
+                background: audioEnabled ? '#1a3310' : '#111', 
+                color: audioEnabled ? '#39FF14' : '#9CA3AF',
+                cursor: 'pointer',
+                fontSize:16,
+                fontWeight:500
+              }}
+            >
+              {audioEnabled ? (audioReady ? '🔊' : '⏳') : '🔇'}
+            </button>
+            
+            <button 
+              onClick={() => setShowHelp(!showHelp)}
+              title="Show help"
+              style={{
+                padding:"4px 8px", 
+                border:"1px solid #374151", 
+                borderRadius:6, 
+                background:"#111", 
+                color:"#9CA3AF",
+                cursor:"pointer",
+                fontSize:14,
+                fontWeight:500
+              }}
+            >
+              ?
+            </button>
             
             <label style={{fontSize:12}}>Key</label>
             <select value={baseKey} onChange={(e)=>setBaseKey(e.target.value as KeyName)}
@@ -1701,15 +2456,36 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
              style={{width:WHEEL_W,height:WHEEL_H, margin:'4px auto 2px',
                      transform:`scale(${UI_SCALE_DEFAULT})`, transformOrigin:'center top'}}>
           <div style={wrapperStyle}>
-            <svg width={WHEEL_W} height={WHEEL_H} viewBox={`0 0 ${WHEEL_W} ${WHEEL_H}`} className="select-none" style={{display:'block'}}>
+            <svg width={WHEEL_W} height={WHEEL_H} viewBox={`0 0 ${WHEEL_W} ${WHEEL_H}`} className="select-none" style={{display:'block', userSelect: 'none', WebkitUserSelect: 'none'}}>
   {/* Labels moved to status bar area */}
 
   {wedgeNodes}
 
               {/* Hub */}
-              <circle cx={260} cy={260} r={220*HUB_RADIUS} fill={HUB_FILL} stroke={HUB_STROKE} strokeWidth={HUB_STROKE_W}/>
+              <circle 
+                cx={260} 
+                cy={260} 
+                r={220*HUB_RADIUS} 
+                fill={HUB_FILL} 
+                stroke={HUB_STROKE} 
+                strokeWidth={HUB_STROKE_W}
+              />
+              
               {SHOW_CENTER_LABEL && centerLabel && (
-                <text x={260} y={260+8} textAnchor="middle" style={{fontFamily: CENTER_FONT_FAMILY, paintOrder:"stroke", stroke:"#000", strokeWidth:1.2 as any}} fontSize={CENTER_FONT_SIZE} fill={CENTER_FILL}>
+                <text 
+                  x={260} 
+                  y={260+8}
+                  textAnchor="middle" 
+                  style={{
+                    fontFamily: CENTER_FONT_FAMILY, 
+                    paintOrder:"stroke", 
+                    stroke:"#000", 
+                    strokeWidth:1.2 as any,
+                    pointerEvents: 'none'
+                  }} 
+                  fontSize={CENTER_FONT_SIZE} 
+                  fill={CENTER_FILL}
+                >
                   {centerLabel}
                 </text>
               )}
@@ -1766,6 +2542,16 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
           // Show chord in hub and trigger keyboard/tab display
           lastInputWasPreviewRef.current = true;
           centerOnly(w.label);
+          
+          // Get chord definition from bonus table
+          const bonusChordDef = BONUS_CHORD_DEFINITIONS[w.label];
+          
+          if (bonusChordDef && audioEnabledRef.current) {
+            // Play the chord audio
+            const pcs = bonusChordDef.triad; // Always triad for now
+            console.log('🎵 Bonus wedge clicked:', w.label, 'PCs:', pcs);
+            playChordWithVoiceLeading(pcs);
+          }
           
           // Manually highlight keyboard by parsing chord name
           // For bonus chords, we need to figure out the notes
@@ -2018,9 +2804,43 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
                         <g key={`w-${m}`}>
                           <rect x={x} y={0} width={WW} height={HW}
                                 fill={fillColor} stroke="#1f2937"
-                                onMouseDown={()=>{lastInputWasPreviewRef.current = false; rightHeld.current.add(m); detect();}}
-                                onMouseUp={()=>{rightHeld.current.delete(m); rightSus.current.delete(m); detect();}}
-                                onMouseLeave={()=>{rightHeld.current.delete(m); rightSus.current.delete(m); detect();}} />
+                                onMouseDown={()=>{
+                                  lastInputWasPreviewRef.current = false; 
+                                  rightHeld.current.add(m); 
+                                  detect();
+                                  // Play audio
+                                  if (audioEnabledRef.current) {
+                                    playNote(m, 0.6, false);
+                                  }
+                                }}
+                                onMouseEnter={(e)=>{
+                                  // Support drag - if mouse is down, play note
+                                  if (e.buttons === 1) { // Left button held
+                                    rightHeld.current.add(m);
+                                    detect();
+                                    if (audioEnabledRef.current) {
+                                      playNote(m, 0.6, false);
+                                    }
+                                  }
+                                }}
+                                onMouseUp={()=>{
+                                  rightHeld.current.delete(m); 
+                                  rightSus.current.delete(m); 
+                                  detect();
+                                  // Stop audio
+                                  if (audioEnabledRef.current) {
+                                    stopNote(m);
+                                  }
+                                }}
+                                onMouseLeave={()=>{
+                                  rightHeld.current.delete(m); 
+                                  rightSus.current.delete(m); 
+                                  detect();
+                                  // Stop audio
+                                  if (audioEnabledRef.current) {
+                                    stopNote(m);
+                                  }
+                                }} />
                         </g>
                       );
                     })}
@@ -2033,9 +2853,43 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
                       return (
                           <rect key={`b-${m}`} x={x} y={0} width={WB} height={HB}
                                 fill={fillColor} stroke={strokeColor}
-                                onMouseDown={()=>{lastInputWasPreviewRef.current = false; rightHeld.current.add(m); detect();}}
-                                onMouseUp={()=>{rightHeld.current.delete(m); rightSus.current.delete(m); detect();}}
-                                onMouseLeave={()=>{rightHeld.current.delete(m); rightSus.current.delete(m); detect();}} />
+                                onMouseDown={()=>{
+                                  lastInputWasPreviewRef.current = false; 
+                                  rightHeld.current.add(m); 
+                                  detect();
+                                  // Play audio
+                                  if (audioEnabledRef.current) {
+                                    playNote(m, 0.6, false);
+                                  }
+                                }}
+                                onMouseEnter={(e)=>{
+                                  // Support drag
+                                  if (e.buttons === 1) {
+                                    rightHeld.current.add(m);
+                                    detect();
+                                    if (audioEnabledRef.current) {
+                                      playNote(m, 0.6, false);
+                                    }
+                                  }
+                                }}
+                                onMouseUp={()=>{
+                                  rightHeld.current.delete(m); 
+                                  rightSus.current.delete(m); 
+                                  detect();
+                                  // Stop audio
+                                  if (audioEnabledRef.current) {
+                                    stopNote(m);
+                                  }
+                                }}
+                                onMouseLeave={()=>{
+                                  rightHeld.current.delete(m); 
+                                  rightSus.current.delete(m); 
+                                  detect();
+                                  // Stop audio
+                                  if (audioEnabledRef.current) {
+                                    stopNote(m);
+                                  }
+                                }} />
                       );
                     })}
                   </svg>
@@ -2116,6 +2970,199 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
         })()}
 
       </div>
+      
+      {/* Help Callouts */}
+      {showHelp && (
+        <>
+          {/* Overlay background */}
+          <div 
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: 'rgba(0, 0, 0, 0.7)',
+              zIndex: 999
+            }}
+            onClick={() => setShowHelp(false)}
+          />
+          
+          {/* Callout 1: SPACE buttons */}
+          <div style={{
+            position: 'absolute',
+            top: 100,
+            left: 40,
+            background: '#1a1a1a',
+            border: '2px solid #F2D74B',
+            borderRadius: 12,
+            padding: 16,
+            maxWidth: 280,
+            zIndex: 1000,
+            boxShadow: '0 4px 20px rgba(0,0,0,0.5)'
+          }}>
+            <div style={{fontSize: 14, color: '#F2D74B', fontWeight: 600, marginBottom: 8}}>🎹 Four Harmonic Spaces</div>
+            <div style={{fontSize: 12, lineHeight: 1.5, color: '#e5e7eb'}}>
+              <strong>HOME</strong> - Main key<br/>
+              <strong>RELATIVE</strong> - Relative minor<br/>
+              <strong>SUBDOM</strong> - Subdominant<br/>
+              <strong>PARALLEL</strong> - Parallel minor
+            </div>
+            <div style={{
+              position: 'absolute',
+              left: -10,
+              top: 20,
+              width: 0,
+              height: 0,
+              borderTop: '10px solid transparent',
+              borderBottom: '10px solid transparent',
+              borderRight: '10px solid #F2D74B'
+            }}/>
+          </div>
+          
+          {/* Callout 2: Skill selector */}
+          <div style={{
+            position: 'absolute',
+            top: 100,
+            right: 40,
+            background: '#1a1a1a',
+            border: '2px solid #39FF14',
+            borderRadius: 12,
+            padding: 16,
+            maxWidth: 280,
+            zIndex: 1000,
+            boxShadow: '0 4px 20px rgba(0,0,0,0.5)'
+          }}>
+            <div style={{fontSize: 14, color: '#39FF14', fontWeight: 600, marginBottom: 8}}>🎓 Skill Levels</div>
+            <div style={{fontSize: 12, lineHeight: 1.5, color: '#e5e7eb'}}>
+              Start at <strong>ROOKIE</strong> (3 chords) and progress to <strong>EXPERT</strong> to unlock all 10 chords + bonus wedges!
+            </div>
+            <div style={{
+              position: 'absolute',
+              right: -10,
+              top: 20,
+              width: 0,
+              height: 0,
+              borderTop: '10px solid transparent',
+              borderBottom: '10px solid transparent',
+              borderLeft: '10px solid #39FF14'
+            }}/>
+          </div>
+          
+          {/* Callout 3: Wheel */}
+          <div style={{
+            position: 'absolute',
+            top: '40%',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            background: '#1a1a1a',
+            border: '2px solid #0EA5E9',
+            borderRadius: 12,
+            padding: 16,
+            maxWidth: 300,
+            zIndex: 1000,
+            boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
+            textAlign: 'center'
+          }}>
+            <div style={{fontSize: 14, color: '#0EA5E9', fontWeight: 600, marginBottom: 8}}>🎵 Click Wedges to Play</div>
+            <div style={{fontSize: 12, lineHeight: 1.5, color: '#e5e7eb'}}>
+              Each wedge is a chord function. Click to hear it and see the notes light up on the keyboard!
+            </div>
+            <div style={{
+              position: 'absolute',
+              top: -10,
+              left: '50%',
+              transform: 'translateX(-50%)',
+              width: 0,
+              height: 0,
+              borderLeft: '10px solid transparent',
+              borderRight: '10px solid transparent',
+              borderBottom: '10px solid #0EA5E9'
+            }}/>
+          </div>
+          
+          {/* Callout 4: Audio button */}
+          <div style={{
+            position: 'absolute',
+            top: 140,
+            right: 200,
+            background: '#1a1a1a',
+            border: '2px solid #F0AD21',
+            borderRadius: 12,
+            padding: 16,
+            maxWidth: 240,
+            zIndex: 1000,
+            boxShadow: '0 4px 20px rgba(0,0,0,0.5)'
+          }}>
+            <div style={{fontSize: 14, color: '#F0AD21', fontWeight: 600, marginBottom: 8}}>🔉 Audio Toggle</div>
+            <div style={{fontSize: 12, lineHeight: 1.5, color: '#e5e7eb'}}>
+              Enable vintage Rhodes piano sound when clicking wedges
+            </div>
+            <div style={{
+              position: 'absolute',
+              right: -10,
+              top: 30,
+              width: 0,
+              height: 0,
+              borderTop: '10px solid transparent',
+              borderBottom: '10px solid transparent',
+              borderLeft: '10px solid #F0AD21'
+            }}/>
+          </div>
+          
+          {/* Callout 5: Make My Key */}
+          <div style={{
+            position: 'absolute',
+            top: 140,
+            right: 360,
+            background: '#1a1a1a',
+            border: '2px solid #9333ea',
+            borderRadius: 12,
+            padding: 16,
+            maxWidth: 240,
+            zIndex: 1000,
+            boxShadow: '0 4px 20px rgba(0,0,0,0.5)'
+          }}>
+            <div style={{fontSize: 14, color: '#9333ea', fontWeight: 600, marginBottom: 8}}>⚡ Quick Tip</div>
+            <div style={{fontSize: 12, lineHeight: 1.5, color: '#e5e7eb'}}>
+              Press <strong>K</strong> key to make the current chord your new key center!
+            </div>
+            <div style={{
+              position: 'absolute',
+              right: -10,
+              top: 30,
+              width: 0,
+              height: 0,
+              borderTop: '10px solid transparent',
+              borderBottom: '10px solid transparent',
+              borderLeft: '10px solid #9333ea'
+            }}/>
+          </div>
+          
+          {/* Close button */}
+          <button
+            onClick={() => setShowHelp(false)}
+            style={{
+              position: 'fixed',
+              bottom: 40,
+              left: '50%',
+              transform: 'translateX(-50%)',
+              padding: '12px 32px',
+              border: '2px solid #F2D74B',
+              borderRadius: 8,
+              background: '#1a1a1a',
+              color: '#F2D74B',
+              cursor: 'pointer',
+              fontSize: 16,
+              fontWeight: 600,
+              zIndex: 1000,
+              boxShadow: '0 4px 20px rgba(0,0,0,0.5)'
+            }}
+          >
+            Got it! ✓
+          </button>
+        </>
+      )}
     </div>
   );
 }
