@@ -75,7 +75,7 @@ import {
 } from "./lib/modes";
 import { BonusDebouncer } from "./lib/overlays";
 import * as preview from "./lib/preview";
-const HW_VERSION = 'v2.49.0'; // FINAL: SVG logo, bonus tab updates, all issues resolved!
+const HW_VERSION = 'v2.51.0'; // FIXES: Make My Key hub label, ♭VII symbol, skill levels work
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -85,6 +85,28 @@ import { DIM_OPACITY } from "./lib/config";
 export default function HarmonyWheel(){
   /* ---------- Core state ---------- */
   const [baseKey,setBaseKey]=useState<KeyName>("C");
+  
+  // Skill level system
+  type SkillLevel = "ROOKIE" | "NOVICE" | "SOPHOMORE" | "INTERMEDIATE" | "ADVANCED" | "EXPERT";
+  const [skillLevel, setSkillLevel] = useState<SkillLevel>("ROOKIE");
+  
+  // Define which functions are visible at each level (cumulative)
+  const SKILL_LEVEL_FUNCTIONS: Record<SkillLevel, Fn[]> = {
+    "ROOKIE": ["I", "IV", "V7"],  // C, F, G7
+    "NOVICE": ["I", "IV", "V7", "vi", "V/V"],  // + Am, E7
+    "SOPHOMORE": ["I", "IV", "V7", "vi", "V/V", "V/vi"],  // + D7
+    "INTERMEDIATE": ["I", "IV", "V7", "vi", "V/V", "V/vi", "ii", "iii"],  // + Dm, Em
+    "ADVANCED": ["I", "IV", "V7", "vi", "V/V", "V/vi", "ii", "iii", "♭VII", "iv"],  // + Bb, Fm
+    "EXPERT": ["I", "IV", "V7", "vi", "V/V", "V/vi", "ii", "iii", "♭VII", "iv"]  // All + bonus button
+  };
+  
+  // Check if a function is visible at current skill level
+  const isFunctionVisible = (fn: Fn): boolean => {
+    return SKILL_LEVEL_FUNCTIONS[skillLevel].includes(fn);
+  };
+  
+  // Check if bonus wedges should be available
+  const bonusWedgesAllowed = skillLevel === "EXPERT";
   
 
 // --- Auto-clear bonus overlays so base wedges return to full color on release
@@ -183,7 +205,13 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
   const bonusDeb = useRef(new BonusDebouncer()).current;
   const [showBonusWedges, setShowBonusWedges] = useState(false); // Toggle for bonus wedge visibility
   const showBonusWedgesRef = useRef(false);
-  useEffect(() => { showBonusWedgesRef.current = showBonusWedges; }, [showBonusWedges]);
+  useEffect(() => { 
+    showBonusWedgesRef.current = showBonusWedges; 
+    // Auto-hide bonus wedges if skill level drops below EXPERT
+    if (skillLevel !== "EXPERT" && showBonusWedges) {
+      setShowBonusWedges(false);
+    }
+  }, [showBonusWedges, skillLevel]);
   
   const [trailFn, setTrailFn] = useState<Fn|"">("");
   const [trailTick, setTrailTick] = useState(0);
@@ -1386,7 +1414,7 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
     homeSuppressUntilRef.current = 0; justExitedSubRef.current = false;
     setTargetRotation(0);
     setActiveFn("I");
-    setCenterLabel("C");
+    setCenterLabel(baseKeyRef.current); // Use current base key, not hardcoded "C"
     stopDimFade();
   };
   
@@ -1426,7 +1454,10 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
       // For major chords, just set as new key and go HOME
       if (FLAT_NAMES.includes(rootName)) {
         setBaseKey(rootName);
-        goHome();
+        // Update center label after a brief delay to ensure baseKey is updated
+        setTimeout(() => {
+          goHome();
+        }, 10);
       }
     }
   };
@@ -1492,7 +1523,9 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
     const renderKey:KeyName = visitorActive ? parKey : baseKey;
     const dimK = Math.min(1, Math.max(0, dimFadeTick / DIM_FADE_MS));
     const fadedBase = 0.5 + 0.5 * dimK; // 0.5→1.0
-    return layout.map(({fn,path,labelPos})=>{
+    return layout
+      .filter(({fn}) => isFunctionVisible(fn)) // Filter by skill level
+      .map(({fn,path,labelPos})=>{
       const isActive = activeFn===fn;
       const isTrailing = trailOn && (trailFn===fn);
       const k = isTrailing ? Math.min(1, Math.max(0, trailTick / RING_FADE_MS)) : 0;
@@ -1515,7 +1548,7 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
       );
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  },[layout, activeFn, trailFn, trailTick, trailOn, baseKey, visitorActive, relMinorActive, subdomActive, labelKey, dimFadeOn, dimFadeTick]);
+  },[layout, activeFn, trailFn, trailTick, trailOn, baseKey, visitorActive, relMinorActive, subdomActive, labelKey, dimFadeOn, dimFadeTick, skillLevel]);
 
   const activeBtnStyle = (on:boolean, spaceColor?:string): React.CSSProperties =>
     ({padding:"6px 10px", border:`2px solid ${on ? (spaceColor || "#39FF14") : "#374151"}`, borderRadius:8, background:"#111", color:"#fff", cursor:"pointer"});
@@ -1603,6 +1636,21 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
             >
               ⚡ Make My Key
             </button>
+            
+            <label style={{fontSize:12, color:'#9CA3AF'}}>Skill</label>
+            <select 
+              value={skillLevel} 
+              onChange={(e)=>setSkillLevel(e.target.value as SkillLevel)}
+              style={{padding:"4px 6px", border:"1px solid #374151", borderRadius:6, background:"#111", color:"#fff", fontSize:11}}
+            >
+              <option value="ROOKIE">ROOKIE</option>
+              <option value="NOVICE">NOVICE</option>
+              <option value="SOPHOMORE">SOPHOMORE</option>
+              <option value="INTERMEDIATE">INTERMEDIATE</option>
+              <option value="ADVANCED">ADVANCED</option>
+              <option value="EXPERT">EXPERT</option>
+            </select>
+            
             <label style={{fontSize:12}}>Key</label>
             <select value={baseKey} onChange={(e)=>setBaseKey(e.target.value as KeyName)}
               style={{padding:"4px 6px", border:"1px solid #374151", borderRadius:6, background:"#111", color:"#fff"}}>
@@ -2042,23 +2090,25 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
                   >
                     Record Wedge to This Song: "{currentGuitarLabel || '—'}" (⌘I)
                   </button>
-                  <button 
-                    onClick={() => setShowBonusWedges(!showBonusWedges)}
-                    title="Toggle bonus wedges (A7 and Bm7♭5)"
-                    style={{
-                      padding:'6px 10px', 
-                      border:`1px solid ${showBonusWedges ? '#39FF14' : '#374151'}`, 
-                      borderRadius:6, 
-                      background: showBonusWedges ? '#1a3310' : '#1f2937', 
-                      color: showBonusWedges ? '#39FF14' : '#9CA3AF', 
-                      cursor:'pointer',
-                      fontSize:11,
-                      fontWeight: showBonusWedges ? 600 : 400,
-                      flex: 1
-                    }}
-                  >
-                    Show Bonus Chords {showBonusWedges ? '✓' : ''}
-                  </button>
+                  {bonusWedgesAllowed && (
+                    <button 
+                      onClick={() => setShowBonusWedges(!showBonusWedges)}
+                      title="Toggle bonus wedges (A7 and Bm7♭5)"
+                      style={{
+                        padding:'6px 10px', 
+                        border:`1px solid ${showBonusWedges ? '#39FF14' : '#374151'}`, 
+                        borderRadius:6, 
+                        background: showBonusWedges ? '#1a3310' : '#1f2937', 
+                        color: showBonusWedges ? '#39FF14' : '#9CA3AF', 
+                        cursor:'pointer',
+                        fontSize:11,
+                        fontWeight: showBonusWedges ? 600 : 400,
+                        flex: 1
+                      }}
+                    >
+                      Show Bonus Chords {showBonusWedges ? '✓' : ''}
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
