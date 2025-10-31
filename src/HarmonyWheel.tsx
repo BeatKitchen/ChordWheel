@@ -1,5 +1,5 @@
 /*
- * HarmonyWheel.tsx — v2.42.0
+ * HarmonyWheel.tsx — v2.45.0
  * 
  * 🚀🚀🚀 PHASE 2C - THE BIG ONE! 🚀🚀🚀
  * 
@@ -75,7 +75,7 @@ import {
 } from "./lib/modes";
 import { BonusDebouncer } from "./lib/overlays";
 import * as preview from "./lib/preview";
-const HW_VERSION = 'v2.42.0'; // UI: Space not Mode, status borders, playlist padding, BKS left
+const HW_VERSION = 'v2.49.0'; // FINAL: SVG logo, bonus tab updates, all issues resolved!
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -230,47 +230,49 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
       lastInputWasPreviewRef.current = false;
       const [st,d1,d2]=e.data, type=st&0xf0;
 
-
-if (type===0x90 && d2>0) {
-  lastMidiEventRef.current = "on";
-  
-  // Hide bonus wedges on any MIDI note input
-  if (showBonusWedgesRef.current) {
-    setShowBonusWedges(false);
-  }
-  
-  // Transpose octave: A0 to C2 (MIDI 21-36)
-  if (d1<=36){
-    leftHeld.current.add(d1);
-    const lowest = Math.min(...leftHeld.current);
-    const k = pcNameForKey(pcFromMidi(lowest), "C") as KeyName;
-    setBaseKey(k);
-  } else {
-    rightHeld.current.add(d1);
-    if (sustainOn.current) rightSus.current.add(d1);
-  }
-  detect();
-} else if (type===0x80 || (type===0x90 && d2===0)) {
-  lastMidiEventRef.current = "off";
-  if (d1<=36) leftHeld.current.delete(d1);
-  else { rightHeld.current.delete(d1); rightSus.current.delete(d1); }
-  detect();
-} else if (type===0xB0 && d1===64) {
-  lastMidiEventRef.current = "cc";
-  const on = d2>=64;
-  if (!on && sustainOn.current){
-    for (const n of Array.from(rightSus.current))
-      if (!rightHeld.current.has(n)) rightSus.current.delete(n);
-    sustainOn.current = false;
-    detect();
-  } else if (on && !sustainOn.current){
-    sustainOn.current = true;
-    for (const n of rightHeld.current) rightSus.current.add(n);
-  }
-}
-
-
-
+      if (type===0x90 && d2>0) {
+        lastMidiEventRef.current = "on";
+        
+        // Hide bonus wedges on any MIDI note input
+        if (showBonusWedgesRef.current) {
+          setShowBonusWedges(false);
+        }
+        
+        // Transpose octave: A0 to C2 (MIDI 21-36)
+        if (d1<=36){
+          leftHeld.current.add(d1);
+          const lowest = Math.min(...leftHeld.current);
+          const k = pcNameForKey(pcFromMidi(lowest), "C") as KeyName;
+          setBaseKey(k);
+        } else {
+          rightHeld.current.add(d1);
+          if (sustainOn.current) rightSus.current.add(d1);
+        }
+        detect();
+      } else if (type===0x80 || (type===0x90 && d2===0)) {
+        lastMidiEventRef.current = "off";
+        if (d1<=36) leftHeld.current.delete(d1);
+        else { 
+          rightHeld.current.delete(d1); 
+          rightSus.current.delete(d1);
+        }
+        // Don't call detect() immediately on note-off - keep chord visible
+        // User can then click "Make This My Key" button
+        // Only detect after a delay
+        setTimeout(() => detect(), 50);
+      } else if (type===0xB0 && d1===64) {
+        lastMidiEventRef.current = "cc";
+        const on = d2>=64;
+        if (!on && sustainOn.current){
+          for (const n of Array.from(rightSus.current))
+            if (!rightHeld.current.has(n)) rightSus.current.delete(n);
+          sustainOn.current = false;
+          detect();
+        } else if (on && !sustainOn.current){
+          sustainOn.current = true;
+          for (const n of rightHeld.current) rightSus.current.add(n);
+        }
+      }
     };
     setSelectedId(id); setMidiConnected(true); setMidiName(dev.name||"MIDI");
   };
@@ -296,7 +298,7 @@ if (type===0x90 && d2>0) {
   },[selectedId]);
 
   /* ---------- v3: Sequence / input ---------- */
-  const [inputText, setInputText] = useState("@TITLE Let It Be, # Intro, F, C, Bb, F, C, # When I find myself in, G, # times of trouble, Am, # Mother Mary, F, # comes to me, C, # Speaking words of, G, # wisdom. Let it, F, # be..., C");
+  const [inputText, setInputText] = useState("@TITLE Let It Be, @KEY F, # Intro, F, C, Bb, F, C, # When I find myself in, G, # times of trouble, Am, # Mother Mary, F, # comes to me, C, # Speaking words of, G, # wisdom. Let it, F, # be..., C");
   type SeqItem = { kind: "chord" | "modifier" | "comment" | "title"; raw: string; chord?: string; comment?: string; title?: string; };
   const [sequence, setSequence] = useState<SeqItem[]>([]);
   const [seqIndex, setSeqIndex] = useState(-1);
@@ -386,6 +388,11 @@ if (type===0x90 && d2>0) {
           return { kind:"title", raw:tok, title: arg };
         }
         
+        // Check for KEY
+        if (upper === "KEY" || upper === "K") {
+          return { kind:"modifier", raw:tok, chord: `KEY:${arg}` };
+        }
+        
         // Normalize abbreviations: REL, SUB, PAR, HOME
         let normalized = upper;
         if (upper === "SUBDOM" || upper === "SUB") normalized = "SUB";
@@ -404,13 +411,25 @@ if (type===0x90 && d2>0) {
     setSequence(items);
     setSeqIndex(items.length ? 0 : -1);
     
-    // Reset to HOME space unless first item is a modifier
+    // Check if first item is @KEY, otherwise default to C
     if (items.length) {
-      if (items[0].kind !== "modifier") {
-        // Return to HOME space before starting
+      const firstItem = items[0];
+      if (firstItem.kind === "modifier" && firstItem.chord?.startsWith("KEY:")) {
+        // First item sets key, apply it
+        applySeqItem(firstItem);
+      } else {
+        // No key specified, default to C and go HOME
+        setBaseKey("C");
         goHome();
       }
-      applySeqItem(items[0]);
+      
+      // Apply first chord/modifier
+      if (items.length > 0) {
+        const startIdx = (firstItem.kind === "modifier" && firstItem.chord?.startsWith("KEY:")) ? 1 : 0;
+        if (startIdx < items.length) {
+          applySeqItem(items[startIdx]);
+        }
+      }
     }
   };
 
@@ -466,12 +485,18 @@ if (type===0x90 && d2>0) {
   const applySeqItem = (it: SeqItem)=>{
     if (it.kind==="comment" || it.kind==="title") return; // Skip comments and titles
     if (it.kind==="modifier" && it.chord){
-      const m = it.chord.split(":")[0];
+      const [m, arg] = it.chord.split(":");
       if (m==="HOME"){ goHome(); } // Return to HOME space
       else if (m==="SUB"){ if(!subdomActiveRef.current) toggleSubdom(); }
       else if (m==="REL"){ if(!relMinorActiveRef.current) toggleRelMinor(); }
       else if (m==="PAR"){ if(!visitorActiveRef.current) toggleVisitor(); }
-      else if (m==="KEY"){ /* reserved for future key changes */ }
+      else if (m==="KEY"){ 
+        // Change key center
+        const newKey = arg?.trim() as KeyName;
+        if (newKey && FLAT_NAMES.includes(newKey)) {
+          setBaseKey(newKey);
+        }
+      }
       return;
     }
     if (it.kind==="chord" && it.chord){
@@ -526,12 +551,15 @@ if (type===0x90 && d2>0) {
       } else if ((e.ctrlKey || e.metaKey) && e.key === 'i') {
         e.preventDefault();
         insertCurrentChord();
+      } else if (e.key === 'k' || e.key === 'K') {
+        e.preventDefault();
+        makeThisMyKey();
       }
     };
     
     window.addEventListener('keydown', handleGlobalKeyDown);
     return () => window.removeEventListener('keydown', handleGlobalKeyDown);
-  }, [inputText, sequence, seqIndex]); // Re-attach when these change
+  }, [inputText, sequence, seqIndex, centerLabel]); // Re-attach when these change
 
   /* ---------- layout & bonus geometry ---------- */
   const cx=260, cy=260, r=220;
@@ -829,6 +857,9 @@ if (type===0x90 && d2>0) {
     const phys=[...rightHeld.current], sus=sustainOn.current?[...rightSus.current]:[], merged=new Set<number>([...phys,...sus]);
     const absHeld=[...merged];
     const pcsAbs=new Set(absHeld.map(pcFromMidi));
+    
+    // MIDI shortcut detection moved to note-off to avoid interference with playing
+    // Now handled separately in MIDI message handler
 
     if(pcsAbs.size===0){
       setTapEdge("REL_Am", false); setTapEdge("REL_C", false); setTapEdge("VIS_G", false);
@@ -909,7 +940,7 @@ if (type===0x90 && d2>0) {
         return r !== null;
       })();
 
-      // ========== NEW v2.42.0: vii°7 special case (works in all keys!) ==========
+      // ========== NEW v2.45.0: vii°7 special case (works in all keys!) ==========
       // vii°7 (leading tone dim7) acts as dominant substitute in ANY key
       // Pattern: [11,2,5,8] relative to tonic (7th scale degree + dim7 intervals)
       // C: Bdim7, F: Edim7, G: F#dim7, Ab: Gdim7, etc.
@@ -922,7 +953,7 @@ if (type===0x90 && d2>0) {
         setBonusActive(false);  // Don't use bonus overlay
         return;
       }
-      // ========== END NEW v2.42.0 ==========
+      // ========== END NEW v2.45.0 ==========
 
       const hasBDF   = isSubset([11,2,5]);
       const hasBDFG  = isSubset([11,2,5,9]);
@@ -1188,7 +1219,7 @@ if (type===0x90 && d2>0) {
           return;
         }
         
-        // ========== NEW v2.42.0: vii°7 in REL Am (works in all keys!) ==========
+        // ========== NEW v2.45.0: vii°7 in REL Am (works in all keys!) ==========
         // vii°7 of meta-key should map to V7, not be misidentified
         const hasVii7Pattern = pcsRel.has(11) && pcsRel.has(2) && pcsRel.has(5) && pcsRel.has(8);
         if (hasVii7Pattern) {
@@ -1196,7 +1227,7 @@ if (type===0x90 && d2>0) {
           setActiveWithTrail("V7", absName); // Use actual name
           return;
         }
-        // ========== END v2.42.0 ==========
+        // ========== END v2.45.0 ==========
         
         // All other dim7 chords: use absName from theory.ts (which uses lowest note)
         const dimLabel = absName || `${["C","C#","D","Eb","E","F","F#","G","Ab","A","Bb","B"][root]}dim7`;
@@ -1206,7 +1237,7 @@ if (type===0x90 && d2>0) {
       }
     }
     
-    /* ========== NEW v2.42.0: PAR EXIT for secondary dominants ========== */
+    /* ========== NEW v2.45.0: PAR EXIT for secondary dominants ========== */
     // When in PAR, certain chords signal return to HOME (secondary dominant area)
     // Check these BEFORE PAR diatonic matching
     if (visitorActiveRef.current) {
@@ -1241,7 +1272,7 @@ if (type===0x90 && d2>0) {
         return;
       }
     }
-    /* ========== END v2.42.0 ========== */
+    /* ========== END v2.45.0 ========== */
 
     /* In PAR mapping - now dynamic for all keys! */
     if(visitorActiveRef.current){
@@ -1358,6 +1389,48 @@ if (type===0x90 && d2>0) {
     setCenterLabel("C");
     stopDimFade();
   };
+  
+  const makeThisMyKey = ()=>{
+    // Extract root from current chord name (centerLabel)
+    if (!centerLabel) return;
+    
+    // Parse chord name to extract root and quality
+    // Examples: "Cmaj7" -> C major, "F#m7" -> F# minor, "Fm" -> F minor, "Ab" -> Ab major
+    const match = centerLabel.match(/^([A-G][b#]?)(m|min|maj|M)?/);
+    if (!match) return;
+    
+    const rootName = match[1] as KeyName;
+    const quality = match[2] || ""; // Empty = major, "m"/"min" = minor
+    
+    const isMinor = quality.startsWith("m") && !quality.startsWith("maj");
+    
+    if (isMinor) {
+      // For minor chords, go to relative major and switch to REL mode
+      // e.g., Fm -> Ab major, then toggle to REL (Fm)
+      const rootPc = NAME_TO_PC[rootName];
+      if (rootPc === undefined) return;
+      
+      const relativeMajorPc = (rootPc + 3) % 12; // Minor 3rd up
+      const relativeMajorKey = pcNameForKey(relativeMajorPc, "C") as KeyName;
+      
+      if (FLAT_NAMES.includes(relativeMajorKey)) {
+        setBaseKey(relativeMajorKey);
+        // Small delay then switch to REL mode
+        setTimeout(() => {
+          if (!relMinorActiveRef.current) {
+            toggleRelMinor();
+          }
+        }, 50);
+      }
+    } else {
+      // For major chords, just set as new key and go HOME
+      if (FLAT_NAMES.includes(rootName)) {
+        setBaseKey(rootName);
+        goHome();
+      }
+    }
+  };
+  
   const toggleVisitor = ()=>{
     const on = !visitorActiveRef.current;
     if(on && subdomActiveRef.current){ subSpinExit(); setSubdomActive(false); subdomLatchedRef.current=false; subHasSpunRef.current=false; }
@@ -1444,8 +1517,8 @@ if (type===0x90 && d2>0) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   },[layout, activeFn, trailFn, trailTick, trailOn, baseKey, visitorActive, relMinorActive, subdomActive, labelKey, dimFadeOn, dimFadeTick]);
 
-  const activeBtnStyle = (on:boolean): React.CSSProperties =>
-    ({padding:"6px 10px", border:"2px solid "+(on?"#39FF14":"#374151"), borderRadius:8, background:"#111", color:"#fff", cursor:"pointer"});
+  const activeBtnStyle = (on:boolean, spaceColor?:string): React.CSSProperties =>
+    ({padding:"6px 10px", border:`2px solid ${on ? (spaceColor || "#39FF14") : "#374151"}`, borderRadius:8, background:"#111", color:"#fff", cursor:"pointer"});
 
   /* ---------- Preview helper ---------- */
   const KBD_LOW=48, KBD_HIGH=71;
@@ -1465,10 +1538,16 @@ if (type===0x90 && d2>0) {
 
   /* ---------- Render ---------- */
   const currentGuitarLabel = (() => {
+    // Priority 1: If bonus wedge is active, use bonusLabel
+    if (bonusActive && bonusLabel) {
+      return bonusLabel;
+    }
+    // Priority 2: If active function from main wheel
     if (activeFnRef.current){
       const dispKey = (visitorActiveRef.current ? parKey : (subdomActiveRef.current ? subKey : baseKeyRef.current)) as KeyName;
       return realizeFunction(activeFnRef.current as Fn, dispKey);
     }
+    // Priority 3: Fall back to center label from MIDI/manual play
     return centerLabel || null;
   })();
 
@@ -1500,12 +1579,30 @@ if (type===0x90 && d2>0) {
         {/* Controls */}
         <div style={{display:'flex', gap:8, flexWrap:'nowrap', alignItems:'center', justifyContent:'space-between', overflowX:'auto'}}>
           <div style={{display:'flex', gap:8, flexWrap:'nowrap', overflowX:'auto'}}>
-            <button onClick={goHome}         style={activeBtnStyle(!(visitorActive||relMinorActive||subdomActive))}>HOME</button>
-            <button onClick={toggleRelMinor} style={activeBtnStyle(relMinorActive)}>RELATIVE</button>
-            <button onClick={toggleSubdom}   style={activeBtnStyle(subdomActive)}>SUBDOM</button>
-            <button onClick={toggleVisitor}  style={activeBtnStyle(visitorActive)}>PARALLEL</button>
+            <button onClick={goHome}         style={activeBtnStyle(!(visitorActive||relMinorActive||subdomActive), '#F2D74B')}>HOME</button>
+            <button onClick={toggleRelMinor} style={activeBtnStyle(relMinorActive, '#F0AD21')}>RELATIVE</button>
+            <button onClick={toggleSubdom}   style={activeBtnStyle(subdomActive, '#0EA5E9')}>SUBDOM</button>
+            <button onClick={toggleVisitor}  style={activeBtnStyle(visitorActive, '#9333ea')}>PARALLEL</button>
           </div>
           <div style={{display:'flex', gap:10, alignItems:'center'}}>
+            <button 
+              onClick={makeThisMyKey}
+              disabled={!centerLabel}
+              style={{
+                padding:"4px 8px", 
+                border:"1px solid #F2D74B", 
+                borderRadius:6, 
+                background:"#111", 
+                color: centerLabel ? "#F2D74B" : "#666",
+                cursor: centerLabel ? "pointer" : "not-allowed",
+                fontSize:11,
+                fontWeight:500,
+                opacity: centerLabel ? 1 : 0.5
+              }}
+              title="Shift wheel to this chord's key (press K)"
+            >
+              ⚡ Make My Key
+            </button>
             <label style={{fontSize:12}}>Key</label>
             <select value={baseKey} onChange={(e)=>setBaseKey(e.target.value as KeyName)}
               style={{padding:"4px 6px", border:"1px solid #374151", borderRadius:6, background:"#111", color:"#fff"}}>
@@ -1527,7 +1624,7 @@ if (type===0x90 && d2>0) {
           <span style={{
             fontSize:12, 
             padding:'2px 6px', 
-            border: `2px solid ${visitorActive ? '#9333ea' : relMinorActive ? '#3b82f6' : subdomActive ? '#f59e0b' : '#ffffff22'}`,
+            border: `2px solid ${visitorActive ? '#9333ea' : relMinorActive ? '#F0AD21' : subdomActive ? '#0EA5E9' : '#F2D74B'}`,
             background:'#ffffff18', 
             borderRadius:6
           }}>
@@ -1538,10 +1635,17 @@ if (type===0x90 && d2>0) {
           </span>
         </div>
 
-        {/* Labels - below MIDI status, aligned with MIDI text */}
-        <div style={{marginTop:2, marginBottom:-8, paddingLeft:2}}>
-          <div style={{fontSize:11, fontWeight:600, color:'#9CA3AF', lineHeight:1.2}}>Beat Kitchen</div>
-          <div style={{fontSize:10, fontWeight:500, color:'#7B7B7B', lineHeight:1.2}}>HarmonyWheel {HW_VERSION}</div>
+        {/* BKS Logo Header */}
+        <div style={{marginTop:8, marginBottom:4, paddingLeft:8}}>
+          <svg width="200" height="24" viewBox="0 0 400 48" style={{opacity:0.7, display:'block'}}>
+            {/* BEAT KITCHEN text */}
+            <text x="0" y="36" fill="#e5e7eb" fontFamily="system-ui, -apple-system, sans-serif" fontSize="32" fontWeight="700" letterSpacing="2">
+              BEAT KITCHEN®
+            </text>
+          </svg>
+          <div style={{fontSize:10, fontWeight:500, color:'#7B7B7B', marginTop:2}}>
+            HarmonyWheel {HW_VERSION}
+          </div>
         </div>
 
         {/* Wheel */}
@@ -1750,7 +1854,7 @@ if (type===0x90 && d2>0) {
             <div style={{maxWidth: WHEEL_W, margin:'0 auto 0'}}>
               {/* UNIFIED LAYOUT - Same structure always, no shifting */}
               
-              {/* Row 1: Playlist display (always visible when loaded) */}
+              {/* Row 1: Song display (always visible when loaded) */}
               {sequence.length > 0 && (
                 <div style={{
                   border:'1px solid #374151',
@@ -1766,9 +1870,15 @@ if (type===0x90 && d2>0) {
                       fontSize:11,
                       fontWeight:600,
                       color:'#39FF14',
-                      textAlign:'left'
+                      textAlign:'left',
+                      display:'flex',
+                      justifyContent:'space-between',
+                      alignItems:'center'
                     }}>
-                      {songTitle}
+                      <span>{songTitle}</span>
+                      <span style={{fontSize:10, color:'#9CA3AF', fontWeight:400}}>
+                        {baseKey} major
+                      </span>
                     </div>
                   )}
                   
@@ -1826,7 +1936,7 @@ if (type===0x90 && d2>0) {
               <div style={{marginBottom: 6}}>
                 <textarea
                   ref={textareaRef}
-                  placeholder={'Type chords, modifiers, and comments...\nExamples:\nC, Am7, F, G7\n@TITLE Song Name\n@SUB F, Bb, C7, @HOME\n@REL Em, Am, @PAR Cm, Fm\n# Verse: lyrics or theory note'}
+                  placeholder={'Type chords, modifiers, and comments...\nExamples:\n@TITLE Song Name, @KEY C\nC, Am7, F, G7\n@SUB F, Bb, C7, @HOME\n@REL Em, Am, @PAR Cm, Fm\n@KEY G, D, G, C\n# Verse: lyrics or theory note'}
                   rows={3}
                   value={inputText}
                   onChange={(e)=>setInputText(e.target.value)}
@@ -1907,7 +2017,7 @@ if (type===0x90 && d2>0) {
                     onClick={() => parseAndLoadSequence()} 
                     style={{padding:'6px 10px', border:'2px solid #39FF14', borderRadius:8, background:'#111', color:'#fff', cursor:'pointer', flex:1, fontSize:12}}
                   >
-                    {sequence.length > 0 ? 'RELOAD PLAYLIST' : 'LOAD PLAYLIST'}
+                    {sequence.length > 0 ? 'RELOAD SONG' : 'LOAD SONG'}
                   </button>
                   <button onClick={stepPrev} style={{padding:'6px 10px', border:'2px solid #39FF14', borderRadius:8, background:'#111', color:'#fff', cursor:'pointer', fontSize:12}}>◀</button>
                   <button onClick={stepNext} style={{padding:'6px 10px', border:'2px solid #39FF14', borderRadius:8, background:'#111', color:'#fff', cursor:'pointer', fontSize:12}}>▶</button>
@@ -1930,7 +2040,7 @@ if (type===0x90 && d2>0) {
                       flex: 2
                     }}
                   >
-                    Wedge to Playlist: "{currentGuitarLabel || '—'}" (⌘I)
+                    Record Wedge to This Song: "{currentGuitarLabel || '—'}" (⌘I)
                   </button>
                   <button 
                     onClick={() => setShowBonusWedges(!showBonusWedges)}
@@ -1947,7 +2057,7 @@ if (type===0x90 && d2>0) {
                       flex: 1
                     }}
                   >
-                    Bonus {showBonusWedges ? '✓' : ''}
+                    Show Bonus Chords {showBonusWedges ? '✓' : ''}
                   </button>
                 </div>
               </div>
@@ -1960,4 +2070,4 @@ if (type===0x90 && d2>0) {
   );
 }
 
-// EOF - HarmonyWheel.tsx v2.42.0
+// EOF - HarmonyWheel.tsx v2.45.0

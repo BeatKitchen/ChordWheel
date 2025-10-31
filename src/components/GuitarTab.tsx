@@ -33,6 +33,7 @@ const OPEN_SHAPES: Record<string, Shape> = {
   Eb: { title:"Eb", position:1, mute:[6], fingers:[[5,1,"2"],[4,3,"3"],[3,3,"4"],[2,4,"5"],[1,3,"1"]] },
   E:  { title:"E",  position:1, fingers:[[6,0],[5,2,"2"],[4,2,"3"],[3,1,"1"],[2,0],[1,0]] },
   F:  { title:"F", position:1, fingers:[[6,1,"1"],[5,3,"3"],[4,3,"4"],[3,2,"2"],[2,1,"1"],[1,1,"1"]], barres:[{fromString:6,toString:1,fret:1}] },
+  "F#":{ title:"F#",position:2, mute:[6], fingers:[[5,2,"1"],[4,4,"3"],[3,4,"4"],[2,4,"5"],[1,2,"1"]], barres:[{fromString:5,toString:1,fret:2}] },
   Gb: { title:"Gb", position:2, mute:[6], fingers:[[5,2,"1"],[4,4,"3"],[3,4,"4"],[2,4,"5"],[1,2,"1"]], barres:[{fromString:5,toString:1,fret:2}] },
   G:  { title:"G",  position:1, fingers:[[6,3,"2"],[5,2,"1"],[4,0],[3,0],[2,0],[1,3,"3"]] },
   Ab: { title:"Ab", position:4, mute:[6], fingers:[[5,4,"1"],[4,6,"3"],[3,6,"4"],[2,6,"5"],[1,4,"1"]], barres:[{fromString:5,toString:1,fret:4}] },
@@ -42,10 +43,12 @@ const OPEN_SHAPES: Record<string, Shape> = {
   
   // ========== MINOR TRIADS ==========
   Cm: { title:"Cm", position:3, mute:[6], fingers:[[5,3,"1"],[4,5,"3"],[3,5,"4"],[2,4,"2"],[1,3,"1"]], barres:[{fromString:5,toString:1,fret:3}] },
+  "C#m":{ title:"C#m",position:4, mute:[6], fingers:[[5,4,"1"],[4,6,"3"],[3,6,"4"],[2,5,"2"],[1,4,"1"]], barres:[{fromString:5,toString:1,fret:4}] },
   Dm: { title:"Dm", position:1, mute:[6,5], fingers:[[4,0],[3,2,"2"],[2,3,"3"],[1,1,"1"]] },
   Ebm:{ title:"Ebm",position:1, mute:[6], fingers:[[5,1,"1"],[4,3,"3"],[3,3,"4"],[2,2,"2"],[1,1,"1"]], barres:[{fromString:5,toString:1,fret:1}] },
   Em: { title:"Em", position:1, fingers:[[6,0],[5,2,"2"],[4,2,"3"],[3,0],[2,0],[1,0]] },
   Fm: { title:"Fm", position:1, mute:[6], fingers:[[5,1,"1"],[4,3,"3"],[3,3,"4"],[2,1,"1"],[1,1,"1"]], barres:[{fromString:5,toString:1,fret:1}] },
+  "F#m":{ title:"F#m",position:2, mute:[6], fingers:[[5,2,"1"],[4,4,"3"],[3,4,"4"],[2,2,"2"],[1,2,"1"]], barres:[{fromString:5,toString:1,fret:2}] },
   Gm: { title:"Gm", position:3, mute:[6], fingers:[[5,3,"1"],[4,5,"3"],[3,5,"4"],[2,3,"2"],[1,3,"1"]], barres:[{fromString:5,toString:1,fret:3}] },
   Abm:{ title:"Abm",position:4, mute:[6], fingers:[[5,4,"1"],[4,6,"3"],[3,6,"4"],[2,4,"2"],[1,4,"1"]], barres:[{fromString:5,toString:1,fret:4}] },
   Am: { title:"Am", position:1, mute:[6], fingers:[[5,0],[4,2,"2"],[3,2,"3"],[2,1,"1"],[1,0]] },
@@ -54,9 +57,11 @@ const OPEN_SHAPES: Record<string, Shape> = {
   
   // ========== DOMINANT 7TH CHORDS ==========
   C7: { title:"C7", position:1, mute:[6], fingers:[[5,3,"3"],[4,2,"2"],[3,3,"4"],[2,1,"1"],[1,0]] },
+  "C#7":{ title:"C#7",position:4, mute:[6], fingers:[[5,4,"1"],[4,5,"2"],[3,4,"1"],[2,4,"1"],[1,4,"1"]], barres:[{fromString:5,toString:1,fret:4}] },
   D7: { title:"D7", position:1, mute:[6,5], fingers:[[4,0],[3,2,"2"],[2,1,"1"],[1,2,"3"]] },
   E7: { title:"E7", position:1, fingers:[[6,0],[5,2,"2"],[4,0],[3,1,"1"],[2,0],[1,0]] },
   F7: { title:"F7", position:1, mute:[6], fingers:[[5,1,"1"],[4,2,"2"],[3,1,"1"],[2,1,"1"],[1,1,"1"]], barres:[{fromString:5,toString:1,fret:1}] },
+  "F#7":{ title:"F#7",position:2, mute:[6], fingers:[[5,2,"1"],[4,3,"2"],[3,2,"1"],[2,2,"1"],[1,2,"1"]], barres:[{fromString:5,toString:1,fret:2}] },
   G7: { title:"G7", position:1, fingers:[[6,3,"2"],[5,2,"1"],[4,0],[3,0],[2,0],[1,1,"3"]] },
   A7: { title:"A7", position:1, mute:[6], fingers:[[5,0],[4,2,"2"],[3,0],[2,2,"3"],[1,0]] },
   B7: { title:"B7", position:2, mute:[6], fingers:[[5,2,"1"],[4,1,"2"],[3,2,"3"],[2,0],[1,2,"4"]] },
@@ -75,9 +80,11 @@ const OPEN_SHAPES: Record<string, Shape> = {
   
   // ========== MINOR 7TH CHORDS ==========
   Cm7:{ title:"Cm7",position:3, mute:[6], fingers:[[5,3,"1"],[4,5,"3"],[3,3,"2"],[2,4,"4"],[1,3,"1"]], barres:[{fromString:5,toString:1,fret:3}] },
+  "C#m7":{title:"C#m7",position:4, mute:[6], fingers:[[5,4,"1"],[4,6,"3"],[3,4,"2"],[2,5,"4"],[1,4,"1"]], barres:[{fromString:5,toString:1,fret:4}] },
   Dm7:{ title:"Dm7",position:1, mute:[6,5], fingers:[[4,0],[3,2,"2"],[2,1,"1"],[1,1,"1"]], barres:[{fromString:2,toString:1,fret:1}] },
   Em7:{ title:"Em7",position:1, fingers:[[6,0],[5,2,"2"],[4,0],[3,0],[2,0],[1,0]] },
   Fm7:{ title:"Fm7",position:1, mute:[6], fingers:[[5,1,"1"],[4,3,"3"],[3,1,"1"],[2,1,"1"],[1,1,"1"]], barres:[{fromString:5,toString:1,fret:1}] },
+  "F#m7":{title:"F#m7",position:2, mute:[6], fingers:[[5,2,"1"],[4,4,"3"],[3,2,"1"],[2,2,"1"],[1,2,"1"]], barres:[{fromString:5,toString:1,fret:2}] },
   Gm7:{ title:"Gm7",position:3, mute:[6], fingers:[[5,3,"2"],[4,3,"1"],[3,3,"1"],[2,3,"1"],[1,3,"1"]], barres:[{fromString:5,toString:1,fret:3}] },
   Am7:{ title:"Am7",position:1, mute:[6], fingers:[[5,0],[4,2,"2"],[3,0],[2,0],[1,0]] },
   Bbm7:{title:"Bbm7",position:1,mute:[6], fingers:[[5,1,"1"],[4,3,"3"],[3,1,"1"],[2,2,"2"],[1,1,"1"]], barres:[{fromString:5,toString:1,fret:1}] },
