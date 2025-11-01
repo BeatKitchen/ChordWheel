@@ -1,16 +1,17 @@
 /*
- * HarmonyWheel.tsx — v2.45.0
+ * HarmonyWheel.tsx — v3.1.0
  * 
- * 🚀🚀🚀 PHASE 2C - THE BIG ONE! 🚀🚀🚀
+ * 🎉 v3.1.0 NEW FEATURES:
+ * - ✅ Help overlay system with keyboard shortcuts and UI tips
+ * - ✅ Audio initialization splash (Web Audio API compliance)
+ * - ✅ Version display in status bar
  * 
- * ONE LINE CHANGE, EVERYTHING WORKS!
- * 
- * CHANGES FROM v2.38.3:
+ * PREVIOUS CHANGES (v2.45.0):
  * - **THE CRITICAL FIX:** pcsRel now relative to baseKey, not C!
  * - Changed: `toRel = (n) => ((n - NAME_TO_PC["C"] + 12) % 12)`
  * - To: `toRel = (n) => ((n - NAME_TO_PC[baseKeyRef.current] + 12) % 12)`
  * 
- * THIS SINGLE LINE MAKES:
+ * THIS MAKES:
  * - ✅ All isSubset() checks work in any key
  * - ✅ Play E major chords, see E major functions
  * - ✅ Play Ab major chords, see Ab major functions  
@@ -19,13 +20,8 @@
  * - ✅ PAR entry works in any key (vi of ♭VI)
  * - ✅ ALL hardcoded checks now relative!
  * 
- * You can now:
- * 1. Set dropdown to E
- * 2. Play E, F#m, G#m, A, B, C#m, D#dim
- * 3. See correct Roman numerals light up!
- * 
  * MODIFIED BY: Claude AI for Nathan Rosenberg / Beat Kitchen
- * DATE: October 30, 2025
+ * DATE: November 1, 2025
  */
 
 // Prefer ii (Gm/Gm7) over ♭VII (Bb) when Bb triad co-occurs with G/Gm context
@@ -64,6 +60,9 @@ import {
 
 import GuitarTab from "./components/GuitarTab";
 
+// v3.1.0: Help overlay with visual callouts
+import HelpOverlay from "./components/HelpOverlay";
+
 import { computeLayout, annulusTopDegree } from "./lib/geometry";
 import {
   pcFromMidi, pcNameForKey, FLAT_NAMES, NAME_TO_PC, T, subsetOf,
@@ -81,8 +80,15 @@ const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 import { DIM_OPACITY } from "./lib/config";
 
 
-
 export default function HarmonyWheel(){
+  // v3.1.0: Skill level icon paths (from public folder)
+  const skillIcons = {
+    ROOKIE: "/assets/rookie.png",
+    NOVICE: "/assets/novice.png",
+    SOPHOMORE: "/assets/sophomore.png",
+    ADVANCED: "/assets/advanced.png",
+    EXPERT: "/assets/expert.png",
+  };
   /* ---------- Core state ---------- */
   const [baseKey,setBaseKey]=useState<KeyName>("C");
   
@@ -92,12 +98,12 @@ export default function HarmonyWheel(){
   
   // Define which functions are visible at each level (cumulative)
   const SKILL_LEVEL_FUNCTIONS: Record<SkillLevel, Fn[]> = {
-    "ROOKIE": ["I", "IV", "V7"],  // C, F, G7
-    "NOVICE": ["I", "IV", "V7", "vi", "V/V"],  // + Am, E7
-    "SOPHOMORE": ["I", "IV", "V7", "vi", "V/V", "V/vi"],  // + D7
-    "INTERMEDIATE": ["I", "IV", "V7", "vi", "V/V", "V/vi", "ii", "iii"],  // + Dm, Em
-    "ADVANCED": ["I", "IV", "V7", "vi", "V/V", "V/vi", "ii", "iii", "♭VII", "iv"],  // + Bb, Fm
-    "EXPERT": ["I", "IV", "V7", "vi", "V/V", "V/vi", "ii", "iii", "♭VII", "iv"]  // All + bonus button
+    "ROOKIE": ["I", "IV", "V7"],  // 3 chords
+    "NOVICE": ["I", "IV", "V7", "vi"],  // 4 chords - add relative minor
+    "SOPHOMORE": ["I", "IV", "V7", "vi", "V/V", "V/vi"],  // 6 chords - add secondary dominants
+    "INTERMEDIATE": ["I", "IV", "V7", "vi", "V/V", "V/vi", "ii", "iii", "♭VII", "iv"],  // 10 chords - full
+    "ADVANCED": ["I", "IV", "V7", "vi", "V/V", "V/vi", "ii", "iii", "♭VII", "iv"],  // Same as INTERMEDIATE
+    "EXPERT": ["I", "IV", "V7", "vi", "V/V", "V/vi", "ii", "iii", "♭VII", "iv"]  // Same + bonus wedges enabled
   };
   
   // Check if a function is visible at current skill level
@@ -2381,12 +2387,13 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
   })();
 
   return (
-    <div style={{background:'#111', color:'#fff', minHeight:'100vh', padding:12, fontFamily:'ui-sans-serif, system-ui'}}>
-      <div style={{maxWidth:960, margin:'0 auto', border:'1px solid #374151', borderRadius:12, padding:12}}>
+    <div style={{background:'#111', color:'#fff', minHeight:'100vh', padding:8, fontFamily:'ui-sans-serif, system-ui'}}>
+      <div style={{maxWidth:800, margin:'0 auto', border:'1px solid #374151', borderRadius:12, padding:8}}>
 
-        {/* BKS Logo Header with Emblem */}
-        <div style={{marginBottom:8, paddingLeft:8}}>
-          <svg width="380" height="56" viewBox="0 0 400 70" preserveAspectRatio="xMinYMin meet" style={{opacity:0.85, display:'block'}}>
+        {/* BKS Logo Header with Emblem + Help Button */}
+        <div style={{marginBottom:0, paddingLeft:8, position:'relative', zIndex:10, display:'flex', justifyContent:'space-between', alignItems:'flex-start'}}>
+          <div>
+            <svg width="300" height="44" viewBox="0 0 400 70" preserveAspectRatio="xMinYMin meet" style={{opacity:0.85, display:'block'}}>
             <g transform="matrix(0.733705,0,0,0.733705,2.67091,-1.60525)">
               <g transform="matrix(-1,0,0,1,99.7819,4.76996e-06)">
                 <circle cx="49.891" cy="49.891" r="44.3" style={{fill:'none', stroke:'#e5e7eb', strokeWidth:'3.7px'}}/>
@@ -2437,15 +2444,98 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
               </g>
             </g>
           </svg>
-          <div style={{fontSize:11, fontWeight:500, color:'#9CA3AF', marginTop:2}}>
+          <div style={{fontSize:11, fontWeight:500, color:'#9CA3AF', marginTop:0}}>
             HarmonyWheel {HW_VERSION}
+          </div>
+          </div>
+          
+          {/* Skill Icons + Help button - top right */}
+          <div style={{display:'flex', alignItems:'flex-start', gap:24}}>
+            {/* Skill Level Icons */}
+            <div style={{display:'flex', gap:8}}>
+              {[
+                { level: "ROOKIE", label: "ROOKIE" },
+                { level: "NOVICE", label: "NOVICE" },
+                { level: "SOPHOMORE", label: "SOPH" },
+                { level: "ADVANCED", label: "ADV" },
+                { level: "EXPERT", label: "EXPERT" },
+              ].map(({level, label}) => {
+                const isActive = skillLevel === level;
+                return (
+                  <div key={level} style={{display:'flex', flexDirection:'column', alignItems:'center', gap:3}}>
+                    <button
+                      onClick={() => setSkillLevel(level as SkillLevel)}
+                      style={{
+                        padding: 3,
+                        border: `2px solid ${isActive ? '#39FF14' : '#374151'}`,
+                        borderRadius: 6,
+                        background: isActive ? '#111' : '#0a0a0a',
+                        cursor: "pointer",
+                        transition: 'all 0.2s',
+                        opacity: isActive ? 1 : 0.75,
+                      }}
+                      title={level}
+                    >
+                      <img 
+                        src={skillIcons[level as keyof typeof skillIcons]} 
+                        alt={label} 
+                        style={{
+                          width: 36,
+                          height: 36, 
+                          display: 'block',
+                        }} 
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
+                    </button>
+                    {/* Label under each icon, only visible when active */}
+                    {isActive && (
+                      <div style={{
+                        fontSize:9, 
+                        color: '#39FF14', 
+                        fontWeight: 600,
+                        textTransform:'uppercase',
+                        textAlign:'center',
+                        lineHeight:'10px'
+                      }}>
+                        {label}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+            
+            {/* Help button - matched size */}
+            <button
+              onClick={() => setShowHelp(!showHelp)}
+              style={{
+                width: 44,
+                height: 44,
+                padding: 0,
+                border: `2px solid ${showHelp ? '#39FF14' : '#374151'}`,
+                borderRadius: 8,
+                background: "#111",
+                color: showHelp ? '#39FF14' : '#9CA3AF',
+                cursor: "pointer",
+                fontSize: 22,
+                fontWeight: 700,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+              title="Help & Keyboard Shortcuts"
+            >
+              ?
+            </button>
           </div>
         </div>
 
-        {/* Wheel */}
+        {/* Wheel - overlaps with logo space */}
         <div className="relative"
-             style={{width:WHEEL_W,height:WHEEL_H, margin:'4px auto 2px',
-                     transform:`scale(${UI_SCALE_DEFAULT})`, transformOrigin:'center top'}}>
+             style={{width:WHEEL_W,height:WHEEL_H, margin:'0 auto', marginTop:-30,
+                     transform:`scale(1.15)`, transformOrigin:'center top'}}>
           <div style={wrapperStyle}>
             <svg width={WHEEL_W} height={WHEEL_H} viewBox={`0 0 ${WHEEL_W} ${WHEEL_H}`} className="select-none" style={{display:'block', userSelect: 'none', WebkitUserSelect: 'none'}}>
   {/* Labels moved to status bar area */}
@@ -2676,7 +2766,7 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
           const tabSize = Math.min(rightW, HW);
 
           return (
-            <div style={{maxWidth: WHEEL_W, margin:'0 auto 0'}}>
+            <div style={{maxWidth: WHEEL_W, margin:'0 auto 0', marginTop: 25}}>
               {/* UNIFIED LAYOUT - Same structure always, no shifting */}
               
               {/* Row 1: Song display - EXPERT ONLY */}
@@ -3009,9 +3099,9 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
               
               {/* Make My Key + Auto-Record + Show Bonus Row */}
               <div style={{marginTop: 6, display:'flex', gap:8, alignItems:'center'}}>
-                {/* Make My Key - EXPERT ONLY */}
                 {skillLevel === "EXPERT" && (
                   <>
+                    {/* Make My Key Button */}
                     <button 
                       onClick={makeThisMyKey}
                       disabled={!centerLabel}
@@ -3082,19 +3172,6 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
                 <div style={{display:'flex', gap:8, alignItems:'center', flexWrap:'wrap', justifyContent:'space-between'}}>
                   {/* Left: Controls */}
                   <div style={{display:'flex', gap:8, alignItems:'center'}}>
-                    <select 
-                      value={skillLevel} 
-                      onChange={(e)=>setSkillLevel(e.target.value as SkillLevel)}
-                      style={{padding:"4px 6px", border:"1px solid #374151", borderRadius:6, background:"#111", color:"#fff", fontSize:11}}
-                    >
-                      <option value="ROOKIE">ROOKIE</option>
-                      <option value="NOVICE">NOVICE</option>
-                      <option value="SOPHOMORE">SOPHOMORE</option>
-                      <option value="INTERMEDIATE">INTERMEDIATE</option>
-                      <option value="ADVANCED">ADVANCED</option>
-                      <option value="EXPERT">EXPERT</option>
-                    </select>
-                    
                     <button 
                     onClick={async () => {
                       const newState = !audioEnabled;
@@ -3123,21 +3200,6 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
                     }}
                   >
                     {audioEnabled ? (audioReady ? '🔊' : '⏳') : '🔇'}
-                  </button>
-                  
-                  <button 
-                    onClick={() => setShowHelp(!showHelp)}
-                    style={{
-                      padding:"4px 8px", 
-                      border:"1px solid #374151", 
-                      borderRadius:6, 
-                      background:"#111", 
-                      color:"#9CA3AF",
-                      cursor: 'pointer',
-                      fontSize:14
-                    }}
-                  >
-                    ?
                   </button>
 
                   {MIDI_SUPPORTED && (
@@ -3171,199 +3233,11 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
       </div>
       
       {/* Help Callouts */}
-      {showHelp && (
-        <>
-          {/* Overlay background */}
-          <div 
-            style={{
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              background: 'rgba(0, 0, 0, 0.7)',
-              zIndex: 999
-            }}
-            onClick={() => setShowHelp(false)}
-          />
-          
-          {/* Callout 1: SPACE buttons */}
-          <div style={{
-            position: 'absolute',
-            top: 100,
-            left: 40,
-            background: '#1a1a1a',
-            border: '2px solid #F2D74B',
-            borderRadius: 12,
-            padding: 16,
-            maxWidth: 280,
-            zIndex: 1000,
-            boxShadow: '0 4px 20px rgba(0,0,0,0.5)'
-          }}>
-            <div style={{fontSize: 14, color: '#F2D74B', fontWeight: 600, marginBottom: 8}}>🎹 Four Harmonic Spaces</div>
-            <div style={{fontSize: 12, lineHeight: 1.5, color: '#e5e7eb'}}>
-              <strong>HOME</strong> - Main key<br/>
-              <strong>RELATIVE</strong> - Relative minor<br/>
-              <strong>SUBDOM</strong> - Subdominant<br/>
-              <strong>PARALLEL</strong> - Parallel minor
-            </div>
-            <div style={{
-              position: 'absolute',
-              left: -10,
-              top: 20,
-              width: 0,
-              height: 0,
-              borderTop: '10px solid transparent',
-              borderBottom: '10px solid transparent',
-              borderRight: '10px solid #F2D74B'
-            }}/>
-          </div>
-          
-          {/* Callout 2: Skill selector */}
-          <div style={{
-            position: 'absolute',
-            top: 100,
-            right: 40,
-            background: '#1a1a1a',
-            border: '2px solid #39FF14',
-            borderRadius: 12,
-            padding: 16,
-            maxWidth: 280,
-            zIndex: 1000,
-            boxShadow: '0 4px 20px rgba(0,0,0,0.5)'
-          }}>
-            <div style={{fontSize: 14, color: '#39FF14', fontWeight: 600, marginBottom: 8}}>🎓 Skill Levels</div>
-            <div style={{fontSize: 12, lineHeight: 1.5, color: '#e5e7eb'}}>
-              Start at <strong>ROOKIE</strong> (3 chords) and progress to <strong>EXPERT</strong> to unlock all 10 chords + bonus wedges!
-            </div>
-            <div style={{
-              position: 'absolute',
-              right: -10,
-              top: 20,
-              width: 0,
-              height: 0,
-              borderTop: '10px solid transparent',
-              borderBottom: '10px solid transparent',
-              borderLeft: '10px solid #39FF14'
-            }}/>
-          </div>
-          
-          {/* Callout 3: Wheel */}
-          <div style={{
-            position: 'absolute',
-            top: '40%',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            background: '#1a1a1a',
-            border: '2px solid #0EA5E9',
-            borderRadius: 12,
-            padding: 16,
-            maxWidth: 300,
-            zIndex: 1000,
-            boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
-            textAlign: 'center'
-          }}>
-            <div style={{fontSize: 14, color: '#0EA5E9', fontWeight: 600, marginBottom: 8}}>🎵 Click Wedges to Play</div>
-            <div style={{fontSize: 12, lineHeight: 1.5, color: '#e5e7eb'}}>
-              Each wedge is a chord function. Click to hear it and see the notes light up on the keyboard!
-            </div>
-            <div style={{
-              position: 'absolute',
-              top: -10,
-              left: '50%',
-              transform: 'translateX(-50%)',
-              width: 0,
-              height: 0,
-              borderLeft: '10px solid transparent',
-              borderRight: '10px solid transparent',
-              borderBottom: '10px solid #0EA5E9'
-            }}/>
-          </div>
-          
-          {/* Callout 4: Audio button */}
-          <div style={{
-            position: 'absolute',
-            top: 140,
-            right: 200,
-            background: '#1a1a1a',
-            border: '2px solid #F0AD21',
-            borderRadius: 12,
-            padding: 16,
-            maxWidth: 240,
-            zIndex: 1000,
-            boxShadow: '0 4px 20px rgba(0,0,0,0.5)'
-          }}>
-            <div style={{fontSize: 14, color: '#F0AD21', fontWeight: 600, marginBottom: 8}}>🔉 Audio Toggle</div>
-            <div style={{fontSize: 12, lineHeight: 1.5, color: '#e5e7eb'}}>
-              Enable vintage Rhodes piano sound when clicking wedges
-            </div>
-            <div style={{
-              position: 'absolute',
-              right: -10,
-              top: 30,
-              width: 0,
-              height: 0,
-              borderTop: '10px solid transparent',
-              borderBottom: '10px solid transparent',
-              borderLeft: '10px solid #F0AD21'
-            }}/>
-          </div>
-          
-          {/* Callout 5: Make My Key */}
-          <div style={{
-            position: 'absolute',
-            top: 140,
-            right: 360,
-            background: '#1a1a1a',
-            border: '2px solid #9333ea',
-            borderRadius: 12,
-            padding: 16,
-            maxWidth: 240,
-            zIndex: 1000,
-            boxShadow: '0 4px 20px rgba(0,0,0,0.5)'
-          }}>
-            <div style={{fontSize: 14, color: '#9333ea', fontWeight: 600, marginBottom: 8}}>⚡ Quick Tip</div>
-            <div style={{fontSize: 12, lineHeight: 1.5, color: '#e5e7eb'}}>
-              Press <strong>K</strong> key to make the current chord your new key center!
-            </div>
-            <div style={{
-              position: 'absolute',
-              right: -10,
-              top: 30,
-              width: 0,
-              height: 0,
-              borderTop: '10px solid transparent',
-              borderBottom: '10px solid transparent',
-              borderLeft: '10px solid #9333ea'
-            }}/>
-          </div>
-          
-          {/* Close button */}
-          <button
-            onClick={() => setShowHelp(false)}
-            style={{
-              position: 'fixed',
-              bottom: 40,
-              left: '50%',
-              transform: 'translateX(-50%)',
-              padding: '12px 32px',
-              border: '2px solid #F2D74B',
-              borderRadius: 8,
-              background: '#1a1a1a',
-              color: '#F2D74B',
-              cursor: 'pointer',
-              fontSize: 16,
-              fontWeight: 600,
-              zIndex: 1000,
-              boxShadow: '0 4px 20px rgba(0,0,0,0.5)'
-            }}
-          >
-            Got it! ✓
-          </button>
-        </>
-      )}
+      
+      {/* v3.1.0: Help Overlay with visual callouts */}
+      {showHelp && <HelpOverlay onClose={() => setShowHelp(false)} />}
     </div>
   );
 }
 
-// EOF - HarmonyWheel.tsx v2.45.0
+// EOF - HarmonyWheel.tsx v3.1.0
