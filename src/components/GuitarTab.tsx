@@ -44,11 +44,13 @@ const OPEN_SHAPES: Record<string, Shape> = {
   // ========== MINOR TRIADS ==========
   Cm: { title:"Cm", position:3, mute:[6], fingers:[[5,3,"1"],[4,5,"3"],[3,5,"4"],[2,4,"2"],[1,3,"1"]], barres:[{fromString:5,toString:1,fret:3}] },
   "C#m":{ title:"C#m",position:4, mute:[6], fingers:[[5,4,"1"],[4,6,"3"],[3,6,"4"],[2,5,"2"],[1,4,"1"]], barres:[{fromString:5,toString:1,fret:4}] },
+  Dbm:{ title:"Dbm",position:4, mute:[6], fingers:[[5,4,"1"],[4,6,"3"],[3,6,"4"],[2,5,"2"],[1,4,"1"]], barres:[{fromString:5,toString:1,fret:4}] }, // Same as C#m
   Dm: { title:"Dm", position:1, mute:[6,5], fingers:[[4,0],[3,2,"2"],[2,3,"3"],[1,1,"1"]] },
   Ebm:{ title:"Ebm",position:1, mute:[6], fingers:[[5,1,"1"],[4,3,"3"],[3,3,"4"],[2,2,"2"],[1,1,"1"]], barres:[{fromString:5,toString:1,fret:1}] },
   Em: { title:"Em", position:1, fingers:[[6,0],[5,2,"2"],[4,2,"3"],[3,0],[2,0],[1,0]] },
   Fm: { title:"Fm", position:1, mute:[6], fingers:[[5,1,"1"],[4,3,"3"],[3,3,"4"],[2,1,"1"],[1,1,"1"]], barres:[{fromString:5,toString:1,fret:1}] },
   "F#m":{ title:"F#m",position:2, mute:[6], fingers:[[5,2,"1"],[4,4,"3"],[3,4,"4"],[2,2,"2"],[1,2,"1"]], barres:[{fromString:5,toString:1,fret:2}] },
+  Gbm:{ title:"Gbm",position:2, mute:[6], fingers:[[5,2,"1"],[4,4,"3"],[3,4,"4"],[2,2,"2"],[1,2,"1"]], barres:[{fromString:5,toString:1,fret:2}] }, // Same as F#m
   Gm: { title:"Gm", position:3, mute:[6], fingers:[[5,3,"1"],[4,5,"3"],[3,5,"4"],[2,3,"2"],[1,3,"1"]], barres:[{fromString:5,toString:1,fret:3}] },
   Abm:{ title:"Abm",position:4, mute:[6], fingers:[[5,4,"1"],[4,6,"3"],[3,6,"4"],[2,4,"2"],[1,4,"1"]], barres:[{fromString:5,toString:1,fret:4}] },
   Am: { title:"Am", position:1, mute:[6], fingers:[[5,0],[4,2,"2"],[3,2,"3"],[2,1,"1"],[1,0]] },
@@ -81,10 +83,12 @@ const OPEN_SHAPES: Record<string, Shape> = {
   // ========== MINOR 7TH CHORDS ==========
   Cm7:{ title:"Cm7",position:3, mute:[6], fingers:[[5,3,"1"],[4,5,"3"],[3,3,"2"],[2,4,"4"],[1,3,"1"]], barres:[{fromString:5,toString:1,fret:3}] },
   "C#m7":{title:"C#m7",position:4, mute:[6], fingers:[[5,4,"1"],[4,6,"3"],[3,4,"2"],[2,5,"4"],[1,4,"1"]], barres:[{fromString:5,toString:1,fret:4}] },
+  Dbm7:{ title:"Dbm7",position:4, mute:[6], fingers:[[5,4,"1"],[4,6,"3"],[3,4,"2"],[2,5,"4"],[1,4,"1"]], barres:[{fromString:5,toString:1,fret:4}] }, // Same as C#m7
   Dm7:{ title:"Dm7",position:1, mute:[6,5], fingers:[[4,0],[3,2,"2"],[2,1,"1"],[1,1,"1"]], barres:[{fromString:2,toString:1,fret:1}] },
   Em7:{ title:"Em7",position:1, fingers:[[6,0],[5,2,"2"],[4,0],[3,0],[2,0],[1,0]] },
   Fm7:{ title:"Fm7",position:1, mute:[6], fingers:[[5,1,"1"],[4,3,"3"],[3,1,"1"],[2,1,"1"],[1,1,"1"]], barres:[{fromString:5,toString:1,fret:1}] },
   "F#m7":{title:"F#m7",position:2, mute:[6], fingers:[[5,2,"1"],[4,4,"3"],[3,2,"1"],[2,2,"1"],[1,2,"1"]], barres:[{fromString:5,toString:1,fret:2}] },
+  Gbm7:{ title:"Gbm7",position:2, mute:[6], fingers:[[5,2,"1"],[4,4,"3"],[3,2,"1"],[2,2,"1"],[1,2,"1"]], barres:[{fromString:5,toString:1,fret:2}] }, // Same as F#m7
   Gm7:{ title:"Gm7",position:3, mute:[6], fingers:[[5,3,"2"],[4,3,"1"],[3,3,"1"],[2,3,"1"],[1,3,"1"]], barres:[{fromString:5,toString:1,fret:3}] },
   Am7:{ title:"Am7",position:1, mute:[6], fingers:[[5,0],[4,2,"2"],[3,0],[2,0],[1,0]] },
   Bbm7:{title:"Bbm7",position:1,mute:[6], fingers:[[5,1,"1"],[4,3,"3"],[3,1,"1"],[2,2,"2"],[1,1,"1"]], barres:[{fromString:5,toString:1,fret:1}] },
@@ -135,10 +139,13 @@ const OPEN_SHAPES: Record<string, Shape> = {
 };
 
 function normalizeLabel(label: string): string {
-  // First normalize enharmonics (sharps to flats)
+  // CRITICAL: C# and F# chords exist in the dictionary, don't normalize them!
+  // Only normalize G#, D#, A# (which don't have entries)
   let normalized = label
-    .replace(/G#/g, "Ab").replace(/D#/g, "Eb").replace(/A#/g, "Bb")
-    .replace(/C#/g, "Db").replace(/F#/g, "Gb");
+    .replace(/G#/g, "Ab")
+    .replace(/D#/g, "Eb")
+    .replace(/A#/g, "Bb");
+  // NOTE: C# and F# are NOT normalized - they have their own entries
   
   // Handle half-diminished variations: m7♭5, m7b5, ø, ø7 → all become m7b5
   normalized = normalized

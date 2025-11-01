@@ -202,11 +202,8 @@ export function internalAbsoluteName(pcsAbs:Set<number>, baseKey:KeyName, midiNo
   // This ensures C#m7♭5 shows as "C#m7♭5" not "Dbm7♭5"
   let rootName=(best.qual==="dim"||best.qual==="dim7"||best.qual==="m7b5")? dimRootName(actualRootPc)
               : pcNameForKey(actualRootPc, baseKey);
-  console.log('[THEORY DEBUG] ACTUAL rootName after assignment:', rootName, 'type:', typeof rootName);
   const qual = best.qual==="m7b5" ? "m7♭5" : best.qual;
-  const result = `${rootName}${qual}`;
-  console.log('[THEORY DEBUG] RETURNING:', result);
-  return result;
+  return `${rootName}${qual}`;
 }
 // ========== END MODIFIED v2.37.9 ==========
 

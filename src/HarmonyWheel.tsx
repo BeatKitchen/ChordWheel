@@ -75,7 +75,7 @@ import {
 } from "./lib/modes";
 import { BonusDebouncer } from "./lib/overlays";
 import * as preview from "./lib/preview";
-const HW_VERSION = 'v3.0.0'; // FIXED MMK BUG! Use theory.ts result, not polluted lastPlayed
+const HW_VERSION = 'v3.1.0'; // Fixed audio button + Db/Gbm tabs
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -218,7 +218,7 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
   // Audio playback
   const [audioEnabled, setAudioEnabled] = useState(true); // Start with audio enabled
   const audioEnabledRef = useRef(true); // Ref for MIDI callback closure
-  const [audioReady, setAudioReady] = useState(false);
+  const [audioReady, setAudioReady] = useState(true); // Start ready since audio enabled by default
   
   // Initialize audio context on mount since we start with audio enabled
   useEffect(() => {
@@ -1046,7 +1046,7 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
     const toRel=(n:number)=>((n-NAME_TO_PC[baseKeyRef.current]+12)%12);
     const pcsRel=new Set([...pcsAbs].map(toRel));
     // MODIFIED v2.37.9: Pass absHeld array to internalAbsoluteName for dim7 root disambiguation
-    const absName=internalAbsoluteName(pcsAbs, baseKeyRef.current, absHeld);
+    const absName = internalAbsoluteName(pcsAbs, baseKeyRef.current, absHeld) || "";
     
     // Store for Make My Key - this is the pure MIDI detection result
     if (absName) {
