@@ -63,6 +63,9 @@ import GuitarTab from "./components/GuitarTab";
 // v3.1.0: Help overlay with visual callouts
 import HelpOverlay from "./components/HelpOverlay";
 
+// v3.1.0: Circular skill selector - Alternative version
+import SkillWheel from "./components/SkillWheel";
+
 import { computeLayout, annulusTopDegree } from "./lib/geometry";
 import {
   pcFromMidi, pcNameForKey, FLAT_NAMES, NAME_TO_PC, T, subsetOf,
@@ -2449,86 +2452,10 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
           </div>
           </div>
           
-          {/* Skill Icons + Help button - top right */}
-          <div style={{display:'flex', alignItems:'flex-start', gap:24}}>
-            {/* Skill Level Icons */}
-            <div style={{display:'flex', gap:8}}>
-              {[
-                { level: "ROOKIE", label: "ROOKIE" },
-                { level: "NOVICE", label: "NOVICE" },
-                { level: "SOPHOMORE", label: "SOPH" },
-                { level: "ADVANCED", label: "ADV" },
-                { level: "EXPERT", label: "EXPERT" },
-              ].map(({level, label}) => {
-                const isActive = skillLevel === level;
-                return (
-                  <div key={level} style={{display:'flex', flexDirection:'column', alignItems:'center', gap:3}}>
-                    <button
-                      onClick={() => setSkillLevel(level as SkillLevel)}
-                      style={{
-                        padding: 3,
-                        border: `2px solid ${isActive ? '#39FF14' : '#374151'}`,
-                        borderRadius: 6,
-                        background: isActive ? '#111' : '#0a0a0a',
-                        cursor: "pointer",
-                        transition: 'all 0.2s',
-                        opacity: isActive ? 1 : 0.75,
-                      }}
-                      title={level}
-                    >
-                      <img 
-                        src={skillIcons[level as keyof typeof skillIcons]} 
-                        alt={label} 
-                        style={{
-                          width: 36,
-                          height: 36, 
-                          display: 'block',
-                        }} 
-                        onError={(e) => {
-                          e.currentTarget.style.display = 'none';
-                        }}
-                      />
-                    </button>
-                    {/* Label under each icon, only visible when active */}
-                    {isActive && (
-                      <div style={{
-                        fontSize:9, 
-                        color: '#39FF14', 
-                        fontWeight: 600,
-                        textTransform:'uppercase',
-                        textAlign:'center',
-                        lineHeight:'10px'
-                      }}>
-                        {label}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-            
-            {/* Help button - matched size */}
-            <button
-              onClick={() => setShowHelp(!showHelp)}
-              style={{
-                width: 44,
-                height: 44,
-                padding: 0,
-                border: `2px solid ${showHelp ? '#39FF14' : '#374151'}`,
-                borderRadius: 8,
-                background: "#111",
-                color: showHelp ? '#39FF14' : '#9CA3AF',
-                cursor: "pointer",
-                fontSize: 22,
-                fontWeight: 700,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-              title="Help & Keyboard Shortcuts"
-            >
-              ?
-            </button>
+          {/* Skill Wheel only - top right */}
+          <div style={{display:'flex', alignItems:'flex-start'}}>
+            {/* Circular Skill Selector */}
+            <SkillWheel current={skillLevel} onChange={setSkillLevel} />
           </div>
         </div>
 
@@ -3211,19 +3138,45 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
                   )}
                   </div>
                   
-                  {/* Right: Status */}
-                  <span style={{
-                    fontSize:11,
-                    padding:'2px 6px',
-                    border: `2px solid ${visitorActive ? '#9333ea' : relMinorActive ? '#F0AD21' : subdomActive ? '#0EA5E9' : (visitorActive || relMinorActive || subdomActive) ? '#F2D74B' : '#6b7280'}`,
-                    background:'#ffffff18',
-                    borderRadius:6
-                  }}>
-                    {visitorActive ? `space: Parallel (${parKey})`
-                      : relMinorActive ? 'space: Relative minor (Am)'
-                      : subdomActive ? `space: Subdominant (${subKey})`
-                      : (midiConnected ? `MIDI: ${midiName||'Connected'}` : 'MIDI: none')}
-                  </span>
+                  {/* Right: Status + Help */}
+                  <div style={{display:'flex', gap:8, alignItems:'center'}}>
+                    <span style={{
+                      fontSize:11,
+                      padding:'2px 6px',
+                      border: `2px solid ${visitorActive ? '#9333ea' : relMinorActive ? '#F0AD21' : subdomActive ? '#0EA5E9' : (visitorActive || relMinorActive || subdomActive) ? '#F2D74B' : '#6b7280'}`,
+                      background:'#ffffff18',
+                      borderRadius:6
+                    }}>
+                      {visitorActive ? `space: Parallel (${parKey})`
+                        : relMinorActive ? 'space: Relative minor (Am)'
+                        : subdomActive ? `space: Subdominant (${subKey})`
+                        : (midiConnected ? `MIDI: ${midiName||'Connected'}` : 'MIDI: none')}
+                    </span>
+                    
+                    {/* Help Button */}
+                    <button
+                      onClick={() => setShowHelp(!showHelp)}
+                      style={{
+                        width: 32,
+                        height: 32,
+                        padding: 0,
+                        border: `2px solid ${showHelp ? '#39FF14' : '#374151'}`,
+                        borderRadius: '50%',
+                        background: showHelp ? '#1a3310' : '#0a0a0a',
+                        color: showHelp ? '#39FF14' : '#9CA3AF',
+                        cursor: "pointer",
+                        fontSize: 16,
+                        fontWeight: 700,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        transition: 'all 0.2s',
+                      }}
+                      title="Help & Keyboard Shortcuts"
+                    >
+                      ?
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -3234,7 +3187,7 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
       
       {/* Help Callouts */}
       
-      {/* v3.1.0: Help Overlay with visual callouts */}
+      {/* Help Overlay */}
       {showHelp && <HelpOverlay onClose={() => setShowHelp(false)} />}
     </div>
   );
