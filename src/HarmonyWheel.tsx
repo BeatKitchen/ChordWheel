@@ -1,5 +1,37 @@
 /*
- * HarmonyWheel.tsx — v3.2.7
+ * HarmonyWheel.tsx — v3.3.4
+ * 
+ * 🔄 v3.3.4 BUTTON SWAP:
+ * - Enter button (⏎) now immediately right of textarea
+ * - Library button (📁) moved after Enter
+ * - Better visual flow: edit → load → library
+ * 
+ * 🎨 v3.3.3 VISUAL TWEAK:
+ * - Non-current sequence items now display in grey (#9CA3AF) for better focus
+ * - Current item stays bright green (#39FF14)
+ * - Comments even dimmer (#6b7280)
+ * 
+ * 🛑 v3.3.2 STEP RECORD EXIT:
+ * - Step record mode now exits automatically when:
+ *   • Transport buttons pressed (<<, <, >, play/pause, stop)
+ *   • Enter key pressed to load sequence
+ * - Prevents loop recording situation
+ * - setStepRecord(false) + stepRecordRef.current = false in all transport handlers
+ * 
+ * 📝 v3.3.1 TERMINOLOGY UPDATES:
+ * - "Auto Record" → "Step Record" (everywhere)
+ * - "Song/Playlist/Editor" → "Sequencer" (in UI text)
+ * - Variable names updated: autoRecord → stepRecord, autoRecordRef → stepRecordRef
+ * - Placeholder text: "Song Name" → "Sequence Name"
+ * - Menu tooltips and comments updated
+ * 
+ * 🎨 v3.3.0 SKILL SELECTOR UI:
+ * - Simplified horizontal skill selector (removed complex radial wheel)
+ * - Square borders instead of circles
+ * - Selected skill shown in bright color
+ * - Larger icons (40px, up from 36px)
+ * - Expert mode shows "EXPERT\n(all functions)"
+ * - Better readability and consistency
  * 
  * 💬 v3.2.7 COMMENTS PAUSE:
  * - Comments now pause when you press > (don't auto-skip)
@@ -156,7 +188,7 @@ import {
   parseSongMetadata
 } from "./lib/songManager";
 
-const HW_VERSION = 'v3.2.7'; // Comments pause on >!
+const HW_VERSION = 'v3.3.4'; // Swapped Enter/Library buttons
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -373,8 +405,8 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
   const [showSongMenu, setShowSongMenu] = useState(false);
   const [shareURL, setShareURL] = useState<string>('');
   const [keyChangeFlash, setKeyChangeFlash] = useState(false);
-  const [autoRecord, setAutoRecord] = useState(false);
-  const autoRecordRef = useRef(false); // Ref for callbacks
+  const [stepRecord, setStepRecord] = useState(false); // v3.3.1: Renamed from autoRecord
+  const stepRecordRef = useRef(false); // v3.3.1: Renamed from stepRecordRef
   
   const [trailFn, setTrailFn] = useState<Fn|"">("");
   const [trailTick, setTrailTick] = useState(0);
@@ -821,6 +853,12 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
   };
 
   const stepPrev = ()=>{
+    // v3.3.2: Exit step record when using transport controls
+    if (stepRecord) {
+      setStepRecord(false);
+      stepRecordRef.current = false;
+    }
+    
     if (!sequence.length) return;
     let i = seqIndex - 1;
     if (i < 0) i = 0; // Stay at beginning
@@ -838,6 +876,12 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
   };
   
   const stepNext = ()=>{
+    // v3.3.2: Exit step record when using transport controls
+    if (stepRecord) {
+      setStepRecord(false);
+      stepRecordRef.current = false;
+    }
+    
     if (!sequence.length) return;
     
     console.log('=== STEP NEXT START ===');
@@ -894,6 +938,12 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
   
   // Playback controls
   const togglePlayPause = () => {
+    // v3.3.2: Exit step record when using transport controls
+    if (stepRecord) {
+      setStepRecord(false);
+      stepRecordRef.current = false;
+    }
+    
     if (isPlaying) {
       setIsPlaying(false);
       if (playbackTimerRef.current) {
@@ -913,6 +963,12 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
   };
   
   const stopPlayback = () => {
+    // v3.3.2: Exit step record when using transport controls
+    if (stepRecord) {
+      setStepRecord(false);
+      stepRecordRef.current = false;
+    }
+    
     setIsPlaying(false);
     if (playbackTimerRef.current) {
       clearTimeout(playbackTimerRef.current);
@@ -927,6 +983,12 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
   };
   
   const goToStart = () => {
+    // v3.3.2: Exit step record when using transport controls
+    if (stepRecord) {
+      setStepRecord(false);
+      stepRecordRef.current = false;
+    }
+    
     console.log('=== GO TO START ===');
     if (sequence.length > 0) {
       // Find first non-title, non-KEY item
@@ -997,7 +1059,14 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
     
     // Return/Enter loads sequence (no line breaks supported)
     if (e.key==="Enter"){ 
-      e.preventDefault(); 
+      e.preventDefault();
+      
+      // v3.3.2: Exit step record when loading sequence
+      if (stepRecord) {
+        setStepRecord(false);
+        stepRecordRef.current = false;
+      }
+      
       parseAndLoadSequence();
       // Blur textarea to exit edit mode
       if (textareaRef.current) {
@@ -1459,7 +1528,7 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
 
   const setActiveWithTrail=(fn:Fn,label:string)=>{ 
     const fullStack = new Error().stack?.split('\n').slice(1, 8).join('\n');
-    console.log('🎯 setActiveWithTrail called:', { fn, label, autoRecord: autoRecordRef.current });
+    console.log('🎯 setActiveWithTrail called:', { fn, label, stepRecord: stepRecordRef.current });
     console.log('📍 Stack trace:', fullStack);
     if(activeFnRef.current && activeFnRef.current!==fn){ makeTrail(); } 
     setActiveFn(fn); 
@@ -1468,7 +1537,7 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
     console.log('📝 lastPlayedChordRef set to:', label);
     
     // Auto-record: append chord to inputText
-    if (autoRecordRef.current && label) {
+    if (stepRecordRef.current && label) {
       setInputText(prev => prev ? `${prev}, ${label}` : label);
     }
     
@@ -1476,7 +1545,7 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
     stopDimFade();
   };
   const centerOnly=(t:string)=>{ 
-    console.log('🎯 centerOnly called:', { t, autoRecord: autoRecordRef.current });
+    console.log('🎯 centerOnly called:', { t, stepRecord: stepRecordRef.current });
     makeTrail(); 
     if (activeFnRef.current) startDimFade();
     // Filter out comment and modifier markers
@@ -1486,7 +1555,7 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
     console.log('📝 lastPlayedChordRef set to:', cleaned);
     
     // Auto-record: append chord to inputText
-    if (autoRecordRef.current && cleaned && !cleaned.startsWith('#') && !cleaned.startsWith('@')) {
+    if (stepRecordRef.current && cleaned && !cleaned.startsWith('#') && !cleaned.startsWith('@')) {
       setInputText(prev => prev ? `${prev}, ${cleaned}` : cleaned);
     }
     
@@ -3542,7 +3611,7 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
                                 background: isCurrent ? '#374151' : 'transparent',
                                 fontWeight: isCurrent ? 600 : 400,
                                 fontStyle: isComment ? 'italic' : 'normal',
-                                color: isCurrent ? '#39FF14' : (isComment ? '#9CA3AF' : '#e5e7eb')
+                                color: isCurrent ? '#39FF14' : (isComment ? '#6b7280' : '#9CA3AF') // v3.3.3: Dimmer text for non-current
                               }}>
                                 {isComment ? item.raw.replace(/^#\s*/, '') : item.raw}
                               </span>
@@ -3556,12 +3625,12 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
                 </div>
               )}
               
-              {/* Row 2: Editor + Buttons - EXPERT ONLY */}
+              {/* Row 2: Sequencer + Buttons - EXPERT ONLY */}
               {skillLevel === "EXPERT" && (
                 <div style={{marginBottom: 6, display:'flex', gap:8, alignItems:'stretch'}}>
                   <textarea
                     ref={textareaRef}
-                    placeholder={'Type chords, modifiers, and comments...\nExamples:\n@TITLE Song Name, @KEY C\nC, Am7, F, G7\n@SUB F, Bb, C7, @HOME\n@REL Em, Am, @PAR Cm, Fm\n@KEY G, D, G, C\n# Verse: lyrics or theory note'}
+                    placeholder={'Type chords, modifiers, and comments...\nExamples:\n@TITLE Sequence Name, @KEY C\nC, Am7, F, G7\n@SUB F, Bb, C7, @HOME\n@REL Em, Am, @PAR Cm, Fm\n@KEY G, D, G, C\n# Verse: lyrics or theory note'}
                     rows={3}
                     value={inputText}
                     onChange={(e)=>setInputText(e.target.value)}
@@ -3580,7 +3649,29 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
                     }}
                   />
                   
-                  {/* Song Menu Button */}
+                  {/* Enter Button - RED when editor differs from loaded - v3.3.4: Moved to be immediately right of textarea */}
+                  <button 
+                    onClick={parseAndLoadSequence}
+                    style={{
+                      width:60,
+                      padding:'6px',
+                      border: inputText !== loadedSongText ? '2px solid #EF4444' : '2px solid #39FF14',
+                      borderRadius:8,
+                      background: inputText !== loadedSongText ? '#2a1a1a' : '#111',
+                      color:'#fff',
+                      cursor:'pointer',
+                      fontSize:20,
+                      display:'flex',
+                      alignItems:'center',
+                      justifyContent:'center',
+                      fontWeight:700
+                    }}
+                    title={inputText !== loadedSongText ? "Load changes (Enter)" : "Load sequence (Enter)"}
+                  >
+                    ⏎
+                  </button>
+                  
+                  {/* Sequencer Menu Button - v3.3.4: Moved after Enter button */}
                   <div style={{position:'relative'}}>
                     <button 
                       onClick={() => setShowSongMenu(!showSongMenu)}
@@ -3598,12 +3689,12 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
                         alignItems:'center',
                         justifyContent:'center'
                       }}
-                      title="Song menu"
+                      title="Sequencer menu"
                     >
                       📁
                     </button>
                     
-                    {/* Song Menu Dropdown */}
+                    {/* Sequencer Menu Dropdown - v3.3.1: Renamed from Song Menu */}
                     {showSongMenu && (
                       <div style={{
                         position: 'absolute',
@@ -3737,28 +3828,6 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
                       </div>
                     )}
                   </div>
-                  
-                  {/* Enter Button - RED when editor differs from loaded */}
-                  <button 
-                    onClick={parseAndLoadSequence}
-                    style={{
-                      width:60,
-                      padding:'6px',
-                      border: inputText !== loadedSongText ? '2px solid #EF4444' : '2px solid #39FF14',
-                      borderRadius:8,
-                      background: inputText !== loadedSongText ? '#2a1a1a' : '#111',
-                      color:'#fff',
-                      cursor:'pointer',
-                      fontSize:20,
-                      display:'flex',
-                      alignItems:'center',
-                      justifyContent:'center',
-                      fontWeight:700
-                    }}
-                    title={inputText !== loadedSongText ? "Load changes (Enter)" : "Load sequence (Enter)"}
-                  >
-                    ⏎
-                  </button>
                 </div>
               )}
               
@@ -4196,7 +4265,7 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
                 </div>
               </div>
               
-              {/* Make My Key + Auto-Record + Show Bonus Row */}
+              {/* Make My Key + Step Record + Show Bonus Row */}
               <div style={{marginTop: 6, display:'flex', gap:8, alignItems:'center'}}>
                 {skillLevel === "EXPERT" && (
                   <>
@@ -4220,26 +4289,26 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
                       ⚡ Make My Key
                     </button>
                     
-                    {/* Auto-Record Toggle */}
+                    {/* Step Record Toggle - v3.3.1: Renamed from Auto-Record */}
                     <button 
                       onClick={() => {
-                        const newState = !autoRecord;
-                        setAutoRecord(newState);
-                        autoRecordRef.current = newState;
+                        const newState = !stepRecord;
+                        setStepRecord(newState);
+                        stepRecordRef.current = newState;
                       }}
                       style={{
                         padding:'6px 10px', 
-                        border:`1px solid ${autoRecord ? '#ff4444' : '#374151'}`, 
+                        border:`1px solid ${stepRecord ? '#ff4444' : '#374151'}`, 
                         borderRadius:6, 
-                        background: autoRecord ? '#331010' : '#1f2937', 
-                        color: autoRecord ? '#ff4444' : '#9CA3AF', 
+                        background: stepRecord ? '#331010' : '#1f2937', 
+                        color: stepRecord ? '#ff4444' : '#9CA3AF', 
                         cursor:'pointer',
                         fontSize:11,
-                        fontWeight: autoRecord ? 600 : 400
+                        fontWeight: stepRecord ? 600 : 400
                       }}
-                      title="Toggle auto-record: automatically add played chords to song"
+                      title="Toggle step record: automatically add played chords to sequencer"
                     >
-                      {autoRecord ? '⏺ Recording' : '⏺ Auto-Record'}
+                      {stepRecord ? '⏺ Recording' : '⏺ Step Record'}
                     </button>
                   </>
                 )}
@@ -4365,4 +4434,4 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
   );
 }
 
-// EOF - HarmonyWheel.tsx v3.2.7
+// EOF - HarmonyWheel.tsx v3.3.4

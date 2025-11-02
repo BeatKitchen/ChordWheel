@@ -1,5 +1,12 @@
-// SkillWheel_Grid.tsx - Grid layout alternative (like key selector)
-// Simple tray that opens with 5 buttons in a row
+/*
+ * SkillWheel.tsx - v3.3.0 IMPROVED GRID
+ * 
+ * Grid layout that opens on hover:
+ * - Closed state: Square border (not circle), bigger icon (40px)
+ * - Selected skill color shown in text
+ * - Expert shows "EXPERT\n(all functions)" 
+ * - Better readability
+ */
 
 import React, { useState } from "react";
 
@@ -36,7 +43,7 @@ const SKILL_LABELS: Record<SkillLevel, string> = {
   SOPHOMORE: "3. SOPHOMORE",
   INTERMEDIATE: "4. INTERMEDIATE",
   ADVANCED: "4. ADVANCED",
-  EXPERT: "5. EXPERT",
+  EXPERT: "5. EXPERT\n(all functions)", // v3.3.0: Added line break
 };
 
 export default function SkillWheel({ current, onChange }: SkillWheelProps) {
@@ -60,13 +67,13 @@ export default function SkillWheel({ current, onChange }: SkillWheelProps) {
     setIsOpen(true);
   };
 
-  // Closed state
+  // Closed state - v3.3.0: Square border, bigger icon, better text
   if (!isOpen) {
     return (
       <div 
         style={{ 
           width: 100, // Wider for text
-          height: 60, // Button + label
+          height: 72, // Taller for multi-line text
           display: 'flex', 
           flexDirection: 'column', 
           alignItems: 'flex-end', // Right-justify
@@ -77,11 +84,11 @@ export default function SkillWheel({ current, onChange }: SkillWheelProps) {
       >
         <button
           style={{
-            width: 44,
-            height: 44,
-            padding: 4,
+            width: 50,  // v3.3.0: Increased from 44
+            height: 50, // v3.3.0: Increased from 44
+            padding: 5,
             border: `2px solid ${SKILL_COLORS[current]}`,
-            borderRadius: "50%",
+            borderRadius: 8, // v3.3.0: Square corners (was 50% circle)
             background: "#0a0a0a",
             cursor: "pointer",
             display: "flex",
@@ -89,21 +96,22 @@ export default function SkillWheel({ current, onChange }: SkillWheelProps) {
             justifyContent: "center",
             transition: "all 0.2s",
           }}
-          title={`Skill Level: ${SKILL_LABELS[current]} - Hover to change`}
+          title={`Skill Level: ${SKILL_LABELS[current].replace('\n', ' ')} - Hover to change`}
         >
           <img 
             src={SKILL_ICONS[current]} 
             alt={current}
-            style={{ width: 32, height: 32, display: 'block' }}
+            style={{ width: 40, height: 40, display: 'block' }} // v3.3.0: Increased from 32
           />
         </button>
         <div style={{ 
           fontSize: 9, 
-          color: SKILL_COLORS[current], 
+          color: SKILL_COLORS[current], // v3.3.0: Always in color
           fontWeight: 600, 
           textTransform: 'uppercase',
-          whiteSpace: 'nowrap',
-          textAlign: 'right'
+          whiteSpace: 'pre-line', // v3.3.0: Allow line breaks for EXPERT
+          textAlign: 'right',
+          lineHeight: 1.2
         }}>
           {SKILL_LABELS[current]}
         </div>
@@ -116,7 +124,7 @@ export default function SkillWheel({ current, onChange }: SkillWheelProps) {
     <div
       style={{ 
         width: 100, // Match closed state
-        height: 60, // Match closed state
+        height: 72, // Match closed state (updated)
         position: "relative",
         display: "flex",
         flexDirection: "column",
