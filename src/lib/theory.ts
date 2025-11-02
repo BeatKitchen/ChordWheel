@@ -1,5 +1,10 @@
 /*
- * theory.ts - v2.37.10
+ * theory.ts — v3.1.3
+ * 
+ * CHANGES FROM v2.37.10:
+ * - Added case "V" to realizeFunction() switch statement
+ * - This was causing all TypeScript "undefined" errors!
+ * - Now realizeFunction handles both "V" and "V7" properly
  * 
  * CHANGES FROM v2.37.9:
  * - Strengthened dim7 lowest-note detection (now runs FIRST, not as fallback)
@@ -13,7 +18,7 @@
  * - This fixes Bdim7 being misidentified as G#dim7
  * 
  * MODIFIED BY: Claude AI for Nathan Rosenberg / Beat Kitchen
- * DATE: October 29, 2025
+ * DATE: November 2, 2025
  */
 
 import type { Fn, KeyName } from "./types";
@@ -223,6 +228,7 @@ export function realizeFunction(fn:Fn, key: KeyName){
     case "iii": return name(DEG[3])+"m";
     case "IV": return name(DEG[4]);
     case "iv": return name(DEG[4])+"m";
+    case "V": return name(DEG[5]);         // ← ADDED v3.1.3! Plain V triad (G in C)
     case "V7": return name(DEG[5])+"7";
     case "vi": return name(DEG[6])+"m";
     case "V/vi": return name(add12(DEG[6],7))+"7";
@@ -254,4 +260,4 @@ export function getParKey(metaKey: KeyName): KeyName {
   return FLAT_NAMES[parPc]; // Always use flat names (KeyName type)
 }
 
-// EOF - theory.ts v2.38.0
+// EOF - theory.ts v3.1.3

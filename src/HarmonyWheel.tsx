@@ -1,5 +1,74 @@
 /*
- * HarmonyWheel.tsx — v3.1.0
+ * HarmonyWheel.tsx — v3.2.7
+ * 
+ * 💬 v3.2.7 COMMENTS PAUSE:
+ * - Comments now pause when you press > (don't auto-skip)
+ * - Allows visual section breaks in sequences
+ * - "# B Section" will pause, then next > plays the chord
+ * - Combined still works: "# Section: Chord" plays immediately
+ * 
+ * 🔧 v3.2.6 PARSER FIX:
+ * - Improved comment+chord regex to handle m7b5, b5, #5, etc.
+ * - Reminder: Use colon not comma: "# B Section: Bm7b5" ✅
+ * - Not comma: "# B Section, Bm7b5" ❌ (splits into separate tokens)
+ * 
+ * 🎯 v3.2.5 QUALITY OF LIFE:
+ * - Forgiving parser: @HOME: F (space after colon) now works
+ * - Combined comments: # Verse: Am plays Am after displaying "Verse"
+ * - Combined KEY: @KEY: B F#m changes key to B and plays F#m
+ * - Don't auto-play first chord on load or "Go to Start"
+ * - Better textarea click targets (explicit line-height)
+ * - 📌 TODO: Add Help button to overlay with full documentation
+ * 
+ * 🎯 v3.2.4 COMBINED MODIFIERS:
+ * - Can now combine space switches with chords in one token!
+ * - Examples: @HOME:F, @SUB:Gm7, HOME:C, SUB F (space or colon)
+ * - No more rhythm-breaking double clicks!
+ * - Usage: F, F, C, C, G, G, C, C7, @HOME:F, F, C, C, G, G7, C, C
+ * 
+ * ⏮️ v3.2.3 REVERT:
+ * - Reverted v3.2.2 change (C triad no longer auto-exits SUB)
+ * - Original MIDI logic is correct and carefully tuned
+ * - Use manual @HOME modifier in sequencer for edge cases
+ * - Example: F, F, C, C, G, G, C, C7, @HOME, F, F, C, C, G, G7, C, C
+ * 
+ * 🏠 v3.2.2 SUB EXIT FIX (REVERTED):
+ * - Plain C triad now exits SUB space when latched (returns HOME)
+ * - Allows C7 → F → C progression to work correctly in sequencer
+ * - C7 enters SUB, F stays in SUB, plain C returns to HOME
+ * 
+ * 🔊 v3.2.1 AUDIO FIX:
+ * - Restored audio playback in sequencer (was removed in v3.2.0)
+ * - Now detect() handles detection AND we play the audio
+ * 
+ * 🎯 v3.2.0 MAJOR REFACTOR:
+ * - Sequencer now uses IDENTICAL detection logic as MIDI input!
+ * - applySeqItem() simulates MIDI state and calls detect()
+ * - Single source of truth for all chord detection
+ * - G chord now lights V wedge in sequencer ✅
+ * - C7 activates SUB space in sequencer ✅
+ * - All MIDI rules (SUB/PAR/REL activation, bonus chords) now work in sequencer!
+ * 
+ * 🔧 v3.1.4 CRASH FIX:
+ * - FIXED: Crash when playing plain V chord (preview module doesn't know about V yet)
+ * - Added fallback to CHORD_DEFINITIONS when preview.chordPcsForFn returns undefined
+ * - G chord now plays AND lights V wedge without crashing!
+ * 
+ * 🔥 v3.1.3 CRITICAL FIX:
+ * - FIXED: G triad now lights V wedge (was only lighting for G7)
+ * - Restored single source of truth - sequencer now matches MIDI behavior
+ * - G (V triad) now correctly returns "V" function instead of null
+ * 
+ * ✅ v3.1.2 BUG FIX:
+ * - FIXED: G chord now plays correct notes (G-B-D instead of C-E-G)
+ * - Added latchedAbsNotesRef to bypass React state timing issue
+ * - stepNext now uses ref for synchronous note access
+ * 
+ * 🔧 v3.1.1 DEBUG/FIX:
+ * - Added comprehensive console logging for stepNext flow
+ * - Added displayIndex separate from seqIndex for proper sync
+ * - Fixed G chord fallback parser (added logging)
+ * - Investigating why first G plays C-E-G instead of G-B-D
  * 
  * 🎉 v3.1.0 NEW FEATURES:
  * - ✅ Help overlay system with keyboard shortcuts and UI tips
@@ -77,7 +146,17 @@ import {
 } from "./lib/modes";
 import { BonusDebouncer } from "./lib/overlays";
 import * as preview from "./lib/preview";
-const HW_VERSION = 'v3.1.0'; // Fixed audio button + Db/Gbm tabs
+import { defaultSong, demoSongs } from "./data/demoSongs";
+import { 
+  generateShareableURL, 
+  getSongFromURL, 
+  exportSongToFile, 
+  importSongFromFile,
+  copyToClipboard,
+  parseSongMetadata
+} from "./lib/songManager";
+
+const HW_VERSION = 'v3.2.7'; // Comments pause on >!
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -290,10 +369,12 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
   // Help overlay
   const [showHelp, setShowHelp] = useState(false);
   const [showKeyDropdown, setShowKeyDropdown] = useState(false);
+  const [showTransposeDropdown, setShowTransposeDropdown] = useState(false);
+  const [showSongMenu, setShowSongMenu] = useState(false);
+  const [shareURL, setShareURL] = useState<string>('');
   const [keyChangeFlash, setKeyChangeFlash] = useState(false);
   const [autoRecord, setAutoRecord] = useState(false);
   const autoRecordRef = useRef(false); // Ref for callbacks
-  const [isEditingSong, setIsEditingSong] = useState(true); // Start in edit mode
   
   const [trailFn, setTrailFn] = useState<Fn|"">("");
   const [trailTick, setTrailTick] = useState(0);
@@ -326,6 +407,7 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
   const [midiName, setMidiName] = useState("");
 
   const [latchedAbsNotes, setLatchedAbsNotes] = useState<number[]>([]);
+  const latchedAbsNotesRef = useRef<number[]>([]); // Synchronous mirror for immediate playback
   const lastInputWasPreviewRef = useRef(false);
 
   const lastMidiEventRef = useRef<"on"|"off"|"cc"|"other">("other");
@@ -423,10 +505,19 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
   },[selectedId]);
 
   /* ---------- v3: Sequence / input ---------- */
-  const [inputText, setInputText] = useState("@TITLE Let It Be, @KEY F, # Intro, F, C, Bb, F, C, # When I find myself in, G, # times of trouble, Am, # Mother Mary, F, # comes to me, C, # Speaking words of, G, # wisdom. Let it, F, # be..., C");
+  const [inputText, setInputText] = useState(defaultSong);
+  const [loadedSongText, setLoadedSongText] = useState(defaultSong); // Track what's actually loaded
   type SeqItem = { kind: "chord" | "modifier" | "comment" | "title"; raw: string; chord?: string; comment?: string; title?: string; };
   const [sequence, setSequence] = useState<SeqItem[]>([]);
-  const [seqIndex, setSeqIndex] = useState(-1);
+  const [seqIndex, setSeqIndex] = useState(-1); // What's loaded in hub (ready to play next)
+  const [displayIndex, setDisplayIndex] = useState(-1); // What we're showing/highlighting (what was just played)
+  
+  // Playback controls
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [tempo, setTempo] = useState(60); // BPM (beats per minute)
+  const [transpose, setTranspose] = useState(0); // Semitones (-12 to +12)
+  const [loopEnabled, setLoopEnabled] = useState(false);
+  const playbackTimerRef = useRef<number | null>(null);
   const [songTitle, setSongTitle] = useState(""); // Static song title from @TITLE
   
   // Autoload preloaded playlist on mount
@@ -451,17 +542,40 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Helper to select current item in textarea (highlight with yellow)
-  const selectCurrentItem = () => {
-    if (!textareaRef.current || seqIndex < 0 || !sequence[seqIndex]) return;
+  const selectCurrentItem = (indexToSelect?: number) => {
+    // Use explicit index if provided, otherwise use current seqIndex
+    const idx = indexToSelect !== undefined ? indexToSelect : seqIndex;
     
-    // Get the raw text of current item
-    const currentRaw = sequence[seqIndex].raw;
+    if (!textareaRef.current || idx < 0 || !sequence[idx]) return;
     
-    // Find this exact text in the input
-    const index = inputText.indexOf(currentRaw);
-    if (index !== -1) {
-      textareaRef.current.setSelectionRange(index, index + currentRaw.length);
-      // Don't focus - let user keep working elsewhere
+    // Get the raw text of item at idx
+    const currentRaw = sequence[idx].raw;
+    
+    // Use loadedSongText since that's what the sequence was parsed from
+    const textToSearch = loadedSongText || inputText;
+    
+    // Find the Nth occurrence (where N = idx)
+    // Split by comma and find our token
+    const tokens = textToSearch.split(',').map(t => t.trim());
+    let charPos = 0;
+    let foundIndex = -1;
+    
+    for (let i = 0; i <= idx && i < tokens.length; i++) {
+      const token = tokens[i];
+      const nextPos = textToSearch.indexOf(token, charPos);
+      if (nextPos !== -1) {
+        if (i === idx) {
+          foundIndex = nextPos;
+          break;
+        }
+        charPos = nextPos + token.length;
+      }
+    }
+    
+    if (foundIndex !== -1) {
+      textareaRef.current.setSelectionRange(foundIndex, foundIndex + currentRaw.length);
+      // Keep focused so selection is visible
+      textareaRef.current.focus();
     }
   };
 
@@ -493,19 +607,63 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
   };
 
   const parseAndLoadSequence = ()=>{
+    const APP_VERSION = "v0.9.2-debug-G-chord-fix";
+    console.log('=== PARSE AND LOAD START ===');
+    console.log('🏷️  APP VERSION:', APP_VERSION);
+    console.log('Input text:', inputText);
+    setLoadedSongText(inputText); // Save what we're loading
+    
+    // Handle empty input gracefully
+    if (!inputText.trim()) {
+      setSequence([]);
+      setSeqIndex(-1);
+      setDisplayIndex(-1);
+      setSongTitle("");
+      setBaseKey("C");
+      goHome();
+      return;
+    }
+    
     const tokens = inputText.split(",").map(t=>t.trim()).filter(Boolean);
+    console.log('Parsed tokens:', tokens);
     let title = "";
+    let currentKey: KeyName = baseKey; // Track key for functional notation
     
     const items: SeqItem[] = tokens.map(tok=>{
       // Comments start with #
-      if (tok.startsWith("#")) return { kind:"comment", raw:tok, comment: tok.slice(1).trim() };
+      if (tok.startsWith("#")) {
+        const commentText = tok.slice(1).trim();
+        // NEW v3.2.5: Check if comment includes a chord after colon
+        // Example: "# Verse: Am" or "# Bridge: F#m"
+        if (commentText.includes(":")) {
+          const colonIdx = commentText.indexOf(":");
+          const beforeColon = commentText.substring(0, colonIdx).trim();
+          const afterColon = commentText.substring(colonIdx + 1).trim();
+          // If text after colon looks like a chord, it's a combined comment+chord
+          // Updated v3.2.6: Better regex to handle m7b5, dim7, maj7, etc.
+          const chordPattern = /^([A-G][#b]?)(m|maj|min|dim|aug|sus)?(7|9|11|13)?(b5|#5|♭5|#9|b9)?$/;
+          if (afterColon && chordPattern.test(afterColon)) {
+            return { kind:"comment", raw:tok, comment: beforeColon, chord: afterColon };
+          }
+        }
+        return { kind:"comment", raw:tok, comment: commentText };
+      }
       
       // Modifiers start with @
       if (tok.startsWith("@")) {
         const remainder = tok.slice(1).trim();
-        const [cmd, ...rest] = remainder.split(/\s+/);
-        const arg = rest.join(" ");
-        const upper = (cmd||"").toUpperCase();
+        // Handle both "@HOME F" and "@HOME:F" and "@HOME: F"
+        // First check if there's a colon - split on that
+        let cmd, arg, rest;
+        if (remainder.includes(":")) {
+          [cmd, ...rest] = remainder.split(":");
+          arg = rest.join(":").trim(); // rejoin in case chord name has colon somehow
+        } else {
+          // No colon, split on whitespace
+          [cmd, ...rest] = remainder.split(/\s+/);
+          arg = rest.join(" ");
+        }
+        const upper = (cmd||"").toUpperCase().trim();
         
         // Check for TITLE
         if (upper === "TITLE" || upper === "TI") {
@@ -513,9 +671,23 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
           return { kind:"title", raw:tok, title: arg };
         }
         
-        // Check for KEY
+        // Check for KEY - update currentKey for functional notation
         if (upper === "KEY" || upper === "K") {
-          return { kind:"modifier", raw:tok, chord: `KEY:${arg}` };
+          const keyArg = arg.trim();
+          // NEW v3.2.5: Check if there's a chord after the key
+          // Example: "@KEY: B F#m" or "@KEY B, F#m"
+          const parts = keyArg.split(/[,\s]+/);
+          const newKey = parts[0] as KeyName;
+          const chordAfterKey = parts.slice(1).join(" ").trim();
+          
+          if (FLAT_NAMES.includes(newKey)) {
+            currentKey = newKey;
+          }
+          
+          if (chordAfterKey) {
+            return { kind:"modifier", raw:tok, chord: `KEY:${newKey}:${chordAfterKey}` };
+          }
+          return { kind:"modifier", raw:tok, chord: `KEY:${newKey}` };
         }
         
         // Normalize abbreviations: REL, SUB, PAR, HOME
@@ -525,18 +697,99 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
         else if (upper === "PARALLEL" || upper === "PAR") normalized = "PAR";
         else if (upper === "HOME" || upper === "HOM") normalized = "HOME";
         
+        // NEW v3.2.4: Check if arg contains a chord to play after switching
+        // Supports: @HOME:F, @SUB F, HOME:Gm7, etc.
+        const chordArg = arg.trim();
+        if (chordArg && (normalized === "HOME" || normalized === "SUB" || normalized === "REL" || normalized === "PAR")) {
+          // Split into separate modifier + chord items
+          // This allows: @HOME:F to (1) switch to HOME, then (2) play F
+          return { kind:"modifier", raw:tok, chord: `${normalized}:${chordArg}` };
+        }
+        
         return { kind:"modifier", raw:tok, chord: `${normalized}:${arg}` };
       }
       
-      // Everything else is a chord (hardened - no special handling needed)
+      // Check if it's functional notation (Roman numerals)
+      // Supported: I-VII with variations (upper/lowercase, accidentals, 7ths, secondary dominants)
+      // Examples: I, ii, ♭VII, V7, V/vi, ii/vi, ♭III, VI
+      const functionalPattern = /^(♭|#)?([IViv]+)(7|M7|m7|maj7|dom7)?(\/([IViv]+))?$/;
+      const match = tok.match(functionalPattern);
+      
+      if (match) {
+        // It's functional notation - convert to literal chord based on current key
+        const accidental = match[1] || '';
+        const numeral = match[2];
+        const quality = match[3] || '';
+        const secondaryTarget = match[5]; // For V/vi style notation
+        
+        // Convert Roman numeral to scale degree (0-11)
+        const romanToDegreeLower: Record<string, number> = {
+          'i': 0, 'ii': 2, 'iii': 4, 'iv': 5, 'v': 7, 'vi': 9, 'vii': 11
+        };
+        const romanToDegreeUpper: Record<string, number> = {
+          'I': 0, 'II': 2, 'III': 4, 'IV': 5, 'V': 7, 'VI': 9, 'VII': 11
+        };
+        
+        const isLower = numeral === numeral.toLowerCase();
+        const degreeMap = isLower ? romanToDegreeLower : romanToDegreeUpper;
+        let degree = degreeMap[isLower ? numeral : numeral.toLowerCase()];
+        
+        if (degree !== undefined) {
+          // If secondary dominant (e.g., V/vi), calculate target first
+          if (secondaryTarget) {
+            // Get target degree
+            const targetIsLower = secondaryTarget === secondaryTarget.toLowerCase();
+            const targetMap = targetIsLower ? romanToDegreeLower : romanToDegreeUpper;
+            const targetDegree = targetMap[targetIsLower ? secondaryTarget : secondaryTarget.toLowerCase()];
+            
+            if (targetDegree !== undefined) {
+              // V/vi means V of vi - so add degree to target
+              degree = (targetDegree + degree) % 12;
+            }
+          }
+          
+          // Apply accidental
+          if (accidental === '♭' || accidental === 'b') degree = (degree - 1 + 12) % 12;
+          if (accidental === '#') degree = (degree + 1) % 12;
+          
+          // Get root note based on current key and degree
+          const keyPc = NAME_TO_PC[currentKey] || 0;
+          const rootPc = (keyPc + degree) % 12;
+          
+          // Convert PC back to note name
+          const pcToName: Record<number, string> = {
+            0: 'C', 1: 'Db', 2: 'D', 3: 'Eb', 4: 'E', 5: 'F',
+            6: 'Gb', 7: 'G', 8: 'Ab', 9: 'A', 10: 'Bb', 11: 'B'
+          };
+          const rootName = pcToName[rootPc];
+          
+          // Build chord name
+          let chordName = rootName;
+          if (isLower) chordName += 'm'; // Lowercase = minor
+          if (quality) chordName += quality;
+          
+          // Return as chord with original functional notation as raw
+          return { kind:"chord", raw:tok, chord: chordName };
+        }
+      }
+      
+      // Everything else is a literal chord
       return { kind:"chord", raw:tok, chord: tok };
     });
     
     setSongTitle(title);
     setSequence(items);
-    setSeqIndex(items.length ? 0 : -1);
+    setLoadedSongText(inputText); // Track what's actually loaded
     
-    // Check if first item is @KEY, otherwise default to C
+    // Find first non-title, non-KEY item to set as initial index
+    let initialIdx = 0;
+    while (initialIdx < items.length && 
+           (items[initialIdx].kind === "title" || 
+            (items[initialIdx].kind === "modifier" && items[initialIdx].chord?.startsWith("KEY:")))) {
+      initialIdx++;
+    }
+    
+    // Check if first item is @KEY, apply it first
     if (items.length) {
       const firstItem = items[0];
       if (firstItem.kind === "modifier" && firstItem.chord?.startsWith("KEY:")) {
@@ -548,13 +801,22 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
         goHome();
       }
       
-      // Apply first chord/modifier
-      if (items.length > 0) {
-        const startIdx = (firstItem.kind === "modifier" && firstItem.chord?.startsWith("KEY:")) ? 1 : 0;
-        if (startIdx < items.length) {
-          applySeqItem(items[startIdx]);
-        }
+      // Set index to first playable item (but don't play it yet - v3.2.5)
+      if (initialIdx < items.length) {
+        console.log('Setting initial index to:', initialIdx, 'chord =', items[initialIdx]?.raw);
+        setSeqIndex(initialIdx);
+        setDisplayIndex(initialIdx);
+        // REMOVED v3.2.5: Don't auto-play first chord on load
+        // applySeqItem(items[initialIdx]);
+        selectCurrentItem(initialIdx); // Pass explicit index
+        console.log('=== PARSE AND LOAD END ===\n');
+      } else {
+        setSeqIndex(-1);
+        setDisplayIndex(-1);
       }
+    } else {
+      setSeqIndex(-1);
+      setDisplayIndex(-1);
     }
   };
 
@@ -563,30 +825,172 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
     let i = seqIndex - 1;
     if (i < 0) i = 0; // Stay at beginning
     
-    // Skip backwards over comments and titles to find previous chord/modifier
-    while (i > 0 && (sequence[i]?.kind === "comment" || sequence[i]?.kind === "title")) {
+    // Skip backwards over titles only (v3.2.7: Keep comments - they should pause)
+    while (i > 0 && sequence[i]?.kind === "title") {
       i--;
     }
     
-    setSeqIndex(i); 
+    setSeqIndex(i);
+    setDisplayIndex(i);
     applySeqItem(sequence[i]);
-    setTimeout(() => selectCurrentItem(), 0);
+    selectCurrentItem(i); // Pass explicit index
+    // Don't play - just move backward
   };
   
   const stepNext = ()=>{
     if (!sequence.length) return;
-    let i = seqIndex + 1;
-    if (i >= sequence.length) i = sequence.length - 1; // Stay at end
     
-    // Skip forward over comments and titles to find next chord/modifier
-    while (i < sequence.length - 1 && (sequence[i]?.kind === "comment" || sequence[i]?.kind === "title")) {
+    console.log('=== STEP NEXT START ===');
+    console.log('Before: seqIndex =', seqIndex, 'displayIndex =', displayIndex);
+    
+    // seqIndex points to what we should play now
+    const currentIdx = seqIndex;
+    console.log('currentIdx =', currentIdx, 'chord =', sequence[currentIdx]?.raw);
+    
+    // Make sure it's applied (in case we backed up with <)
+    console.log('Calling applySeqItem for:', sequence[currentIdx]?.raw);
+    applySeqItem(sequence[currentIdx]);
+    
+    // CRITICAL: Get the notes AFTER applying (they're now in latchedAbsNotesRef)
+    // Use the ref, not state, because state won't update until next render
+    const notesToPlay = [...latchedAbsNotesRef.current];
+    console.log('📋 Captured notes to play:', notesToPlay);
+    
+    // Play it with the captured notes
+    const currentItem = sequence[currentIdx];
+    if (currentItem?.kind === "chord" && notesToPlay.length > 0) {
+      console.log('Playing chord:', currentItem.chord, 'notes:', notesToPlay.length);
+      const transposedNotes = notesToPlay.map(note => note + transpose);
+      playChord(transposedNotes, 1.5);
+    }
+    
+    // Update displayIndex to show what we just played
+    console.log('Setting displayIndex to:', currentIdx);
+    setDisplayIndex(currentIdx);
+    selectCurrentItem(currentIdx);
+    
+    // Advance seqIndex to next (but DON'T apply it yet)
+    let i = currentIdx + 1;
+    if (i >= sequence.length) {
+      console.log('At end of sequence');
+      return;
+    }
+    
+    // Skip titles only (v3.2.7: Keep comments - they should pause)
+    while (i < sequence.length && sequence[i]?.kind === "title") {
       i++;
     }
     
-    setSeqIndex(i); 
-    applySeqItem(sequence[i]);
+    if (i >= sequence.length) {
+      console.log('No more items after skipping titles');
+      return;
+    }
+    
+    console.log('Advancing seqIndex to:', i, 'chord =', sequence[i]?.raw);
+    // Just advance index - next > will apply it
+    setSeqIndex(i);
+    console.log('=== STEP NEXT END ===\n');
+  };
+  
+  // Playback controls
+  const togglePlayPause = () => {
+    if (isPlaying) {
+      setIsPlaying(false);
+      if (playbackTimerRef.current) {
+        clearTimeout(playbackTimerRef.current);
+        playbackTimerRef.current = null;
+      }
+    } else {
+      // Start playing
+      if (sequence.length === 0) return;
+      if (seqIndex < 0 || seqIndex >= sequence.length - 1) {
+        // At end or invalid, restart from beginning
+        setSeqIndex(0);
+        applySeqItem(sequence[0]);
+      }
+      setIsPlaying(true);
+    }
+  };
+  
+  const stopPlayback = () => {
+    setIsPlaying(false);
+    if (playbackTimerRef.current) {
+      clearTimeout(playbackTimerRef.current);
+      playbackTimerRef.current = null;
+    }
+    // Reset to beginning
+    if (sequence.length > 0) {
+      setSeqIndex(0);
+      applySeqItem(sequence[0]);
+      setTimeout(() => selectCurrentItem(), 0);
+    }
+  };
+  
+  const goToStart = () => {
+    console.log('=== GO TO START ===');
+    if (sequence.length > 0) {
+      // Find first non-title, non-KEY item
+      let startIdx = 0;
+      while (startIdx < sequence.length && 
+             (sequence[startIdx].kind === "title" || 
+              (sequence[startIdx].kind === "modifier" && sequence[startIdx].chord?.startsWith("KEY:")))) {
+        startIdx++;
+      }
+      if (startIdx < sequence.length) {
+        console.log('Going to index:', startIdx, 'chord =', sequence[startIdx]?.raw);
+        setSeqIndex(startIdx);
+        setDisplayIndex(startIdx);
+        // REMOVED v3.2.5: Don't auto-play when jumping to start
+        // applySeqItem(sequence[startIdx]); 
+        selectCurrentItem(startIdx); // Pass explicit index
+      }
+    }
+    console.log('=== GO TO START END ===\n');
+  };
+  
+  // Skip to next comment
+  const skipToNextComment = () => {
+    if (!sequence.length) return;
+    for (let i = seqIndex + 1; i < sequence.length; i++) {
+      if (sequence[i].kind === "comment") {
+        setSeqIndex(i);
+        applySeqItem(sequence[i]);
+        setTimeout(() => selectCurrentItem(), 0);
+        return;
+      }
+    }
+    // No comment found, go to end
+    const lastIdx = sequence.length - 1;
+    setSeqIndex(lastIdx);
+    applySeqItem(sequence[lastIdx]);
     setTimeout(() => selectCurrentItem(), 0);
   };
+  
+  // Skip to previous comment
+  const skipToPrevComment = () => {
+    if (!sequence.length) return;
+    for (let i = seqIndex - 1; i >= 0; i--) {
+      if (sequence[i].kind === "comment") {
+        setSeqIndex(i);
+        applySeqItem(sequence[i]);
+        setTimeout(() => selectCurrentItem(), 0);
+        return;
+      }
+    }
+    // No comment found, go to beginning
+    setSeqIndex(0);
+    applySeqItem(sequence[0]);
+    setTimeout(() => selectCurrentItem(), 0);
+  };
+  
+  // Reset function - resets key, space, transpose, and playback
+  const resetAll = () => {
+    setBaseKey("C");
+    setTranspose(0);
+    goHomeC(); // This handles space reset
+    stopPlayback();
+  };
+  
   const handleInputKeyNav: React.KeyboardEventHandler<HTMLTextAreaElement> = (e)=>{
     // Only handle Return/Enter and Ctrl+I in textarea
     // Arrow keys work normally for cursor movement
@@ -608,54 +1012,234 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
   };
 
   const applySeqItem = (it: SeqItem)=>{
-    if (it.kind==="comment" || it.kind==="title") return; // Skip comments and titles
+    // NEW v3.2.5: Handle combined comments (# comment: Chord)
+    if (it.kind==="comment") {
+      // If comment has a chord attached, play it
+      if (it.chord) {
+        console.log('🔄 Combined comment:', it.comment, '+ chord:', it.chord);
+        applySeqItem({ kind: "chord", raw: it.chord, chord: it.chord });
+      }
+      return;
+    }
+    
+    if (it.kind==="title") return; // Skip titles
     if (it.kind==="modifier" && it.chord){
       const [m, arg] = it.chord.split(":");
-      if (m==="HOME"){ goHome(); } // Return to HOME space
-      else if (m==="SUB"){ if(!subdomActiveRef.current) toggleSubdom(); }
-      else if (m==="REL"){ if(!relMinorActiveRef.current) toggleRelMinor(); }
-      else if (m==="PAR"){ if(!visitorActiveRef.current) toggleVisitor(); }
+      
+      // NEW v3.2.4: Check if arg is a chord name (combined space+chord)
+      const isSpaceModifier = m === "HOME" || m === "SUB" || m === "REL" || m === "PAR";
+      const hasChordArg = arg && arg.trim() && isSpaceModifier;
+      
+      if (m==="HOME"){ 
+        goHome();
+        // If chord specified, play it after switching
+        if (hasChordArg) {
+          const chordName = arg.trim();
+          console.log('🔄 Combined modifier: HOME + chord:', chordName);
+          // Recursively call applySeqItem with chord item
+          applySeqItem({ kind: "chord", raw: chordName, chord: chordName });
+        }
+      }
+      else if (m==="SUB"){ 
+        if(!subdomActiveRef.current) toggleSubdom();
+        if (hasChordArg) {
+          const chordName = arg.trim();
+          console.log('🔄 Combined modifier: SUB + chord:', chordName);
+          applySeqItem({ kind: "chord", raw: chordName, chord: chordName });
+        }
+      }
+      else if (m==="REL"){ 
+        if(!relMinorActiveRef.current) toggleRelMinor();
+        if (hasChordArg) {
+          const chordName = arg.trim();
+          console.log('🔄 Combined modifier: REL + chord:', chordName);
+          applySeqItem({ kind: "chord", raw: chordName, chord: chordName });
+        }
+      }
+      else if (m==="PAR"){ 
+        if(!visitorActiveRef.current) toggleVisitor();
+        if (hasChordArg) {
+          const chordName = arg.trim();
+          console.log('🔄 Combined modifier: PAR + chord:', chordName);
+          applySeqItem({ kind: "chord", raw: chordName, chord: chordName });
+        }
+      }
       else if (m==="KEY"){ 
         // Change key center
-        const newKey = arg?.trim() as KeyName;
+        // NEW v3.2.5: Check if format is KEY:C:Am (key + chord)
+        const parts = arg?.split(":") || [];
+        const newKey = parts[0]?.trim() as KeyName;
+        const chordAfterKey = parts.slice(1).join(":").trim();
+        
         if (newKey && FLAT_NAMES.includes(newKey)) {
           setBaseKey(newKey);
+        }
+        
+        if (chordAfterKey) {
+          console.log('🔄 Combined KEY change:', newKey, '+ chord:', chordAfterKey);
+          applySeqItem({ kind: "chord", raw: chordAfterKey, chord: chordAfterKey });
         }
       }
       return;
     }
     if (it.kind==="chord" && it.chord){
-      // Space-switching logic: automatically activate appropriate space for chord
+      // 🎯 CRITICAL: Simulate MIDI input to use IDENTICAL detection logic!
+      // This makes sequencer behavior match keyboard playing exactly.
+      
       const chordName = it.chord.trim();
-      const baseKey = baseKeyRef.current;
+      console.log('🎹 Simulating MIDI for sequencer:', chordName);
       
-      // Check if chord belongs to SUB space (e.g., Gm in C major)
-      // SUB space chords: IV (F), ii (Dm), vi (Am), ♭VII (Bb), IVM7 (FM7), iim7 (Dm7), vim7 (Am7), ♭VIIM7 (BbM7)
-      const subChords = ['F', 'Dm', 'Am', 'Bb', 'FM7', 'Dm7', 'Am7', 'BbM7', 'Gm', 'Gm7'];
-      
-      // Check if chord belongs to REL space (e.g., Em in C major)
-      // REL space chords: based on relative minor (Am in C major)
-      const relChords = ['Em', 'Em7', 'G', 'G7', 'Am', 'Am7'];
-      
-      // Determine space based on chord name
-      // Note: This is a simplified heuristic. Full implementation would parse chord roots and qualities.
-      if (chordName.includes('m') && !chordName.startsWith('M')) {
-        // Minor chord - check if it's Gm (subdominant minor in C)
-        if (chordName.startsWith('G') && !visitorActiveRef.current && !relMinorActiveRef.current) {
-          // Gm → activate SUB space
-          if (!subdomActiveRef.current) toggleSubdom();
-        } else if (chordName.startsWith('E') && !visitorActiveRef.current && !subdomActiveRef.current) {
-          // Em → activate REL space
-          if (!relMinorActiveRef.current) toggleRelMinor();
-        } else if (chordName.startsWith('C') && !subdomActiveRef.current && !relMinorActiveRef.current) {
-          // Cm → activate PAR space
-          if (!visitorActiveRef.current) toggleVisitor();
-        }
+      // Parse chord to get pitch classes
+      const match = chordName.match(/^([A-G][#b]?)(.*)?$/);
+      if (!match) {
+        console.warn('⚠️ Could not parse chord:', chordName);
+        return;
       }
       
-      // Use previewChordByName to show chord on keyboard and light wedge
-      previewChordByName(it.chord);
+      const root = match[1];
+      const quality = match[2] || "";
+      
+      // Get root pitch class
+      const rootPc = NAME_TO_PC[root as KeyName];
+      if (rootPc === undefined) {
+        console.warn('⚠️ Unknown root:', root);
+        return;
+      }
+      
+      // Determine intervals based on quality
+      let intervals: number[] = [];
+      if (quality === "m" || quality === "min") {
+        intervals = [0, 3, 7]; // Minor triad
+      } else if (quality === "7") {
+        intervals = [0, 4, 7, 10]; // Dominant 7th
+      } else if (quality === "m7") {
+        intervals = [0, 3, 7, 10]; // Minor 7th
+      } else if (quality === "maj7" || quality === "Maj7" || quality === "M7") {
+        intervals = [0, 4, 7, 11]; // Major 7th
+      } else if (quality === "m7b5" || quality === "m7♭5") {
+        intervals = [0, 3, 6, 10]; // Half-diminished
+      } else if (quality === "dim" || quality === "°") {
+        intervals = [0, 3, 6]; // Diminished triad
+      } else if (quality === "dim7" || quality === "°7") {
+        intervals = [0, 3, 6, 9]; // Fully diminished 7th
+      } else if (quality === "aug" || quality === "+") {
+        intervals = [0, 4, 8]; // Augmented triad
+      } else {
+        intervals = [0, 4, 7]; // Major triad (default)
+      }
+      
+      // Create MIDI notes (using C4=60 as base, keep in comfortable range)
+      const baseMidi = 60;
+      let midiNotes = intervals.map(interval => baseMidi + rootPc + interval);
+      
+      // Transpose down an octave if root is too high (keeps G-B in range)
+      if (rootPc > 4) {
+        midiNotes = midiNotes.map(n => n - 12);
+      }
+      
+      console.log('🎹 Simulated MIDI notes:', midiNotes, 'for chord:', chordName);
+      
+      // 🔑 KEY INSIGHT: Temporarily set MIDI state, call detect(), then restore
+      const savedRightHeld = new Set(rightHeld.current);
+      const savedEvent = lastMidiEventRef.current;
+      
+      // Simulate MIDI note-on
+      rightHeld.current = new Set(midiNotes);
+      lastMidiEventRef.current = "on";
+      
+      // Call the SAME detect() function that MIDI uses!
+      detect();
+      
+      // Restore previous state (so we don't interfere with actual MIDI)
+      rightHeld.current = savedRightHeld;
+      lastMidiEventRef.current = savedEvent;
+      
+      console.log('✅ Sequencer detection complete');
+      
+      // 🎵 NOW PLAY THE AUDIO!
+      // detect() handles wedge lighting and space activation
+      // But we still need to actually PLAY the notes
+      if (audioEnabledRef.current) {
+        const transposedNotes = midiNotes.map(note => note + transpose);
+        console.log('🔊 Playing sequencer chord:', transposedNotes);
+        playChord(transposedNotes, 1.5);
+      }
     }
+  };
+
+  // Highlight current chord in editor
+  const highlightCurrentChordInEditor = () => {
+    if (!textareaRef.current || seqIndex < 0 || seqIndex >= sequence.length) return;
+    
+    const currentItem = sequence[seqIndex];
+    if (!currentItem) return;
+    
+    // Find the position of this item in the text
+    const text = inputText;
+    const tokens = text.split(',').map(t => t.trim());
+    
+    // Find which token index corresponds to seqIndex
+    let tokenCount = 0;
+    for (let i = 0; i < tokens.length; i++) {
+      if (tokenCount === seqIndex) {
+        // Found it! Now find the position in the original text
+        let charPos = 0;
+        for (let j = 0; j < i; j++) {
+          charPos = text.indexOf(tokens[j], charPos);
+          charPos += tokens[j].length + 1; // +1 for comma
+        }
+        charPos = text.indexOf(tokens[i], charPos);
+        
+        const tokenLength = tokens[i].length;
+        textareaRef.current.setSelectionRange(charPos, charPos + tokenLength);
+        textareaRef.current.focus();
+        break;
+      }
+      tokenCount++;
+    }
+  };
+
+  // Check for song in URL on mount
+  useEffect(() => {
+    const songFromURL = getSongFromURL();
+    if (songFromURL) {
+      setInputText(songFromURL);
+      // Auto-load the song
+      setTimeout(() => parseAndLoadSequence(), 100);
+    }
+  }, []);
+  
+  // Song management handlers
+  const handleExportSong = () => {
+    const metadata = parseSongMetadata(inputText);
+    const filename = metadata.title 
+      ? `${metadata.title.replace(/\s+/g, '-').toLowerCase()}.txt`
+      : 'harmony-wheel-song.txt';
+    exportSongToFile(inputText, filename);
+  };
+  
+  const handleGenerateShareURL = () => {
+    const url = generateShareableURL(inputText);
+    setShareURL(url);
+    copyToClipboard(url);
+  };
+  
+  const handleImportSong = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      importSongFromFile(file).then(content => {
+        setInputText(content);
+        parseAndLoadSequence();
+      }).catch(err => {
+        console.error('Failed to import song:', err);
+      });
+    }
+  };
+  
+  const handleLoadDemoSong = (songContent: string) => {
+    setInputText(songContent);
+    setShowSongMenu(false);
+    setTimeout(() => parseAndLoadSequence(), 100);
   };
 
   // Global keyboard handler for arrow keys and Enter (when not in textarea)
@@ -664,8 +1248,49 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
       // Only handle if NOT in textarea
       if (document.activeElement?.tagName === 'TEXTAREA') return;
       
+      // Navigation shortcuts
+      if (e.shiftKey && e.key === '<') { // Shift+, (which is <)
+        e.preventDefault();
+        goToStart();
+      } else if (e.key === ',') {
+        e.preventDefault();
+        stepPrev();
+      } else if (e.key === '.') {
+        e.preventDefault();
+        stepNext();
+      // Playback controls
+      } else if (e.key === ' ') {
+        e.preventDefault();
+        togglePlayPause();
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        stopPlayback();
+      } else if ((e.ctrlKey || e.metaKey) && e.key === 'ArrowRight') {
+        e.preventDefault();
+        skipToNextComment();
+      } else if ((e.ctrlKey || e.metaKey) && e.key === 'ArrowLeft') {
+        e.preventDefault();
+        skipToPrevComment();
+      // Transpose controls
+      } else if (e.shiftKey && e.key === 'ArrowUp') {
+        e.preventDefault();
+        setTranspose(prev => Math.min(12, prev + 1));
+      } else if (e.shiftKey && e.key === 'ArrowDown') {
+        e.preventDefault();
+        setTranspose(prev => Math.max(-12, prev - 1));
+      // Tempo controls
+      } else if (e.key === '[') {
+        e.preventDefault();
+        setTempo(prev => Math.max(20, prev - 10));
+      } else if (e.key === ']') {
+        e.preventDefault();
+        setTempo(prev => Math.min(240, prev + 10));
+      // Reset (extend H key)
+      } else if ((e.ctrlKey || e.metaKey) && (e.key === 'h' || e.key === 'H')) {
+        e.preventDefault();
+        resetAll();
       // Skill level shortcuts: 1-5
-      if (e.key === '1') {
+      } else if (e.key === '1') {
         e.preventDefault();
         setSkillLevel('ROOKIE');
       } else if (e.key === '2') {
@@ -680,6 +1305,7 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
       } else if (e.key === '5') {
         e.preventDefault();
         setSkillLevel('EXPERT');
+      // Legacy arrow navigation (still work)
       } else if (e.key === 'ArrowLeft') {
         e.preventDefault();
         stepPrev();
@@ -697,13 +1323,76 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
         makeThisMyKey();
       } else if (e.key === 'h' || e.key === 'H') {
         e.preventDefault();
-        goHomeC(); // Return to HOME C
+        goHomeC(); // Return to HOME C (without reset)
       }
     };
     
     window.addEventListener('keydown', handleGlobalKeyDown);
     return () => window.removeEventListener('keydown', handleGlobalKeyDown);
   }, [inputText, sequence, seqIndex, centerLabel]); // Re-attach when these change
+
+  // Playback timer effect
+  useEffect(() => {
+    if (!isPlaying) {
+      if (playbackTimerRef.current) {
+        clearTimeout(playbackTimerRef.current);
+        playbackTimerRef.current = null;
+      }
+      return;
+    }
+    
+    // Play current chord immediately (if it's a chord)
+    const currentItem = sequence[seqIndex];
+    if (currentItem?.kind === "chord" && currentItem.chord && latchedAbsNotes.length > 0) {
+      const transposedNotes = latchedAbsNotes.map(note => note + transpose);
+      const noteDuration = (60 / tempo) * 0.8; // 80% of beat duration
+      playChord(transposedNotes, noteDuration);
+    }
+    
+    // Calculate interval based on tempo (60 BPM = 1 second per beat)
+    const interval = (60 / tempo) * 1000; // milliseconds per beat
+    
+    // Wait, then advance to next
+    playbackTimerRef.current = window.setTimeout(() => {
+      // Advance to next item
+      let nextIndex = seqIndex + 1;
+      
+      // Skip over comments and titles
+      while (nextIndex < sequence.length && 
+             (sequence[nextIndex]?.kind === "comment" || sequence[nextIndex]?.kind === "title")) {
+        nextIndex++;
+      }
+      
+      if (nextIndex < sequence.length) {
+        setSeqIndex(nextIndex);
+        applySeqItem(sequence[nextIndex]);
+        setTimeout(() => selectCurrentItem(), 0);
+      } else {
+        // End of sequence
+        if (loopEnabled) {
+          // Loop back to start (skip title/key)
+          let startIdx = 0;
+          while (startIdx < sequence.length && 
+                 (sequence[startIdx].kind === "title" || 
+                  (sequence[startIdx].kind === "modifier" && sequence[startIdx].chord?.startsWith("KEY:")))) {
+            startIdx++;
+          }
+          setSeqIndex(startIdx);
+          applySeqItem(sequence[startIdx]);
+          setTimeout(() => selectCurrentItem(), 0);
+        } else {
+          setIsPlaying(false);
+        }
+      }
+    }, interval);
+    
+    return () => {
+      if (playbackTimerRef.current) {
+        clearTimeout(playbackTimerRef.current);
+        playbackTimerRef.current = null;
+      }
+    };
+  }, [isPlaying, seqIndex, tempo, sequence, transpose, latchedAbsNotes, loopEnabled]);
 
   /* ---------- layout & bonus geometry ---------- */
   const cx=260, cy=260, r=220;
@@ -845,13 +1534,22 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
       // Map to function based on degree and quality
       const isMinor = chord.includes('m') && !chord.includes('maj') && !chord.includes('M');
       const is7th = chord.includes('7');
+      const isMaj7 = chord.includes('Maj') || chord.includes('maj') || chord.includes('M7');
       
       // Diatonic functions
-      if (relativeDegree === 0) return "I";       // I (C in C)
+      // Don't match I7 (dominant 7 on tonic - non-diatonic blues/jazz)
+      if (relativeDegree === 0) {
+        if (is7th && !isMaj7) return null; // I7 is non-diatonic, use fallback
+        return "I";
+      }
       if (relativeDegree === 2) return isMinor ? "ii" : null;    // ii (Dm in C)
       if (relativeDegree === 4) return isMinor ? "iii" : null;   // iii (Em in C)
       if (relativeDegree === 5) return isMinor ? "iv" : "IV";    // IV (F in C) or iv (Fm in C)
-      if (relativeDegree === 7) return "V7";      // V (G in C)
+      // V - plain V triad OR V7
+      if (relativeDegree === 7) {
+        if (is7th) return "V7"; // G7, GMaj7 in C
+        return "V"; // Plain G triad in C - should light V wedge!
+      }
       if (relativeDegree === 9) return isMinor ? "vi" : null;    // vi (Am in C)
       if (relativeDegree === 10) return "♭VII";   // ♭VII (Bb in C)
       
@@ -859,49 +1557,101 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
     };
     
     const fn = chordToFunction(chordName, renderKey);
+    console.log('🔍 chordToFunction returned:', fn, 'for chord:', chordName);
     
     if (fn) {
       // Use previewFn logic to activate wedge
-      const with7th = PREVIEW_USE_SEVENTHS || fn === "V7" || fn === "V/V" || fn === "V/vi";
+      // Only add 7th if explicitly in chord name OR if it's V7/V/V/etc
+      const with7th = PREVIEW_USE_SEVENTHS || fn.includes("7") || chordName.includes("7") || chordName.includes("9") || chordName.includes("11") || chordName.includes("13");
       const pcs = preview.chordPcsForFn(fn, renderKey, with7th);
+      
+      // Guard: preview module might not know about plain "V" yet
+      if (!pcs || pcs.length === 0) {
+        console.warn('⚠️ preview.chordPcsForFn returned empty for:', fn, 'falling back to CHORD_DEFINITIONS');
+        // Use CHORD_DEFINITIONS instead
+        const chordDef = CHORD_DEFINITIONS[fn as Fn];
+        if (chordDef) {
+          const keyPc = NAME_TO_PC[renderKey];
+          const absPcs = chordDef.triad.map(pc => (pc + keyPc) % 12);
+          const rootPc = absPcs[0];
+          const absRootPos = preview.absChordRootPositionFromPcs(absPcs, rootPc);
+          const fitted = preview.fitNotesToWindowPreserveInversion(absRootPos, KBD_LOW, KBD_HIGH);
+          latchedAbsNotesRef.current = fitted;
+          setLatchedAbsNotes(fitted);
+          setActiveWithTrail(fn, realizeFunction(fn, renderKey));
+        }
+        return;
+      }
+      
       const rootPc = pcs[0];
       const absRootPos = preview.absChordRootPositionFromPcs(pcs, rootPc);
       const fitted = preview.fitNotesToWindowPreserveInversion(absRootPos, KBD_LOW, KBD_HIGH);
+      latchedAbsNotesRef.current = fitted; // Update ref synchronously
       setLatchedAbsNotes(fitted);
       setActiveWithTrail(fn, realizeFunction(fn, renderKey));
     } else {
       // Fallback: parse chord manually for keyboard display only
+      console.log('🔧 Entering fallback parser for:', chordName);
       try {
         const match = chordName.match(/^([A-G][#b]?)(.*)?$/);
         if (match) {
           const root = match[1];
-          const quality = match[2] || '';
+          let quality = match[2] || '';
+          console.log('🔧 Parsed root:', root, 'quality:', quality);
+          
+          // Normalize quality string for better parsing
+          // Handle alternate notations: A- → Am, AM7 → AMaj7, Bm7-5 → Bm7b5
+          quality = quality
+            .replace(/^-(?!5)/, 'm')      // A- → Am (but not -5)
+            .replace(/^M7/, 'Maj7')       // AM7 → AMaj7, FM7 → FMaj7
+            .replace(/m-5/, 'm7b5')       // Bm-5 → Bm7b5
+            .replace(/-5/, '7b5')         // A-5 → A7b5
+            .replace(/ø/, 'm7b5');        // Aø → Am7b5
           
           const rootPc = NAME_TO_PC[root as KeyName];
-          let intervals: number[] = [0, 4, 7];
+          let intervals: number[] = [0, 4, 7]; // Default: major triad
+          console.log('🔧 Root PC:', rootPc, 'intervals:', intervals);
           
-          if (quality.includes('m') && !quality.includes('maj') && !quality.includes('M')) {
-            intervals = [0, 3, 7];
+          // Check for minor (m or -)
+          const isMinor = quality.includes('m') && !quality.includes('maj') && !quality.includes('Maj') && !quality.includes('M');
+          if (isMinor) {
+            intervals = [0, 3, 7]; // Minor triad
           }
-          if (quality.includes('7')) {
-            if (quality.includes('maj') || quality.includes('M')) {
-              intervals.push(11);
-            } else if (quality.includes('m')) {
-              intervals.push(10);
-            } else {
-              intervals.push(10);
+          
+          // Check for 7th, 9th, 11th, 13th (all get dominant 7th for now)
+          if (quality.match(/\d+/)) {
+            const hasExtension = quality.match(/7|9|11|13/);
+            if (hasExtension) {
+              if (quality.includes('maj') || quality.includes('Maj') || quality.includes('M7')) {
+                intervals.push(11); // Major 7th
+              } else if (isMinor) {
+                intervals.push(10); // Minor 7th
+              } else {
+                intervals.push(10); // Dominant 7th
+              }
             }
+          }
+          
+          // Check for b5 or #5
+          if (quality.includes('b5')) {
+            intervals[2] = 6; // Flatten the 5th
+          } else if (quality.includes('#5') || quality.includes('+')) {
+            intervals[2] = 8; // Sharpen the 5th
           }
           
           const baseMidi = 60;
           let midiNotes = intervals.map(interval => baseMidi + rootPc + interval);
           const fitted = preview.fitNotesToWindowPreserveInversion(midiNotes, KBD_LOW, KBD_HIGH);
+          console.log('🔧 Setting latchedAbsNotes to:', fitted);
+          latchedAbsNotesRef.current = fitted; // Update ref synchronously  
           setLatchedAbsNotes(fitted);
+          console.log('🔧 latchedAbsNotes updated successfully');
         }
       } catch (e) {
-        console.warn('Could not parse chord:', chordName);
+        console.warn('Could not parse chord:', chordName, e);
       }
       
+      console.log('🔧 Calling centerOnly for:', chordName);
       centerOnly(chordName);
     }
   };
@@ -2004,9 +2754,10 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
     "iii":   {triad: [4, 7, 11],  seventh: 2},   // E-G-B (D)  = Em7
     "IV":    {triad: [5, 9, 0],   seventh: 4},   // F-A-C (E)  = Fmaj7
     "iv":    {triad: [5, 8, 0],   seventh: 3},   // F-Ab-C (Eb) = Fm7
+    "V":     {triad: [7, 11, 2]},                // G-B-D (no 7th) = G major triad
     "V7":    {triad: [7, 11, 2],  seventh: 5},   // G-B-D (F)  = G7
     "vi":    {triad: [9, 0, 4],   seventh: 7},   // A-C-E (G)  = Am7
-    "♭VII":  {triad: [10, 2, 5]},             // Bb-D-F (no 7th)
+    "♭VII":  {triad: [10, 2, 5]},                // Bb-D-F (no 7th)
     "V/V":   {triad: [2, 6, 9],   seventh: 0},   // D-F#-A (C) = D7
     "V/vi":  {triad: [4, 8, 11],  seventh: 2},   // E-G#-B (D) = E7
   };
@@ -2291,7 +3042,7 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
         const now = audioContextRef.current.currentTime;
         nodes.gain.gain.cancelScheduledValues(now);
         nodes.gain.gain.setValueAtTime(nodes.gain.gain.value, now);
-        nodes.gain.gain.linearRampToValueAtTime(0, now + 0.05);
+        nodes.gain.gain.linearRampToValueAtTime(0, now + 0.5); // Lengthened from 0.05 to 0.5
         
         setTimeout(() => {
           try {
@@ -2300,7 +3051,7 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
             nodes.osc3.stop();
           } catch(e) { /* already stopped */ }
           activeNotesRef.current.delete(noteId);
-        }, 60);
+        }, 550); // Updated timeout to match release
       } catch(e) { /* ignore */ }
     }
   };
@@ -2316,9 +3067,24 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
     noteIdsToStop.forEach(id => stopNoteById(id));
   };
 
-  const playChord = (midiNotes: number[]) => {
+  const playChord = (midiNotes: number[], duration: number = 1.0) => {
     if (!audioEnabled) return;
-    midiNotes.forEach(note => playNote(note, 0.4));
+    
+    // Stop all currently playing notes first for quick cutoff
+    const activeNotes = Array.from(activeNotesRef.current.keys());
+    activeNotes.forEach(noteId => stopNoteById(noteId));
+    
+    // Play new notes
+    const noteIds: string[] = [];
+    midiNotes.forEach(note => {
+      const id = playNote(note, 0.4, true); // Mark as chord note
+      if (id) noteIds.push(id);
+    });
+    
+    // Auto-release after duration
+    setTimeout(() => {
+      noteIds.forEach(id => stopNoteById(id));
+    }, duration * 1000);
   };
 
   const playChordWithVoiceLeading = (chordPitchClasses: number[]) => {
@@ -2762,7 +3528,7 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
                           {start > 0 && <span style={{marginRight:8, color:'#6b7280'}}>...</span>}
                           {visibleItems.map((item, localIdx) => {
                             const globalIdx = start + localIdx;
-                            const isCurrent = globalIdx === seqIndex;
+                            const isCurrent = globalIdx === displayIndex;
                             const isComment = item.kind === "comment";
                             const isTitle = item.kind === "title";
                             
@@ -2790,9 +3556,9 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
                 </div>
               )}
               
-              {/* Row 2: Editor - EXPERT ONLY */}
+              {/* Row 2: Editor + Buttons - EXPERT ONLY */}
               {skillLevel === "EXPERT" && (
-                <div style={{marginBottom: 6}}>
+                <div style={{marginBottom: 6, display:'flex', gap:8, alignItems:'stretch'}}>
                   <textarea
                     ref={textareaRef}
                     placeholder={'Type chords, modifiers, and comments...\nExamples:\n@TITLE Song Name, @KEY C\nC, Am7, F, G7\n@SUB F, Bb, C7, @HOME\n@REL Em, Am, @PAR Cm, Fm\n@KEY G, D, G, C\n# Verse: lyrics or theory note'}
@@ -2800,20 +3566,436 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
                     value={inputText}
                     onChange={(e)=>setInputText(e.target.value)}
                     onKeyDown={handleInputKeyNav}
-                    readOnly={!isEditingSong}
                     style={{
-                      width: "100%",
+                      flex: 1,
                       padding:'8px 10px',
                       border:'1px solid #374151',
-                      background: isEditingSong ? '#0f172a' : '#1a1a1a',
-                      color: isEditingSong ? '#e5e7eb' : '#9CA3AF',
+                      background: '#0f172a',
+                      color: '#e5e7eb',
                       borderRadius:8,
                       fontFamily:'ui-sans-serif, system-ui',
                       resize:'vertical',
                       fontSize:12,
-                      cursor: isEditingSong ? 'text' : 'not-allowed'
+                      lineHeight: '1.5' // v3.2.5: Explicit line-height for better click targets
                     }}
                   />
+                  
+                  {/* Song Menu Button */}
+                  <div style={{position:'relative'}}>
+                    <button 
+                      onClick={() => setShowSongMenu(!showSongMenu)}
+                      style={{
+                        width:60,
+                        height:'100%',
+                        padding:'6px',
+                        border:'2px solid #60A5FA',
+                        borderRadius:8,
+                        background:'#111',
+                        color:'#fff',
+                        cursor:'pointer',
+                        fontSize:24,
+                        display:'flex',
+                        alignItems:'center',
+                        justifyContent:'center'
+                      }}
+                      title="Song menu"
+                    >
+                      📁
+                    </button>
+                    
+                    {/* Song Menu Dropdown */}
+                    {showSongMenu && (
+                      <div style={{
+                        position: 'absolute',
+                        top: '100%',
+                        right: 0,
+                        marginTop: 4,
+                        background: '#1a1a1a',
+                        border: '2px solid #60A5FA',
+                        borderRadius: 8,
+                        padding: 8,
+                        zIndex: 10000,
+                        minWidth: 250,
+                        maxHeight: 400,
+                        overflowY: 'auto'
+                      }}>
+                        <div style={{fontSize:12, fontWeight:600, color:'#60A5FA', marginBottom:8, paddingBottom:8, borderBottom:'1px solid #374151'}}>
+                          SONG MENU
+                        </div>
+                        
+                        {/* Demo Songs */}
+                        <div style={{marginBottom:12}}>
+                          <div style={{fontSize:10, color:'#9CA3AF', marginBottom:4, textTransform:'uppercase'}}>Demo Songs</div>
+                          {demoSongs.map((song, idx) => (
+                            <button
+                              key={idx}
+                              onClick={() => handleLoadDemoSong(song.content)}
+                              style={{
+                                width:'100%',
+                                padding: '6px 8px',
+                                border: 'none',
+                                background: 'transparent',
+                                color: '#e5e7eb',
+                                cursor: 'pointer',
+                                textAlign: 'left',
+                                borderRadius: 4,
+                                fontSize: 11,
+                                marginBottom:2
+                              }}
+                              onMouseEnter={(e) => e.currentTarget.style.background = '#374151'}
+                              onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                            >
+                              {song.title}
+                            </button>
+                          ))}
+                        </div>
+                        
+                        {/* Import/Export */}
+                        <div style={{borderTop:'1px solid #374151', paddingTop:8}}>
+                          <div style={{fontSize:10, color:'#9CA3AF', marginBottom:4, textTransform:'uppercase'}}>Import / Export</div>
+                          
+                          {/* Import */}
+                          <label style={{
+                            width:'100%',
+                            padding: '6px 8px',
+                            border: 'none',
+                            background: 'transparent',
+                            color: '#e5e7eb',
+                            cursor: 'pointer',
+                            textAlign: 'left',
+                            borderRadius: 4,
+                            fontSize: 11,
+                            display:'block',
+                            marginBottom:2
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.background = '#374151'}
+                          onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
+                            📂 Import from file...
+                            <input 
+                              type="file" 
+                              accept=".txt,.md" 
+                              onChange={handleImportSong}
+                              style={{display:'none'}}
+                            />
+                          </label>
+                          
+                          {/* Export */}
+                          <button
+                            onClick={handleExportSong}
+                            style={{
+                              width:'100%',
+                              padding: '6px 8px',
+                              border: 'none',
+                              background: 'transparent',
+                              color: '#e5e7eb',
+                              cursor: 'pointer',
+                              textAlign: 'left',
+                              borderRadius: 4,
+                              fontSize: 11,
+                              marginBottom:2
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.background = '#374151'}
+                            onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                          >
+                            💾 Export to file...
+                          </button>
+                          
+                          {/* Share URL */}
+                          <button
+                            onClick={handleGenerateShareURL}
+                            style={{
+                              width:'100%',
+                              padding: '6px 8px',
+                              border: 'none',
+                              background: 'transparent',
+                              color: '#e5e7eb',
+                              cursor: 'pointer',
+                              textAlign: 'left',
+                              borderRadius: 4,
+                              fontSize: 11
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.background = '#374151'}
+                            onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                          >
+                            🔗 Copy share link
+                          </button>
+                          
+                          {shareURL && (
+                            <div style={{
+                              marginTop:8,
+                              padding:6,
+                              background:'#0f172a',
+                              borderRadius:4,
+                              fontSize:9,
+                              color:'#10B981',
+                              wordBreak:'break-all'
+                            }}>
+                              ✓ Link copied to clipboard!
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Enter Button - RED when editor differs from loaded */}
+                  <button 
+                    onClick={parseAndLoadSequence}
+                    style={{
+                      width:60,
+                      padding:'6px',
+                      border: inputText !== loadedSongText ? '2px solid #EF4444' : '2px solid #39FF14',
+                      borderRadius:8,
+                      background: inputText !== loadedSongText ? '#2a1a1a' : '#111',
+                      color:'#fff',
+                      cursor:'pointer',
+                      fontSize:20,
+                      display:'flex',
+                      alignItems:'center',
+                      justifyContent:'center',
+                      fontWeight:700
+                    }}
+                    title={inputText !== loadedSongText ? "Load changes (Enter)" : "Load sequence (Enter)"}
+                  >
+                    ⏎
+                  </button>
+                </div>
+              )}
+              
+              {/* Row 2.5: Transport Controls - EXPERT ONLY (when sequence loaded) */}
+              {skillLevel === "EXPERT" && sequence.length > 0 && (
+                <div style={{display:'flex', gap:8, alignItems:'center', marginBottom:6}}>
+                  {/* 1. Go to start */}
+                  <button 
+                    onClick={goToStart} 
+                    style={{
+                      padding:'6px 10px', 
+                      border:'2px solid #9CA3AF', 
+                      borderRadius:8, 
+                      background:'#111', 
+                      color:'#fff', 
+                      cursor:'pointer', 
+                      fontSize:16
+                    }} 
+                    title="Go to start (Shift+<)"
+                  >
+                    ⏮️
+                  </button>
+                  
+                  {/* 2. Prev chord - BLUE */}
+                  <button 
+                    onClick={stepPrev} 
+                    style={{
+                      padding:'6px 10px', 
+                      border:'2px solid #3B82F6', 
+                      borderRadius:8, 
+                      background:'#111', 
+                      color:'#fff', 
+                      cursor:'pointer', 
+                      fontSize:14,
+                      fontWeight:700
+                    }} 
+                    title="Previous chord (,)"
+                  >
+                    &lt;
+                  </button>
+                  
+                  {/* 3. Next chord - BLUE */}
+                  <button 
+                    onClick={stepNext} 
+                    style={{
+                      padding:'6px 10px', 
+                      border:'2px solid #3B82F6', 
+                      borderRadius:8, 
+                      background:'#111', 
+                      color:'#fff', 
+                      cursor:'pointer', 
+                      fontSize:14,
+                      fontWeight:700
+                    }} 
+                    title="Next chord (.)"
+                  >
+                    &gt;
+                  </button>
+                  
+                  {/* 4. Play/Stop - GREEN for ▷, RED for ■ */}
+                  <button 
+                    onClick={togglePlayPause}
+                    style={{
+                      padding:'6px 10px',
+                      border: isPlaying ? '2px solid #EF4444' : '2px solid #10B981', 
+                      borderRadius:8, 
+                      background: isPlaying ? '#2a1a1a' : '#1a3a2a', 
+                      color:'#fff', 
+                      cursor:'pointer', 
+                      fontSize:16,
+                      fontWeight:700
+                    }}
+                    title={isPlaying ? "Stop (Space)" : "Play (Space)"}
+                  >
+                    {isPlaying ? '■' : '▷'}
+                  </button>
+                  
+                  {/* 5. Loop button */}
+                  <button 
+                    onClick={() => setLoopEnabled(!loopEnabled)}
+                    style={{
+                      padding:'6px 10px', 
+                      border: loopEnabled ? '2px solid #10B981' : '2px solid #374151', 
+                      borderRadius:8, 
+                      background: loopEnabled ? '#1a3a2a' : '#111', 
+                      color:'#fff', 
+                      cursor:'pointer', 
+                      fontSize:16
+                    }} 
+                    title={loopEnabled ? "Loop enabled" : "Loop disabled"}
+                  >
+                    🔁
+                  </button>
+                  
+                  {/* 6. Prev comment - GREY */}
+                  <button 
+                    onClick={skipToPrevComment} 
+                    style={{
+                      padding:'6px 10px', 
+                      border:'1px solid #6B7280', 
+                      borderRadius:8, 
+                      background:'#111', 
+                      color:'#9CA3AF', 
+                      cursor:'pointer', 
+                      fontSize:12
+                    }} 
+                    title="Previous comment (Ctrl+←)"
+                  >
+                    &lt;&lt;
+                  </button>
+                  
+                  {/* 7. Next comment - GREY */}
+                  <button 
+                    onClick={skipToNextComment} 
+                    style={{
+                      padding:'6px 10px', 
+                      border:'1px solid #6B7280', 
+                      borderRadius:8, 
+                      background:'#111', 
+                      color:'#9CA3AF', 
+                      cursor:'pointer', 
+                      fontSize:12
+                    }} 
+                    title="Next comment (Ctrl+→)"
+                  >
+                    &gt;&gt;
+                  </button>
+                  
+                  {/* Tempo */}
+                  <input 
+                    type="number"
+                    min="1"
+                    max="240"
+                    value={tempo}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value) || 60;
+                      setTempo(Math.max(1, Math.min(240, val)));
+                    }}
+                    style={{
+                      width: 50,
+                      padding: '6px',
+                      border: '1px solid #374151',
+                      borderRadius: 6,
+                      background: '#0a0a0a',
+                      color: '#E5E7EB',
+                      fontSize: 12,
+                      textAlign: 'center'
+                    }}
+                    title="Tempo (BPM)"
+                  />
+                  <span style={{fontSize: 11, color: '#9CA3AF'}}>BPM</span>
+                  
+                  {/* Transpose dropdown - RED when active, GREY when @KEY present */}
+                  <div style={{position:'relative', marginLeft:8}}>
+                    {(() => {
+                      const hasKeyDirective = loadedSongText.includes('@KEY');
+                      const transposeActive = transpose !== 0;
+                      const disabled = hasKeyDirective && transposeActive;
+                      
+                      return (
+                        <>
+                          <button 
+                            onClick={() => setShowTransposeDropdown(!showTransposeDropdown)}
+                            style={{
+                              padding:'6px 10px',
+                              border: transposeActive ? '2px solid #EF4444' : hasKeyDirective ? '2px solid #6B7280' : '2px solid #374151',
+                              borderRadius:8,
+                              background: transposeActive ? '#2a1a1a' : '#111',
+                              color: transposeActive ? '#EF4444' : hasKeyDirective ? '#6B7280' : '#9CA3AF',
+                              cursor:'pointer',
+                              minWidth:70,
+                              fontSize: 11,
+                              fontWeight: 600,
+                              opacity: hasKeyDirective ? 0.7 : 1
+                            }}
+                            title={hasKeyDirective ? "Transpose disabled (song uses @KEY)" : "Transpose"}
+                          >
+                            TR: {transpose > 0 ? `+${transpose}` : transpose}
+                            {hasKeyDirective && ' ⚠'}
+                          </button>
+                          
+                          {/* Transpose dropdown - now +/-12 */}
+                          {showTransposeDropdown && !hasKeyDirective && (
+                            <div style={{
+                              position: 'absolute',
+                              top: '100%',
+                              left: 0,
+                              marginTop: 4,
+                              background: '#1a1a1a',
+                              border: '2px solid #39FF14',
+                              borderRadius: 8,
+                              padding: 4,
+                              zIndex: 10000,
+                              maxHeight: 300,
+                              overflowY: 'auto',
+                              display:'flex',
+                              flexDirection:'column',
+                              gap:2
+                            }}>
+                              {Array.from({length: 25}, (_, i) => i - 12).map(semitones => (
+                                <button
+                                  key={semitones}
+                                  onClick={() => {
+                                    setTranspose(semitones);
+                                    setShowTransposeDropdown(false);
+                                  }}
+                                  style={{
+                                    padding: '6px 12px',
+                                    border: 'none',
+                                    background: transpose === semitones ? '#39FF14' : 'transparent',
+                                    color: transpose === semitones ? '#000' : '#fff',
+                                    cursor: 'pointer',
+                                    textAlign: 'left',
+                                    borderRadius: 4,
+                                    fontSize: 12,
+                                    fontWeight: transpose === semitones ? 600 : 400,
+                                    whiteSpace: 'nowrap'
+                                  }}
+                                >
+                                  {semitones > 0 ? `+${semitones}` : semitones}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </>
+                      );
+                    })()}
+                  </div>
+                  
+                  {/* Reset */}
+                  <button 
+                    onClick={resetAll}
+                    style={{padding:'6px 10px', border:'1px solid #EF4444', borderRadius:8, background:'#111', color:'#EF4444', cursor:'pointer', fontSize:11, marginLeft: 'auto'}}
+                    title="Reset All (Ctrl+H)"
+                  >
+                    ↺ Reset
+                  </button>
                 </div>
               )}
               
@@ -3014,32 +4196,6 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
                 </div>
               </div>
               
-              {/* Row 4: Buttons - EXPERT ONLY */}
-              {skillLevel === "EXPERT" && (
-                <div style={{display:'flex', flexDirection:'column', gap:6}}>
-                  {/* Navigation Buttons */}
-                  <div style={{display:'flex', gap:8}}>
-                    <button 
-                      onClick={() => {
-                        if (isEditingSong) {
-                          // Switching from EDIT to PLAY mode
-                          parseAndLoadSequence();
-                          setIsEditingSong(false);
-                        } else {
-                          // Switching back to EDIT mode
-                          setIsEditingSong(true);
-                        }
-                      }}
-                      style={{padding:'6px 10px', border:'2px solid #39FF14', borderRadius:8, background:'#111', color:'#fff', cursor:'pointer', flex:1, fontSize:12}}
-                    >
-                      {isEditingSong ? 'SAVE SONG' : 'EDIT SONG'}
-                    </button>
-                    <button onClick={stepPrev} style={{padding:'6px 10px', border:'2px solid #39FF14', borderRadius:8, background:'#111', color:'#fff', cursor:'pointer', fontSize:12}}>◀</button>
-                    <button onClick={stepNext} style={{padding:'6px 10px', border:'2px solid #39FF14', borderRadius:8, background:'#111', color:'#fff', cursor:'pointer', fontSize:12}}>▶</button>
-                  </div>
-                </div>
-              )}
-              
               {/* Make My Key + Auto-Record + Show Bonus Row */}
               <div style={{marginTop: 6, display:'flex', gap:8, alignItems:'center'}}>
                 {skillLevel === "EXPERT" && (
@@ -3209,4 +4365,4 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
   );
 }
 
-// EOF - HarmonyWheel.tsx v3.1.0
+// EOF - HarmonyWheel.tsx v3.2.7
