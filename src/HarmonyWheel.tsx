@@ -63,7 +63,7 @@ import GuitarTab from "./components/GuitarTab";
 // v3.1.0: Help overlay with visual callouts
 import HelpOverlay from "./components/HelpOverlay";
 
-// v3.1.0: Circular skill selector - Alternative version
+// v3.1.0: Circular skill selector with radial text
 import SkillWheel from "./components/SkillWheel";
 
 import { computeLayout, annulusTopDegree } from "./lib/geometry";
@@ -664,7 +664,23 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
       // Only handle if NOT in textarea
       if (document.activeElement?.tagName === 'TEXTAREA') return;
       
-      if (e.key === 'ArrowLeft') {
+      // Skill level shortcuts: 1-5
+      if (e.key === '1') {
+        e.preventDefault();
+        setSkillLevel('ROOKIE');
+      } else if (e.key === '2') {
+        e.preventDefault();
+        setSkillLevel('NOVICE');
+      } else if (e.key === '3') {
+        e.preventDefault();
+        setSkillLevel('SOPHOMORE');
+      } else if (e.key === '4') {
+        e.preventDefault();
+        setSkillLevel('ADVANCED');
+      } else if (e.key === '5') {
+        e.preventDefault();
+        setSkillLevel('EXPERT');
+      } else if (e.key === 'ArrowLeft') {
         e.preventDefault();
         stepPrev();
       } else if (e.key === 'ArrowRight') {
