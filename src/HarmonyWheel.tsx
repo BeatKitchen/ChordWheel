@@ -2767,7 +2767,24 @@ useEffect(() => {
              const pt = svg.createSVGPoint();
              pt.x = e.clientX;
              pt.y = e.clientY;
-             const svgP = pt.matrixTransform(svg.getScreenCTM()?.inverse());
+             const ctm = svg.getScreenCTM();
+             
+             // Safari/zoom debugging
+             console.log('🔍 CTM:', {
+               ctm: ctm ? 'exists' : 'null',
+               a: ctm?.a,
+               d: ctm?.d,
+               clientX: e.clientX,
+               clientY: e.clientY
+             });
+             
+             if (!ctm) {
+               console.warn('⚠️ getScreenCTM() returned null, using fallback');
+               previewFn(fn, true); // Default to 7th if transform fails
+               return;
+             }
+             
+             const svgP = pt.matrixTransform(ctm.inverse());
              
              const dx = svgP.x - cx;
              const dy = svgP.y - cy;
@@ -2779,7 +2796,17 @@ useEffect(() => {
              const playWith7th = normalizedRadius < SEVENTH_RADIUS_THRESHOLD;
              lastPlayedWith7thRef.current = playWith7th; // Remember what we played
              
-             console.log('🖱️ Click radius:', normalizedRadius.toFixed(2), 'Play 7th:', playWith7th);
+             console.log('🖱️ Click coords:', {
+               svgX: svgP.x.toFixed(1),
+               svgY: svgP.y.toFixed(1),
+               dx: dx.toFixed(1),
+               dy: dy.toFixed(1),
+               clickRadius: clickRadius.toFixed(1),
+               wheelRadius: r,
+               normalizedRadius: normalizedRadius.toFixed(2),
+               threshold: SEVENTH_RADIUS_THRESHOLD,
+               playWith7th
+             });
              previewFn(fn, playWith7th);
            }}
            onMouseEnter={(e)=>{
@@ -2815,7 +2842,13 @@ useEffect(() => {
                const pt = svg.createSVGPoint();
                pt.x = e.clientX;
                pt.y = e.clientY;
-               const svgP = pt.matrixTransform(svg.getScreenCTM()?.inverse());
+               const ctm = svg.getScreenCTM();
+               if (!ctm) {
+                 console.warn('⚠️ CTM null in onMouseEnter');
+                 previewFn(fn, true);
+                 return;
+               }
+               const svgP = pt.matrixTransform(ctm.inverse());
                
                const dx = svgP.x - cx;
                const dy = svgP.y - cy;
@@ -2842,7 +2875,12 @@ useEffect(() => {
              const pt = svg.createSVGPoint();
              pt.x = e.clientX;
              pt.y = e.clientY;
-             const svgP = pt.matrixTransform(svg.getScreenCTM()?.inverse());
+             const ctm = svg.getScreenCTM();
+             if (!ctm) {
+               console.warn('⚠️ CTM null in onMouseMove');
+               return;
+             }
+             const svgP = pt.matrixTransform(ctm.inverse());
              
              const dx = svgP.x - cx;
              const dy = svgP.y - cy;
@@ -3003,7 +3041,7 @@ useEffect(() => {
   const KBD_LOW=48, KBD_HIGH=71;
   
   // Configuration for radial click zones
-  const SEVENTH_RADIUS_THRESHOLD = 0.60; // Inner 60% = 7th chords, outer 40% = triads
+  const SEVENTH_RADIUS_THRESHOLD = 0.75; // Inner 75% = 7th chords, outer 25% = triads (v3.5.0: increased for easier clicking)
   
   // Complete chord definitions for C major metaspace
   // Format: [root_pc, third_pc, fifth_pc, seventh_pc (optional)]
