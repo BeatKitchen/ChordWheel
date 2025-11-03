@@ -2059,6 +2059,18 @@ useEffect(() => {
     // MODIFIED v2.37.9: Pass absHeld array to internalAbsoluteName for dim7 root disambiguation
     const absName = internalAbsoluteName(pcsAbs, baseKeyRef.current, absHeld) || "";
     
+    // v3.5.0: Fix diminished chord spelling in HOME space
+    // G#dim (leading tone to A), C#dim (leading tone to D), Ebdim (ties to bIII parallel)
+    let displayName = absName;
+    if ((absName.includes('°') || absName.includes('dim')) && !relMinorActiveRef.current && !subdomActiveRef.current && !visitorActiveRef.current) {
+      // HOME space only - spell based on function
+      displayName = displayName
+        .replace(/^Ab(dim|°)/, 'G#$1')   // G# is leading tone to A (V/vi function)
+        .replace(/^Db(dim|°)/, 'C#$1')   // C# is leading tone to D (V/ii function)  
+        .replace(/^D#(dim|°)/, 'Eb$1');  // Eb ties to bIII in parallel (keep flat)
+      // Gb→F# naturally handled by theory.ts
+    }
+    
     // Store for Make My Key - this is the pure MIDI detection result
     if (absName) {
       lastDetectedChordRef.current = absName;
@@ -2130,7 +2142,7 @@ useEffect(() => {
       if (!inParallel && hasVii7Pattern) {
         // Light the V7 wedge, display actual chord name in hub
         setActiveFn("V7"); 
-        setCenterLabel(absName); // Use actual name (Bdim7, Edim7, etc.)
+        setCenterLabel(displayName); // Use actual name (Bdim7, Edim7, etc.)
         setBonusActive(false);  // Don't use bonus overlay
         return;
       }
@@ -2153,9 +2165,9 @@ useEffect(() => {
           
           // Use actual chord name (Bdim in C, Edim in F, etc.)
           setActiveFn(""); 
-          setCenterLabel(absName);
+          setCenterLabel(displayName);
           setBonusActive(true); 
-          setBonusLabel(absName);
+          setBonusLabel(displayName);
         }, BONUS_DEBOUNCE_MS) as unknown as number;
         return;
       } else {
@@ -2279,9 +2291,15 @@ useEffect(() => {
         const em   = isSubsetIn([4,7,11], S) || isSubsetIn([4,7,11,2], S);
         const d7   = isSubsetIn([2,6,9,0], S);
         const e7   = isSubsetIn([4,8,11,2], S);
+        
+        // v3.5.0: Add G#dim and G#dim7 to V/vi family (functions like E7)
+        const bassNote = absHeld.length > 0 ? Math.min(...absHeld) : null;
+        const bassPc = bassNote !== null ? (bassNote % 12) : null;
+        const gSharpDim = isSubsetIn([8,11,2], S) && (S.size === 3 || (S.size === 4 && bassPc === 8)); // G#dim triad or G#dim7 in root position
+        
         const fm   = isSubsetIn([5,8,0], S) || isSubsetIn([5,8,0,3], S); // iv chord - exit immediately
 
-        if (dm || am || em || d7 || e7 || fm){
+        if (dm || am || em || d7 || e7 || gSharpDim || fm){
           subdomLatchedRef.current = false;
           subSpinExit();
           setSubdomActive(false);
@@ -2292,7 +2310,12 @@ useEffect(() => {
           if (am){ setActiveWithTrail("vi",  absName || (isSubsetIn([9,0,4,7], S)?"Am7":"Am")); return; }
           if (em){ setActiveWithTrail("iii", absName || (isSubsetIn([4,7,11,2], S)?"Em7":"Em")); return; }
           if (d7){ setActiveWithTrail("V/V", "D7"); return; }
-          if (e7){ setActiveWithTrail("V/vi","E7"); return; }
+          if (e7 || gSharpDim){ 
+            // v3.5.0: E7 family includes G#dim and G#dim7 (both function as V/vi)
+            const chordName = gSharpDim ? displayName : "E7";
+            setActiveWithTrail("V/vi", chordName); 
+            return; 
+          }
           if (fm){ setActiveWithTrail("iv",  absName || (isSubsetIn([5,8,0,3], S)?"Fm7":"Fm")); return; }
         }
 
@@ -2440,7 +2463,7 @@ useEffect(() => {
         setVisitorActive(false);
         setBonusActive(true);
         setBonusLabel("A7");
-        setCenterLabel(absName);
+        setCenterLabel(displayName);
         setActiveFn("");
         return;
       }
@@ -2451,7 +2474,7 @@ useEffect(() => {
         setVisitorActive(false);
         setBonusActive(true);
         setBonusLabel("A7"); // Functional label
-        setCenterLabel(absName); // Actual chord name
+        setCenterLabel(displayName); // Actual chord name
         setActiveFn("");
         return;
       }
@@ -2471,7 +2494,7 @@ useEffect(() => {
       if (hasViiTriad || hasVii7) {
         // Light V/vi wedge, display actual chord name
         setActiveFn("V/vi"); 
-        setCenterLabel(absName); // Edim/Edim7 in F, Bdim/Bdim7 in C, etc.
+        setCenterLabel(displayName); // Edim/Edim7 in F, Bdim/Bdim7 in C, etc.
         setBonusActive(false);
         return;
       }
@@ -2479,13 +2502,13 @@ useEffect(() => {
       // Now check diatonic (after vii° check)
       const m7 = firstMatch(parDiatonic.req7, pcsRel); 
       if(m7){ 
-        // Prefer absName for 7th chords
+        // Prefer displayName for 7th chords (with corrected spelling)
         const hasSeventhQuality = /(maj7|m7♭5|m7|mMaj7|dim7|[^m]7)$/.test(absName);
-        const chordName = hasSeventhQuality ? absName : realizeFunction(m7.f as Fn, parKey);
+        const chordName = hasSeventhQuality ? displayName : realizeFunction(m7.f as Fn, parKey);
         setActiveWithTrail(m7.f as Fn, chordName); 
         return; 
       }
-      if(/(maj7|m7♭5|m7$|dim7$|[^m]7$)/.test(absName)) { centerOnly(absName); return; }
+      if(/(maj7|m7♭5|m7$|dim7$|[^m]7$)/.test(absName)) { centerOnly(displayName); return; }
       const tri = firstMatch(parDiatonic.reqt, pcsRel); 
       if(tri){ 
         // v3.5.0: Use absName from theory.ts instead of realizeFunction
@@ -2507,41 +2530,49 @@ useEffect(() => {
 
     /* In C mapping */
     if (performance.now() >= homeSuppressUntilRef.current){
+      // v3.5.0: Get bass note for root position checking
+      const bassNote = absHeld.length > 0 ? Math.min(...absHeld) : null;
+      const bassPc = bassNote !== null ? (bassNote % 12) : null;
+      
       // PRIORITY: Check bonus chords BEFORE diatonic chords
-      // This prevents Bm7♭5 [11,2,5,9] from being misidentified as Dm7 [2,5,9,0]
-      const hasBDF   = isSubset([11,2,5]);
-      const hasBDFG  = isSubset([11,2,5,9]);
+      // Bdim/Bm7♭5 (ii/vi wedge): B-D-F or B-D-F-Ab
+      const hasBDF   = isSubset([11,2,5]) && pcsRel.size === 3; // Bdim triad, any inversion
+      const hasBDFG  = isSubset([11,2,5,8]) && pcsRel.size === 4 && bassPc === 11; // Bdim7 ROOT POSITION only
       if (!visitorActiveRef.current && (hasBDF || hasBDFG)) {
-        // This is a bonus chord - activate immediately (no debounce needed here)
         setActiveFn(""); 
-        setCenterLabel(absName); // Use actual name
+        setCenterLabel(displayName);
         setBonusActive(true); 
-        setBonusLabel(absName);
+        setBonusLabel(displayName);
         return;
       }
       
-      // Also check A7 before diatonic
-      const hasA7tri = isSubset([9,1,4]);
-      const hasA7    = hasA7tri || isSubset([9,1,4,7]);
-      if (!visitorActiveRef.current && hasA7) {
+      // A7 family (V/ii wedge): A/A7, C#dim/C#dim7, C#m7♭5
+      // All function as V/ii (resolve to Dm)
+      const hasA7tri = isSubset([9,1,4]) && pcsRel.size === 3;
+      const hasA7    = isSubset([9,1,4,7]) && pcsRel.size === 4;
+      const hasCSharpDim = isSubset([1,4,8]) && pcsRel.size === 3; // C#dim triad, any inversion
+      const hasCSharpDim7 = isSubset([1,4,7,10]) && pcsRel.size === 4 && bassPc === 1; // C#dim7 root position (C#-E-G-Bb)
+      const hasCSharpHalfDim = isSubset([1,4,7,11]) && pcsRel.size === 4; // C#m7♭5 any inversion (C#-E-G-B)
+      
+      if (!visitorActiveRef.current && (hasA7tri || hasA7 || hasCSharpDim || hasCSharpDim7 || hasCSharpHalfDim)) {
         setActiveFn(""); 
-        setCenterLabel("A7");
+        setCenterLabel(displayName); // Show actual chord name
         setBonusActive(true); 
-        setBonusLabel("A7");
+        setBonusLabel(displayName);
         return;
       }
       
       if (exactSet([6,9,0,4])){ setActiveWithTrail("V/V","F#m7♭5"); return; }
       const m7 = firstMatch(homeDiatonic.req7, pcsRel); 
       if(m7){ 
-        // Prefer absName for 7th chords (Em7, Gmaj7, etc.) over generic realizeFunction
+        // Prefer displayName for 7th chords (with corrected spelling)
         const hasSeventhQuality = /(maj7|m7♭5|m7|mMaj7|dim7|[^m]7)$/.test(absName);
-        const chordName = hasSeventhQuality ? absName : realizeFunction(m7.f as Fn, baseKeyRef.current);
-        console.log('[DETECT] Matched m7:', { fn: m7.f, chordName, absName, hasSeventhQuality, baseKey: baseKeyRef.current });
+        const chordName = hasSeventhQuality ? displayName : realizeFunction(m7.f as Fn, baseKeyRef.current);
+        console.log('[DETECT] Matched m7:', { fn: m7.f, chordName, absName, displayName, hasSeventhQuality, baseKey: baseKeyRef.current });
         setActiveWithTrail(m7.f as Fn, chordName); 
         return; 
       }
-      if(/(maj7|m7♭5|m7$|dim7$|[^m]7$)/.test(absName)) { centerOnly(absName); return; }
+      if(/(maj7|m7♭5|m7$|dim7$|[^m]7$)/.test(absName)) { centerOnly(displayName); return; }
       const tri = firstMatch(homeDiatonic.reqt, pcsRel); 
       if(tri){ 
         // v3.5.0: Use absName from theory.ts instead of realizeFunction
@@ -2713,7 +2744,7 @@ useEffect(() => {
   const fnFillColor = (fn: Fn) =>
     (relMinorActive && fn === "V/V") ? FN_COLORS["IV"] : FN_COLORS[fn];
 
-  const fnDisplay = (fn: Fn): string => (fn === "V/vi" ? "ii/vi" : fn);
+  const fnDisplay = (fn: Fn): string => fn; // v3.5.0: Display function as-is (V/vi shows as V/vi)
 
   const [dimFadeTick, setDimFadeTick] = useState(0);
   const [dimFadeOn, setDimFadeOn] = useState(false);
