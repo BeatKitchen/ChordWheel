@@ -13,7 +13,7 @@ export interface DemoSong {
 export const demoSongs: DemoSong[] = [
   {
     title: "DEBUG TEST",
-    content: "F, F, C, C, G, G, C, C7, F, F, C, C, G, G7, C, C"
+    content: "@TITLE Hello World, @Key G, #hello darkness my old friend, B7, Em"
   },
   {
     title: "Simple Progression",
