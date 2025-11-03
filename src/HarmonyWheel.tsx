@@ -1,5 +1,61 @@
 /*
- * HarmonyWheel.tsx — v3.3.4
+ * HarmonyWheel.tsx — v3.4.7
+ * 
+ * 🐛 v3.4.7 HOTFIX:
+ * - Fixed A triad triggering wrong wedge (was vi, now correctly V/ii bonus)
+ * - Bonus wedge label stays "A7" (functional), center shows "A" or "A7" (actual)
+ * - Reverted audio context changes (was working fine before)
+ * 
+ * 🔊 v3.4.7 AUDIO + BONUS WEDGE FIXES:
+ * - Fixed A/A7 bonus wedge (V/ii) - now shows "A" for triad, "A7" for seventh
+ * - Fixed audio context resume - now properly awaits resume promise
+ * - Audio should work on first MIDI input without needing speaker toggle
+ * 
+ * 🎯 v3.4.7 CRITICAL FIX - G TRIAD vs G7:
+ * - Fixed all triads being labeled as 7th chords (G→G7, D→D7, E→E7, etc.)
+ * - Root cause: realizeFunction("V7") always returned "G7" even for triads
+ * - Solution: Use absName from theory.ts (which correctly detects "G" vs "G7")
+ * - Applied fix to both HOME and PAR space detection
+ * - Preserves functional triggering (G triad still triggers V7 wedge correctly)
+ * - But now displays correct chord name in hub/notation/step record
+ * 
+ * 🐛 v3.4.3 BUG FIXES:
+ * - Restored loop button (🔁)
+ * - Restored comment navigation buttons (<< >>)
+ * - Fixed Play button (was ▶️, now shows ▷ and ■)
+ * - Fixed Prev/Next buttons (were emoji, now < >)
+ * - Fixed Play colors (green when stopped, red when playing)
+ * - Added flexWrap to transport row
+ *
+ * 
+ * 🔧 v3.4.3 FIXES:
+ * - Transpose/Reset only visible in EXPERT mode (or if transpose non-zero)
+ * - Fixed double-reset issue: now fully resets spaces in one click
+ * - Added subHasSpunRef, recentRelMapRef clearing to resetAll
+ * 
+ * 🔧 v3.4.3 FIXES:
+ * - Transpose always visible if non-zero, turns yellow when active
+ * - Transpose dropdown now horizontal (13 columns instead of 5 rows)
+ * - Reset button doesn't trigger HOME wedge anymore
+ * - Removed marginLeft:auto from Reset (better positioning)
+ * 
+ * 🎨 v3.4.3 MAJOR LAYOUT REORGANIZATION:
+ * - Sequencer moved below keyboard
+ * - Transport controls above sequencer (with Step Record)
+ * - MMK + Show Bonus + Transpose + Reset combined in one row
+ * - Transpose and Reset moved up from bottom
+ * - Step Record moved down with transport
+ * - Reset button changed to yellow
+ * - Song display always visible, shows message when not EXPERT
+ * - Enter button text changed to "APPLY"
+ */
+/*
+ * HarmonyWheel.tsx — v3.4.3
+ * 
+ * 🔴 v3.4.3 ENTER BUTTON TEXT:
+ * - Red Enter button now shows "LOAD" text below icon
+ * - Only appears when there are unsaved changes
+ * - Makes it obvious when changes need loading
  * 
  * 🔄 v3.3.4 BUTTON SWAP:
  * - Enter button (⏎) now immediately right of textarea
@@ -188,7 +244,7 @@ import {
   parseSongMetadata
 } from "./lib/songManager";
 
-const HW_VERSION = 'v3.3.4'; // Swapped Enter/Library buttons
+const HW_VERSION = 'v3.4.3'; // Transpose/Reset visibility + full reset fix
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -953,11 +1009,26 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
     } else {
       // Start playing
       if (sequence.length === 0) return;
-      if (seqIndex < 0 || seqIndex >= sequence.length - 1) {
-        // At end or invalid, restart from beginning
-        setSeqIndex(0);
-        applySeqItem(sequence[0]);
+      
+      // v3.4.7: Play first chord BEFORE starting playback timer
+      let startIdx = seqIndex;
+      if (startIdx < 0 || startIdx >= sequence.length) {
+        startIdx = 0;
       }
+      
+      // Apply the first item to get notes
+      applySeqItem(sequence[startIdx]);
+      
+      // Immediately play it using the ref (like stepNext does)
+      const notesToPlay = [...latchedAbsNotesRef.current];
+      const currentItem = sequence[startIdx];
+      if (currentItem?.kind === "chord" && notesToPlay.length > 0) {
+        const transposedNotes = notesToPlay.map(note => note + transpose);
+        const noteDuration = (60 / tempo) * 0.8;
+        playChord(transposedNotes, noteDuration);
+      }
+      
+      // NOW start the playback loop
       setIsPlaying(true);
     }
   };
@@ -1047,9 +1118,18 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
   
   // Reset function - resets key, space, transpose, and playback
   const resetAll = () => {
+    // v3.4.3: Full reset including all refs
     setBaseKey("C");
     setTranspose(0);
-    goHomeC(); // This handles space reset
+    // Reset ALL space states and refs
+    setSubdomActive(false);
+    subdomLatchedRef.current = false;
+    subHasSpunRef.current = false;
+    setRelMinorActive(false);
+    setVisitorActive(false);
+    // Clear recent maps
+    recentRelMapRef.current.clear();
+    lastPcsRelSizeRef.current = 0;
     stopPlayback();
   };
   
@@ -2012,8 +2092,11 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
       const hasA7tri = isSubset([9,1,4]);
       const hasA7    = hasA7tri || isSubset([9,1,4,7]);
       if (hasA7){
-        setActiveFn(""); setCenterLabel("A7");
-        setBonusActive(true); setBonusLabel("A7");
+        // v3.4.7: Use absName for center label to distinguish A from A7
+        // But keep bonus wedge label as "A7" (functional label)
+        const centerLabelToUse = absName || "A7";
+        setActiveFn(""); setCenterLabel(centerLabelToUse);
+        setBonusActive(true); setBonusLabel("A7"); // Wedge always shows "A7"
         return;
       }
 
@@ -2318,15 +2401,17 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
       if(/(maj7|m7♭5|m7$|dim7$|[^m]7$)/.test(absName)) { centerOnly(absName); return; }
       const tri = firstMatch(parDiatonic.reqt, pcsRel); 
       if(tri){ 
-        const chordName = realizeFunction(tri.f as Fn, parKey);
+        // v3.4.7: Use absName from theory.ts instead of realizeFunction
+        const chordName = absName || realizeFunction(tri.f as Fn, parKey);
         console.log('[DETECT] Matched PAR tri:', { 
           fn: tri.f, 
           chordName, 
+          absName,
+          usingAbsName: !!absName,
           parKey,
           baseKey: baseKeyRef.current,
           pcsRel: [...pcsRel],
-          triPattern: tri.s ? [...tri.s] : 'none',
-          absName
+          triPattern: tri.s ? [...tri.s] : 'none'
         });
         setActiveWithTrail(tri.f as Fn, chordName); 
         return; 
@@ -2372,14 +2457,17 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
       if(/(maj7|m7♭5|m7$|dim7$|[^m]7$)/.test(absName)) { centerOnly(absName); return; }
       const tri = firstMatch(homeDiatonic.reqt, pcsRel); 
       if(tri){ 
-        const chordName = realizeFunction(tri.f as Fn, baseKeyRef.current);
+        // v3.4.7: Use absName from theory.ts instead of realizeFunction
+        // This prevents G triad from being labeled "G7" just because it triggers V7 function
+        const chordName = absName || realizeFunction(tri.f as Fn, baseKeyRef.current);
         console.log('[DETECT] Matched tri:', { 
           fn: tri.f, 
           chordName, 
+          absName,
+          usingAbsName: !!absName,
           baseKey: baseKeyRef.current, 
           pcsRel: [...pcsRel],
-          triPattern: tri.s ? [...tri.s] : 'none',
-          absName
+          triPattern: tri.s ? [...tri.s] : 'none'
         });
         setActiveWithTrail(tri.f as Fn, chordName); 
         return; 
@@ -3547,528 +3635,101 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
             <div style={{maxWidth: WHEEL_W, margin:'0 auto 0', marginTop: 25}}>
               {/* UNIFIED LAYOUT - Same structure always, no shifting */}
               
-              {/* Row 1: Song display - EXPERT ONLY */}
-              {skillLevel === "EXPERT" && sequence.length > 0 && (
+              
+              {/* Row 1: Sequence display - v3.4.3: Always visible, shows message when not EXPERT */}
+              {skillLevel === "EXPERT" ? (
+                sequence.length > 0 && (
+                  <div style={{
+                    border:'1px solid #374151',
+                    borderRadius:8,
+                    background:'#0f172a',
+                    overflow:'hidden',
+                    marginBottom: 6
+                  }}>
+                    {/* Song Title */}
+                    {songTitle && (
+                      <div style={{
+                        padding:'2px 8px',
+                        fontSize:11,
+                        fontWeight:600,
+                        color:'#39FF14',
+                        textAlign:'left',
+                        display:'flex',
+                        justifyContent:'space-between',
+                        alignItems:'center'
+                      }}>
+                        <span>{songTitle}</span>
+                        <span style={{fontSize:10, color:'#9CA3AF', fontWeight:400}}>
+                          {baseKey} major
+                        </span>
+                      </div>
+                    )}
+                    
+                    {/* Windowed sequence view */}
+                    <div style={{
+                      padding:'4px 8px',
+                      color:'#e5e7eb',
+                      fontSize:12,
+                      minHeight:24,
+                      display:'flex',
+                      alignItems:'center',
+                      justifyContent:'center',
+                      whiteSpace:'nowrap'
+                    }}>
+                      {(() => {
+                        const WINDOW_SIZE = 3;
+                        const start = Math.max(0, seqIndex - WINDOW_SIZE);
+                        const end = Math.min(sequence.length, seqIndex + WINDOW_SIZE + 1);
+                        const visibleItems = sequence.slice(start, end);
+                        
+                        return (
+                          <>
+                            {start > 0 && <span style={{marginRight:8, color:'#6b7280'}}>...</span>}
+                            {visibleItems.map((item, localIdx) => {
+                              const globalIdx = start + localIdx;
+                              const isCurrent = globalIdx === displayIndex;
+                              const isComment = item.kind === "comment";
+                              const isTitle = item.kind === "title";
+                              
+                              if (isTitle) return null;
+                              
+                              return (
+                                <span key={globalIdx} style={{
+                                  marginRight: 8,
+                                  padding: '2px 6px',
+                                  borderRadius: 4,
+                                  background: isCurrent ? '#374151' : 'transparent',
+                                  fontWeight: isCurrent ? 600 : 400,
+                                  fontStyle: isComment ? 'italic' : 'normal',
+                                  color: isCurrent ? '#39FF14' : (isComment ? '#6b7280' : '#9CA3AF')
+                                }}>
+                                  {isComment ? item.raw.replace(/^#\s*/, '') : item.raw}
+                                </span>
+                              );
+                            })}
+                            {end < sequence.length && <span style={{marginLeft:0, color:'#6b7280'}}>...</span>}
+                          </>
+                        );
+                      })()}
+                    </div>
+                  </div>
+                )
+              ) : (
                 <div style={{
                   border:'1px solid #374151',
                   borderRadius:8,
                   background:'#0f172a',
-                  overflow:'hidden',
-                  marginBottom: 6
+                  padding:'12px',
+                  marginBottom: 6,
+                  textAlign:'center',
+                  color:'#6b7280',
+                  fontSize:11,
+                  fontStyle:'italic'
                 }}>
-                  {/* Song Title */}
-                  {songTitle && (
-                    <div style={{
-                      padding:'2px 8px',
-                      fontSize:11,
-                      fontWeight:600,
-                      color:'#39FF14',
-                      textAlign:'left',
-                      display:'flex',
-                      justifyContent:'space-between',
-                      alignItems:'center'
-                    }}>
-                      <span>{songTitle}</span>
-                      <span style={{fontSize:10, color:'#9CA3AF', fontWeight:400}}>
-                        {baseKey} major
-                      </span>
-                    </div>
-                  )}
-                  
-                  {/* Windowed sequence view */}
-                  <div style={{
-                    padding:'4px 8px',
-                    color:'#e5e7eb',
-                    fontSize:12,
-                    minHeight:24,
-                    display:'flex',
-                    alignItems:'center',
-                    justifyContent:'center',
-                    whiteSpace:'nowrap'
-                  }}>
-                    {(() => {
-                      const WINDOW_SIZE = 3;
-                      const start = Math.max(0, seqIndex - WINDOW_SIZE);
-                      const end = Math.min(sequence.length, seqIndex + WINDOW_SIZE + 1);
-                      const visibleItems = sequence.slice(start, end);
-                      
-                      return (
-                        <>
-                          {start > 0 && <span style={{marginRight:8, color:'#6b7280'}}>...</span>}
-                          {visibleItems.map((item, localIdx) => {
-                            const globalIdx = start + localIdx;
-                            const isCurrent = globalIdx === displayIndex;
-                            const isComment = item.kind === "comment";
-                            const isTitle = item.kind === "title";
-                            
-                            if (isTitle) return null;
-                            
-                            return (
-                              <span key={globalIdx} style={{
-                                marginRight: 8,
-                                padding: '2px 6px',
-                                borderRadius: 4,
-                                background: isCurrent ? '#374151' : 'transparent',
-                                fontWeight: isCurrent ? 600 : 400,
-                                fontStyle: isComment ? 'italic' : 'normal',
-                                color: isCurrent ? '#39FF14' : (isComment ? '#6b7280' : '#9CA3AF') // v3.3.3: Dimmer text for non-current
-                              }}>
-                                {isComment ? item.raw.replace(/^#\s*/, '') : item.raw}
-                              </span>
-                            );
-                          })}
-                          {end < sequence.length && <span style={{marginLeft:0, color:'#6b7280'}}>...</span>}
-                        </>
-                      );
-                    })()}
-                  </div>
+                  To use sequencer, activate Expert mode (5)
                 </div>
               )}
               
-              {/* Row 2: Sequencer + Buttons - EXPERT ONLY */}
-              {skillLevel === "EXPERT" && (
-                <div style={{marginBottom: 6, display:'flex', gap:8, alignItems:'stretch'}}>
-                  <textarea
-                    ref={textareaRef}
-                    placeholder={'Type chords, modifiers, and comments...\nExamples:\n@TITLE Sequence Name, @KEY C\nC, Am7, F, G7\n@SUB F, Bb, C7, @HOME\n@REL Em, Am, @PAR Cm, Fm\n@KEY G, D, G, C\n# Verse: lyrics or theory note'}
-                    rows={3}
-                    value={inputText}
-                    onChange={(e)=>setInputText(e.target.value)}
-                    onKeyDown={handleInputKeyNav}
-                    style={{
-                      flex: 1,
-                      padding:'8px 10px',
-                      border:'1px solid #374151',
-                      background: '#0f172a',
-                      color: '#e5e7eb',
-                      borderRadius:8,
-                      fontFamily:'ui-sans-serif, system-ui',
-                      resize:'vertical',
-                      fontSize:12,
-                      lineHeight: '1.5' // v3.2.5: Explicit line-height for better click targets
-                    }}
-                  />
-                  
-                  {/* Enter Button - RED when editor differs from loaded - v3.3.4: Moved to be immediately right of textarea */}
-                  <button 
-                    onClick={parseAndLoadSequence}
-                    style={{
-                      width:60,
-                      padding:'6px',
-                      border: inputText !== loadedSongText ? '2px solid #EF4444' : '2px solid #39FF14',
-                      borderRadius:8,
-                      background: inputText !== loadedSongText ? '#2a1a1a' : '#111',
-                      color:'#fff',
-                      cursor:'pointer',
-                      fontSize:20,
-                      display:'flex',
-                      alignItems:'center',
-                      justifyContent:'center',
-                      fontWeight:700
-                    }}
-                    title={inputText !== loadedSongText ? "Load changes (Enter)" : "Load sequence (Enter)"}
-                  >
-                    ⏎
-                  </button>
-                  
-                  {/* Sequencer Menu Button - v3.3.4: Moved after Enter button */}
-                  <div style={{position:'relative'}}>
-                    <button 
-                      onClick={() => setShowSongMenu(!showSongMenu)}
-                      style={{
-                        width:60,
-                        height:'100%',
-                        padding:'6px',
-                        border:'2px solid #60A5FA',
-                        borderRadius:8,
-                        background:'#111',
-                        color:'#fff',
-                        cursor:'pointer',
-                        fontSize:24,
-                        display:'flex',
-                        alignItems:'center',
-                        justifyContent:'center'
-                      }}
-                      title="Sequencer menu"
-                    >
-                      📁
-                    </button>
-                    
-                    {/* Sequencer Menu Dropdown - v3.3.1: Renamed from Song Menu */}
-                    {showSongMenu && (
-                      <div style={{
-                        position: 'absolute',
-                        top: '100%',
-                        right: 0,
-                        marginTop: 4,
-                        background: '#1a1a1a',
-                        border: '2px solid #60A5FA',
-                        borderRadius: 8,
-                        padding: 8,
-                        zIndex: 10000,
-                        minWidth: 250,
-                        maxHeight: 400,
-                        overflowY: 'auto'
-                      }}>
-                        <div style={{fontSize:12, fontWeight:600, color:'#60A5FA', marginBottom:8, paddingBottom:8, borderBottom:'1px solid #374151'}}>
-                          SONG MENU
-                        </div>
-                        
-                        {/* Demo Songs */}
-                        <div style={{marginBottom:12}}>
-                          <div style={{fontSize:10, color:'#9CA3AF', marginBottom:4, textTransform:'uppercase'}}>Demo Songs</div>
-                          {demoSongs.map((song, idx) => (
-                            <button
-                              key={idx}
-                              onClick={() => handleLoadDemoSong(song.content)}
-                              style={{
-                                width:'100%',
-                                padding: '6px 8px',
-                                border: 'none',
-                                background: 'transparent',
-                                color: '#e5e7eb',
-                                cursor: 'pointer',
-                                textAlign: 'left',
-                                borderRadius: 4,
-                                fontSize: 11,
-                                marginBottom:2
-                              }}
-                              onMouseEnter={(e) => e.currentTarget.style.background = '#374151'}
-                              onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                            >
-                              {song.title}
-                            </button>
-                          ))}
-                        </div>
-                        
-                        {/* Import/Export */}
-                        <div style={{borderTop:'1px solid #374151', paddingTop:8}}>
-                          <div style={{fontSize:10, color:'#9CA3AF', marginBottom:4, textTransform:'uppercase'}}>Import / Export</div>
-                          
-                          {/* Import */}
-                          <label style={{
-                            width:'100%',
-                            padding: '6px 8px',
-                            border: 'none',
-                            background: 'transparent',
-                            color: '#e5e7eb',
-                            cursor: 'pointer',
-                            textAlign: 'left',
-                            borderRadius: 4,
-                            fontSize: 11,
-                            display:'block',
-                            marginBottom:2
-                          }}
-                          onMouseEnter={(e) => e.currentTarget.style.background = '#374151'}
-                          onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
-                            📂 Import from file...
-                            <input 
-                              type="file" 
-                              accept=".txt,.md" 
-                              onChange={handleImportSong}
-                              style={{display:'none'}}
-                            />
-                          </label>
-                          
-                          {/* Export */}
-                          <button
-                            onClick={handleExportSong}
-                            style={{
-                              width:'100%',
-                              padding: '6px 8px',
-                              border: 'none',
-                              background: 'transparent',
-                              color: '#e5e7eb',
-                              cursor: 'pointer',
-                              textAlign: 'left',
-                              borderRadius: 4,
-                              fontSize: 11,
-                              marginBottom:2
-                            }}
-                            onMouseEnter={(e) => e.currentTarget.style.background = '#374151'}
-                            onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                          >
-                            💾 Export to file...
-                          </button>
-                          
-                          {/* Share URL */}
-                          <button
-                            onClick={handleGenerateShareURL}
-                            style={{
-                              width:'100%',
-                              padding: '6px 8px',
-                              border: 'none',
-                              background: 'transparent',
-                              color: '#e5e7eb',
-                              cursor: 'pointer',
-                              textAlign: 'left',
-                              borderRadius: 4,
-                              fontSize: 11
-                            }}
-                            onMouseEnter={(e) => e.currentTarget.style.background = '#374151'}
-                            onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                          >
-                            🔗 Copy share link
-                          </button>
-                          
-                          {shareURL && (
-                            <div style={{
-                              marginTop:8,
-                              padding:6,
-                              background:'#0f172a',
-                              borderRadius:4,
-                              fontSize:9,
-                              color:'#10B981',
-                              wordBreak:'break-all'
-                            }}>
-                              ✓ Link copied to clipboard!
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-              
-              {/* Row 2.5: Transport Controls - EXPERT ONLY (when sequence loaded) */}
-              {skillLevel === "EXPERT" && sequence.length > 0 && (
-                <div style={{display:'flex', gap:8, alignItems:'center', marginBottom:6}}>
-                  {/* 1. Go to start */}
-                  <button 
-                    onClick={goToStart} 
-                    style={{
-                      padding:'6px 10px', 
-                      border:'2px solid #9CA3AF', 
-                      borderRadius:8, 
-                      background:'#111', 
-                      color:'#fff', 
-                      cursor:'pointer', 
-                      fontSize:16
-                    }} 
-                    title="Go to start (Shift+<)"
-                  >
-                    ⏮️
-                  </button>
-                  
-                  {/* 2. Prev chord - BLUE */}
-                  <button 
-                    onClick={stepPrev} 
-                    style={{
-                      padding:'6px 10px', 
-                      border:'2px solid #3B82F6', 
-                      borderRadius:8, 
-                      background:'#111', 
-                      color:'#fff', 
-                      cursor:'pointer', 
-                      fontSize:14,
-                      fontWeight:700
-                    }} 
-                    title="Previous chord (,)"
-                  >
-                    &lt;
-                  </button>
-                  
-                  {/* 3. Next chord - BLUE */}
-                  <button 
-                    onClick={stepNext} 
-                    style={{
-                      padding:'6px 10px', 
-                      border:'2px solid #3B82F6', 
-                      borderRadius:8, 
-                      background:'#111', 
-                      color:'#fff', 
-                      cursor:'pointer', 
-                      fontSize:14,
-                      fontWeight:700
-                    }} 
-                    title="Next chord (.)"
-                  >
-                    &gt;
-                  </button>
-                  
-                  {/* 4. Play/Stop - GREEN for ▷, RED for ■ */}
-                  <button 
-                    onClick={togglePlayPause}
-                    style={{
-                      padding:'6px 10px',
-                      border: isPlaying ? '2px solid #EF4444' : '2px solid #10B981', 
-                      borderRadius:8, 
-                      background: isPlaying ? '#2a1a1a' : '#1a3a2a', 
-                      color:'#fff', 
-                      cursor:'pointer', 
-                      fontSize:16,
-                      fontWeight:700
-                    }}
-                    title={isPlaying ? "Stop (Space)" : "Play (Space)"}
-                  >
-                    {isPlaying ? '■' : '▷'}
-                  </button>
-                  
-                  {/* 5. Loop button */}
-                  <button 
-                    onClick={() => setLoopEnabled(!loopEnabled)}
-                    style={{
-                      padding:'6px 10px', 
-                      border: loopEnabled ? '2px solid #10B981' : '2px solid #374151', 
-                      borderRadius:8, 
-                      background: loopEnabled ? '#1a3a2a' : '#111', 
-                      color:'#fff', 
-                      cursor:'pointer', 
-                      fontSize:16
-                    }} 
-                    title={loopEnabled ? "Loop enabled" : "Loop disabled"}
-                  >
-                    🔁
-                  </button>
-                  
-                  {/* 6. Prev comment - GREY */}
-                  <button 
-                    onClick={skipToPrevComment} 
-                    style={{
-                      padding:'6px 10px', 
-                      border:'1px solid #6B7280', 
-                      borderRadius:8, 
-                      background:'#111', 
-                      color:'#9CA3AF', 
-                      cursor:'pointer', 
-                      fontSize:12
-                    }} 
-                    title="Previous comment (Ctrl+←)"
-                  >
-                    &lt;&lt;
-                  </button>
-                  
-                  {/* 7. Next comment - GREY */}
-                  <button 
-                    onClick={skipToNextComment} 
-                    style={{
-                      padding:'6px 10px', 
-                      border:'1px solid #6B7280', 
-                      borderRadius:8, 
-                      background:'#111', 
-                      color:'#9CA3AF', 
-                      cursor:'pointer', 
-                      fontSize:12
-                    }} 
-                    title="Next comment (Ctrl+→)"
-                  >
-                    &gt;&gt;
-                  </button>
-                  
-                  {/* Tempo */}
-                  <input 
-                    type="number"
-                    min="1"
-                    max="240"
-                    value={tempo}
-                    onChange={(e) => {
-                      const val = parseInt(e.target.value) || 60;
-                      setTempo(Math.max(1, Math.min(240, val)));
-                    }}
-                    style={{
-                      width: 50,
-                      padding: '6px',
-                      border: '1px solid #374151',
-                      borderRadius: 6,
-                      background: '#0a0a0a',
-                      color: '#E5E7EB',
-                      fontSize: 12,
-                      textAlign: 'center'
-                    }}
-                    title="Tempo (BPM)"
-                  />
-                  <span style={{fontSize: 11, color: '#9CA3AF'}}>BPM</span>
-                  
-                  {/* Transpose dropdown - RED when active, GREY when @KEY present */}
-                  <div style={{position:'relative', marginLeft:8}}>
-                    {(() => {
-                      const hasKeyDirective = loadedSongText.includes('@KEY');
-                      const transposeActive = transpose !== 0;
-                      const disabled = hasKeyDirective && transposeActive;
-                      
-                      return (
-                        <>
-                          <button 
-                            onClick={() => setShowTransposeDropdown(!showTransposeDropdown)}
-                            style={{
-                              padding:'6px 10px',
-                              border: transposeActive ? '2px solid #EF4444' : hasKeyDirective ? '2px solid #6B7280' : '2px solid #374151',
-                              borderRadius:8,
-                              background: transposeActive ? '#2a1a1a' : '#111',
-                              color: transposeActive ? '#EF4444' : hasKeyDirective ? '#6B7280' : '#9CA3AF',
-                              cursor:'pointer',
-                              minWidth:70,
-                              fontSize: 11,
-                              fontWeight: 600,
-                              opacity: hasKeyDirective ? 0.7 : 1
-                            }}
-                            title={hasKeyDirective ? "Transpose disabled (song uses @KEY)" : "Transpose"}
-                          >
-                            TR: {transpose > 0 ? `+${transpose}` : transpose}
-                            {hasKeyDirective && ' ⚠'}
-                          </button>
-                          
-                          {/* Transpose dropdown - now +/-12 */}
-                          {showTransposeDropdown && !hasKeyDirective && (
-                            <div style={{
-                              position: 'absolute',
-                              top: '100%',
-                              left: 0,
-                              marginTop: 4,
-                              background: '#1a1a1a',
-                              border: '2px solid #39FF14',
-                              borderRadius: 8,
-                              padding: 4,
-                              zIndex: 10000,
-                              maxHeight: 300,
-                              overflowY: 'auto',
-                              display:'flex',
-                              flexDirection:'column',
-                              gap:2
-                            }}>
-                              {Array.from({length: 25}, (_, i) => i - 12).map(semitones => (
-                                <button
-                                  key={semitones}
-                                  onClick={() => {
-                                    setTranspose(semitones);
-                                    setShowTransposeDropdown(false);
-                                  }}
-                                  style={{
-                                    padding: '6px 12px',
-                                    border: 'none',
-                                    background: transpose === semitones ? '#39FF14' : 'transparent',
-                                    color: transpose === semitones ? '#000' : '#fff',
-                                    cursor: 'pointer',
-                                    textAlign: 'left',
-                                    borderRadius: 4,
-                                    fontSize: 12,
-                                    fontWeight: transpose === semitones ? 600 : 400,
-                                    whiteSpace: 'nowrap'
-                                  }}
-                                >
-                                  {semitones > 0 ? `+${semitones}` : semitones}
-                                </button>
-                              ))}
-                            </div>
-                          )}
-                        </>
-                      );
-                    })()}
-                  </div>
-                  
-                  {/* Reset */}
-                  <button 
-                    onClick={resetAll}
-                    style={{padding:'6px 10px', border:'1px solid #EF4444', borderRadius:8, background:'#111', color:'#EF4444', cursor:'pointer', fontSize:11, marginLeft: 'auto'}}
-                    title="Reset All (Ctrl+H)"
-                  >
-                    ↺ Reset
-                  </button>
-                </div>
-              )}
-              
-              {/* Row 3: Keyboard + Tab (side by side) */}
               <div style={{display:'grid', gridTemplateColumns:'65% 35%', columnGap:12, marginBottom:6}}>
                 {/* Left: Key Button + Space Buttons + Keyboard */}
                 <div style={{display:'flex', flexDirection:'column', gap:8, height:'100%'}}>
@@ -4265,52 +3926,28 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
                 </div>
               </div>
               
-              {/* Make My Key + Step Record + Show Bonus Row */}
-              <div style={{marginTop: 6, display:'flex', gap:8, alignItems:'center'}}>
+              
+              {/* Row: MMK + Show Bonus + Transpose + Reset - v3.4.3: Combined row */}
+              <div style={{marginTop: 6, display:'flex', gap:8, alignItems:'center', flexWrap:'wrap'}}>
                 {skillLevel === "EXPERT" && (
-                  <>
-                    {/* Make My Key Button */}
-                    <button 
-                      onClick={makeThisMyKey}
-                      disabled={!centerLabel}
-                      style={{
-                        padding:'6px 10px', 
-                        border:"1px solid #F2D74B", 
-                        borderRadius:6, 
-                        background: centerLabel ? '#332810' : '#111', 
-                        color: centerLabel ? "#F2D74B" : "#666",
-                        cursor: centerLabel ? "pointer" : "not-allowed",
-                        fontSize:11,
-                        fontWeight:500,
-                        opacity: centerLabel ? 1 : 0.5
-                      }}
-                      title="Make current chord your new key center (K)"
-                    >
-                      ⚡ Make My Key
-                    </button>
-                    
-                    {/* Step Record Toggle - v3.3.1: Renamed from Auto-Record */}
-                    <button 
-                      onClick={() => {
-                        const newState = !stepRecord;
-                        setStepRecord(newState);
-                        stepRecordRef.current = newState;
-                      }}
-                      style={{
-                        padding:'6px 10px', 
-                        border:`1px solid ${stepRecord ? '#ff4444' : '#374151'}`, 
-                        borderRadius:6, 
-                        background: stepRecord ? '#331010' : '#1f2937', 
-                        color: stepRecord ? '#ff4444' : '#9CA3AF', 
-                        cursor:'pointer',
-                        fontSize:11,
-                        fontWeight: stepRecord ? 600 : 400
-                      }}
-                      title="Toggle step record: automatically add played chords to sequencer"
-                    >
-                      {stepRecord ? '⏺ Recording' : '⏺ Step Record'}
-                    </button>
-                  </>
+                  <button 
+                    onClick={makeThisMyKey}
+                    disabled={!centerLabel}
+                    style={{
+                      padding:'6px 10px', 
+                      border:"1px solid #F2D74B", 
+                      borderRadius:6, 
+                      background: centerLabel ? '#332810' : '#111', 
+                      color: centerLabel ? "#F2D74B" : "#666",
+                      cursor: centerLabel ? "pointer" : "not-allowed",
+                      fontSize:11,
+                      fontWeight:500,
+                      opacity: centerLabel ? 1 : 0.5
+                    }}
+                    title="Make current chord your new key center (K)"
+                  >
+                    ⚡ Make My Key
+                  </button>
                 )}
                 
                 {/* Show Bonus - ADVANCED/EXPERT */}
@@ -4329,12 +3966,477 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
                       fontWeight: showBonusWedges ? 600 : 400
                     }}
                   >
-                    Show Bonus Chords {showBonusWedges ? '✓' : ''}
+                    {showBonusWedges ? '✓ Show Bonus Chords' : 'Show Bonus Chords'}
                   </button>
+                )}
+                
+                {/* Transpose - v3.4.3: Only EXPERT, or always if non-zero */}
+                {(skillLevel === "EXPERT" || transpose !== 0) && (
+                  <div style={{position:'relative'}}>
+                    <button 
+                      onClick={() => setShowTransposeDropdown(!showTransposeDropdown)}
+                      style={{
+                        padding:'6px 10px', 
+                        border: transpose !== 0 ? '1px solid #F2D74B' : '1px solid #60A5FA', 
+                        borderRadius:8, 
+                        background:'#111', 
+                        color: transpose !== 0 ? '#F2D74B' : '#60A5FA', 
+                        cursor:'pointer', 
+                        fontSize:11
+                      }}
+                      title="Transpose (T)"
+                    >
+                      TR: {transpose > 0 ? `+${transpose}` : transpose} ▼
+                    </button>
+                    
+                    {showTransposeDropdown && (
+                      <div style={{
+                        position:'absolute',
+                        bottom:'100%',
+                        left:0,
+                        marginBottom:4,
+                        background:'#1f2937',
+                        border: transpose !== 0 ? '1px solid #F2D74B' : '1px solid #60A5FA',
+                        borderRadius:6,
+                        padding:8,
+                        zIndex:1000,
+                        display:'grid',
+                        gridTemplateColumns:'repeat(13, 1fr)', // Horizontal: -12 to +12
+                        gap:4
+                      }}>
+                        {[-12,-11,-10,-9,-8,-7,-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6,7,8,9,10,11,12].map(semitones => (
+                          <button
+                            key={semitones}
+                            onClick={() => {
+                              setTranspose(semitones);
+                              setShowTransposeDropdown(false);
+                            }}
+                            style={{
+                              padding:'6px 8px',
+                              border: transpose === semitones ? `1px solid ${transpose !== 0 ? '#F2D74B' : '#60A5FA'}` : '1px solid #374151',
+                              borderRadius:4,
+                              background: transpose === semitones ? (transpose !== 0 ? '#332810' : '#1e3a5f') : '#111',
+                              color: transpose === semitones ? (transpose !== 0 ? '#F2D74B' : '#60A5FA') : '#9CA3AF',
+                              cursor:'pointer',
+                              fontSize:10,
+                              fontWeight: transpose === semitones ? 600 : 400,
+                              minWidth:32
+                            }}
+                          >
+                            {semitones > 0 ? `+${semitones}` : semitones}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+                
+                {/* Reset - v3.4.3: Only EXPERT */}
+                {skillLevel === "EXPERT" && (
+                  <button 
+                    onClick={resetAll}
+                    style={{
+                      padding:'6px 10px', 
+                      border:'1px solid #F2D74B', 
+                    borderRadius:8, 
+                    background:'#111', 
+                    color:'#F2D74B', 
+                    cursor:'pointer', 
+                    fontSize:11
+                  }}
+                  title="Reset All (Ctrl+H)"
+                >
+                  ↺ Reset
+                </button>
                 )}
               </div>
               
-              {/* Bottom Utility Controls - ALWAYS VISIBLE */}
+              
+              {/* Row: Transport Controls + Step Record - v3.4.3: Fixed missing buttons */}
+              {skillLevel === "EXPERT" && sequence.length > 0 && (
+                <div style={{display:'flex', gap:8, alignItems:'center', marginTop:6, marginBottom:6, flexWrap:'wrap'}}>
+                  {/* 1. Go to start */}
+                  <button 
+                    onClick={goToStart} 
+                    style={{
+                      padding:'6px 10px', 
+                      border:'2px solid #9CA3AF', 
+                      borderRadius:8, 
+                      background:'#111', 
+                      color:'#fff', 
+                      cursor:'pointer', 
+                      fontSize:16
+                    }} 
+                    title="Go to start (Shift+<)"
+                  >
+                    ⏮️
+                  </button>
+                  
+                  {/* 2. Prev chord - BLUE */}
+                  <button 
+                    onClick={stepPrev} 
+                    style={{
+                      padding:'6px 10px', 
+                      border:'2px solid #3B82F6', 
+                      borderRadius:8, 
+                      background:'#111', 
+                      color:'#fff', 
+                      cursor:'pointer', 
+                      fontSize:14,
+                      fontWeight:700
+                    }} 
+                    title="Previous chord (<)"
+                  >
+                    &lt;
+                  </button>
+                  
+                  {/* 3. Next chord - BLUE */}
+                  <button 
+                    onClick={stepNext} 
+                    style={{
+                      padding:'6px 10px', 
+                      border:'2px solid #3B82F6', 
+                      borderRadius:8, 
+                      background:'#111', 
+                      color:'#fff', 
+                      cursor:'pointer', 
+                      fontSize:14,
+                      fontWeight:700
+                    }} 
+                    title="Next chord (>)"
+                  >
+                    &gt;
+                  </button>
+                  
+                  {/* 4. Play/Stop - GREEN for ▷, RED for ■ */}
+                  <button 
+                    onClick={togglePlayPause}
+                    style={{
+                      padding:'6px 10px',
+                      border: isPlaying ? '2px solid #EF4444' : '2px solid #10B981', 
+                      borderRadius:8, 
+                      background: isPlaying ? '#2a1a1a' : '#1a3a2a', 
+                      color:'#fff', 
+                      cursor:'pointer', 
+                      fontSize:16,
+                      fontWeight:700
+                    }}
+                    title={isPlaying ? "Stop (Space)" : "Play (Space)"}
+                  >
+                    {isPlaying ? '■' : '▷'}
+                  </button>
+                  
+                  {/* 5. Loop button */}
+                  <button 
+                    onClick={() => setLoopEnabled(!loopEnabled)}
+                    style={{
+                      padding:'6px 10px', 
+                      border: loopEnabled ? '2px solid #10B981' : '2px solid #374151', 
+                      borderRadius:8, 
+                      background: loopEnabled ? '#1a3a2a' : '#111', 
+                      color:'#fff', 
+                      cursor:'pointer', 
+                      fontSize:16
+                    }} 
+                    title={loopEnabled ? "Loop enabled" : "Loop disabled"}
+                  >
+                    🔁
+                  </button>
+                  
+                  {/* 6. Prev comment - GREY */}
+                  <button 
+                    onClick={skipToPrevComment} 
+                    style={{
+                      padding:'6px 10px', 
+                      border:'1px solid #6B7280', 
+                      borderRadius:8, 
+                      background:'#111', 
+                      color:'#9CA3AF', 
+                      cursor:'pointer', 
+                      fontSize:12
+                    }} 
+                    title="Previous comment (Ctrl+←)"
+                  >
+                    {"<<"}
+                  </button>
+                  
+                  {/* 7. Next comment - GREY */}
+                  <button 
+                    onClick={skipToNextComment} 
+                    style={{
+                      padding:'6px 10px', 
+                      border:'1px solid #6B7280', 
+                      borderRadius:8, 
+                      background:'#111', 
+                      color:'#9CA3AF', 
+                      cursor:'pointer', 
+                      fontSize:12
+                    }} 
+                    title="Next comment (Ctrl+→)"
+                  >
+                    {">>"}
+                  </button>
+                  
+                  {/* Tempo input */}
+                  <input 
+                    type="number"
+                    min="1"
+                    max="240"
+                    value={tempo}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value) || 60;
+                      setTempo(Math.max(1, Math.min(240, val)));
+                    }}
+                    style={{
+                      width: 50,
+                      padding: '6px',
+                      border: '1px solid #374151',
+                      borderRadius: 6,
+                      background: '#0a0a0a',
+                      color: '#E5E7EB',
+                      fontSize: 12,
+                      textAlign: 'center'
+                    }}
+                    title="Tempo (BPM)"
+                  />
+                  <span style={{fontSize: 11, color: '#9CA3AF'}}>BPM</span>
+                  
+                  {/* Step Record - v3.4.0: Moved here from MMK row */}
+                  <button 
+                    onClick={() => {
+                      const newState = !stepRecord;
+                      setStepRecord(newState);
+                      stepRecordRef.current = newState;
+                    }}
+                    style={{
+                      padding:'6px 10px', 
+                      border:`1px solid ${stepRecord ? '#ff4444' : '#374151'}`, 
+                      borderRadius:6, 
+                      background: stepRecord ? '#331010' : '#1f2937', 
+                      color: stepRecord ? '#ff4444' : '#9CA3AF', 
+                      cursor:'pointer',
+                      fontSize:11,
+                      fontWeight: stepRecord ? 600 : 400,
+                      marginLeft:'auto'
+                    }}
+                    title="Toggle step record: automatically add played chords to sequencer"
+                  >
+                    {stepRecord ? '⏺ Recording' : '⏺ Step Record'}
+                  </button>
+                </div>
+              )}
+              
+              
+              {/* Row 2: Sequencer + Buttons - EXPERT ONLY */}
+              {skillLevel === "EXPERT" && (
+                <div style={{marginBottom: 6, display:'flex', gap:8, alignItems:'stretch'}}>
+                  <textarea
+                    ref={textareaRef}
+                    placeholder={'Type chords, modifiers, and comments...\nExamples:\n@TITLE Sequence Name, @KEY C\nC, Am7, F, G7\n@SUB F, Bb, C7, @HOME\n@REL Em, Am, @PAR Cm, Fm\n@KEY G, D, G, C\n# Verse: lyrics or theory note'}
+                    rows={3}
+                    value={inputText}
+                    onChange={(e)=>setInputText(e.target.value)}
+                    onKeyDown={handleInputKeyNav}
+                    style={{
+                      flex: 1,
+                      padding:'8px 10px',
+                      border:'1px solid #374151',
+                      background: '#0f172a',
+                      color: '#e5e7eb',
+                      borderRadius:8,
+                      fontFamily:'ui-sans-serif, system-ui',
+                      resize:'vertical',
+                      fontSize:12,
+                      lineHeight: '1.5' // v3.2.5: Explicit line-height for better click targets
+                    }}
+                  />
+                  
+                  {/* Enter Button - RED when editor differs from loaded - v3.3.4: Moved to be immediately right of textarea */}
+                  <button 
+                    onClick={parseAndLoadSequence}
+                    style={{
+                      width:60,
+                      padding:'6px',
+                      border: inputText !== loadedSongText ? '2px solid #EF4444' : '2px solid #39FF14',
+                      borderRadius:8,
+                      background: inputText !== loadedSongText ? '#2a1a1a' : '#111',
+                      color:'#fff',
+                      cursor:'pointer',
+                      display:'flex',
+                      flexDirection:'column', // v3.4.3: Column layout for icon + text
+                      alignItems:'center',
+                      justifyContent:'center',
+                      gap: 2
+                    }}
+                    title={inputText !== loadedSongText ? "Load changes (Enter)" : "Load sequence (Enter)"}
+                  >
+                    <span style={{fontSize:20, fontWeight:700, lineHeight:1}}>⏎</span>
+                    {inputText !== loadedSongText && (
+                      <span style={{fontSize:8, fontWeight:600, color:'#EF4444', textTransform:'uppercase', lineHeight:1}}>
+                        Apply
+                      </span>
+                    )}
+                  </button>
+                  
+                  {/* Sequencer Menu Button - v3.3.4: Moved after Enter button */}
+                  <div style={{position:'relative'}}>
+                    <button 
+                      onClick={() => setShowSongMenu(!showSongMenu)}
+                      style={{
+                        width:60,
+                        height:'100%',
+                        padding:'6px',
+                        border:'2px solid #60A5FA',
+                        borderRadius:8,
+                        background:'#111',
+                        color:'#fff',
+                        cursor:'pointer',
+                        fontSize:24,
+                        display:'flex',
+                        alignItems:'center',
+                        justifyContent:'center'
+                      }}
+                      title="Sequencer menu"
+                    >
+                      📁
+                    </button>
+                    
+                    {/* Sequencer Menu Dropdown - v3.3.1: Renamed from Song Menu */}
+                    {showSongMenu && (
+                      <div style={{
+                        position: 'absolute',
+                        top: '100%',
+                        right: 0,
+                        marginTop: 4,
+                        background: '#1a1a1a',
+                        border: '2px solid #60A5FA',
+                        borderRadius: 8,
+                        padding: 8,
+                        zIndex: 10000,
+                        minWidth: 250,
+                        maxHeight: 400,
+                        overflowY: 'auto'
+                      }}>
+                        <div style={{fontSize:12, fontWeight:600, color:'#60A5FA', marginBottom:8, paddingBottom:8, borderBottom:'1px solid #374151'}}>
+                          SONG MENU
+                        </div>
+                        
+                        {/* Demo Songs */}
+                        <div style={{marginBottom:12}}>
+                          <div style={{fontSize:10, color:'#9CA3AF', marginBottom:4, textTransform:'uppercase'}}>Demo Songs</div>
+                          {demoSongs.map((song, idx) => (
+                            <button
+                              key={idx}
+                              onClick={() => handleLoadDemoSong(song.content)}
+                              style={{
+                                width:'100%',
+                                padding: '6px 8px',
+                                border: 'none',
+                                background: 'transparent',
+                                color: '#e5e7eb',
+                                cursor: 'pointer',
+                                textAlign: 'left',
+                                borderRadius: 4,
+                                fontSize: 11,
+                                marginBottom:2
+                              }}
+                              onMouseEnter={(e) => e.currentTarget.style.background = '#374151'}
+                              onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                            >
+                              {song.title}
+                            </button>
+                          ))}
+                        </div>
+                        
+                        {/* Import/Export */}
+                        <div style={{borderTop:'1px solid #374151', paddingTop:8}}>
+                          <div style={{fontSize:10, color:'#9CA3AF', marginBottom:4, textTransform:'uppercase'}}>Import / Export</div>
+                          
+                          {/* Import */}
+                          <label style={{
+                            width:'100%',
+                            padding: '6px 8px',
+                            border: 'none',
+                            background: 'transparent',
+                            color: '#e5e7eb',
+                            cursor: 'pointer',
+                            textAlign: 'left',
+                            borderRadius: 4,
+                            fontSize: 11,
+                            display:'block',
+                            marginBottom:2
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.background = '#374151'}
+                          onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
+                            📂 Import from file...
+                            <input 
+                              type="file" 
+                              accept=".txt,.md" 
+                              onChange={handleImportSong}
+                              style={{display:'none'}}
+                            />
+                          </label>
+                          
+                          {/* Export */}
+                          <button
+                            onClick={handleExportSong}
+                            style={{
+                              width:'100%',
+                              padding: '6px 8px',
+                              border: 'none',
+                              background: 'transparent',
+                              color: '#e5e7eb',
+                              cursor: 'pointer',
+                              textAlign: 'left',
+                              borderRadius: 4,
+                              fontSize: 11,
+                              marginBottom:2
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.background = '#374151'}
+                            onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                          >
+                            💾 Export to file...
+                          </button>
+                          
+                          {/* Share URL */}
+                          <button
+                            onClick={handleGenerateShareURL}
+                            style={{
+                              width:'100%',
+                              padding: '6px 8px',
+                              border: 'none',
+                              background: 'transparent',
+                              color: '#e5e7eb',
+                              cursor: 'pointer',
+                              textAlign: 'left',
+                              borderRadius: 4,
+                              fontSize: 11
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.background = '#374151'}
+                            onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                          >
+                            🔗 Copy share link
+                          </button>
+                          
+                          {shareURL && (
+                            <div style={{
+                              marginTop:8,
+                              padding:6,
+                              background:'#0f172a',
+                              borderRadius:4,
+                              fontSize:9,
+                              color:'#10B981',
+                              wordBreak:'break-all'
+                            }}>
+                              ✓ Link copied to clipboard!
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
               <div style={{marginTop: 12, paddingTop: 12, borderTop: '1px solid #374151'}}>
                 {/* Single line: Controls + Status */}
                 <div style={{display:'flex', gap:8, alignItems:'center', flexWrap:'wrap', justifyContent:'space-between'}}>
@@ -4434,4 +4536,4 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
   );
 }
 
-// EOF - HarmonyWheel.tsx v3.3.4
+// EOF - HarmonyWheel.tsx v3.4.3
