@@ -1,5 +1,30 @@
 /*
- * HarmonyWheel.tsx — v3.5.0 🎹 FULL TRANSPOSE IMPLEMENTATION
+ * HarmonyWheel.tsx — v3.5.7 🎯 DIM TRIAD FIX
+ * 
+ * 🎯 v3.5.7 CRITICAL FIX:
+ * - Fixed: G#dim triad (3 notes) no longer triggers V/vi wedge
+ * - Only G#dim7 (4 notes) should activate V/vi
+ * - G#dim triad now correctly goes to bonus wedge (ii/vi)
+ * - Bug was: releasing 4th finger showed V/vi wedge with 3 notes!
+ * 
+ * 🎯 v3.5.6 SUCCESS:
+ * - ALWAYS check held notes for dim7, regardless of detection order
+ * - G#dim7 correctly activates V/vi when all 4 notes held
+ * 
+ * 🎯 v3.5.2 FIXES - Dim7 Detection Priority:
+ * - Fixed: Dim7 chords now checked FIRST (before triads can match)
+ * - Fixed: Note order no longer matters (B-D-F-G# vs G#-B-D-F same result)
+ * - Fixed: G#dim7 with G# bass correctly activates V/vi wedge
+ * - Fixed: Bdim7 with B bass correctly activates V7 wedge
+ * - Added: Comprehensive debug logging for dim7 detection
+ * 
+ * 🎯 v3.5.1 FIXES - Diminished Chord Detection:
+ * - Fixed: G#dim now activates V/vi wedge (not ii/vi bonus)
+ * - Fixed: Bdim7 with B bass activates V7 wedge (resolves to C)
+ * - Fixed: Dim7 bass note determines function (symmetrical chord)
+ * - Fixed: Only ONE inversion per dim7 activates wedge, others off-grid
+ * - Added: E and G triads to their respective wedge families
+ * - Fixed: Spelling now shows G#dim (not Abdim) in HOME space
  * 
  * 🎯 v3.5.0 MAJOR FEATURE - TRUE KEY TRANSPOSE:
  * - Transpose now shifts EVERYTHING (like a capo):
@@ -275,7 +300,7 @@ import {
   parseSongMetadata
 } from "./lib/songManager";
 
-const HW_VERSION = 'v3.5.0';
+const HW_VERSION = 'v3.5.7';
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -2064,10 +2089,14 @@ useEffect(() => {
     let displayName = absName;
     if ((absName.includes('°') || absName.includes('dim')) && !relMinorActiveRef.current && !subdomActiveRef.current && !visitorActiveRef.current) {
       // HOME space only - spell based on function
+      const before = displayName;
       displayName = displayName
         .replace(/^Ab(dim|°)/, 'G#$1')   // G# is leading tone to A (V/vi function)
         .replace(/^Db(dim|°)/, 'C#$1')   // C# is leading tone to D (V/ii function)  
         .replace(/^D#(dim|°)/, 'Eb$1');  // Eb ties to bIII in parallel (keep flat)
+      if (before !== displayName) {
+        console.log('🔤 Spelling fix:', before, '→', displayName);
+      }
       // Gb→F# naturally handled by theory.ts
     }
     
@@ -2080,6 +2109,53 @@ useEffect(() => {
     updateRecentRel(pcsRel);
 
     const isSubset = (need:number[])=> subsetOf(T(need), pcsRel);
+
+    /* ---------- PRIORITY DIM7 CHECK (v3.5.6) ---------- */
+    // CRITICAL: Check ALL dim7 chords BEFORE any other logic (including PAR)
+    // Must run IMMEDIATELY after getting absName from theory.ts
+    
+    // v3.5.6: ALWAYS check if currently held notes form a dim7, regardless of what was detected
+    // This prevents Bdim from showing when all 4 notes of G#dim7 are held
+    const currentPcsRel = new Set([...merged].map(n => pcFromMidi(n)).map(n => (n - NAME_TO_PC[baseKeyRef.current] + 12) % 12));
+    const bassNote = absHeld.length > 0 ? Math.min(...absHeld) : null;
+    const bassPc = bassNote !== null ? (bassNote % 12) : null;
+    
+    console.log('🔍 [DIM7 ALWAYS-CHECK]', {
+      currentPcsRel: [...currentPcsRel].sort((a,b) => a-b),
+      absHeld,
+      bassNote,
+      bassPc,
+      absName,
+      displayName
+    });
+    
+    // G#dim7 [8,11,2,5] with G# bass → V/vi wedge
+    // Check if ALL 4 notes are currently held
+    if (currentPcsRel.size >= 4 && [8,11,2,5].every(pc => currentPcsRel.has(pc)) && bassPc === 8) {
+      console.log('✅ G#dim7 ALWAYS detected (all 4 notes held) → V/vi');
+      setActiveWithTrail("V/vi", displayName);
+      return;
+    }
+    
+    // Bdim7 [11,2,5,8] with B bass → V7 wedge (exception!)
+    if (currentPcsRel.size >= 4 && [11,2,5,8].every(pc => currentPcsRel.has(pc)) && bassPc === 11) {
+      console.log('✅ Bdim7 ALWAYS detected (all 4 notes held) → V7');
+      setActiveWithTrail("V7", displayName);
+      return;
+    }
+    
+    // C#dim7 [1,4,7,10] with C# bass → V/ii bonus
+    if (currentPcsRel.size >= 4 && [1,4,7,10].every(pc => currentPcsRel.has(pc)) && bassPc === 1) {
+      console.log('✅ C#dim7 ALWAYS detected (all 4 notes held) → V/ii bonus');
+      setActiveFn("");
+      setCenterLabel(displayName);
+      setBonusActive(true);
+      setBonusLabel(displayName);
+      return;
+    }
+    
+    // If we get here and it's a dim triad (3 notes), allow it through
+    // (not part of a held dim7 chord)
     const exactSet=(need:number[])=>{
       const needSet=T(need); if(!subsetOf(needSet, pcsRel)) return false;
       for(const p of pcsRel) if(!needSet.has(p)) return false;
@@ -2529,16 +2605,46 @@ useEffect(() => {
     }
 
     /* In C mapping */
+    console.log('🏠 HOME CHECK:', {
+      now: performance.now(),
+      suppressUntil: homeSuppressUntilRef.current,
+      willRun: performance.now() >= homeSuppressUntilRef.current,
+      pcsRelSize: pcsRel.size
+    });
+    
     if (performance.now() >= homeSuppressUntilRef.current){
-      // v3.5.0: Get bass note for root position checking
+      // v3.5.1: Get bass note for diminished chord function detection
       const bassNote = absHeld.length > 0 ? Math.min(...absHeld) : null;
       const bassPc = bassNote !== null ? (bassNote % 12) : null;
       
-      // PRIORITY: Check bonus chords BEFORE diatonic chords
-      // Bdim/Bm7♭5 (ii/vi wedge): B-D-F or B-D-F-Ab
-      const hasBDF   = isSubset([11,2,5]) && pcsRel.size === 3; // Bdim triad, any inversion
-      const hasBDFG  = isSubset([11,2,5,8]) && pcsRel.size === 4 && bassPc === 11; // Bdim7 ROOT POSITION only
-      if (!visitorActiveRef.current && (hasBDF || hasBDFG)) {
+      // NOW check triads and other chords
+      // Check V/vi family (E, E7 only - G#dim7 checked in priority section above)
+      const isE = isSubset([4,8,11]) && pcsRel.size === 3; // E triad
+      const isE7 = isSubset([4,8,11,2]) && pcsRel.size === 4; // E7, any inversion
+      
+      if (!visitorActiveRef.current && (isE || isE7)) {
+        let chordName = "E7";
+        if (isE) chordName = "E";
+        setActiveWithTrail("V/vi", chordName);
+        return;
+      }
+      
+      // Check V7 family (G, G7 only - Bdim7 checked above)
+      const isG = isSubset([7,11,2]) && pcsRel.size === 3; // G triad, any inversion
+      const isG7 = isSubset([7,11,2,5]) && pcsRel.size === 4; // G7, any inversion
+      
+      if (!visitorActiveRef.current && (isG || isG7)) {
+        const chordName = isG ? "G" : "G7";
+        setActiveWithTrail("V7", chordName);
+        return;
+      }
+      
+      // PRIORITY: Check bonus chords (triads and half-dim only - dim7 checked above)
+      // ii/vi bonus: Bdim triad (any inversion) or Bm7♭5 (any inversion)
+      const hasBdimTriad = isSubset([11,2,5]) && pcsRel.size === 3; // Bdim triad, any inversion
+      const hasBm7b5 = isSubset([11,2,5,9]) && pcsRel.size === 4; // Bm7♭5, any inversion
+      
+      if (!visitorActiveRef.current && (hasBdimTriad || hasBm7b5)) {
         setActiveFn(""); 
         setCenterLabel(displayName);
         setBonusActive(true); 
@@ -2546,15 +2652,13 @@ useEffect(() => {
         return;
       }
       
-      // A7 family (V/ii wedge): A/A7, C#dim/C#dim7, C#m7♭5
-      // All function as V/ii (resolve to Dm)
-      const hasA7tri = isSubset([9,1,4]) && pcsRel.size === 3;
-      const hasA7    = isSubset([9,1,4,7]) && pcsRel.size === 4;
-      const hasCSharpDim = isSubset([1,4,8]) && pcsRel.size === 3; // C#dim triad, any inversion
-      const hasCSharpDim7 = isSubset([1,4,7,10]) && pcsRel.size === 4 && bassPc === 1; // C#dim7 root position (C#-E-G-Bb)
-      const hasCSharpHalfDim = isSubset([1,4,7,11]) && pcsRel.size === 4; // C#m7♭5 any inversion (C#-E-G-B)
+      // V/ii bonus (A7 family): A, A7, C#dim triad, C#m7♭5 (C#dim7 checked above)
+      const hasA = isSubset([9,1,4]) && pcsRel.size === 3; // A triad, any inversion
+      const hasA7 = isSubset([9,1,4,7]) && pcsRel.size === 4; // A7, any inversion
+      const hasCSharpDimTriad = isSubset([1,4,8]) && pcsRel.size === 3; // C#dim triad, any inversion
+      const hasCSharpHalfDim = isSubset([1,4,7,11]) && pcsRel.size === 4; // C#m7♭5, any inversion
       
-      if (!visitorActiveRef.current && (hasA7tri || hasA7 || hasCSharpDim || hasCSharpDim7 || hasCSharpHalfDim)) {
+      if (!visitorActiveRef.current && (hasA || hasA7 || hasCSharpDimTriad || hasCSharpHalfDim)) {
         setActiveFn(""); 
         setCenterLabel(displayName); // Show actual chord name
         setBonusActive(true); 
@@ -2610,8 +2714,8 @@ useEffect(() => {
     }
 
     const triDisp = detectDisplayTriadLabel(pcsRel, baseKeyRef.current);
-    console.log('[DETECT] Fallback:', { triDisp, absName, result: triDisp || absName });
-    centerOnly(triDisp || absName);
+    console.log('[DETECT] Fallback:', { triDisp, absName, displayName, result: triDisp || displayName });
+    centerOnly(triDisp || displayName);
   }
   /* ---------- controls ---------- */
   const goHome = ()=>{
@@ -4785,4 +4889,6 @@ useEffect(() => {
   );
 }
 
-// EOF - HarmonyWheel.tsx v3.4.3
+// HarmonyWheel v3.5.7 - G#dim triad removed from V/vi (only dim7 triggers it!)
+
+// EOF - HarmonyWheel.tsx v3.5.7
