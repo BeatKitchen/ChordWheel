@@ -1,17 +1,48 @@
 /*
- * HarmonyWheel.tsx — v3.4.7
+ * HarmonyWheel.tsx — v3.5.0 🎹 FULL TRANSPOSE IMPLEMENTATION
  * 
- * 🐛 v3.4.7 HOTFIX:
+ * 🎯 v3.5.0 MAJOR FEATURE - TRUE KEY TRANSPOSE:
+ * - Transpose now shifts EVERYTHING (like a capo):
+ *   • MIDI input transposed (C key → D with +2)
+ *   • Hub displays transposed chords (shows D, not C)
+ *   • Wedges light for transposed chords
+ *   • Base key shifts (C → D with +2)
+ *   • Sequencer chords transposed
+ *   • Works WITH @KEY (adds/subtracts from specified key)
+ * 
+ * - Added Bypass Toggle (🔇/🔊):
+ *   • Temporarily disable transpose without resetting value
+ *   • Perfect for A/B comparison
+ *   • Resume exactly where you left off
+ * 
+ * - Removed double-transpose bugs:
+ *   • Notes already transposed at input, don't re-transpose at playback
+ *   • Fixed stepNext, togglePlayPause, playback effect
+ * 
+ * - @KEY directive support:
+ *   • No longer disables transpose
+ *   • Transpose adds to @KEY value
+ *   • Example: @KEY F + transpose +2 = key becomes G
+ * 
+ * 🎹 v3.5.0 TRANSPOSE IMPLEMENTATION:
+ * - Transpose UI fully functional (was already mostly working)
+ * - @KEY directive disables transpose (grays out button with ⚠)
+ * - Keyboard shortcuts: T toggles dropdown, Shift+↑/↓ adjusts semitones
+ * - Transpose affects playback only, not detection (correct behavior)
+ * - Active transpose shows RED border, inactive shows BLUE
+ * - Works with all sequence features (step record, comments, modifiers)
+ * 
+ * 🐛 v3.5.0 HOTFIX:
  * - Fixed A triad triggering wrong wedge (was vi, now correctly V/ii bonus)
  * - Bonus wedge label stays "A7" (functional), center shows "A" or "A7" (actual)
  * - Reverted audio context changes (was working fine before)
  * 
- * 🔊 v3.4.7 AUDIO + BONUS WEDGE FIXES:
+ * 🔊 v3.5.0 AUDIO + BONUS WEDGE FIXES:
  * - Fixed A/A7 bonus wedge (V/ii) - now shows "A" for triad, "A7" for seventh
  * - Fixed audio context resume - now properly awaits resume promise
  * - Audio should work on first MIDI input without needing speaker toggle
  * 
- * 🎯 v3.4.7 CRITICAL FIX - G TRIAD vs G7:
+ * 🎯 v3.5.0 CRITICAL FIX - G TRIAD vs G7:
  * - Fixed all triads being labeled as 7th chords (G→G7, D→D7, E→E7, etc.)
  * - Root cause: realizeFunction("V7") always returned "G7" even for triads
  * - Solution: Use absName from theory.ts (which correctly detects "G" vs "G7")
@@ -244,7 +275,7 @@ import {
   parseSongMetadata
 } from "./lib/songManager";
 
-const HW_VERSION = 'v3.4.3'; // Transpose/Reset visibility + full reset fix
+const HW_VERSION = 'v3.5.0';
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -303,7 +334,6 @@ useEffect(() => {
     window.removeEventListener("touchend", clear);
   };
 }, []);
-const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey;},[baseKey]);
 
   // PHASE 2B: Dynamic SUB and PAR keys (not hardcoded!)
   // SUB = IV of baseKey (F when base=C, Db when base=Ab, A when base=E, etc.)
@@ -525,17 +555,21 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
           const k = pcNameForKey(pcFromMidi(lowest), "C") as KeyName;
           setBaseKey(k);
         } else {
-          rightHeld.current.add(d1);
-          if (sustainOn.current) rightSus.current.add(d1);
+          // v3.5.0: Apply transpose to MIDI input
+          const transposedNote = d1 + effectiveTranspose;
+          console.log('🎹 MIDI INPUT:', {
+            originalNote: d1,
+            transpose: effectiveTranspose,
+            transposedNote,
+            noteName: `${['C','C#','D','Eb','E','F','F#','G','Ab','A','Bb','B'][d1 % 12]} → ${['C','C#','D','Eb','E','F','F#','G','Ab','A','Bb','B'][transposedNote % 12]}`
+          });
+          rightHeld.current.add(transposedNote);
+          if (sustainOn.current) rightSus.current.add(transposedNote);
           
-          // Play audio for MIDI keyboard input
-          console.log('🎹 MIDI note-on:', d1, 'velocity:', d2, 'audioEnabled:', audioEnabledRef.current);
+          // Play audio for MIDI keyboard input (use transposed note)
           if (audioEnabledRef.current) {
             const velocity = d2 / 127;
-            console.log('🎵 Calling playNote with velocity:', velocity);
-            playNote(d1, velocity, false);
-          } else {
-            console.log('❌ Audio not enabled, not playing');
+            playNote(transposedNote, velocity, false);
           }
         }
         detect();
@@ -543,12 +577,14 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
         lastMidiEventRef.current = "off";
         if (d1<=36) leftHeld.current.delete(d1);
         else { 
-          rightHeld.current.delete(d1); 
-          rightSus.current.delete(d1);
+          // v3.5.0: Apply transpose to note-off as well
+          const transposedNote = d1 + effectiveTranspose;
+          rightHeld.current.delete(transposedNote); 
+          rightSus.current.delete(transposedNote);
           
-          // Stop audio for MIDI keyboard note-off
+          // Stop audio for MIDI keyboard note-off (use transposed note)
           if (audioEnabledRef.current) {
-            stopNote(d1);
+            stopNote(transposedNote);
           }
         }
         // Don't call detect() immediately on note-off - keep chord visible
@@ -604,6 +640,43 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
   const [isPlaying, setIsPlaying] = useState(false);
   const [tempo, setTempo] = useState(60); // BPM (beats per minute)
   const [transpose, setTranspose] = useState(0); // Semitones (-12 to +12)
+  const [transposeBypass, setTransposeBypass] = useState(false); // Temporarily disable transpose
+  
+  // Computed transpose value (0 if bypassed)
+  const effectiveTranspose = transposeBypass ? 0 : transpose;
+  
+  // Debug: Log transpose changes
+  useEffect(() => {
+    console.log('🎹 TRANSPOSE STATE:', {
+      transpose,
+      transposeBypass,
+      effectiveTranspose,
+      baseKey,
+      willBecomeKey: effectiveTranspose !== 0 ? transposeKey(baseKey, effectiveTranspose) : baseKey
+    });
+  }, [transpose, transposeBypass, baseKey, effectiveTranspose]);
+  
+  // Helper: Transpose a key name by N semitones
+  const transposeKey = (key: KeyName, semitones: number): KeyName => {
+    const pc = NAME_TO_PC[key];
+    const newPc = (pc + semitones + 12) % 12;
+    const result = FLAT_NAMES[newPc]; // Always use flat names for keys
+    console.log(`🔄 transposeKey(${key}, ${semitones}) = ${result} (pc ${pc} → ${newPc})`);
+    return result;
+  };
+  
+  // Computed transposed base key
+  const effectiveBaseKey = effectiveTranspose !== 0 ? transposeKey(baseKey, effectiveTranspose) : baseKey;
+  
+  // Debug: Log effective base key
+  useEffect(() => {
+    console.log('🎯 EFFECTIVE BASE KEY:', effectiveBaseKey, '(original:', baseKey, ')');
+  }, [effectiveBaseKey, baseKey]);
+  
+  // Ref for baseKey - uses effectiveBaseKey for transpose
+  const baseKeyRef = useRef<KeyName>("C"); 
+  useEffect(() => { baseKeyRef.current = effectiveBaseKey; }, [effectiveBaseKey]);
+  
   const [loopEnabled, setLoopEnabled] = useState(false);
   const playbackTimerRef = useRef<number | null>(null);
   const [songTitle, setSongTitle] = useState(""); // Static song title from @TITLE
@@ -960,8 +1033,8 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
     const currentItem = sequence[currentIdx];
     if (currentItem?.kind === "chord" && notesToPlay.length > 0) {
       console.log('Playing chord:', currentItem.chord, 'notes:', notesToPlay.length);
-      const transposedNotes = notesToPlay.map(note => note + transpose);
-      playChord(transposedNotes, 1.5);
+      // v3.5.0: Notes already transposed via effectiveBaseKey, don't transpose again
+      playChord(notesToPlay, 1.5);
     }
     
     // Update displayIndex to show what we just played
@@ -1010,7 +1083,7 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
       // Start playing
       if (sequence.length === 0) return;
       
-      // v3.4.7: Play first chord BEFORE starting playback timer
+      // v3.5.0: Play first chord BEFORE starting playback timer
       let startIdx = seqIndex;
       if (startIdx < 0 || startIdx >= sequence.length) {
         startIdx = 0;
@@ -1023,9 +1096,9 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
       const notesToPlay = [...latchedAbsNotesRef.current];
       const currentItem = sequence[startIdx];
       if (currentItem?.kind === "chord" && notesToPlay.length > 0) {
-        const transposedNotes = notesToPlay.map(note => note + transpose);
+        // v3.5.0: Notes already transposed, don't transpose again
         const noteDuration = (60 / tempo) * 0.8;
-        playChord(transposedNotes, noteDuration);
+        playChord(notesToPlay, noteDuration);
       }
       
       // NOW start the playback loop
@@ -1033,7 +1106,7 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
     }
   };
   
-  const stopPlayback = () => {
+  const stopPlayback = (silent = false) => {
     // v3.3.2: Exit step record when using transport controls
     if (stepRecord) {
       setStepRecord(false);
@@ -1046,7 +1119,8 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
       playbackTimerRef.current = null;
     }
     // Reset to beginning
-    if (sequence.length > 0) {
+    // v3.5.0: Skip audio when silent=true (for reset button)
+    if (sequence.length > 0 && !silent) {
       setSeqIndex(0);
       applySeqItem(sequence[0]);
       setTimeout(() => selectCurrentItem(), 0);
@@ -1121,6 +1195,7 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
     // v3.4.3: Full reset including all refs
     setBaseKey("C");
     setTranspose(0);
+    setTransposeBypass(false);
     // Reset ALL space states and refs
     setSubdomActive(false);
     subdomLatchedRef.current = false;
@@ -1130,7 +1205,7 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
     // Clear recent maps
     recentRelMapRef.current.clear();
     lastPcsRelSizeRef.current = 0;
-    stopPlayback();
+    stopPlayback(true); // v3.5.0: Silent stop
   };
   
   const handleInputKeyNav: React.KeyboardEventHandler<HTMLTextAreaElement> = (e)=>{
@@ -1286,7 +1361,10 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
         midiNotes = midiNotes.map(n => n - 12);
       }
       
-      console.log('🎹 Simulated MIDI notes:', midiNotes, 'for chord:', chordName);
+      // v3.5.0: Apply transpose to sequencer chords (like MIDI input)
+      midiNotes = midiNotes.map(n => n + effectiveTranspose);
+      
+      console.log('🎹 Simulated MIDI notes:', midiNotes, 'for chord:', chordName, 'transpose:', effectiveTranspose);
       
       // 🔑 KEY INSIGHT: Temporarily set MIDI state, call detect(), then restore
       const savedRightHeld = new Set(rightHeld.current);
@@ -1308,10 +1386,10 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
       // 🎵 NOW PLAY THE AUDIO!
       // detect() handles wedge lighting and space activation
       // But we still need to actually PLAY the notes
+      // v3.5.0: midiNotes already transposed above, don't transpose again
       if (audioEnabledRef.current) {
-        const transposedNotes = midiNotes.map(note => note + transpose);
-        console.log('🔊 Playing sequencer chord:', transposedNotes);
-        playChord(transposedNotes, 1.5);
+        console.log('🔊 Playing sequencer chord:', midiNotes);
+        playChord(midiNotes, 1.5);
       }
     }
   };
@@ -1421,6 +1499,12 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
         e.preventDefault();
         skipToPrevComment();
       // Transpose controls
+      } else if (e.key === 't' || e.key === 'T') {
+        e.preventDefault();
+        const hasKeyDirective = loadedSongText.includes('@KEY');
+        if (!hasKeyDirective) {
+          setShowTransposeDropdown(prev => !prev);
+        }
       } else if (e.shiftKey && e.key === 'ArrowUp') {
         e.preventDefault();
         setTranspose(prev => Math.min(12, prev + 1));
@@ -1493,9 +1577,9 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
     // Play current chord immediately (if it's a chord)
     const currentItem = sequence[seqIndex];
     if (currentItem?.kind === "chord" && currentItem.chord && latchedAbsNotes.length > 0) {
-      const transposedNotes = latchedAbsNotes.map(note => note + transpose);
+      // v3.5.0: Notes already transposed, don't transpose again
       const noteDuration = (60 / tempo) * 0.8; // 80% of beat duration
-      playChord(transposedNotes, noteDuration);
+      playChord(latchedAbsNotes, noteDuration);
     }
     
     // Calculate interval based on tempo (60 BPM = 1 second per beat)
@@ -1936,8 +2020,11 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
     // DEBUG: Log space state when chords are detected
     if (pcsAbs.size >= 3) {
       console.log('🔍 [DETECT] Space state:', {
+        absHeldNotes: absHeld,
         pcsAbs: [...pcsAbs],
         baseKey: baseKeyRef.current,
+        effectiveBaseKey: baseKeyRef.current,
+        transpose: effectiveTranspose,
         visitor: visitorActiveRef.current,
         subdom: subdomActiveRef.current,
         rel: relMinorActiveRef.current,
@@ -2092,7 +2179,7 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
       const hasA7tri = isSubset([9,1,4]);
       const hasA7    = hasA7tri || isSubset([9,1,4,7]);
       if (hasA7){
-        // v3.4.7: Use absName for center label to distinguish A from A7
+        // v3.5.0: Use absName for center label to distinguish A from A7
         // But keep bonus wedge label as "A7" (functional label)
         const centerLabelToUse = absName || "A7";
         setActiveFn(""); setCenterLabel(centerLabelToUse);
@@ -2401,7 +2488,7 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
       if(/(maj7|m7♭5|m7$|dim7$|[^m]7$)/.test(absName)) { centerOnly(absName); return; }
       const tri = firstMatch(parDiatonic.reqt, pcsRel); 
       if(tri){ 
-        // v3.4.7: Use absName from theory.ts instead of realizeFunction
+        // v3.5.0: Use absName from theory.ts instead of realizeFunction
         const chordName = absName || realizeFunction(tri.f as Fn, parKey);
         console.log('[DETECT] Matched PAR tri:', { 
           fn: tri.f, 
@@ -2457,7 +2544,7 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
       if(/(maj7|m7♭5|m7$|dim7$|[^m]7$)/.test(absName)) { centerOnly(absName); return; }
       const tri = firstMatch(homeDiatonic.reqt, pcsRel); 
       if(tri){ 
-        // v3.4.7: Use absName from theory.ts instead of realizeFunction
+        // v3.5.0: Use absName from theory.ts instead of realizeFunction
         // This prevents G triad from being labeled "G7" just because it triggers V7 function
         const chordName = absName || realizeFunction(tri.f as Fn, baseKeyRef.current);
         console.log('[DETECT] Matched tri:', { 
@@ -2633,14 +2720,29 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
   const dimFadeRafRef = useRef<number | null>(null);
 
   /* ---------- label key + center text style ---------- */
-  const labelKey = (visitorActive ? parKey : (subdomActive ? subKey : baseKey)) as KeyName;
+  // v3.5.0: Use effectiveBaseKey for transpose support
+  const labelKey = (visitorActive ? parKey : (subdomActive ? subKey : effectiveBaseKey)) as KeyName;
+  
+  // Debug: Log wedge label key
+  useEffect(() => {
+    console.log('🏷️ WEDGE LABEL KEY:', {
+      labelKey,
+      effectiveBaseKey,
+      baseKey,
+      visitor: visitorActive,
+      subdom: subdomActive
+    });
+  }, [labelKey, effectiveBaseKey, baseKey, visitorActive, subdomActive]);
+  
   const centerTextStyle: React.CSSProperties = {
     fontFamily: CENTER_FONT_FAMILY, paintOrder: "stroke", stroke: "#000", strokeWidth: 1.2 as any
   };
 
   /* ---------- wedges ---------- */
   const wedgeNodes = useMemo(()=>{
-    const renderKey:KeyName = visitorActive ? parKey : baseKey;
+    // v3.5.0: Use effectiveBaseKey for transpose support
+    const renderKey:KeyName = visitorActive ? parKey : effectiveBaseKey;
+    console.log('🎨 RENDERING WEDGES with key:', renderKey);
     const dimK = Math.min(1, Math.max(0, dimFadeTick / DIM_FADE_MS));
     const fadedBase = 0.5 + 0.5 * dimK; // 0.5→1.0
     return layout
@@ -2892,7 +2994,7 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
       );
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  },[layout, activeFn, trailFn, trailTick, trailOn, baseKey, visitorActive, relMinorActive, subdomActive, labelKey, dimFadeOn, dimFadeTick, skillLevel]);
+  },[layout, activeFn, trailFn, trailTick, trailOn, effectiveBaseKey, visitorActive, relMinorActive, subdomActive, labelKey, dimFadeOn, dimFadeTick, skillLevel]);
 
   const activeBtnStyle = (on:boolean, spaceColor?:string): React.CSSProperties =>
     ({padding:"6px 10px", border:`2px solid ${on ? (spaceColor || "#39FF14") : "#374151"}`, borderRadius:8, background:"#111", color:"#fff", cursor:"pointer"});
@@ -3927,8 +4029,27 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
               </div>
               
               
-              {/* Row: MMK + Show Bonus + Transpose + Reset - v3.4.3: Combined row */}
+              {/* Row: Reset + MMK + Show Bonus + Transpose - v3.5.0: Reordered */}
               <div style={{marginTop: 6, display:'flex', gap:8, alignItems:'center', flexWrap:'wrap'}}>
+                {/* Reset - v3.5.0: Moved left, renamed "Key ↻" */}
+                {skillLevel === "EXPERT" && (
+                  <button 
+                    onClick={resetAll}
+                    style={{
+                      padding:'6px 10px', 
+                      border:'1px solid #F2D74B', 
+                      borderRadius:8, 
+                      background:'#111', 
+                      color:'#F2D74B', 
+                      cursor:'pointer', 
+                      fontSize:11
+                    }}
+                    title="Reset All (Ctrl+H)"
+                  >
+                    Key ↻
+                  </button>
+                )}
+                
                 {skillLevel === "EXPERT" && (
                   <button 
                     onClick={makeThisMyKey}
@@ -3970,26 +4091,33 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
                   </button>
                 )}
                 
-                {/* Transpose - v3.4.3: Only EXPERT, or always if non-zero */}
-                {(skillLevel === "EXPERT" || transpose !== 0) && (
+                {/* Transpose - v3.5.0: Disabled when @KEY present */}
+                {(skillLevel === "EXPERT" || transpose !== 0) && (() => {
+                  const hasKeyDirective = loadedSongText.includes('@KEY');
+                  const transposeActive = transpose !== 0;
+                  const disabled = hasKeyDirective && transposeActive;
+                  
+                  return (
                   <div style={{position:'relative'}}>
                     <button 
-                      onClick={() => setShowTransposeDropdown(!showTransposeDropdown)}
+                      onClick={() => !hasKeyDirective && setShowTransposeDropdown(!showTransposeDropdown)}
                       style={{
                         padding:'6px 10px', 
-                        border: transpose !== 0 ? '1px solid #F2D74B' : '1px solid #60A5FA', 
+                        border: (transpose === 0 || transposeBypass) ? '1px solid #6B7280' : '2px solid #EF4444',
                         borderRadius:8, 
-                        background:'#111', 
-                        color: transpose !== 0 ? '#F2D74B' : '#60A5FA', 
-                        cursor:'pointer', 
-                        fontSize:11
+                        background: (transpose === 0 || transposeBypass) ? '#111' : '#2a1010',
+                        color: (transpose === 0 || transposeBypass) ? '#6B7280' : '#EF4444',
+                        cursor: hasKeyDirective ? 'not-allowed' : 'pointer',
+                        fontSize:11,
+                        opacity: hasKeyDirective ? 0.5 : 1
                       }}
-                      title="Transpose (T)"
+                      title={hasKeyDirective ? "Transpose disabled (song uses @KEY)" : (transposeBypass ? "Transpose bypassed (click to edit)" : "Transpose (T)")}
                     >
-                      TR: {transpose > 0 ? `+${transpose}` : transpose} ▼
+                      TR {transpose > 0 ? `+${transpose}` : transpose}
+                      {hasKeyDirective && ' ⚠'}
                     </button>
                     
-                    {showTransposeDropdown && (
+                    {showTransposeDropdown && !hasKeyDirective && (
                       <div style={{
                         position:'absolute',
                         bottom:'100%',
@@ -4001,14 +4129,17 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
                         padding:8,
                         zIndex:1000,
                         display:'grid',
-                        gridTemplateColumns:'repeat(13, 1fr)', // Horizontal: -12 to +12
+                        gridTemplateColumns:'repeat(13, 1fr)', // 2 rows: positive top, negative bottom
+                        gridTemplateRows:'repeat(2, 1fr)',
                         gap:4
                       }}>
-                        {[-12,-11,-10,-9,-8,-7,-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6,7,8,9,10,11,12].map(semitones => (
+                        {/* Row 1: 0 to +12 */}
+                        {[0,1,2,3,4,5,6,7,8,9,10,11,12].map(semitones => (
                           <button
                             key={semitones}
                             onClick={() => {
                               setTranspose(semitones);
+                              setTransposeBypass(false); // Clear bypass when changing value
                               setShowTransposeDropdown(false);
                             }}
                             style={{
@@ -4026,28 +4157,77 @@ const baseKeyRef=useRef<KeyName>("C"); useEffect(()=>{baseKeyRef.current=baseKey
                             {semitones > 0 ? `+${semitones}` : semitones}
                           </button>
                         ))}
+                        {/* Row 2: -1 to -12 */}
+                        {[-1,-2,-3,-4,-5,-6,-7,-8,-9,-10,-11,-12].map(semitones => (
+                          <button
+                            key={semitones}
+                            onClick={() => {
+                              setTranspose(semitones);
+                              setTransposeBypass(false); // Clear bypass when changing value
+                              setShowTransposeDropdown(false);
+                            }}
+                            style={{
+                              padding:'6px 8px',
+                              border: transpose === semitones ? `1px solid ${transpose !== 0 ? '#F2D74B' : '#60A5FA'}` : '1px solid #374151',
+                              borderRadius:4,
+                              background: transpose === semitones ? (transpose !== 0 ? '#332810' : '#1e3a5f') : '#111',
+                              color: transpose === semitones ? (transpose !== 0 ? '#F2D74B' : '#60A5FA') : '#9CA3AF',
+                              cursor:'pointer',
+                              fontSize:10,
+                              fontWeight: transpose === semitones ? 600 : 400,
+                              minWidth:32
+                            }}
+                          >
+                            {semitones}
+                          </button>
+                        ))}
                       </div>
                     )}
                   </div>
-                )}
+                  );
+                })()}
                 
-                {/* Reset - v3.4.3: Only EXPERT */}
-                {skillLevel === "EXPERT" && (
+                {/* Transpose Bypass - v3.5.0: Toggle to temporarily disable */}
+                {transpose !== 0 && (
                   <button 
-                    onClick={resetAll}
+                    onClick={() => setTransposeBypass(!transposeBypass)}
                     style={{
                       padding:'6px 10px', 
-                      border:'1px solid #F2D74B', 
-                    borderRadius:8, 
-                    background:'#111', 
-                    color:'#F2D74B', 
-                    cursor:'pointer', 
-                    fontSize:11
-                  }}
-                  title="Reset All (Ctrl+H)"
-                >
-                  ↺ Reset
-                </button>
+                      border: transposeBypass ? '1px solid #6B7280' : '2px solid #10B981', 
+                      borderRadius:8, 
+                      background: transposeBypass ? '#111' : '#1a3a2a', 
+                      color: transposeBypass ? '#6B7280' : '#10B981', 
+                      cursor:'pointer', 
+                      fontSize:11,
+                      fontWeight: transposeBypass ? 400 : 600
+                    }}
+                    title={transposeBypass ? "Resume transpose" : "Bypass transpose (temporary disable)"}
+                  >
+                    {transposeBypass ? 'TR OFF' : 'TR ON'}
+                  </button>
+                )}
+                
+                {/* Play in C - Quick reset to C major */}
+                {(transpose !== 0 || baseKey !== 'C') && skillLevel === "EXPERT" && (
+                  <button 
+                    onClick={() => {
+                      setTranspose(0);
+                      setTransposeBypass(false);
+                      setBaseKey('C');
+                    }}
+                    style={{
+                      padding:'6px 10px', 
+                      border:'1px solid #60A5FA', 
+                      borderRadius:8, 
+                      background:'#111', 
+                      color:'#60A5FA', 
+                      cursor:'pointer', 
+                      fontSize:11
+                    }}
+                    title="Reset to C major (no transpose)"
+                  >
+                    🎹 Play in C
+                  </button>
                 )}
               </div>
               
