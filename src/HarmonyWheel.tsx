@@ -1,5 +1,10 @@
 /*
- * HarmonyWheel.tsx — v3.8.0 🎯 TRANSPOSE FIX (FINAL!)
+ * HarmonyWheel.tsx — v3.9.0 🔁 LOOP FIX
+ * 
+ * 🔁 v3.9.0 FIX:
+ * - Fixed loop mode: pressing ">" at end now goes back to start
+ * - Before: stopped at end even with loop enabled
+ * - Now: wraps to index 0 and continues playing
  * 
  * 🎯 v3.8.0 CRITICAL FIX:
  * - Fixed sequencer baseKeyRef to use effectiveBaseKey (respects transpose!)
@@ -363,7 +368,7 @@ import {
   parseSongMetadata
 } from "./lib/songManager";
 
-const HW_VERSION = 'v3.8.0';
+const HW_VERSION = 'v3.9.0';
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -862,7 +867,7 @@ useEffect(() => {
   };
 
   const parseAndLoadSequence = ()=>{
-    const APP_VERSION = "v3.8.0-harmony-wheel";
+    const APP_VERSION = "v3.9.0-harmony-wheel";
     console.log('=== PARSE AND LOAD START ===');
     console.log('🏷️  APP VERSION:', APP_VERSION);
     console.log('Input text:', inputText);
@@ -1158,7 +1163,21 @@ useEffect(() => {
     let i = currentIdx + 1;
     if (i >= sequence.length) {
       console.log('At end of sequence');
-      return;
+      // ✅ v3.9.0: If loop enabled, go back to start
+      if (loopEnabled) {
+        console.log('🔁 Loop enabled - going back to start');
+        i = 0;
+        // Skip any initial titles
+        while (i < sequence.length && sequence[i]?.kind === "title") {
+          i++;
+        }
+        if (i >= sequence.length) {
+          console.log('No playable items in sequence');
+          return;
+        }
+      } else {
+        return;
+      }
     }
     
     // Skip titles only (v3.2.7: Keep comments - they should pause)
@@ -5021,6 +5040,6 @@ useEffect(() => {
   );
 }
 
-// HarmonyWheel v3.8.0 - Transpose FINALLY works! baseKeyRef uses effectiveBaseKey
+// HarmonyWheel v3.9.0 - Loop mode wraps to start when pressing ">" at end
 
-// EOF - HarmonyWheel.tsx v3.8.0
+// EOF - HarmonyWheel.tsx v3.9.0
