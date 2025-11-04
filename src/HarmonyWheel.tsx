@@ -1,5 +1,10 @@
 /*
- * HarmonyWheel.tsx — v3.15.4 🎯 MIDI LATCH & LEGEND FIX
+ * HarmonyWheel.tsx — v3.15.5 🎯 MIDI LATCH & LEGEND FIX
+ * 
+ * 🔧 v3.15.5 FIXES:
+ * - Keyboard shortcuts (skill levels 1-5, etc.) now ignore input fields
+ * - Can type tempo without skill level changing
+ * - All number/letter shortcuts disabled when focused on tempo or text input
  * 
  * 🔧 v3.15.4 FIXES:
  * - Dragging between inner/outer zones now updates keyboard display
@@ -735,7 +740,7 @@ import {
   parseSongMetadata
 } from "./lib/songManager";
 
-const HW_VERSION = 'v3.15.4';
+const HW_VERSION = 'v3.15.5';
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -1258,7 +1263,7 @@ useEffect(() => {
   };
 
   const parseAndLoadSequence = ()=>{
-    const APP_VERSION = "v3.15.4-harmony-wheel";
+    const APP_VERSION = "v3.15.5-harmony-wheel";
     console.log('=== PARSE AND LOAD START ===');
     console.log('🏷️  APP VERSION:', APP_VERSION);
     console.log('Input text:', inputText);
@@ -2002,8 +2007,9 @@ useEffect(() => {
   // Global keyboard handler for arrow keys and Enter (when not in textarea)
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
-      // Only handle if NOT in textarea
-      if (document.activeElement?.tagName === 'TEXTAREA') return;
+      // Only handle if NOT in textarea or input field
+      const activeTag = document.activeElement?.tagName;
+      if (activeTag === 'TEXTAREA' || activeTag === 'INPUT') return;
       
       // Navigation shortcuts
       if (e.shiftKey && e.key === '<') { // Shift+, (which is <)
@@ -4005,8 +4011,6 @@ useEffect(() => {
         // Already has 7 in the function name, don't add
       } else if (fn === "ii" || fn === "iii" || fn === "vi") {
         chordLabel += "7";
-      } else if (fn === "vii°") {
-        chordLabel = chordLabel.replace("°", "°7");
       }
     }
     
@@ -6056,6 +6060,6 @@ useEffect(() => {
   );
 }
 
-// HarmonyWheel v3.15.4 - Drag inner/outer updates keyboard display & hub label
+// HarmonyWheel v3.15.5 - Keyboard shortcuts ignore input fields (tempo, text)
 
-// EOF - HarmonyWheel.tsx v3.15.4
+// EOF - HarmonyWheel.tsx v3.15.5
