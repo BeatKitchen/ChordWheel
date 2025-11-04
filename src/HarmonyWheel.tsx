@@ -1,5 +1,26 @@
 /*
- * HarmonyWheel.tsx — v3.10.2 🐛 TYPESCRIPT FIX (COMPLETE)
+ * HarmonyWheel.tsx — v3.10.6 🐛 TYPESCRIPT FIX
+ * 
+ * 🐛 v3.10.6 FIX:
+ * - Fixed TypeScript error: cast currentTarget to SVGElement
+ * - Error was in bonus overlay click handler (line 3989)
+ * 
+ * 🎹 v3.10.5 FIX:
+ * - Keyboard clicks now play and display exact MIDI notes (no voice leading)
+ * - Before: Clicking high/low keys displayed middle octave due to voice leading
+ * - Now: Only wedge clicks use voice leading, keyboard input is direct
+ * - Fixes: Click C6 (MIDI 84) → plays/shows C6, not C4
+ * 
+ * 🎯 v3.10.4 FIX:
+ * - Added inner/outer ring detection to bonus overlays (A7, Bm7♭5)
+ * - Click OUTSIDE → triad only (A-C#-E or B-D-F)
+ * - Click INSIDE (toward hub) → with 7th (A-C#-E-G or B-D-F-A)
+ * - Now matches main wedge behavior perfectly!
+ * 
+ * 🎵 v3.10.3 FIX:
+ * - Bonus chord overlays (A7, Bm7♭5) now play 4-note versions with 7th
+ * - Before: Only played triads (3 notes)
+ * - Now: Includes 7th note, matching main wedge behavior
  * 
  * 🐛 v3.10.2 FIX:
  * - Fixed realizeFunction in theory.ts: added V/ii case and `: string` return type
@@ -387,7 +408,7 @@ import {
   parseSongMetadata
 } from "./lib/songManager";
 
-const HW_VERSION = 'v3.10.2';
+const HW_VERSION = 'v3.10.6';
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -882,7 +903,7 @@ useEffect(() => {
   };
 
   const parseAndLoadSequence = ()=>{
-    const APP_VERSION = "v3.10.2-harmony-wheel";
+    const APP_VERSION = "v3.10.6-harmony-wheel";
     console.log('=== PARSE AND LOAD START ===');
     console.log('🏷️  APP VERSION:', APP_VERSION);
     console.log('Input text:', inputText);
@@ -3962,40 +3983,79 @@ useEffect(() => {
         const ty = cy + textR * Math.sin(toRad(mid));
         
         // Click handler to preview and enable insert
-        const handleClick = () => {
+        const handleClick = (e: React.MouseEvent) => {
           // Show chord in hub and trigger keyboard/tab display
           lastInputWasPreviewRef.current = true;
           centerOnly(w.label);
+          
+          // ✅ v3.10.4: Add radius detection for inner/outer ring behavior
+          // Calculate click position relative to wheel center
+          const svg = (e.currentTarget as SVGElement).ownerSVGElement;
+          let playWith7th = true; // Default to 7th if we can't detect radius
+          
+          if (svg) {
+            const pt = svg.createSVGPoint();
+            pt.x = e.clientX;
+            pt.y = e.clientY;
+            const ctm = svg.getScreenCTM();
+            
+            if (ctm) {
+              const svgP = pt.matrixTransform(ctm.inverse());
+              const dx = svgP.x - cx;
+              const dy = svgP.y - cy;
+              const clickRadius = Math.sqrt(dx*dx + dy*dy);
+              const normalizedRadius = clickRadius / r; // 0 = center, 1 = outer edge
+              
+              // Inner zone (< threshold) = play with 7th
+              // Outer zone (>= threshold) = play triad only
+              playWith7th = normalizedRadius < SEVENTH_RADIUS_THRESHOLD;
+              
+              console.log('🖱️ Bonus click:', {
+                label: w.label,
+                clickRadius: clickRadius.toFixed(1),
+                normalizedRadius: normalizedRadius.toFixed(2),
+                threshold: SEVENTH_RADIUS_THRESHOLD,
+                playWith7th
+              });
+            }
+          }
           
           // Get chord definition from bonus table
           const bonusChordDef = BONUS_CHORD_DEFINITIONS[w.label];
           
           if (bonusChordDef && audioEnabledRef.current) {
-            // Play the chord audio
-            const pcs = bonusChordDef.triad; // Always triad for now
-            console.log('🎵 Bonus wedge clicked:', w.label, 'PCs:', pcs);
+            // Play with or without 7th based on click zone
+            const pcs = (playWith7th && bonusChordDef.seventh !== undefined)
+              ? [...bonusChordDef.triad, bonusChordDef.seventh]
+              : bonusChordDef.triad;
+            console.log('🎵 Bonus wedge clicked:', w.label, 'with7th:', playWith7th, 'PCs:', pcs);
             playChordWithVoiceLeading(pcs);
           }
           
-          // Manually highlight keyboard by parsing chord name
-          // For bonus chords, we need to figure out the notes
+          // Update keyboard highlight based on what we're playing
           const chordName = w.label;
           
-          // A7 = A C# E G, Bm7♭5 = B D F A
-          const chordNotes: Record<string, number[]> = {
-            'A7': [57, 61, 64, 67],       // A3 C#4 E4 G4
-            'Bm7♭5': [59, 62, 65, 69]     // B3 D4 F4 A4
+          // Define both triad and seventh versions
+          const chordNotes: Record<string, {triad: number[], seventh: number[]}> = {
+            'A7': {
+              triad: [57, 61, 64],           // A3 C#4 E4
+              seventh: [57, 61, 64, 67]      // A3 C#4 E4 G4
+            },
+            'Bm7♭5': {
+              triad: [59, 62, 65],           // B3 D4 F4
+              seventh: [59, 62, 65, 69]      // B3 D4 F4 A4
+            }
           };
           
           if (chordNotes[chordName]) {
-            setLatchedAbsNotes(chordNotes[chordName]);
+            setLatchedAbsNotes(playWith7th ? chordNotes[chordName].seventh : chordNotes[chordName].triad);
           }
         };
         
         return (
           <g 
             key={w.label} 
-            onClick={handleClick}
+            onMouseDown={handleClick}
             style={{cursor: 'pointer'}}
           >
             <path d={pathD} fill={BONUS_FILL} stroke={PALETTE_ACCENT_GREEN} strokeWidth={1.5 as any}/>
@@ -4099,8 +4159,16 @@ useEffect(() => {
               src = [...new Set(latchedAbsNotes)].sort((a,b)=>a-b);
             }
             if(src.length===0) return new Set<number>();
-            const fitted = preview.fitNotesToWindowPreserveInversion(src, KBD_LOW, KBD_HIGH);
-            return new Set(fitted);
+            
+            // ✅ v3.10.5: Don't apply voice leading for direct keyboard input
+            // Only apply for wedge clicks (lastInputWasPreviewRef === true)
+            if (lastInputWasPreviewRef.current) {
+              const fitted = preview.fitNotesToWindowPreserveInversion(src, KBD_LOW, KBD_HIGH);
+              return new Set(fitted);
+            } else {
+              // Direct keyboard input - show exact notes clicked
+              return new Set(src);
+            }
           };
           const disp = rhDisplaySet();
 
@@ -5098,6 +5166,6 @@ useEffect(() => {
   );
 }
 
-// HarmonyWheel v3.10.2 - All TypeScript errors resolved (V/ii complete, safety checks added)
+// HarmonyWheel v3.10.6 - TypeScript fix for bonus overlay SVG element cast
 
-// EOF - HarmonyWheel.tsx v3.10.2
+// EOF - HarmonyWheel.tsx v3.10.6
