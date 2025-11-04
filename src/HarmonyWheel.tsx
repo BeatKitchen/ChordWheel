@@ -1,5 +1,22 @@
 /*
- * HarmonyWheel.tsx — v3.6.3 🔍 DEBUG VERSION
+ * HarmonyWheel.tsx — v3.6.6 🐛 BUG FIXES (CORRECTED)
+ * 
+ * 🐛 v3.6.6 FIXES:
+ * - Fixed roman numeral parsing CORRECTLY (uppercase IV now works)
+ * - Bug was: looking up uppercase numerals in wrong case
+ * - Fix: Use numeral as-is (IV looks up 'IV', iv looks up 'iv')
+ * - Major/minor determined by isLower check, not the degree map
+ * 
+ * 🐛 v3.6.5 FIXES:
+ * - Fixed roman numeral parsing (IV, V7 now work correctly)
+ * - Bug was: lookup used wrong case, degree came back undefined
+ * - Now converts properly: IV → Ab in Eb, V7 → Bb7 in Eb
+ * 
+ * 🎯 v3.6.4 FIXES:
+ * - Fixed "Play in C" button to use transpose (capo mode) instead of changing baseKey
+ * - Button now calculates correct transpose amount to reach C
+ * - Shows only when baseKey ≠ C (not based on transpose state)
+ * - Works with modes.ts v3.6.4 (fixed pattern matching)
  * 
  * 🔍 v3.6.3 DEBUG - Added comprehensive logging:
  * - Shows why pattern matching fails
@@ -324,7 +341,7 @@ import {
   parseSongMetadata
 } from "./lib/songManager";
 
-const HW_VERSION = 'v3.5.7';
+const HW_VERSION = 'v3.6.6';
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -824,7 +841,7 @@ useEffect(() => {
   };
 
   const parseAndLoadSequence = ()=>{
-    const APP_VERSION = "v3.6.3-harmony-wheel-debug";
+    const APP_VERSION = "v3.6.6-harmony-wheel";
     console.log('=== PARSE AND LOAD START ===');
     console.log('🏷️  APP VERSION:', APP_VERSION);
     console.log('Input text:', inputText);
@@ -936,12 +953,16 @@ useEffect(() => {
       const functionalPattern = /^(♭|#)?([IViv]+)(7|M7|m7|maj7|dom7)?(\/([IViv]+))?$/;
       const match = tok.match(functionalPattern);
       
+      console.log('[PARSER] Checking token:', tok, 'functionalPattern match:', match ? 'YES' : 'NO');
+      
       if (match) {
         // It's functional notation - convert to literal chord based on current key
         const accidental = match[1] || '';
         const numeral = match[2];
         const quality = match[3] || '';
         const secondaryTarget = match[5]; // For V/vi style notation
+        
+        console.log('[PARSER] Roman numeral detected:', { accidental, numeral, quality, secondaryTarget, currentKey });
         
         // Convert Roman numeral to scale degree (0-11)
         const romanToDegreeLower: Record<string, number> = {
@@ -953,7 +974,10 @@ useEffect(() => {
         
         const isLower = numeral === numeral.toLowerCase();
         const degreeMap = isLower ? romanToDegreeLower : romanToDegreeUpper;
-        let degree = degreeMap[isLower ? numeral : numeral.toLowerCase()];
+        // ✅ v3.6.5 FIX: Use matching case - lowercase maps use lowercase keys, uppercase maps use uppercase keys
+        let degree = degreeMap[numeral]; // Use numeral as-is (already correct case)
+        
+        console.log('[PARSER] Degree lookup:', { numeral, isLower, degree });
         
         if (degree !== undefined) {
           // If secondary dominant (e.g., V/vi), calculate target first
@@ -989,8 +1013,12 @@ useEffect(() => {
           if (isLower) chordName += 'm'; // Lowercase = minor
           if (quality) chordName += quality;
           
+          console.log('[PARSER] ✅ Converted roman numeral:', tok, '→', chordName, 'in key', currentKey);
+          
           // Return as chord with original functional notation as raw
           return { kind:"chord", raw:tok, chord: chordName };
+        } else {
+          console.log('[PARSER] ❌ Failed to convert roman numeral - degree undefined');
         }
       }
       
@@ -4456,13 +4484,15 @@ useEffect(() => {
                   </button>
                 )}
                 
-                {/* Play in C - Quick reset to C major */}
-                {(transpose !== 0 || baseKey !== 'C') && skillLevel === "EXPERT" && (
+                {/* Play in C - Transpose to C (capo analogy) */}
+                {baseKey !== 'C' && skillLevel === "EXPERT" && (
                   <button 
                     onClick={() => {
-                      setTranspose(0);
-                      setTransposeBypass(false);
-                      setBaseKey('C');
+                      // Calculate transpose needed to reach C from current key
+                      const currentPc = NAME_TO_PC[baseKey] || 0;
+                      const transposeAmount = currentPc === 0 ? 0 : (12 - currentPc) % 12;
+                      setTranspose(transposeAmount);
+                      setTransposeBypass(false); // Engage transpose
                     }}
                     style={{
                       padding:'6px 10px', 
@@ -4473,7 +4503,7 @@ useEffect(() => {
                       cursor:'pointer', 
                       fontSize:11
                     }}
-                    title="Reset to C major (no transpose)"
+                    title={`Transpose to C (like a capo on fret ${NAME_TO_PC[baseKey] || 0})`}
                   >
                     🎹 Play in C
                   </button>
@@ -4965,6 +4995,6 @@ useEffect(() => {
   );
 }
 
-// HarmonyWheel v3.6.3 - DEBUG version with pattern matching diagnostics
+// HarmonyWheel v3.6.6 - Roman numerals ACTUALLY fixed (IV → Ab, iv → Abm)
 
-// EOF - HarmonyWheel.tsx v3.6.3
+// EOF - HarmonyWheel.tsx v3.6.6
