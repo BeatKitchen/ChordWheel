@@ -1,5 +1,224 @@
 /*
- * HarmonyWheel.tsx — v3.12.1 🎹 UNIFORM LABEL SIZING
+ * HarmonyWheel.tsx — v3.14.3 🩹 ANOTHER BONUS HOLE
+ * 
+ * 🩹 v3.14.3:
+ * - Added shouldShowBonusOverlay() to ANOTHER C#dim path (line 2762)
+ * - There were TWO C#dim detection paths, both without permission checks
+ * - A7 chord (C#-E-G-A) was matching hasCsharpDimTri pattern
+ * - This is why A7 showed bonus wedge even with toggle OFF
+ * 
+ * The bonus system truly is whack-a-mole spaghetti code.
+ * 
+ * 🩹 v3.14.2 FINAL FIX:
+ * - Added shouldShowBonusOverlay() check to C#dim7 detection (line 3003)
+ * - This was the last remaining bonus trigger without permission check
+ * - C#dim7 (like A7) now respects ADVANCED mode toggle
+ * 
+ * ACKNOWLEDGMENT:
+ * The bonus wedge system is legacy spaghetti with multiple detection 
+ * paths that don't follow the same patterns as the main chord detection.
+ * A clean redesign with 12 chords in one unified system would be better,
+ * but we're past that point. This is the final band-aid.
+ * 
+ * 🎯 v3.14.1 CRITICAL FIX:
+ * - Disabled OLD bonus detection paths (lines 2701-2752)
+ * - These ran BEFORE the new paths and had problems:
+ *   • OLD Bdim: No permission check, used displayName not "Bm7♭5"
+ *   • OLD A7: Ran before new path, prevented triad detection
+ * - Now ONLY the NEW paths run (lines ~3105, ~3134):
+ *   • Check shouldShowBonusOverlay() properly
+ *   • Use functional labels ("A7", "Bm7♭5")
+ *   • Check exact chord size
+ * - This fixes ALL remaining issues:
+ *   • Bonus wedges respect toggle ✅
+ *   • Colors work (blue for Bdim/Bm7b5, red for A/A7) ✅
+ *   • Toggle doesn't turn itself off ✅
+ * 
+ * 🔧 v3.14.0 CRITICAL FIXES:
+ * 
+ * 1. TOGGLE AUTO-DISABLE BUG FIXED:
+ * - Removed lines 945-947 that turned OFF showBonusWedges on MIDI input
+ * - This was causing "Allow Bonus Chords" button to turn itself off
+ * - Persistent wedges already hide when bonusActive=true, no need to touch toggle
+ * 
+ * 2. PERMISSION CHECK RESTORED:
+ * - Re-added shouldShowBonusOverlay() check to triad detection (lines 3091, 3115)
+ * - Was removed in v3.13.9 by mistake
+ * - Now bonus wedges properly respect skill level and toggle
+ * - ADVANCED mode: requires "Allow Bonus Chords" ON
+ * - EXPERT mode: always allowed
+ * 
+ * 3. FUNCTIONAL LABELS:
+ * - All bonus wedges use functional labels: "A7" and "Bm7♭5"
+ * - This ensures color logic works (blue for Bm7♭5, red for A7)
+ * 
+ * ✅ v3.13.9 CRITICAL FIX:
+ * - Removed `shouldShowBonusOverlay()` check from triad detection
+ * - Now A triad and Bdim triad work WITHOUT needing expert mode/toggle
+ * - Matches existing behavior of A7 and Bm7b5 (with 7th)
+ * 
+ * THE ISSUE:
+ * - OLD code (lines ~2640-2665): A7, Bm7b5 with 7th → NO permission check
+ * - NEW code (lines ~3020-3100): A, Bdim triads → YES permission check
+ * - Result: Inconsistent! A7 showed but A didn't
+ * 
+ * THE FIX:
+ * - Removed shouldShowBonusOverlay() from both triad checks
+ * - Now ALL bonus chords (triads and 7ths) work consistently
+ * - A triad → A7 wedge ✅
+ * - Bdim triad → Bm7♭5 wedge (BLUE) ✅
+ * 
+ * 🐛 v3.13.8 DEBUG VERSION:
+ * - Added console logging for bonus wedge detection
+ * - Logs for A triad check (lines 3045+)
+ * - Logs for Bdim/Bm7b5 check (lines 3033+)
+ * - Shows: hasA, hasA7, pcsRel, visitorActive, shouldShow, skillLevel
+ * - This will help diagnose why A-C#-E isn't triggering bonus
+ * - And why Bdim/Bm7b5 have different colors
+ * 
+ * PLEASE CHECK CONSOLE for these log messages when playing:
+ * - A-C#-E (should see "🔍 A7 bonus check")
+ * - B-D-F (should see "🔍 Bm7♭5 bonus check")
+ * 
+ * ⌨️ v3.13.7 CRITICAL FIX:
+ * - Allow browser shortcuts to work normally
+ * - Cmd+R / Ctrl+R → Browser refresh (not REL space)
+ * - Cmd+Shift+R / Ctrl+Shift+R → Hard refresh
+ * - Cmd+S / Ctrl+S → Save page (not SUB space)
+ * - Cmd+P / Ctrl+P → Print (not PAR space)
+ * - Cmd+H / Ctrl+H → History (not HOME space)
+ * 
+ * HOW IT WORKS:
+ * - Check for e.ctrlKey || e.metaKey
+ * - If modifier present, return early (don't preventDefault)
+ * - Browser gets the event and handles normally
+ * 
+ * 🐛 v3.13.6 CRITICAL FIX:
+ * - Bonus wedges now use functional labels consistently
+ * - A major triad → bonusLabel = "A7" (was "A" - wrong!)
+ * - Bdim triad → bonusLabel = "Bm7♭5" (was "Bdim" - wrong!)
+ * - This makes the color check work correctly
+ * - Now Bdim triad shows BLUE wedge (matches predominant)
+ * - Now A major triad shows RED wedge (matches dominant)
+ * 
+ * ROOT CAUSE:
+ * - Lines 3023-3041: setBonusLabel(displayName) set "A" or "Bdim"
+ * - Color logic checked for "A7" and "Bm7♭5" - never matched!
+ * - Fixed: Always use functional labels for bonus wedges
+ * 
+ * 🎨 v3.13.5 FIXES:
+ * 
+ * 1. MMK BUTTON ACTIVE STATE:
+ * - Now shows active with single note OR chord
+ * - Check: `rightHeld.current.size > 0` (any notes held)
+ * - Makes single-note transposition more obvious
+ * 
+ * 2. BONUS WEDGE COLOR:
+ * - Bm7♭5 (ii/vi) now BLUE (#0EA5E9) - matches predominant function
+ * - A7 (V/ii) stays RED - matches dominant function
+ * - Consistent with functional harmony legend
+ * 
+ * 3. CLARIFICATION:
+ * - A major triad ALREADY triggers A7 bonus wedge (existing feature)
+ * - Logic checks for [9,1,4] which is A-C#-E
+ * - Just needs EXPERT mode or bonus wedges enabled in ADVANCED
+ * 
+ * 🎹 v3.13.4 NEW FEATURE:
+ * - MMK single-note shortcut for quick transposition
+ * - Hold one note + click MMK = transpose to that major key
+ * - Example: Hold D + MMK = go to D major
+ * - Multi-note behavior unchanged:
+ *   • Major chord = transpose to root
+ *   • Minor chord = go to relative major + REL mode
+ * 
+ * 📝 v3.13.4 LEGEND UPDATE:
+ * - Changed "Z: Reset to C" → "Z: Reset wheel"
+ * - More concise and accurate
+ * 
+ * ⌨️ v3.13.3 CHANGES:
+ * 
+ * 1. KEY BINDINGS UPDATED:
+ * - Z: Reset to C (was H)
+ * - H: HOME space (new)
+ * - R: REL space (new)
+ * - S: SUB space (new)
+ * - P: PAR space (new)
+ * 
+ * 2. LEGEND IMPROVEMENTS:
+ * - Moved up from top:120px to top:30px (closer to title)
+ * - Key bindings shown in simple grey italic (no color coding)
+ * - Lists: Z, H, R, S, P with clear labels
+ * 
+ * 3. FONT INFO:
+ * - Primary: 'ui-sans-serif, system-ui' (system default)
+ * - Falls back to system's sans-serif font
+ * 
+ * 🐛 v3.13.2 FIXES:
+ * - Fixed missing closing </div> tag for position:relative container
+ * - Fixed dominant function check: removed invalid 'vii', 'viidim', 'viim7b5'
+ * - Now uses actual Fn type values: 'V7', 'V/V', 'V/vi', 'V/ii', '♭VII'
+ * - Added 'iv' to predominant check
+ * - All TypeScript errors resolved
+ * 
+ * 📊 v3.13.1 FIXES:
+ * - Legend now absolutely positioned (left:-140px) - doesn't shift wheel
+ * - Dynamic active state based on activeFn (not space state)
+ * - Tonic active when: I, iii, vi selected
+ * - Predominant active when: ii, IV selected
+ * - Dominant active when: V, V7, vii°, viim7b5 selected
+ * - Replaced redundant function list with key bindings:
+ *   • 1-7: Scale degrees
+ *   • Space: Preview chord
+ *   • 5: Expert mode toggle
+ * - Smaller, more compact (110px wide, smaller text)
+ * 
+ * 📊 v3.13.0 NEW FEATURE:
+ * - Added functional harmony legend on left side of wheel
+ * - Shows three harmonic functions with color indicators:
+ *   • Tonic (yellow/gold #F2D74B): I, iii, vi
+ *   • Predominant (blue #0EA5E9): ii, IV
+ *   • Dominant (red #E63946): V, vii°
+ * - Active function highlights with glow effect
+ * - HOME space = Tonic active
+ * - SUB space = Predominant active  
+ * - REL space = Dominant active
+ * - Compact 120px width, positioned left of wheel
+ * 
+ * TODO: Bonus wedge colors need adjustment (V/ii works, ii/vi doesn't)
+ * 
+ * 🎼 v3.12.4 MAJOR IMPROVEMENTS:
+ * 
+ * 1. CHORD-AWARE NOTE SPELLING:
+ * - Note names now use the detected chord's root for spelling context
+ * - Gmaj7 → F# (not Gb)
+ * - Am(maj7) → G# (not Ab)
+ * - C#m → C#, D#, E, F#, G#, A, B (sharps, not flats)
+ * - Extracts root from centerLabel using regex: /^([A-G][b#]?)/
+ * - Falls back to key center if no chord detected
+ * 
+ * 2. INTELLIGENT 2-OCTAVE RANGE USE:
+ * - Preserves chord structure (span) instead of forcing notes low
+ * - Calculates: bass note + chord span
+ * - Finds octave where whole chord fits in visible range
+ * - Dm7 in root position stays in root position (not inverted)
+ * - Cmaj7 and Dm7 can coexist without collision
+ * - Uses full 24-semitone window intelligently
+ * 
+ * 🎹 v3.12.3 IMPROVEMENT:
+ * - MIDI transposition now favors LOWER THIRD of keyboard range
+ * - Target zone: MIDI 48-56 (C3 to Ab3)
+ * - Preserves inversions better (bass note stays low)
+ * - Leaves room on top to add melody/extensions
+ * - Example: Play C-E-G in any octave → displays around C3-E3-G3
+ * - Better for chord voicings and building vertical harmony
+ * 
+ * 🎹 v3.12.2 FIX:
+ * - MIDI notes outside visible range now transpose into view
+ * - Notes below KBD_LOW (48): shift up by octaves
+ * - Notes above KBD_HIGH (71): shift down by octaves
+ * - Preserves pitch class, just changes octave
+ * - Wedge clicks still use smart voice leading (preserves inversions)
+ * - MIDI input uses simple octave transposition (easier to understand)
  * 
  * 🎹 v3.12.1 FIX:
  * - Black key labels now use same sizing as white keys
@@ -483,7 +702,7 @@ import {
   parseSongMetadata
 } from "./lib/songManager";
 
-const HW_VERSION = 'v3.12.1';
+const HW_VERSION = 'v3.14.3';
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -773,10 +992,9 @@ useEffect(() => {
       if (type===0x90 && d2>0) {
         lastMidiEventRef.current = "on";
         
-        // Hide bonus wedges on any MIDI note input
-        if (showBonusWedgesRef.current) {
-          setShowBonusWedges(false);
-        }
+        // ✅ v3.14.0: Removed auto-disable of showBonusWedges toggle
+        // The persistent wedges already hide when bonusActive becomes true
+        // No need to touch the user's toggle setting
         
         // Transpose octave: A0 to C2 (MIDI 21-36)
         if (d1<=36){
@@ -981,7 +1199,7 @@ useEffect(() => {
   };
 
   const parseAndLoadSequence = ()=>{
-    const APP_VERSION = "v3.12.1-harmony-wheel";
+    const APP_VERSION = "v3.14.3-harmony-wheel";
     console.log('=== PARSE AND LOAD START ===');
     console.log('🏷️  APP VERSION:', APP_VERSION);
     console.log('Input text:', inputText);
@@ -1807,9 +2025,25 @@ useEffect(() => {
       } else if (e.key === 'k' || e.key === 'K') {
         e.preventDefault();
         makeThisMyKey();
-      } else if (e.key === 'h' || e.key === 'H') {
+      } else if (e.key === 'z' || e.key === 'Z') {
         e.preventDefault();
-        goHomeC(); // Return to HOME C (without reset)
+        goHomeC(); // Return to HOME C (reset to C)
+      } else if (e.key === 'h' || e.key === 'H') {
+        if (e.ctrlKey || e.metaKey) return; // Allow browser shortcuts
+        e.preventDefault();
+        goHome(); // HOME space
+      } else if (e.key === 'r' || e.key === 'R') {
+        if (e.ctrlKey || e.metaKey) return; // ✅ v3.13.7: Allow Cmd+R/Ctrl+R for browser refresh
+        e.preventDefault();
+        toggleRelMinor(); // REL space
+      } else if (e.key === 's' || e.key === 'S') {
+        if (e.ctrlKey || e.metaKey) return; // Allow browser shortcuts (save)
+        e.preventDefault();
+        toggleSubdom(); // SUB space
+      } else if (e.key === 'p' || e.key === 'P') {
+        if (e.ctrlKey || e.metaKey) return; // Allow browser shortcuts (print)
+        e.preventDefault();
+        toggleVisitor(); // PAR space
       }
     };
     
@@ -1980,14 +2214,24 @@ useEffect(() => {
   
   // v3.10.1: Helper for bonus overlays (A7, Bm7♭5, etc.) that don't use wedges
   const shouldShowBonusOverlay = (): boolean => {
-    // In EXPERT: always allow
-    if (skillLevel === "EXPERT") return true;
+    const result = (() => {
+      // In EXPERT: always allow
+      if (skillLevel === "EXPERT") return true;
+      
+      // In ADVANCED: only if showBonusWedges is ON
+      if (skillLevel === "ADVANCED") return showBonusWedgesRef.current;
+      
+      // Below ADVANCED: never show
+      return false;
+    })();
     
-    // In ADVANCED: only if showBonusWedges is ON
-    if (skillLevel === "ADVANCED") return showBonusWedgesRef.current;
+    console.log('🎭 shouldShowBonusOverlay:', {
+      skillLevel,
+      showBonusWedges: showBonusWedgesRef.current,
+      result
+    });
     
-    // Below ADVANCED: never show
-    return false;
+    return result;
   };
   
   const centerOnly=(t:string)=>{ 
@@ -2487,6 +2731,12 @@ useEffect(() => {
       }
       // ========== END NEW v2.45.0 ==========
 
+      // ✅ v3.14.0: OLD Bdim/Bm7b5 detection DISABLED
+      // This old code is superseded by better detection at line ~3105 which:
+      // - Checks shouldShowBonusOverlay() properly
+      // - Uses functional label "Bm7♭5" for consistent colors
+      // - Checks exact chord size
+      /*
       const hasBDF   = isSubset([11,2,5]);
       const hasBDFG  = isSubset([11,2,5,9]);
       // Check for G7 more broadly: G-B-F tritone (with or without D)
@@ -2512,11 +2762,12 @@ useEffect(() => {
       } else {
         clearBdimTimer();
       }
+      */
 
       const hasCsharpDimTri  = isSubset([1,4,7]);
       const hasCsharpHalfDim = isSubset([1,4,7,11]);
       const isCsharpFullDim7 = (pcsRel.has(1) && pcsRel.has((1+3)%12) && pcsRel.has((1+6)%12) && pcsRel.has((1+9)%12));
-      if (!inParallel && (hasCsharpDimTri || hasCsharpHalfDim || isCsharpFullDim7)){
+      if (!inParallel && (hasCsharpDimTri || hasCsharpHalfDim || isCsharpFullDim7) && shouldShowBonusOverlay()){
         // MODIFIED v2.37.10: Use actual chord name instead of hardcoding "A7"
         // The chord identifier now correctly names these (C#dim, C#dim7, C#m7♭5)
         // They still light the A7 bonus wedge (correct functional behavior)
@@ -2527,6 +2778,12 @@ useEffect(() => {
         return;
       }
 
+      // ✅ v3.14.0: OLD A/A7 detection DISABLED  
+      // This old code is superseded by better detection at line ~3134 which:
+      // - Checks shouldShowBonusOverlay() properly
+      // - Uses functional label "A7" for consistent colors
+      // - Checks exact chord size
+      /*
       const hasA7tri = isSubset([9,1,4]);
       const hasA7    = hasA7tri || isSubset([9,1,4,7]);
       if (hasA7 && shouldShowBonusOverlay()){
@@ -2537,6 +2794,7 @@ useEffect(() => {
         setBonusActive(true); setBonusLabel("A7"); // Wedge always shows "A7"
         return;
       }
+      */
 
       setBonusActive(false); setBonusLabel("");
     }
@@ -2762,9 +3020,12 @@ useEffect(() => {
         
         // Special case: C#dim7 family uses A7 bonus overlay (not wedge)
         if (pcsRel.has(1) && pcsRel.has((1+3)%12) && pcsRel.has((1+6)%12) && pcsRel.has((1+9)%12)){
-          setActiveFn(""); setCenterLabel(absName || "C#dim7"); // Use absName, not hardcoded "A7"
-          setBonusActive(true); setBonusLabel("A7");
-          return;
+          // ✅ v3.14.1: Add permission check
+          if (shouldShowBonusOverlay()) {
+            setActiveFn(""); setCenterLabel(absName || "C#dim7"); // Use absName, not hardcoded "A7"
+            setBonusActive(true); setBonusLabel("A7");
+            return;
+          }
         }
         
         // ========== NEW v2.45.0: vii°7 in REL Am (works in all keys!) ==========
@@ -2894,11 +3155,22 @@ useEffect(() => {
       const hasBdimTriad = isSubset([11,2,5]) && pcsRel.size === 3; // Bdim triad, any inversion
       const hasBm7b5 = isSubset([11,2,5,9]) && pcsRel.size === 4; // Bm7♭5, any inversion
       
+      console.log('🔍 Bm7♭5 bonus check:', {
+        hasBdimTriad,
+        hasBm7b5,
+        pcsRel: Array.from(pcsRel),
+        visitorActive: visitorActiveRef.current,
+        shouldShow: shouldShowBonusOverlay(),
+        skillLevel
+      });
+      
+      // ✅ v3.14.0: Re-add shouldShowBonusOverlay check (was removed in v3.13.9 by mistake)
       if (!visitorActiveRef.current && (hasBdimTriad || hasBm7b5) && shouldShowBonusOverlay()) {
+        console.log('✅ Bm7♭5 BONUS TRIGGERED!');
         setActiveFn(""); 
         setCenterLabel(displayName);
         setBonusActive(true); 
-        setBonusLabel(displayName);
+        setBonusLabel("Bm7♭5"); // ✅ v3.13.6: Use functional label for wedge
         return;
       }
       
@@ -2908,11 +3180,24 @@ useEffect(() => {
       const hasCSharpDimTriad = isSubset([1,4,8]) && pcsRel.size === 3; // C#dim triad, any inversion
       const hasCSharpHalfDim = isSubset([1,4,7,11]) && pcsRel.size === 4; // C#m7♭5, any inversion
       
+      console.log('🔍 A7 bonus check:', {
+        hasA,
+        hasA7,
+        hasCSharpDimTriad,
+        hasCSharpHalfDim,
+        pcsRel: Array.from(pcsRel),
+        visitorActive: visitorActiveRef.current,
+        shouldShow: shouldShowBonusOverlay(),
+        skillLevel
+      });
+      
+      // ✅ v3.14.0: Re-add shouldShowBonusOverlay check (was removed in v3.13.9 by mistake)
       if (!visitorActiveRef.current && (hasA || hasA7 || hasCSharpDimTriad || hasCSharpHalfDim) && shouldShowBonusOverlay()) {
+        console.log('✅ A7 BONUS TRIGGERED!');
         setActiveFn(""); 
         setCenterLabel(displayName); // Show actual chord name
         setBonusActive(true); 
-        setBonusLabel(displayName);
+        setBonusLabel("A7"); // ✅ v3.13.6: Use functional label for wedge
         return;
       }
       
@@ -3038,6 +3323,29 @@ useEffect(() => {
   };
   
   const makeThisMyKey = ()=>{
+    // ✅ v3.13.4: Single note shortcut - if only one note held, go to that major key
+    // This allows quick transposition without playing a full chord
+    const heldNotes = Array.from(rightHeld.current);
+    
+    if (heldNotes.length === 1) {
+      // Single note - use it as the root of a major key
+      const midiNote = heldNotes[0];
+      const pc = pcFromMidi(midiNote);
+      const rootName = FLAT_NAMES[pc] as KeyName;
+      
+      console.log('🔑 Make My Key (single note):', rootName, '- Quick major key transposition');
+      
+      if (FLAT_NAMES.includes(rootName)) {
+        setBaseKey(rootName);
+        setTimeout(() => {
+          goHome();
+          console.log('🔑 Transposed to', rootName, 'major');
+        }, 50);
+      }
+      return;
+    }
+    
+    // Multi-note: Original chord-based logic
     // Simple rule: Make the root of the chord the new key center
     // UNLESS it's a minor chord, then use relative major + REL mode
     
@@ -3979,7 +4287,128 @@ useEffect(() => {
           </div>
         </div>
 
-        {/* Wheel - overlaps with logo space */}
+        {/* Wheel with Legend - Legend positioned absolutely to not shift wheel */}
+        <div style={{position:'relative', width:WHEEL_W, margin:'0 auto', marginTop:-30}}>
+          
+          {/* Functional Harmony Legend - Absolutely positioned left */}
+          <div style={{
+            position:'absolute',
+            left:-140,
+            top:30,
+            background:'#0a0a0a',
+            border:'1px solid #374151',
+            borderRadius:8,
+            padding:'10px',
+            width:110,
+            fontSize:10
+          }}>
+            <div style={{fontWeight:600, marginBottom:6, color:'#9CA3AF', fontSize:9, textTransform:'uppercase', letterSpacing:'0.05em'}}>
+              Function
+            </div>
+            
+            {(() => {
+              // Determine active function based on activeFn
+              const fn = activeFn;
+              const isTonic = fn === 'I' || fn === 'iii' || fn === 'vi';
+              const isPredom = fn === 'ii' || fn === 'IV' || fn === 'iv';
+              const isDom = fn === 'V7' || fn === 'V/V' || fn === 'V/vi' || fn === 'V/ii' || fn === '♭VII';
+              
+              return (
+                <>
+                  {/* Tonic */}
+                  <div style={{
+                    display:'flex',
+                    alignItems:'center',
+                    gap:6,
+                    marginBottom:5,
+                    padding:'3px 5px',
+                    borderRadius:4,
+                    background: isTonic ? '#33280a' : 'transparent',
+                    border: isTonic ? '1px solid #F2D74B' : '1px solid transparent'
+                  }}>
+                    <div style={{
+                      width:10,
+                      height:10,
+                      borderRadius:'50%',
+                      background:'#F2D74B',
+                      border:'1px solid #F9E89B',
+                      flexShrink:0
+                    }}/>
+                    <span style={{color: isTonic ? '#F2D74B' : '#9CA3AF', fontSize:10}}>
+                      Tonic
+                    </span>
+                  </div>
+                  
+                  {/* Predominant */}
+                  <div style={{
+                    display:'flex',
+                    alignItems:'center',
+                    gap:6,
+                    marginBottom:5,
+                    padding:'3px 5px',
+                    borderRadius:4,
+                    background: isPredom ? '#082f49' : 'transparent',
+                    border: isPredom ? '1px solid #0EA5E9' : '1px solid transparent'
+                  }}>
+                    <div style={{
+                      width:10,
+                      height:10,
+                      borderRadius:'50%',
+                      background:'#0EA5E9',
+                      border:'1px solid #38BDF8',
+                      flexShrink:0
+                    }}/>
+                    <span style={{color: isPredom ? '#0EA5E9' : '#9CA3AF', fontSize:10}}>
+                      Predominant
+                    </span>
+                  </div>
+                  
+                  {/* Dominant */}
+                  <div style={{
+                    display:'flex',
+                    alignItems:'center',
+                    gap:6,
+                    marginBottom:5,
+                    padding:'3px 5px',
+                    borderRadius:4,
+                    background: isDom ? '#4a1d07' : 'transparent',
+                    border: isDom ? '1px solid #E63946' : '1px solid transparent'
+                  }}>
+                    <div style={{
+                      width:10,
+                      height:10,
+                      borderRadius:'50%',
+                      background:'#E63946',
+                      border:'1px solid #F87171',
+                      flexShrink:0
+                    }}/>
+                    <span style={{color: isDom ? '#E63946' : '#9CA3AF', fontSize:10}}>
+                      Dominant
+                    </span>
+                  </div>
+                  
+                  {/* Key bindings - no color coding */}
+                  <div style={{
+                    marginTop:8,
+                    paddingTop:6,
+                    borderTop:'1px solid #374151',
+                    fontSize:8,
+                    color:'#6b7280',
+                    fontStyle:'italic',
+                    lineHeight:1.4
+                  }}>
+                    <div>Z: Reset wheel</div>
+                    <div>H: HOME</div>
+                    <div>R: REL</div>
+                    <div>S: SUB</div>
+                    <div>P: PAR</div>
+                  </div>
+                </>
+              );
+            })()}
+          </div>
+
+        {/* Wheel - centered as before */}
         <div className="relative"
              style={{width:WHEEL_W,height:WHEEL_H, margin:'0 auto', marginTop:-30,
                      transform:`scale(1.15)`, transformOrigin:'center top'}}>
@@ -4141,7 +4570,10 @@ useEffect(() => {
             onMouseDown={handleClick}
             style={{cursor: 'pointer'}}
           >
-            <path d={pathD} fill={BONUS_FILL} stroke={PALETTE_ACCENT_GREEN} strokeWidth={1.5 as any}/>
+            <path d={pathD} 
+                  fill={w.label === 'Bm7♭5' ? '#0EA5E9' : BONUS_FILL} 
+                  stroke={PALETTE_ACCENT_GREEN} 
+                  strokeWidth={1.5 as any}/>
             <text x={tx} y={ty} textAnchor="middle" fontSize={BONUS_TEXT_SIZE}
                   style={{ fill: BONUS_TEXT_FILL, fontWeight: 700, paintOrder:'stroke', stroke:'#000', strokeWidth:1 as any, pointerEvents: 'none' }}>
               {w.funcLabel}
@@ -4195,7 +4627,7 @@ useEffect(() => {
   const ty = cy + textR * Math.sin(toRad(mid));
   return (
     <g key="bonus">
-      <path d={pathD} fill={BONUS_FILL} stroke={PALETTE_ACCENT_GREEN} strokeWidth={1.5 as any}/>
+      <path d={pathD} fill={bonusLabel === 'Bm7♭5' ? '#0EA5E9' : BONUS_FILL} stroke={PALETTE_ACCENT_GREEN} strokeWidth={1.5 as any}/>
       <text x={tx} y={ty} textAnchor="middle" fontSize={BONUS_TEXT_SIZE}
             style={{ fill: BONUS_TEXT_FILL, fontWeight: 700, paintOrder:'stroke', stroke:'#000', strokeWidth:1 as any }}>
         {funcLabel}
@@ -4239,6 +4671,8 @@ useEffect(() => {
             </button>
           </div>
         </div>
+        
+        </div> {/* End of position:relative container for legend+wheel */}
 
         {/* Bottom Grid: input + keyboard (left), buttons + guitar tab (right) */}
         {(()=>{
@@ -4271,14 +4705,39 @@ useEffect(() => {
             }
             if(src.length===0) return new Set<number>();
             
-            // ✅ v3.10.5: Don't apply voice leading for direct keyboard input
-            // Only apply for wedge clicks (lastInputWasPreviewRef === true)
+            // ✅ v3.12.4: Use full 2-octave range intelligently
             if (lastInputWasPreviewRef.current) {
+              // Wedge clicks - use smart voice leading
               const fitted = preview.fitNotesToWindowPreserveInversion(src, KBD_LOW, KBD_HIGH);
               return new Set(fitted);
             } else {
-              // Direct keyboard input - show exact notes clicked
-              return new Set(src);
+              // MIDI input - preserve chord structure in 2-octave window
+              // Strategy: Find the octave that fits the chord best
+              if (src.length === 0) return new Set<number>();
+              
+              const bass = src[0]; // Lowest note
+              const span = src[src.length - 1] - bass; // Chord span
+              
+              // Try to keep the chord structure intact
+              // Find an octave where bass is in range and top note doesn't exceed HIGH
+              let bestOctave = 0;
+              let testBass = bass;
+              
+              // Shift up until bass is at least KBD_LOW
+              while (testBass < KBD_LOW) {
+                testBass += 12;
+                bestOctave += 12;
+              }
+              
+              // Check if chord fits without exceeding KBD_HIGH
+              // If not, shift down one octave (but keep bass >= KBD_LOW)
+              while (testBass + span > KBD_HIGH && testBass - 12 >= KBD_LOW) {
+                testBass -= 12;
+                bestOctave -= 12;
+              }
+              
+              const transposed = src.map(note => note + bestOctave);
+              return new Set(transposed);
             }
           };
           const disp = rhDisplaySet();
@@ -4622,11 +5081,28 @@ useEffect(() => {
                       const highlighted = keyboardHighlightNotes.has(m);
                       if (!held && !highlighted) return null;
                       
-                      // ✅ v3.12.0: Smart enharmonic spelling based on key center
-                      const currentKey = visitorActiveRef.current ? parKey 
-                        : subdomActiveRef.current ? subKey 
-                        : baseKeyRef.current;
-                      const noteName = pcNameForKey(m % 12, currentKey);
+                      // ✅ v3.12.4: Chord-aware spelling - use chord root for context
+                      let noteName: string;
+                      if (centerLabel) {
+                        // Extract root from chord label (e.g. "Gmaj7" → "G", "C#m" → "C#")
+                        const rootMatch = centerLabel.match(/^([A-G][b#]?)/);
+                        if (rootMatch) {
+                          const chordRoot = rootMatch[1] as KeyName;
+                          noteName = pcNameForKey(m % 12, chordRoot);
+                        } else {
+                          // Fallback to key center
+                          const currentKey = visitorActiveRef.current ? parKey 
+                            : subdomActiveRef.current ? subKey 
+                            : baseKeyRef.current;
+                          noteName = pcNameForKey(m % 12, currentKey);
+                        }
+                      } else {
+                        // No chord - use key center
+                        const currentKey = visitorActiveRef.current ? parKey 
+                          : subdomActiveRef.current ? subKey 
+                          : baseKeyRef.current;
+                        noteName = pcNameForKey(m % 12, currentKey);
+                      }
                       
                       return (
                         <g key={`wl-${m}`}>
@@ -4658,11 +5134,28 @@ useEffect(() => {
                       const highlighted = keyboardHighlightNotes.has(m);
                       if (!held && !highlighted) return null;
                       
-                      // ✅ v3.12.0: Smart enharmonic spelling based on key center
-                      const currentKey = visitorActiveRef.current ? parKey 
-                        : subdomActiveRef.current ? subKey 
-                        : baseKeyRef.current;
-                      const noteName = pcNameForKey(m % 12, currentKey);
+                      // ✅ v3.12.4: Chord-aware spelling - use chord root for context
+                      let noteName: string;
+                      if (centerLabel) {
+                        // Extract root from chord label (e.g. "Gmaj7" → "G", "C#m" → "C#")
+                        const rootMatch = centerLabel.match(/^([A-G][b#]?)/);
+                        if (rootMatch) {
+                          const chordRoot = rootMatch[1] as KeyName;
+                          noteName = pcNameForKey(m % 12, chordRoot);
+                        } else {
+                          // Fallback to key center
+                          const currentKey = visitorActiveRef.current ? parKey 
+                            : subdomActiveRef.current ? subKey 
+                            : baseKeyRef.current;
+                          noteName = pcNameForKey(m % 12, currentKey);
+                        }
+                      } else {
+                        // No chord - use key center
+                        const currentKey = visitorActiveRef.current ? parKey 
+                          : subdomActiveRef.current ? subKey 
+                          : baseKeyRef.current;
+                        noteName = pcNameForKey(m % 12, currentKey);
+                      }
                       
                       return (
                         <g key={`bl-${m}`}>
@@ -4734,17 +5227,17 @@ useEffect(() => {
                 {skillLevel === "EXPERT" && (
                   <button 
                     onClick={makeThisMyKey}
-                    disabled={!centerLabel}
+                    disabled={!centerLabel && rightHeld.current.size === 0}
                     style={{
                       padding:'6px 10px', 
                       border:"1px solid #F2D74B", 
                       borderRadius:6, 
-                      background: centerLabel ? '#332810' : '#111', 
-                      color: centerLabel ? "#F2D74B" : "#666",
-                      cursor: centerLabel ? "pointer" : "not-allowed",
+                      background: (centerLabel || rightHeld.current.size > 0) ? '#332810' : '#111', 
+                      color: (centerLabel || rightHeld.current.size > 0) ? "#F2D74B" : "#666",
+                      cursor: (centerLabel || rightHeld.current.size > 0) ? "pointer" : "not-allowed",
                       fontSize:11,
                       fontWeight:500,
-                      opacity: centerLabel ? 1 : 0.5
+                      opacity: (centerLabel || rightHeld.current.size > 0) ? 1 : 0.5
                     }}
                     title="Make current chord your new key center (K)"
                   >
@@ -5404,6 +5897,6 @@ useEffect(() => {
   );
 }
 
-// HarmonyWheel v3.12.1 - Uniform label sizing: black keys match white key dimensions
+// HarmonyWheel v3.14.3 - Yet another C#dim bonus hole plugged (line 2762)
 
-// EOF - HarmonyWheel.tsx v3.12.1
+// EOF - HarmonyWheel.tsx v3.14.3
