@@ -45,8 +45,8 @@ export const C_REQ7 = [
   { n:"Em7",   s:T([4,7,11,2]), f:"iii" },
   { n:"Am7",   s:T([9,0,4,7]),  f:"vi"  },
   { n:"G7",    s:T([7,11,2,5]), f:"V7"  },
-  { n:"D7",    s:T([2,6,9,0]),  f:"V/V" },
-  { n:"E7",    s:T([4,8,11,2]), f:"V/vi"},
+  // v3.6.2 FIX: REMOVED D7 (V/V) and E7 (V/vi) from diatonic 7ths
+  // Same issue as triads - secondary dominants matching before diatonic chords
 ] as const;
 
 export const C_REQT = [
@@ -57,9 +57,11 @@ export const C_REQT = [
   { n:"Fm", s:T([5,8,0]),  f:"iv"  },
   { n:"Am", s:T([9,0,4]),  f:"vi"  },
   { n:"G",  s:T([7,11,2]), f:"V7"  },
-  { n:"D",  s:T([2,6,9]),  f:"V/V" },
-  { n:"E",  s:T([4,8,11]), f:"V/vi"},
   { n:"Bb", s:T([10,2,5]), f:"♭VII"},
+  // v3.6.2 FIX: REMOVED V/V and V/vi from diatonic tables
+  // These secondary dominants were matching BEFORE actual diatonic chords
+  // Example: In Eb, Ab (IV) was matching as "V/V" instead
+  // Secondary dominants are now handled separately in HarmonyWheel
 ] as const;
 
 /** ---------- Diatonic in Eb space (7ths + triads) ---------- */
@@ -71,8 +73,7 @@ export const EB_REQ7 = [
   { n:"Bb7",    s:T([10,2,5,8]), f:"V7"  },
   { n:"Cm7",    s:T([0,3,7,10]), f:"vi"  },
   { n:"Dbmaj7", s:T([1,5,8,0]),  f:"♭VII"},
-  { n:"F7",     s:T([5,9,0,3]),  f:"V/V" },
-  { n:"G7",     s:T([7,11,2,5]), f:"V/vi"},
+  // v3.6.2 FIX: REMOVED F7 (V/V) and G7 (V/vi) from Eb diatonic 7ths
 ] as const;
 
 export const EB_REQT = [
@@ -83,8 +84,7 @@ export const EB_REQT = [
   { n:"Bb", s:T([10,2,5]), f:"V7"  },
   { n:"Cm", s:T([0,3,7]),  f:"vi"  },
   { n:"Db", s:T([1,5,8]),  f:"♭VII"},
-  { n:"F",  s:T([5,9,0]),  f:"V/V" },
-  { n:"G",  s:T([7,11,2]), f:"V/vi"},
+  // v3.6.2 FIX: REMOVED F (V/V) and G (V/vi) from Eb diatonic tables
 ] as const;
 
 /* =========================
@@ -136,29 +136,33 @@ export function shouldStaySubdom(
 
 /**
  * Generate dynamic diatonic matching tables for any key
- * Returns { req7, reqt } transposed from C to the given key
+ * Returns { req7, reqt } - patterns are ALREADY relative, no transposition needed!
+ * 
+ * v3.6.4 CRITICAL FIX: Patterns in C_REQ7/C_REQT are relative intervals (e.g., [5,9,0] = IV)
+ * These patterns work in ANY key because they're relative to the tonic.
+ * Previous bug: Was transposing patterns to absolute PCs, breaking matching.
+ * Fix: Return patterns unchanged - they're universal relative intervals!
  */
 export function getDiatonicTablesFor(key: string): {
   req7: Array<{n: string, s: Set<number>, f: string}>,
   reqt: Array<{n: string, s: Set<number>, f: string}>
 } {
-  const basePc = NAME_TO_PC[key as keyof typeof NAME_TO_PC] || 0;
-  const offset = basePc; // Offset from C
+  // Patterns are ALREADY relative intervals that work in any key
+  // No transposition needed!
   
-  // Transpose C_REQ7 and C_REQT pitch classes
   const req7 = C_REQ7.map(item => ({
-    n: item.n, // Keep original name (not used, but required by type)
-    s: new Set([...item.s].map(pc => add12(pc, offset))),
+    n: item.n,
+    s: item.s, // Use pattern as-is (it's a relative interval)
     f: item.f
   }));
   
   const reqt = C_REQT.map(item => ({
-    n: item.n, // Keep original name (not used, but required by type)
-    s: new Set([...item.s].map(pc => add12(pc, offset))),
+    n: item.n,
+    s: item.s, // Use pattern as-is (it's a relative interval)
     f: item.f
   }));
   
   return { req7, reqt };
 }
 
-// EOF - modes.ts v2.38.2
+// EOF - modes.ts v3.6.4

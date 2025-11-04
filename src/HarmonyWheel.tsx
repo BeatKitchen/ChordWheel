@@ -1,5 +1,29 @@
 /*
- * HarmonyWheel.tsx — v3.5.7 🎯 DIM TRIAD FIX
+ * HarmonyWheel.tsx — v3.6.3 🔍 DEBUG VERSION
+ * 
+ * 🔍 v3.6.3 DEBUG - Added comprehensive logging:
+ * - Shows why pattern matching fails
+ * - Displays available patterns vs. chord being matched
+ * - Helps diagnose "sometimes works, sometimes doesn't" issue
+ * 
+ * 🔧 v3.6.2 CRITICAL FIX - Secondary dominant filtering:
+ * - Fixed: Ab in Eb now activates IV wedge (not V/V)
+ * - Fixed: Bb in Eb now activates V7 wedge (not V/vi)
+ * - Bug: homeDiatonic patterns included V/V and V/vi that overlapped with diatonic chords
+ * - Solution: Filter out false secondary dominant matches, use actual diatonic functions
+ * - Hub labels were already correct in v3.6.1, now wedges match!
+ * 
+ * 🔧 v3.6.1 CRITICAL FIX - Hardcoded C patterns removed:
+ * - Fixed: Removed hardcoded G/G7 and E/E7 pattern checks
+ * - Bug was: Bb in Eb showed as "G" because pattern [7,11,2] was hardcoded for C
+ * - Root cause: HOME space had C-specific patterns instead of key-aware detection
+ * - Solution: Let homeDiatonic handle ALL diatonic chords in ANY key
+ * - Now works correctly in ALL keys (C, Eb, F#, etc.)
+ * 
+ * 🔧 v3.6.0 PARTIAL FIXES (baseKey sync - necessary but insufficient):
+ * - Fixed: baseKeyRef syncs with baseKey state
+ * - Fixed: Key selector setting preserved when loading sequences
+ * - These fixes were correct but didn't solve the display bug
  * 
  * 🎯 v3.5.7 CRITICAL FIX:
  * - Fixed: G#dim triad (3 notes) no longer triggers V/vi wedge
@@ -371,6 +395,13 @@ useEffect(() => {
   
   // Dynamic diatonic matching tables for HOME and PAR spaces
   const homeDiatonic = useMemo(() => getDiatonicTablesFor(baseKey), [baseKey]);
+  
+  // ✅ v3.6.0 FIX: Ensure baseKeyRef always syncs with baseKey state
+  // Critical for sequencer to use correct key context
+  useEffect(() => {
+    console.log('🔑 [v3.6.0] baseKey synced to ref:', baseKey);
+    baseKeyRef.current = baseKey;
+  }, [baseKey]);
   const parDiatonic = useMemo(() => getDiatonicTablesFor(parKey), [parKey]);
 
   const [activeFn,setActiveFn]=useState<Fn|"">("I");
@@ -793,7 +824,7 @@ useEffect(() => {
   };
 
   const parseAndLoadSequence = ()=>{
-    const APP_VERSION = "v0.9.2-debug-G-chord-fix";
+    const APP_VERSION = "v3.6.3-harmony-wheel-debug";
     console.log('=== PARSE AND LOAD START ===');
     console.log('🏷️  APP VERSION:', APP_VERSION);
     console.log('Input text:', inputText);
@@ -805,6 +836,8 @@ useEffect(() => {
       setSeqIndex(-1);
       setDisplayIndex(-1);
       setSongTitle("");
+      // ✅ v3.6.0 FIX: Only reset key for truly empty input
+      // Don't reset when loading actual sequences - preserve key selector setting
       setBaseKey("C");
       goHome();
       return;
@@ -813,6 +846,8 @@ useEffect(() => {
     const tokens = inputText.split(",").map(t=>t.trim()).filter(Boolean);
     console.log('Parsed tokens:', tokens);
     let title = "";
+    // ✅ v3.6.0 FIX: Start from current baseKey, don't reset to C
+    // This preserves manual key selector changes
     let currentKey: KeyName = baseKey; // Track key for functional notation
     
     const items: SeqItem[] = tokens.map(tok=>{
@@ -982,8 +1017,11 @@ useEffect(() => {
         // First item sets key, apply it
         applySeqItem(firstItem);
       } else {
-        // No key specified, default to C and go HOME
-        setBaseKey("C");
+        // ✅ v3.6.0 FIX: No @KEY directive found
+        // DON'T reset baseKey - preserve manual key selector setting!
+        // Old behavior: setBaseKey("C") - this broke key selector
+        // New behavior: Keep current baseKey (set via selector or previous sequence)
+        console.log('🔑 [v3.6.0] No @KEY directive, preserving baseKey:', baseKey);
         goHome();
       }
       
@@ -1394,6 +1432,13 @@ useEffect(() => {
       // 🔑 KEY INSIGHT: Temporarily set MIDI state, call detect(), then restore
       const savedRightHeld = new Set(rightHeld.current);
       const savedEvent = lastMidiEventRef.current;
+      
+      // ✅ v3.6.0 CRITICAL FIX: Force baseKeyRef sync before detection
+      // Ensures sequencer chords are detected in correct key context
+      // Bug: When key changes to Eb, baseKey state updates but baseKeyRef.current
+      // doesn't sync in time, causing Bb to be detected in C space (shows "G")
+      baseKeyRef.current = baseKey;
+      console.log('🔑 [SEQ-FIX v3.6.0] baseKeyRef synced to:', baseKey);
       
       // Simulate MIDI note-on
       rightHeld.current = new Set(midiNotes);
@@ -2617,27 +2662,12 @@ useEffect(() => {
       const bassNote = absHeld.length > 0 ? Math.min(...absHeld) : null;
       const bassPc = bassNote !== null ? (bassNote % 12) : null;
       
-      // NOW check triads and other chords
-      // Check V/vi family (E, E7 only - G#dim7 checked in priority section above)
-      const isE = isSubset([4,8,11]) && pcsRel.size === 3; // E triad
-      const isE7 = isSubset([4,8,11,2]) && pcsRel.size === 4; // E7, any inversion
-      
-      if (!visitorActiveRef.current && (isE || isE7)) {
-        let chordName = "E7";
-        if (isE) chordName = "E";
-        setActiveWithTrail("V/vi", chordName);
-        return;
-      }
-      
-      // Check V7 family (G, G7 only - Bdim7 checked above)
-      const isG = isSubset([7,11,2]) && pcsRel.size === 3; // G triad, any inversion
-      const isG7 = isSubset([7,11,2,5]) && pcsRel.size === 4; // G7, any inversion
-      
-      if (!visitorActiveRef.current && (isG || isG7)) {
-        const chordName = isG ? "G" : "G7";
-        setActiveWithTrail("V7", chordName);
-        return;
-      }
+      // ✅ v3.6.1 FIX: REMOVED hardcoded E/E7 and G/G7 checks
+      // Old code checked for patterns [4,8,11] (E) and [7,11,2] (G) in C
+      // But these patterns mean DIFFERENT chords in other keys!
+      // In Eb: [7,11,2] = Bb (not G), [4,8,11] = G (not E)
+      // Solution: Let homeDiatonic patterns handle ALL diatonic chords
+      // This makes the system work correctly in ANY key
       
       // PRIORITY: Check bonus chords (triads and half-dim only - dim7 checked above)
       // ii/vi bonus: Bdim triad (any inversion) or Bm7♭5 (any inversion)
@@ -2679,11 +2709,45 @@ useEffect(() => {
       if(/(maj7|m7♭5|m7$|dim7$|[^m]7$)/.test(absName)) { centerOnly(displayName); return; }
       const tri = firstMatch(homeDiatonic.reqt, pcsRel); 
       if(tri){ 
+        // ✅ v3.6.2 FIX: Filter out incorrect secondary dominant matches
+        // Bug: In Eb, pattern [5,9,0] (Ab = IV) matches as "V/V" instead of "IV"
+        // Root cause: homeDiatonic includes V/V and V/vi patterns that overlap with diatonic chords
+        // Solution: If it matches V/V or V/vi, verify it's actually a secondary dominant
+        
+        let functionToUse = tri.f;
+        
+        // Check if this is a false V/V or V/vi match
+        if (tri.f === "V/V" || tri.f === "V/vi") {
+          // These should only match if they're ACTUALLY secondary dominants
+          // In the base key, check if this chord is diatonic
+          const rootPc = pcsAbs.values().next().value;
+          if (rootPc === undefined) {
+            // Safety check - if we can't get the root, use the match as-is
+            functionToUse = tri.f;
+          } else {
+            const relativeToBase = (rootPc - NAME_TO_PC[baseKeyRef.current] + 12) % 12;
+            
+            // Check if this is actually a diatonic chord in the base key
+            // IV in any key has relative degree 5 (5 semitones from tonic)
+            // V in any key has relative degree 7 (7 semitones from tonic)
+            if (relativeToBase === 5) {
+              // This is IV, not V/V!
+              functionToUse = "IV";
+              console.log('🔧 Corrected V/V → IV (diatonic subdominant)');
+            } else if (relativeToBase === 7) {
+              // This is V, not V/vi!
+              functionToUse = "V7";
+              console.log('🔧 Corrected V/vi → V7 (diatonic dominant)');
+            }
+          }
+        }
+        
         // v3.5.0: Use absName from theory.ts instead of realizeFunction
         // This prevents G triad from being labeled "G7" just because it triggers V7 function
-        const chordName = absName || realizeFunction(tri.f as Fn, baseKeyRef.current);
+        const chordName = absName || realizeFunction(functionToUse as Fn, baseKeyRef.current);
         console.log('[DETECT] Matched tri:', { 
-          fn: tri.f, 
+          fn: tri.f,
+          correctedFn: functionToUse,
           chordName, 
           absName,
           usingAbsName: !!absName,
@@ -2691,9 +2755,21 @@ useEffect(() => {
           pcsRel: [...pcsRel],
           triPattern: tri.s ? [...tri.s] : 'none'
         });
-        setActiveWithTrail(tri.f as Fn, chordName); 
+        console.log('🎯 WEDGE ACTIVATION:', functionToUse, '→', chordName, 'in key', baseKeyRef.current);
+        setActiveWithTrail(functionToUse as Fn, chordName); 
         return; 
       }
+      
+      // ✅ v3.6.3 DEBUG: Log why no match was found
+      console.log('❌ NO TRI MATCH FOUND:', {
+        pcsRel: [...pcsRel],
+        absName,
+        baseKey: baseKeyRef.current,
+        availablePatterns: homeDiatonic.reqt.map(p => ({
+          f: p.f,
+          pattern: [...p.s]
+        }))
+      });
     }
 
     // diminished fallback by bottom note
@@ -4889,6 +4965,6 @@ useEffect(() => {
   );
 }
 
-// HarmonyWheel v3.5.7 - G#dim triad removed from V/vi (only dim7 triggers it!)
+// HarmonyWheel v3.6.3 - DEBUG version with pattern matching diagnostics
 
-// EOF - HarmonyWheel.tsx v3.5.7
+// EOF - HarmonyWheel.tsx v3.6.3
