@@ -1,5 +1,18 @@
 /*
- * HarmonyWheel.tsx — v3.14.3 🩹 ANOTHER BONUS HOLE
+ * HarmonyWheel.tsx — v3.15.0 🎯 MIDI LATCH & LEGEND FIX
+ * 
+ * 🎯 v3.15.0 NEW FEATURES:
+ * 
+ * 1. MIDI LATCH (10-second auto-clear):
+ * - MIDI-detected chords now latch like clicked wedges
+ * - Stays visible for 10 seconds after releasing all keys
+ * - Allows time to use MMK, view keyboard, interact with chord
+ * - Press 'X' key to manually clear before timeout
+ * - Cancels timer if new notes played
+ * 
+ * 2. LEGEND TEXT FIX:
+ * - ROOKIE/NOVICE/SOPHOMORE: Shows "Subdominant" (only IV available)
+ * - INTERMEDIATE/ADVANCED/EXPERT: Shows "Predominant" (includes ii, IV, etc.)
  * 
  * 🩹 v3.14.3:
  * - Added shouldShowBonusOverlay() to ANOTHER C#dim path (line 2762)
@@ -702,7 +715,7 @@ import {
   parseSongMetadata
 } from "./lib/songManager";
 
-const HW_VERSION = 'v3.14.3';
+const HW_VERSION = 'v3.15.0';
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -866,6 +879,10 @@ useEffect(() => {
   useEffect(() => { 
     showBonusWedgesRef.current = showBonusWedges; 
   }, [showBonusWedges]);
+  
+  // ✅ v3.15.0: MIDI latch - keep last detected chord visible for 10s after note-off
+  const midiLatchTimeoutRef = useRef<number | null>(null);
+  const latchedChordRef = useRef<{fn: Fn | "", label: string} | null>(null);
   
   /* ---------- Space Lock (v3.11.0) ---------- */
   const [spaceLocked, setSpaceLocked] = useState(false);
@@ -1038,7 +1055,29 @@ useEffect(() => {
         // Don't call detect() immediately on note-off - keep chord visible
         // User can then click "Make This My Key" button
         // Only detect after a delay
-        setTimeout(() => detect(), 50);
+        setTimeout(() => {
+          detect();
+          
+          // ✅ v3.15.0: Start 10-second latch timer if all notes released
+          const allNotesReleased = rightHeld.current.size === 0 && rightSus.current.size === 0;
+          if (allNotesReleased) {
+            // Clear any existing timer
+            if (midiLatchTimeoutRef.current !== null) {
+              clearTimeout(midiLatchTimeoutRef.current);
+            }
+            
+            // Start new 10-second timer to clear the latched chord
+            midiLatchTimeoutRef.current = window.setTimeout(() => {
+              latchedChordRef.current = null;
+              setActiveFn("");
+              setCenterLabel("");
+              setLatchedAbsNotes([]); // ✅ Clear keyboard highlights
+              console.log('⏱️ MIDI latch timeout - cleared display and keyboard highlights');
+            }, 10000);
+            
+            console.log('⏱️ MIDI latch timer started - 10s until clear');
+          }
+        }, 50);
       } else if (type===0xB0 && d1===64) {
         lastMidiEventRef.current = "cc";
         const on = d2>=64;
@@ -1199,7 +1238,7 @@ useEffect(() => {
   };
 
   const parseAndLoadSequence = ()=>{
-    const APP_VERSION = "v3.14.3-harmony-wheel";
+    const APP_VERSION = "v3.15.0-harmony-wheel";
     console.log('=== PARSE AND LOAD START ===');
     console.log('🏷️  APP VERSION:', APP_VERSION);
     console.log('Input text:', inputText);
@@ -2044,6 +2083,18 @@ useEffect(() => {
         if (e.ctrlKey || e.metaKey) return; // Allow browser shortcuts (print)
         e.preventDefault();
         toggleVisitor(); // PAR space
+      } else if (e.key === 'x' || e.key === 'X') {
+        // ✅ v3.15.0: Clear MIDI latch
+        e.preventDefault();
+        if (midiLatchTimeoutRef.current !== null) {
+          clearTimeout(midiLatchTimeoutRef.current);
+          midiLatchTimeoutRef.current = null;
+        }
+        latchedChordRef.current = null;
+        setActiveFn("");
+        setCenterLabel("");
+        setLatchedAbsNotes([]); // ✅ Clear keyboard highlights
+        console.log('❌ MIDI latch manually cleared with X key');
       }
     };
     
@@ -2181,6 +2232,16 @@ useEffect(() => {
     const fullStack = new Error().stack?.split('\n').slice(1, 8).join('\n');
     console.log('🎯 setActiveWithTrail called:', { fn, label, stepRecord: stepRecordRef.current });
     console.log('📍 Stack trace:', fullStack);
+    
+    // ✅ v3.15.0: Save for MIDI latch and cancel any pending clear timer
+    latchedChordRef.current = { fn, label };
+    console.log('💾 Saved latched chord:', { fn, label });
+    if (midiLatchTimeoutRef.current !== null) {
+      clearTimeout(midiLatchTimeoutRef.current);
+      midiLatchTimeoutRef.current = null;
+      console.log('⏱️ Cancelled existing latch timer');
+    }
+    
     if(activeFnRef.current && activeFnRef.current!==fn){ makeTrail(); } 
     setActiveFn(fn); 
     setCenterLabel(SHOW_CENTER_LABEL?label:""); 
@@ -2236,10 +2297,17 @@ useEffect(() => {
   
   const centerOnly=(t:string)=>{ 
     console.log('🎯 centerOnly called:', { t, stepRecord: stepRecordRef.current });
+    
+    // ✅ v3.15.0: Save for MIDI latch and cancel any pending clear timer
+    const cleaned = t.replace(/^[#@]\s*/, '').trim();
+    latchedChordRef.current = { fn: "", label: cleaned };
+    if (midiLatchTimeoutRef.current !== null) {
+      clearTimeout(midiLatchTimeoutRef.current);
+      midiLatchTimeoutRef.current = null;
+    }
+    
     makeTrail(); 
     if (activeFnRef.current) startDimFade();
-    // Filter out comment and modifier markers
-    const cleaned = t.replace(/^[#@]\s*/, '').trim();
     setCenterLabel(SHOW_CENTER_LABEL ? cleaned : ""); 
     lastPlayedChordRef.current = cleaned; // Save for Make My Key
     console.log('📝 lastPlayedChordRef set to:', cleaned);
@@ -2565,8 +2633,26 @@ useEffect(() => {
     // Now handled separately in MIDI message handler
 
     if(pcsAbs.size===0){
+      console.log('🔍 No notes held - checking latch state:', {
+        latchedChord: latchedChordRef.current,
+        hasLatchedChord: !!latchedChordRef.current,
+        subdomActive: subdomActiveRef.current,
+        subdomLatched: subdomLatchedRef.current
+      });
+      
       setTapEdge("REL_Am", false); setTapEdge("REL_C", false); setTapEdge("VIS_G", false);
       bonusDeb.reset();
+
+      // ✅ v3.15.0: Check for latched chord before clearing
+      if (latchedChordRef.current) {
+        console.log('🔒 MIDI latch active - keeping display:', latchedChordRef.current);
+        // Restore the latched chord display
+        if (latchedChordRef.current.fn) {
+          setActiveFn(latchedChordRef.current.fn);
+        }
+        setCenterLabel(latchedChordRef.current.label);
+        return; // Don't clear!
+      }
 
       if (subdomActiveRef.current && subdomLatchedRef.current) {
         if (!centerLabel) setCenterLabel(subKey);
@@ -2575,6 +2661,7 @@ useEffect(() => {
         return;
       }
       hardClearGhostIfIdle();
+      console.log('❌ No latch - clearing display');
       return clear();
     }
 
@@ -4359,7 +4446,9 @@ useEffect(() => {
                       flexShrink:0
                     }}/>
                     <span style={{color: isPredom ? '#0EA5E9' : '#9CA3AF', fontSize:10}}>
-                      Predominant
+                      {skillLevel === 'ROOKIE' || skillLevel === 'NOVICE' || skillLevel === 'SOPHOMORE' 
+                        ? 'Subdominant' 
+                        : 'Predominant'}
                     </span>
                   </div>
                   
@@ -5897,6 +5986,6 @@ useEffect(() => {
   );
 }
 
-// HarmonyWheel v3.14.3 - Yet another C#dim bonus hole plugged (line 2762)
+// HarmonyWheel v3.15.0 - MIDI latch (10s auto-clear), legend fix (Subdominant for beginners)
 
-// EOF - HarmonyWheel.tsx v3.14.3
+// EOF - HarmonyWheel.tsx v3.15.0
