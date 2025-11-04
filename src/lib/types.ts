@@ -1,7 +1,11 @@
 /*
- * types.ts — v3.1.3
+ * types.ts — v3.10.0
  * 
  * Type definitions for HarmonyWheel
+ * 
+ * v3.10.0 CHANGES:
+ * - Added "V/ii" to Fn type (secondary dominant: A7 in key of C)
+ * - Was missing, causing TypeScript error in shouldTriggerBonus()
  * 
  * v3.1.3 CHANGES:
  * - Added "V" to Fn type (plain V triad, e.g., G in key of C)
@@ -17,9 +21,10 @@ export type KeyName =
 export type Fn = 
   | "I" 
   | "ii" 
-  | "V/V"    // Secondary dominant (D in key of C)
+  | "V/V"    // Secondary dominant (D7 in key of C)
   | "iii" 
-  | "V/vi"   // Secondary dominant (E in key of C)
+  | "V/vi"   // Secondary dominant (E7 in key of C)
+  | "V/ii"   // ← ADDED v3.10.0! Secondary dominant (A7 in key of C)
   | "iv"     // Minor iv
   | "IV"     // Major IV
   | "V"      // ← ADDED v3.1.3! Plain V triad (G in key of C)
@@ -29,4 +34,4 @@ export type Fn =
 
 export type SizeSpec = Partial<Record<Fn, number>>;
 
-// EOF - types.ts v3.1.3
+// EOF - types.ts v3.10.0

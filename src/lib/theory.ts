@@ -1,7 +1,12 @@
 /*
- * theory.ts — v3.1.3
+ * theory.ts — v3.10.2
  * 
- * CHANGES FROM v2.37.10:
+ * CHANGES FROM v3.10.1:
+ * - Added "V/ii" case to realizeFunction() (A7 in key of C)
+ * - Added explicit return type `: string` to realizeFunction()
+ * - Fixes TypeScript errors where return was possibly undefined
+ * 
+ * CHANGES FROM v3.1.3:
  * - Added case "V" to realizeFunction() switch statement
  * - This was causing all TypeScript "undefined" errors!
  * - Now realizeFunction handles both "V" and "V7" properly
@@ -219,7 +224,7 @@ export const mapDimRootToFn_ByBottom=(rootPc:number):Fn|""=>
 export const mapDim7_EbVisitor=(pcsRel:Set<number>):Fn|""=> subsetOf(T([11,2,5,8]), pcsRel)? "V/vi":"";
 
 /* function label realizer in arbitrary key */
-export function realizeFunction(fn:Fn, key: KeyName){
+export function realizeFunction(fn:Fn, key: KeyName): string {
   const t = NAME_TO_PC[key];
   const name=(o:number)=>pcNameForKey(add12(t,o), key);
   switch(fn){
@@ -233,6 +238,7 @@ export function realizeFunction(fn:Fn, key: KeyName){
     case "vi": return name(DEG[6])+"m";
     case "V/vi": return name(add12(DEG[6],7))+"7";
     case "V/V": return name(add12(DEG[5],7))+"7";
+    case "V/ii": return name(add12(DEG[2],7))+"7";  // ← ADDED v3.10.2! A7 in key of C
     case "♭VII": return pcNameForKey(add12(t,10), key);
   }
 }
@@ -260,4 +266,4 @@ export function getParKey(metaKey: KeyName): KeyName {
   return FLAT_NAMES[parPc]; // Always use flat names (KeyName type)
 }
 
-// EOF - theory.ts v3.1.3
+// EOF - theory.ts v3.10.2

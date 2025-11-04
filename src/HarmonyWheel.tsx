@@ -1,5 +1,24 @@
 /*
- * HarmonyWheel.tsx — v3.9.0 🔁 LOOP FIX
+ * HarmonyWheel.tsx — v3.10.2 🐛 TYPESCRIPT FIX (COMPLETE)
+ * 
+ * 🐛 v3.10.2 FIX:
+ * - Fixed realizeFunction in theory.ts: added V/ii case and `: string` return type
+ * - Added V/ii to CHORD_DEFINITIONS (was missing, causing Record<Fn> error)
+ * - Added safety checks for potentially undefined chord names
+ * - All 14 TypeScript errors now resolved!
+ * 
+ * 🐛 v3.10.1 FIX:
+ * - Added "V/ii" to Fn type (was missing, caused TypeScript error)
+ * - Wrapped all bonus overlays (A7, Bm7♭5, etc.) with shouldShowBonusOverlay()
+ * - Now bonus overlays respect skill level and "Allow/Reveal" toggle
+ * 
+ * 🎓 v3.10.0 NEW FEATURE:
+ * - ADVANCED: "Allow Bonus Chords" toggle (OFF by default)
+ *   -- OFF: Bonus chords (V/V, V/vi, V/ii) don't trigger
+ *   -- ON: Bonus chords trigger dynamically (appear/disappear)
+ * - EXPERT: "Reveal Bonus Chords" toggle (OFF by default)
+ *   -- OFF: Bonus chords trigger dynamically (like ADVANCED ON)
+ *   -- ON: Bonus chords always visible (persistent overlay for teaching)
  * 
  * 🔁 v3.9.0 FIX:
  * - Fixed loop mode: pressing ">" at end now goes back to start
@@ -368,7 +387,7 @@ import {
   parseSongMetadata
 } from "./lib/songManager";
 
-const HW_VERSION = 'v3.9.0';
+const HW_VERSION = 'v3.10.2';
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -409,8 +428,8 @@ export default function HarmonyWheel(){
     return SKILL_LEVEL_FUNCTIONS[skillLevel].includes(fn);
   };
   
-  // Check if bonus wedges should be available
-  const bonusWedgesAllowed = skillLevel === "EXPERT";
+  // Bonus wedges available in ADVANCED and EXPERT
+  const bonusWedgesAllowed = skillLevel === "ADVANCED" || skillLevel === "EXPERT";
   
 
 // --- Auto-clear bonus overlays so base wedges return to full color on release
@@ -531,11 +550,7 @@ useEffect(() => {
   const showBonusWedgesRef = useRef(false);
   useEffect(() => { 
     showBonusWedgesRef.current = showBonusWedges; 
-    // Auto-hide bonus wedges if skill level drops below EXPERT
-    if (skillLevel !== "EXPERT" && showBonusWedges) {
-      setShowBonusWedges(false);
-    }
-  }, [showBonusWedges, skillLevel]);
+  }, [showBonusWedges]);
   
   // Audio playback
   const [audioEnabled, setAudioEnabled] = useState(true); // Start with audio enabled
@@ -867,7 +882,7 @@ useEffect(() => {
   };
 
   const parseAndLoadSequence = ()=>{
-    const APP_VERSION = "v3.9.0-harmony-wheel";
+    const APP_VERSION = "v3.10.2-harmony-wheel";
     console.log('=== PARSE AND LOAD START ===');
     console.log('🏷️  APP VERSION:', APP_VERSION);
     console.log('Input text:', inputText);
@@ -1847,6 +1862,35 @@ useEffect(() => {
     setBonusActive(false); setBonusLabel(""); 
     stopDimFade();
   };
+  
+  // ✅ v3.10.0: Helper to check if bonus chord should trigger based on skill level
+  const shouldTriggerBonus = (fn: Fn): boolean => {
+    // Bonus functions: V/V, V/vi, V/ii (secondary dominants)
+    const isBonusFunction = fn === "V/V" || fn === "V/vi" || fn === "V/ii";
+    if (!isBonusFunction) return true; // Not a bonus chord, always allow
+    
+    // In EXPERT: always allow (they can trigger dynamically)
+    if (skillLevel === "EXPERT") return true;
+    
+    // In ADVANCED: only if showBonusWedges is ON
+    if (skillLevel === "ADVANCED") return showBonusWedgesRef.current;
+    
+    // Below ADVANCED: never allow bonus chords
+    return false;
+  };
+  
+  // v3.10.1: Helper for bonus overlays (A7, Bm7♭5, etc.) that don't use wedges
+  const shouldShowBonusOverlay = (): boolean => {
+    // In EXPERT: always allow
+    if (skillLevel === "EXPERT") return true;
+    
+    // In ADVANCED: only if showBonusWedges is ON
+    if (skillLevel === "ADVANCED") return showBonusWedgesRef.current;
+    
+    // Below ADVANCED: never show
+    return false;
+  };
+  
   const centerOnly=(t:string)=>{ 
     console.log('🎯 centerOnly called:', { t, stepRecord: stepRecordRef.current });
     makeTrail(); 
@@ -2246,9 +2290,11 @@ useEffect(() => {
     // G#dim7 [8,11,2,5] with G# bass → V/vi wedge
     // Check if ALL 4 notes are currently held
     if (currentPcsRel.size >= 4 && [8,11,2,5].every(pc => currentPcsRel.has(pc)) && bassPc === 8) {
-      console.log('✅ G#dim7 ALWAYS detected (all 4 notes held) → V/vi');
-      setActiveWithTrail("V/vi", displayName);
-      return;
+      if (shouldTriggerBonus("V/vi")) {
+        console.log('✅ G#dim7 ALWAYS detected (all 4 notes held) → V/vi');
+        setActiveWithTrail("V/vi", displayName);
+        return;
+      }
     }
     
     // Bdim7 [11,2,5,8] with B bass → V7 wedge (exception!)
@@ -2260,12 +2306,14 @@ useEffect(() => {
     
     // C#dim7 [1,4,7,10] with C# bass → V/ii bonus
     if (currentPcsRel.size >= 4 && [1,4,7,10].every(pc => currentPcsRel.has(pc)) && bassPc === 1) {
-      console.log('✅ C#dim7 ALWAYS detected (all 4 notes held) → V/ii bonus');
-      setActiveFn("");
-      setCenterLabel(displayName);
-      setBonusActive(true);
-      setBonusLabel(displayName);
-      return;
+      if (shouldShowBonusOverlay()) {
+        console.log('✅ C#dim7 ALWAYS detected (all 4 notes held) → V/ii bonus');
+        setActiveFn("");
+        setCenterLabel(displayName);
+        setBonusActive(true);
+        setBonusLabel(displayName);
+        return;
+      }
     }
     
     // If we get here and it's a dim triad (3 notes), allow it through
@@ -2380,7 +2428,7 @@ useEffect(() => {
 
       const hasA7tri = isSubset([9,1,4]);
       const hasA7    = hasA7tri || isSubset([9,1,4,7]);
-      if (hasA7){
+      if (hasA7 && shouldShowBonusOverlay()){
         // v3.5.0: Use absName for center label to distinguish A from A7
         // But keep bonus wedge label as "A7" (functional label)
         const centerLabelToUse = absName || "A7";
@@ -2499,8 +2547,8 @@ useEffect(() => {
           if (dm){ setActiveWithTrail("ii",  absName || (isSubsetIn([2,5,9,0], S)?"Dm7":"Dm")); return; }
           if (am){ setActiveWithTrail("vi",  absName || (isSubsetIn([9,0,4,7], S)?"Am7":"Am")); return; }
           if (em){ setActiveWithTrail("iii", absName || (isSubsetIn([4,7,11,2], S)?"Em7":"Em")); return; }
-          if (d7){ setActiveWithTrail("V/V", "D7"); return; }
-          if (e7 || gSharpDim){ 
+          if (d7 && shouldTriggerBonus("V/V")){ setActiveWithTrail("V/V", "D7"); return; }
+          if ((e7 || gSharpDim) && shouldTriggerBonus("V/vi")){ 
             // v3.5.0: E7 family includes G#dim and G#dim7 (both function as V/vi)
             const chordName = gSharpDim ? displayName : "E7";
             setActiveWithTrail("V/vi", chordName); 
@@ -2559,9 +2607,11 @@ useEffect(() => {
 
     /* ---------- PARALLEL quick rule ---------- */
     if (visitorActiveRef.current && (isSubset([2,6,9,0]) || exactSet([2,6,9,0]))){
-      setVisitorActive(false);
-      setActiveWithTrail("V/V", "D7");
-      return;
+      if (shouldTriggerBonus("V/V")) {
+        setVisitorActive(false);
+        setActiveWithTrail("V/V", "D7");
+        return;
+      }
     }
 
     // Guard Fm7 exact in HOME
@@ -2641,7 +2691,7 @@ useEffect(() => {
       // Exit on F#dim7 family (V/V function) - relative to meta-key
       // Pattern [6,9,0,3] in C = F#dim7, works in all keys
       const hasFsharpDim7 = pcsRel.has(6) && pcsRel.has(9) && pcsRel.has(0) && pcsRel.has(3);
-      if (hasFsharpDim7) {
+      if (hasFsharpDim7 && shouldTriggerBonus("V/V")) {
         setVisitorActive(false);
         setActiveWithTrail("V/V", absName);
         return;
@@ -2649,7 +2699,7 @@ useEffect(() => {
       
       // Exit on A7/A (V/ii function - use bonus wedge)
       const hasA = isSubset([9,1,4]);
-      if (hasA) {
+      if (hasA && shouldShowBonusOverlay()) {
         setVisitorActive(false);
         setBonusActive(true);
         setBonusLabel("A7");
@@ -2660,7 +2710,7 @@ useEffect(() => {
       
       // Exit on C#dim7 family (V/ii function - use bonus wedge)
       const hasCsharpDim7 = pcsRel.has(1) && pcsRel.has(4) && pcsRel.has(7) && pcsRel.has(10);
-      if (hasCsharpDim7) {
+      if (hasCsharpDim7 && shouldShowBonusOverlay()) {
         setVisitorActive(false);
         setBonusActive(true);
         setBonusLabel("A7"); // Functional label
@@ -2743,7 +2793,7 @@ useEffect(() => {
       const hasBdimTriad = isSubset([11,2,5]) && pcsRel.size === 3; // Bdim triad, any inversion
       const hasBm7b5 = isSubset([11,2,5,9]) && pcsRel.size === 4; // Bm7♭5, any inversion
       
-      if (!visitorActiveRef.current && (hasBdimTriad || hasBm7b5)) {
+      if (!visitorActiveRef.current && (hasBdimTriad || hasBm7b5) && shouldShowBonusOverlay()) {
         setActiveFn(""); 
         setCenterLabel(displayName);
         setBonusActive(true); 
@@ -2757,7 +2807,7 @@ useEffect(() => {
       const hasCSharpDimTriad = isSubset([1,4,8]) && pcsRel.size === 3; // C#dim triad, any inversion
       const hasCSharpHalfDim = isSubset([1,4,7,11]) && pcsRel.size === 4; // C#m7♭5, any inversion
       
-      if (!visitorActiveRef.current && (hasA || hasA7 || hasCSharpDimTriad || hasCSharpHalfDim)) {
+      if (!visitorActiveRef.current && (hasA || hasA7 || hasCSharpDimTriad || hasCSharpHalfDim) && shouldShowBonusOverlay()) {
         setActiveFn(""); 
         setCenterLabel(displayName); // Show actual chord name
         setBonusActive(true); 
@@ -2765,7 +2815,7 @@ useEffect(() => {
         return;
       }
       
-      if (exactSet([6,9,0,4])){ setActiveWithTrail("V/V","F#m7♭5"); return; }
+      if (exactSet([6,9,0,4]) && shouldTriggerBonus("V/V")){ setActiveWithTrail("V/V","F#m7♭5"); return; }
       const m7 = firstMatch(homeDiatonic.req7, pcsRel); 
       if(m7){ 
         // Prefer displayName for 7th chords (with corrected spelling)
@@ -3182,6 +3232,8 @@ useEffect(() => {
                const renderKey = visitorActiveRef.current ? parKey : (subdomActiveRef.current ? subKey : baseKeyRef.current);
                const chordName = realizeFunction(fn, renderKey);
                
+               if (!chordName) return; // Safety check
+               
                // Add or remove appropriate 7th extension
                if (shouldHave7th) {
                  if (!chordName.includes('7')) {
@@ -3341,6 +3393,7 @@ useEffect(() => {
     "♭VII":  {triad: [10, 2, 5]},                // Bb-D-F (no 7th)
     "V/V":   {triad: [2, 6, 9],   seventh: 0},   // D-F#-A (C) = D7
     "V/vi":  {triad: [4, 8, 11],  seventh: 2},   // E-G#-B (D) = E7
+    "V/ii":  {triad: [9, 1, 4],   seventh: 7},   // A-C#-E (G) = A7
   };
   
   // Bonus wedge definitions
@@ -3505,7 +3558,7 @@ useEffect(() => {
     // Priority 2: If active function from main wheel
     if (activeFnRef.current){
       const dispKey = (visitorActiveRef.current ? parKey : (subdomActiveRef.current ? subKey : baseKeyRef.current)) as KeyName;
-      return realizeFunction(activeFnRef.current as Fn, dispKey);
+      return realizeFunction(activeFnRef.current as Fn, dispKey) || null;
     }
     // Priority 3: Fall back to center label from MIDI/manual play
     return centerLabel || null;
@@ -4393,11 +4446,13 @@ useEffect(() => {
                   </button>
                 )}
                 
-                {/* Show Bonus - ADVANCED/EXPERT */}
+                {/* Show/Allow/Reveal Bonus - ADVANCED/EXPERT */}
                 {bonusWedgesAllowed && (
                   <button 
                     onClick={() => setShowBonusWedges(!showBonusWedges)}
-                    title="Toggle bonus wedges (A7 and Bm7♭5)"
+                    title={skillLevel === "EXPERT" 
+                      ? "Reveal bonus wedges persistently for teaching" 
+                      : "Allow bonus wedges to trigger dynamically"}
                     style={{
                       padding:'6px 10px', 
                       border:`1px solid ${showBonusWedges ? '#39FF14' : '#374151'}`, 
@@ -4409,7 +4464,10 @@ useEffect(() => {
                       fontWeight: showBonusWedges ? 600 : 400
                     }}
                   >
-                    {showBonusWedges ? '✓ Show Bonus Chords' : 'Show Bonus Chords'}
+                    {skillLevel === "EXPERT" 
+                      ? (showBonusWedges ? '✓ Reveal Bonus Chords' : 'Reveal Bonus Chords')
+                      : (showBonusWedges ? '✓ Allow Bonus Chords' : 'Allow Bonus Chords')
+                    }
                   </button>
                 )}
                 
@@ -5040,6 +5098,6 @@ useEffect(() => {
   );
 }
 
-// HarmonyWheel v3.9.0 - Loop mode wraps to start when pressing ">" at end
+// HarmonyWheel v3.10.2 - All TypeScript errors resolved (V/ii complete, safety checks added)
 
-// EOF - HarmonyWheel.tsx v3.9.0
+// EOF - HarmonyWheel.tsx v3.10.2
