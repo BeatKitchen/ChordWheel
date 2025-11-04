@@ -1,5 +1,11 @@
 /*
- * HarmonyWheel.tsx — v3.15.3 🎯 MIDI LATCH & LEGEND FIX
+ * HarmonyWheel.tsx — v3.15.4 🎯 MIDI LATCH & LEGEND FIX
+ * 
+ * 🔧 v3.15.4 FIXES:
+ * - Dragging between inner/outer zones now updates keyboard display
+ * - Yellow keys now correctly show/hide 7th note during drag
+ * - Hub label updates consistently during drag
+ * - lastPlayedChordRef updated for MMK consistency
  * 
  * 🔧 v3.15.3 FIXES:
  * - Hub now shows "Fmaj7", "Dm7", etc. when clicking inner zone (with 7th)
@@ -729,7 +735,7 @@ import {
   parseSongMetadata
 } from "./lib/songManager";
 
-const HW_VERSION = 'v3.15.3';
+const HW_VERSION = 'v3.15.4';
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -1252,7 +1258,7 @@ useEffect(() => {
   };
 
   const parseAndLoadSequence = ()=>{
-    const APP_VERSION = "v3.15.3-harmony-wheel";
+    const APP_VERSION = "v3.15.4-harmony-wheel";
     console.log('=== PARSE AND LOAD START ===');
     console.log('🏷️  APP VERSION:', APP_VERSION);
     console.log('Input text:', inputText);
@@ -3751,36 +3757,66 @@ useEffect(() => {
                if (!chordName) return; // Safety check
                
                // Add or remove appropriate 7th extension
+               let updatedLabel = chordName;
                if (shouldHave7th) {
                  if (!chordName.includes('7')) {
                    // Check if it's a major or dominant chord
                    // I, IV = maj7, V7 = 7, ii, iii, vi = m7
                    if (fn === "I" || fn === "IV") {
-                     setCenterLabel(chordName + 'maj7');
+                     updatedLabel = chordName + 'maj7';
+                     setCenterLabel(updatedLabel);
                    } else if (fn === "V7") {
                      // V7 already has 7 in the function name, but chord might show as "G"
-                     setCenterLabel(chordName.includes('7') ? chordName : chordName + '7');
+                     updatedLabel = chordName.includes('7') ? chordName : chordName + '7';
+                     setCenterLabel(updatedLabel);
                    } else if (fn === "ii" || fn === "iii" || fn === "vi" || fn === "iv") {
                      // Minor chords - check if already has 'm' to avoid "Amm7"
                      if (chordName.includes('m')) {
-                       setCenterLabel(chordName + '7'); // Already has 'm', just add '7'
+                       updatedLabel = chordName + '7'; // Already has 'm', just add '7'
+                       setCenterLabel(updatedLabel);
                      } else {
-                       setCenterLabel(chordName + 'm7');
+                       updatedLabel = chordName + 'm7';
+                       setCenterLabel(updatedLabel);
                      }
                    } else {
-                     setCenterLabel(chordName + '7');
+                     updatedLabel = chordName + '7';
+                     setCenterLabel(updatedLabel);
                    }
                  }
                } else {
-                 setCenterLabel(chordName.replace(/maj7|m7|7/g, ''));
+                 updatedLabel = chordName.replace(/maj7|m7|7/g, '');
+                 setCenterLabel(updatedLabel);
+               }
+               
+               // Update lastPlayedChordRef for MMK consistency
+               lastPlayedChordRef.current = updatedLabel;
+               
+               // ✅ v3.15.3: Update keyboard display to match triad/7th
+               const chordDef = CHORD_DEFINITIONS[fn];
+               if (chordDef) {
+                 const keyPc = NAME_TO_PC[renderKey];
+                 const transposedTriad = chordDef.triad.map(pc => (pc + keyPc) % 12);
+                 
+                 let pcs: number[];
+                 if (shouldHave7th && chordDef.seventh !== undefined) {
+                   const transposedSeventh = (chordDef.seventh + keyPc) % 12;
+                   pcs = [...transposedTriad, transposedSeventh];
+                 } else {
+                   pcs = transposedTriad;
+                 }
+                 
+                 const rootPc = pcs[0];
+                 const absRootPos = preview.absChordRootPositionFromPcs(pcs, rootPc);
+                 const fitted = preview.fitNotesToWindowPreserveInversion(absRootPos, KBD_LOW, KBD_HIGH);
+                 setLatchedAbsNotes(fitted);
                }
                
                // Get the 7th note for this function
-               const chordDef = CHORD_DEFINITIONS[fn];
+               const chordDef2 = CHORD_DEFINITIONS[fn];
                
-               if (chordDef && chordDef.seventh !== undefined && audioEnabledRef.current) {
+               if (chordDef2 && chordDef2.seventh !== undefined && audioEnabledRef.current) {
                  const keyPc = NAME_TO_PC[renderKey];
-                 const seventhPc = (chordDef.seventh + keyPc) % 12;
+                 const seventhPc = (chordDef2.seventh + keyPc) % 12;
                  
                  // Special case: For minor tonic chords (vi, iv in minor contexts),
                  // use root doubling instead of 7th for better harmonic minor sound
@@ -3793,7 +3829,7 @@ useEffect(() => {
                    
                    if (isMinorTonic) {
                      // Use root note an octave down
-                     const rootPc = chordDef.triad[0];
+                     const rootPc = chordDef2.triad[0];
                      const transposedRootPc = (rootPc + keyPc) % 12;
                      fourthNoteMidi = 48; // Start at C3
                      while ((fourthNoteMidi % 12) !== transposedRootPc) fourthNoteMidi++;
@@ -3814,7 +3850,7 @@ useEffect(() => {
                  } else {
                    // Remove the 4th note - replay triad
                    console.log('➖ Removing 4th note');
-                   const triadPcs = chordDef.triad.map(pc => (pc + keyPc) % 12);
+                   const triadPcs = chordDef2.triad.map(pc => (pc + keyPc) % 12);
                    playChordWithVoiceLeading(triadPcs);
                  }
                }
@@ -6020,6 +6056,6 @@ useEffect(() => {
   );
 }
 
-// HarmonyWheel v3.15.3 - Hub shows 7th chord names (Fmaj7, Dm7, etc.)
+// HarmonyWheel v3.15.4 - Drag inner/outer updates keyboard display & hub label
 
-// EOF - HarmonyWheel.tsx v3.15.3
+// EOF - HarmonyWheel.tsx v3.15.4
