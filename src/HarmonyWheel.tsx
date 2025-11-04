@@ -1,5 +1,22 @@
 /*
- * HarmonyWheel.tsx — v3.6.7 🎨 ENHARMONIC & UI FIXES
+ * HarmonyWheel.tsx — v3.8.0 🎯 TRANSPOSE FIX (FINAL!)
+ * 
+ * 🎯 v3.8.0 CRITICAL FIX:
+ * - Fixed sequencer baseKeyRef to use effectiveBaseKey (respects transpose!)
+ * - Bug: baseKeyRef synced to Eb even when transposed to C
+ * - Result: F and G (transposed chords) detected in Eb patterns → no match!
+ * - Now: baseKeyRef uses effectiveBaseKey, so F/G detected in C patterns → IV/V7 ✅
+ * 
+ * 🐛 v3.7.0 FIX:
+ * - Fixed TypeScript errors: moved transpose state declarations before use
+ * - Variables used at line 430 but declared at line 738 - now declared at line 374
+ * - Adopting semantic versioning: next will be v3.8.0, v3.9.0, v3.10.0, etc.
+ * 
+ * 🎯 v3.6.8 CRITICAL FIX:
+ * - Fixed "Play in C" transpose bug - patterns now use effectiveBaseKey not baseKey
+ * - Bug was: visitorShapes and homeDiatonic used Eb patterns even when transposed to C
+ * - Result: Detection went into Parallel (Gb) instead of staying in C space
+ * - Now: All pattern matching respects transpose state correctly
  * 
  * 🎨 v3.6.7 FIXES:
  * - Fixed G#dim naming: Now shows "G#dim" not "Abdim" (uses sharp spelling)
@@ -346,7 +363,7 @@ import {
   parseSongMetadata
 } from "./lib/songManager";
 
-const HW_VERSION = 'v3.6.7';
+const HW_VERSION = 'v3.8.0';
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -363,6 +380,10 @@ export default function HarmonyWheel(){
   };
   /* ---------- Core state ---------- */
   const [baseKey,setBaseKey]=useState<KeyName>("C");
+  
+  // Transpose state - must be declared early for effectiveBaseKey calculation
+  const [transpose, setTranspose] = useState(0); // Semitones (-12 to +12)
+  const [transposeBypass, setTransposeBypass] = useState(false); // Temporarily disable transpose
   
   // Skill level system
   type SkillLevel = "ROOKIE" | "NOVICE" | "SOPHOMORE" | "INTERMEDIATE" | "ADVANCED" | "EXPERT";
@@ -412,11 +433,23 @@ useEffect(() => {
   const subKey = useMemo(() => getSubKey(baseKey), [baseKey]);
   const parKey = useMemo(() => getParKey(baseKey), [baseKey]);
   
-  // Dynamic VISITOR_SHAPES (PAR entry chords) transposed for current baseKey
-  const visitorShapes = useMemo(() => getVisitorShapesFor(baseKey), [baseKey]);
+  // Helper: Transpose a key name by N semitones
+  const transposeKey = (key: KeyName, semitones: number): KeyName => {
+    const pc = NAME_TO_PC[key];
+    const newPc = (pc + semitones + 12) % 12;
+    const result = FLAT_NAMES[newPc]; // Always use flat names for keys
+    return result;
+  };
   
-  // Dynamic diatonic matching tables for HOME and PAR spaces
-  const homeDiatonic = useMemo(() => getDiatonicTablesFor(baseKey), [baseKey]);
+  // ✅ v3.6.7 FIX: Calculate transpose and effective key EARLY so patterns can use it
+  const effectiveTranspose = transposeBypass ? 0 : transpose;
+  const effectiveBaseKey = effectiveTranspose !== 0 ? transposeKey(baseKey, effectiveTranspose) : baseKey;
+  
+  // Dynamic VISITOR_SHAPES (PAR entry chords) - uses effectiveBaseKey (respects transpose!)
+  const visitorShapes = useMemo(() => getVisitorShapesFor(effectiveBaseKey), [effectiveBaseKey]);
+  
+  // Dynamic diatonic matching tables for HOME and PAR spaces - uses effectiveBaseKey (respects transpose!)
+  const homeDiatonic = useMemo(() => getDiatonicTablesFor(effectiveBaseKey), [effectiveBaseKey]);
   
   // ✅ v3.6.0 FIX: Ensure baseKeyRef always syncs with baseKey state
   // Critical for sequencer to use correct key context
@@ -717,11 +750,6 @@ useEffect(() => {
   // Playback controls
   const [isPlaying, setIsPlaying] = useState(false);
   const [tempo, setTempo] = useState(60); // BPM (beats per minute)
-  const [transpose, setTranspose] = useState(0); // Semitones (-12 to +12)
-  const [transposeBypass, setTransposeBypass] = useState(false); // Temporarily disable transpose
-  
-  // Computed transpose value (0 if bypassed)
-  const effectiveTranspose = transposeBypass ? 0 : transpose;
   
   // Debug: Log transpose changes
   useEffect(() => {
@@ -730,21 +758,9 @@ useEffect(() => {
       transposeBypass,
       effectiveTranspose,
       baseKey,
-      willBecomeKey: effectiveTranspose !== 0 ? transposeKey(baseKey, effectiveTranspose) : baseKey
+      willBecomeKey: effectiveBaseKey
     });
-  }, [transpose, transposeBypass, baseKey, effectiveTranspose]);
-  
-  // Helper: Transpose a key name by N semitones
-  const transposeKey = (key: KeyName, semitones: number): KeyName => {
-    const pc = NAME_TO_PC[key];
-    const newPc = (pc + semitones + 12) % 12;
-    const result = FLAT_NAMES[newPc]; // Always use flat names for keys
-    console.log(`🔄 transposeKey(${key}, ${semitones}) = ${result} (pc ${pc} → ${newPc})`);
-    return result;
-  };
-  
-  // Computed transposed base key
-  const effectiveBaseKey = effectiveTranspose !== 0 ? transposeKey(baseKey, effectiveTranspose) : baseKey;
+  }, [transpose, transposeBypass, baseKey, effectiveTranspose, effectiveBaseKey]);
   
   // Debug: Log effective base key
   useEffect(() => {
@@ -846,7 +862,7 @@ useEffect(() => {
   };
 
   const parseAndLoadSequence = ()=>{
-    const APP_VERSION = "v3.6.7-harmony-wheel";
+    const APP_VERSION = "v3.8.0-harmony-wheel";
     console.log('=== PARSE AND LOAD START ===');
     console.log('🏷️  APP VERSION:', APP_VERSION);
     console.log('Input text:', inputText);
@@ -1467,11 +1483,12 @@ useEffect(() => {
       const savedEvent = lastMidiEventRef.current;
       
       // ✅ v3.6.0 CRITICAL FIX: Force baseKeyRef sync before detection
+      // ✅ v3.8.0 CRITICAL FIX: Sync to effectiveBaseKey (respects transpose!)
+      // Bug: Was syncing to baseKey, so transpose didn't affect detection
+      // Example: In Eb with transpose to C, Ab→F transposed but detected in Eb patterns
       // Ensures sequencer chords are detected in correct key context
-      // Bug: When key changes to Eb, baseKey state updates but baseKeyRef.current
-      // doesn't sync in time, causing Bb to be detected in C space (shows "G")
-      baseKeyRef.current = baseKey;
-      console.log('🔑 [SEQ-FIX v3.6.0] baseKeyRef synced to:', baseKey);
+      baseKeyRef.current = effectiveBaseKey;
+      console.log('🔑 [SEQ-FIX v3.8.0] baseKeyRef synced to:', effectiveBaseKey, '(original baseKey:', baseKey, ')');
       
       // Simulate MIDI note-on
       rightHeld.current = new Set(midiNotes);
@@ -5004,6 +5021,6 @@ useEffect(() => {
   );
 }
 
-// HarmonyWheel v3.6.7 - G#dim shows correctly, bonus wedges hidden for students
+// HarmonyWheel v3.8.0 - Transpose FINALLY works! baseKeyRef uses effectiveBaseKey
 
-// EOF - HarmonyWheel.tsx v3.6.7
+// EOF - HarmonyWheel.tsx v3.8.0
