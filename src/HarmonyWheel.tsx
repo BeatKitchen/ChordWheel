@@ -1,5 +1,68 @@
 /*
- * HarmonyWheel.tsx — v3.11.1 🔒 LOCK BUTTON + EXPERT LINK
+ * HarmonyWheel.tsx — v3.12.1 🎹 UNIFORM LABEL SIZING
+ * 
+ * 🎹 v3.12.1 FIX:
+ * - Black key labels now use same sizing as white keys
+ * - Both use white key width (WW) as reference
+ * - Circle radius: WW * 0.4 (both black and white)
+ * - Font size: WW * 0.5 (both black and white)
+ * - Text Y offset: WW * 0.15 (both black and white)
+ * - Result: Uniform, consistent appearance across all keys
+ * 
+ * 🎼 v3.12.0 NEW FEATURE:
+ * - Note labels now use context-aware enharmonic spelling!
+ * - Uses existing pcNameForKey(pc, key) function from theory.ts
+ * - Sharp keys (G, D, A, E, B): Shows F#, C#, G#, D#, A#
+ * - Flat keys (C, F, Bb, Eb, Ab, Db, Gb): Shows Bb, Eb, Ab, Db, Gb
+ * - Respects current space: HOME (baseKey), SUB (subKey), PAR (parKey)
+ * - No complex rules needed - leverages existing chord detection logic!
+ * - Example: Fm chord (iv) shows Ab, E7 chord (V/vi) shows G#
+ * 
+ * 🎹 v3.11.9 IMPROVEMENTS:
+ * - Much larger circles: 80% of white key width (WW * 0.4 radius)
+ * - Much larger font: 50% of key width (WW * 0.5 fontSize)
+ * - Only flat names: Db, Eb, Gb, Ab, Bb (no sharps)
+ * - Labels rendered AFTER all keys (proper z-order, always on top)
+ * - 100% white opacity, thick black stroke (2px)
+ * - Black text for maximum contrast
+ * 
+ * 🎹 v3.11.8 IMPROVEMENTS:
+ * - White circles with black text (100% opacity)
+ * - Larger font size (10px, up from 8px/7px)
+ * - Slightly larger circles (r=11, up from 10)
+ * - Thicker stroke (1.5px) for better definition
+ * - Using flat names only (Db, Eb, Gb, Ab, Bb)
+ * - TODO: Investigate enharmonic spelling based on key signature
+ * 
+ * 🐛 v3.11.7 FIX:
+ * - Moved note label circles from y=-8 to y=18 (inside visible range)
+ * - Changed text from y=-4 to y=22
+ * - Both white and black keys now fully visible at top of keyboard
+ * - White key labels: white text on dark blue circle
+ * - Black key labels: white text on medium blue circle
+ * 
+ * 🎹 v3.11.6 IMPROVEMENTS:
+ * - Note labels only appear when key is active (held or highlighted)
+ * - White keys: Dark blue text (#1e3a8a) in dark blue circle, positioned ABOVE key
+ * - Black keys: Pale blue text (#1e40af) in light blue circle, positioned ABOVE key
+ * - Circles positioned at y=-8 (above SVG key area) so they don't look off-center
+ * - Includes both sharps and flats (C#/Db, D#/Eb, etc.)
+ * 
+ * 🎹 v3.11.5 IMPROVEMENTS:
+ * - Note labels moved to TOP of keys (y=14)
+ * - Changed to WHITE color (#ffffff)
+ * - Heavier font weight (700, bold)
+ * - Flats included (C#/Db, D#/Eb, etc.)
+ * 
+ * 🎹 v3.11.4 NEW:
+ * - Added note labels above piano keyboard (C, D, E, etc.)
+ * - Small grey text at bottom of white keys
+ * - Changed Expert mode button from blue to green (#39FF14)
+ * 
+ * 🐛 v3.11.2 FIX:
+ * - Changed "Expert mode (5)" from span to button for reliable clicking
+ * - Added stopPropagation to prevent event bubbling
+ * - Now guaranteed to work on all browsers/devices
  * 
  * 🎯 v3.11.1 IMPROVEMENTS:
  * - Lock button moved 40px lower (better positioning)
@@ -420,7 +483,7 @@ import {
   parseSongMetadata
 } from "./lib/songManager";
 
-const HW_VERSION = 'v3.11.1';
+const HW_VERSION = 'v3.12.1';
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -918,7 +981,7 @@ useEffect(() => {
   };
 
   const parseAndLoadSequence = ()=>{
-    const APP_VERSION = "v3.11.1-harmony-wheel";
+    const APP_VERSION = "v3.12.1-harmony-wheel";
     console.log('=== PARSE AND LOAD START ===');
     console.log('🏷️  APP VERSION:', APP_VERSION);
     console.log('Input text:', inputText);
@@ -4320,17 +4383,46 @@ useEffect(() => {
                   fontStyle:'italic'
                 }}>
                   To use sequencer, activate{' '}
-                  <span 
-                    onClick={() => setSkillLevel('EXPERT')}
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      console.log('🎯 Expert mode button clicked!');
+                      setSkillLevel('EXPERT');
+                    }}
                     style={{
-                      color: '#3B82F6',
+                      color: '#39FF14',
                       cursor: 'pointer',
                       textDecoration: 'underline',
-                      fontWeight: 600
+                      fontWeight: 600,
+                      background: 'rgba(57, 255, 20, 0.1)',
+                      border: '1px solid transparent',
+                      padding: '2px 4px',
+                      margin: '0 2px',
+                      borderRadius: '3px',
+                      font: 'inherit',
+                      fontSize: 11,
+                      fontStyle: 'normal',
+                      display: 'inline-block',
+                      position: 'relative',
+                      zIndex: 9999,
+                      pointerEvents: 'auto',
+                      userSelect: 'none',
+                      WebkitUserSelect: 'none',
+                      touchAction: 'manipulation'
+                    }}
+                    onMouseEnter={(e) => {
+                      console.log('🖱️ Mouse entered expert button');
+                      e.currentTarget.style.background = 'rgba(57, 255, 20, 0.2)';
+                      e.currentTarget.style.borderColor = '#39FF14';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = 'rgba(57, 255, 20, 0.1)';
+                      e.currentTarget.style.borderColor = 'transparent';
                     }}
                   >
                     Expert mode (5)
-                  </span>
+                  </button>
                 </div>
               )}
               
@@ -4418,6 +4510,11 @@ useEffect(() => {
                       const held=disp.has(m);
                       const highlighted = keyboardHighlightNotes.has(m);
                       const fillColor = held ? "#AEC9FF" : (highlighted ? "#FFE999" : "#f9fafb");
+                      
+                      // Get note name - use flats for black keys
+                      const noteNames = ['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
+                      const noteName = noteNames[m % 12];
+                      
                       return (
                         <g key={`w-${m}`}>
                           <rect x={x} y={0} width={WW} height={HW}
@@ -4468,8 +4565,14 @@ useEffect(() => {
                       const highlighted = keyboardHighlightNotes.has(m);
                       const fillColor = held ? "#6B93D6" : (highlighted ? "#D4B560" : "#1f2937");
                       const strokeColor = held ? "#4A7BC0" : (highlighted ? "#B8972D" : "#0a0a0a");
+                      
+                      // Get note name - use flats
+                      const noteNames = ['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
+                      const noteName = noteNames[m % 12];
+                      
                       return (
-                          <rect key={`b-${m}`} x={x} y={0} width={WB} height={HB}
+                        <g key={`b-${m}`}>
+                          <rect x={x} y={0} width={WB} height={HB}
                                 fill={fillColor} stroke={strokeColor}
                                 onMouseDown={()=>{
                                   lastInputWasPreviewRef.current = false; 
@@ -4508,6 +4611,82 @@ useEffect(() => {
                                     stopNote(m);
                                   }
                                 }} />
+                        </g>
+                      );
+                    })}
+                    
+                    {/* Note labels - rendered last so they're on top */}
+                    {Object.entries(whitePos).map(([mStr,x])=>{
+                      const m=+mStr;
+                      const held=disp.has(m);
+                      const highlighted = keyboardHighlightNotes.has(m);
+                      if (!held && !highlighted) return null;
+                      
+                      // ✅ v3.12.0: Smart enharmonic spelling based on key center
+                      const currentKey = visitorActiveRef.current ? parKey 
+                        : subdomActiveRef.current ? subKey 
+                        : baseKeyRef.current;
+                      const noteName = pcNameForKey(m % 12, currentKey);
+                      
+                      return (
+                        <g key={`wl-${m}`}>
+                          <circle
+                            cx={x + WW/2}
+                            cy={20}
+                            r={WW * 0.4}
+                            fill="#ffffff"
+                            stroke="#000000"
+                            strokeWidth={2}
+                          />
+                          <text 
+                            x={x + WW/2} 
+                            y={20 + WW * 0.15}
+                            textAnchor="middle" 
+                            fontSize={WW * 0.5}
+                            fontWeight={700}
+                            fill="#000000"
+                            style={{pointerEvents: 'none', userSelect: 'none'}}
+                          >
+                            {noteName}
+                          </text>
+                        </g>
+                      );
+                    })}
+                    {Object.entries(blackPos).map(([mStr,x])=>{
+                      const m=+mStr;
+                      const held=disp.has(m);
+                      const highlighted = keyboardHighlightNotes.has(m);
+                      if (!held && !highlighted) return null;
+                      
+                      // ✅ v3.12.0: Smart enharmonic spelling based on key center
+                      const currentKey = visitorActiveRef.current ? parKey 
+                        : subdomActiveRef.current ? subKey 
+                        : baseKeyRef.current;
+                      const noteName = pcNameForKey(m % 12, currentKey);
+                      
+                      return (
+                        <g key={`bl-${m}`}>
+                          {/* Same styling as white keys - use WW for sizing */}
+                          <circle
+                            cx={x + WB/2}
+                            cy={20}
+                            r={WW * 0.4}
+                            fill="#ffffff"
+                            stroke="#000000"
+                            strokeWidth={2}
+                          />
+                          <text 
+                            x={x + WB/2} 
+                            y={20 + WW * 0.15}
+                            textAnchor="middle" 
+                            fontSize={WW * 0.5}
+                            fontWeight={700}
+                            fill="#000000"
+                            style={{pointerEvents: 'none', userSelect: 'none'}}
+                          >
+                            {noteName}
+                          </text>
+                        </g>
                       );
                     })}
                   </svg>
@@ -5225,6 +5404,6 @@ useEffect(() => {
   );
 }
 
-// HarmonyWheel v3.11.1 - Lock button repositioned, expert mode text clickable
+// HarmonyWheel v3.12.1 - Uniform label sizing: black keys match white key dimensions
 
-// EOF - HarmonyWheel.tsx v3.11.1
+// EOF - HarmonyWheel.tsx v3.12.1
