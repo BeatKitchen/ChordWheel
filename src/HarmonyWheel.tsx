@@ -1,5 +1,17 @@
 /*
- * HarmonyWheel.tsx — v3.10.6 🐛 TYPESCRIPT FIX
+ * HarmonyWheel.tsx — v3.11.1 🔒 LOCK BUTTON + EXPERT LINK
+ * 
+ * 🎯 v3.11.1 IMPROVEMENTS:
+ * - Lock button moved 40px lower (better positioning)
+ * - "Expert mode (5)" text now blue, clickable, activates EXPERT mode
+ * - Makes it easier for beginners to discover sequencer feature
+ * 
+ * 🔒 v3.11.0 NEW FEATURE:
+ * - Added Lock button (positioned above sequencer display)
+ * - Locks space rotation (HOME/REL/SUB/PAR buttons disabled)
+ * - Prevents wheel from spinning when locked
+ * - Perfect for students exploring without accidental space changes
+ * - Amber lock icon (🔒) when locked, grey unlock (🔓) when open
  * 
  * 🐛 v3.10.6 FIX:
  * - Fixed TypeScript error: cast currentTarget to SVGElement
@@ -408,7 +420,7 @@ import {
   parseSongMetadata
 } from "./lib/songManager";
 
-const HW_VERSION = 'v3.10.6';
+const HW_VERSION = 'v3.11.1';
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -572,6 +584,9 @@ useEffect(() => {
   useEffect(() => { 
     showBonusWedgesRef.current = showBonusWedges; 
   }, [showBonusWedges]);
+  
+  /* ---------- Space Lock (v3.11.0) ---------- */
+  const [spaceLocked, setSpaceLocked] = useState(false);
   
   // Audio playback
   const [audioEnabled, setAudioEnabled] = useState(true); // Start with audio enabled
@@ -903,7 +918,7 @@ useEffect(() => {
   };
 
   const parseAndLoadSequence = ()=>{
-    const APP_VERSION = "v3.10.6-harmony-wheel";
+    const APP_VERSION = "v3.11.1-harmony-wheel";
     console.log('=== PARSE AND LOAD START ===');
     console.log('🏷️  APP VERSION:', APP_VERSION);
     console.log('Input text:', inputText);
@@ -2117,6 +2132,7 @@ useEffect(() => {
   };
 
   const subSpinEnter = ()=>{
+    if (spaceLocked) return; // ✅ v3.11.0: Locked
     if (subHasSpunRef.current) return;
     clearSubSpinTimer();
     setTargetRotation(IV_ROTATE_DEG ?? -168);
@@ -2126,6 +2142,7 @@ useEffect(() => {
     }, ROTATION_ANIM_MS + 20) as unknown as number;
   };
   const subSpinExit = ()=>{
+    if (spaceLocked) return; // ✅ v3.11.0: Locked
     clearSubSpinTimer();
     setTargetRotation(SUB_SPIN_DEG);
     subSpinTimerRef.current = window.setTimeout(()=>{
@@ -3025,6 +3042,7 @@ useEffect(() => {
   };
   
   const toggleVisitor = ()=>{
+    if (spaceLocked) return; // ✅ v3.11.0: Locked
     const on = !visitorActiveRef.current;
     if(on && subdomActiveRef.current){ subSpinExit(); setSubdomActive(false); subdomLatchedRef.current=false; subHasSpunRef.current=false; }
     if(on && relMinorActiveRef.current) setRelMinorActive(false);
@@ -3032,6 +3050,7 @@ useEffect(() => {
     if(on){ setActiveFn("I"); setCenterLabel(parKey); stopDimFade(); }
   };
   const toggleRelMinor = ()=>{
+    if (spaceLocked) return; // ✅ v3.11.0: Locked
     const on = !relMinorActiveRef.current;
     if(on && subdomActiveRef.current){ subSpinExit(); setSubdomActive(false); subdomLatchedRef.current=false; subHasSpunRef.current=false; }
     if(on && visitorActiveRef.current) setVisitorActive(false);
@@ -3039,6 +3058,7 @@ useEffect(() => {
     if(on){ setActiveFn("vi"); setCenterLabel("Am"); stopDimFade(); }
   };
   const toggleSubdom = ()=>{
+    if (spaceLocked) return; // ✅ v3.11.0: Locked
     const on = !subdomActiveRef.current;
     if(on){
       setVisitorActive(false); setRelMinorActive(false);
@@ -4126,6 +4146,34 @@ useEffect(() => {
 {/* -------- END BONUS BLOCK -------- */}
 
             </svg>
+            
+            {/* ✅ v3.11.0: Lock Button - positioned above sequencer display */}
+            <button
+              onClick={() => setSpaceLocked(!spaceLocked)}
+              style={{
+                position: 'absolute',
+                right: 40,
+                bottom: 60,  // ← v3.11.1: Moved 40px lower (was 100)
+                width: 32,
+                height: 32,
+                padding: 0,
+                border: `2px solid ${spaceLocked ? '#F59E0B' : '#374151'}`,
+                borderRadius: '50%',
+                background: spaceLocked ? '#78350F' : '#0a0a0a',
+                color: spaceLocked ? '#FCD34D' : '#9CA3AF',
+                cursor: "pointer",
+                fontSize: 16,
+                fontWeight: 700,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.2s',
+                zIndex: 10,
+              }}
+              title={spaceLocked ? "Unlock spaces & rotation" : "Lock spaces & rotation"}
+            >
+              {spaceLocked ? '🔒' : '🔓'}
+            </button>
           </div>
         </div>
 
@@ -4271,7 +4319,18 @@ useEffect(() => {
                   fontSize:11,
                   fontStyle:'italic'
                 }}>
-                  To use sequencer, activate Expert mode (5)
+                  To use sequencer, activate{' '}
+                  <span 
+                    onClick={() => setSkillLevel('EXPERT')}
+                    style={{
+                      color: '#3B82F6',
+                      cursor: 'pointer',
+                      textDecoration: 'underline',
+                      fontWeight: 600
+                    }}
+                  >
+                    Expert mode (5)
+                  </span>
                 </div>
               )}
               
@@ -5166,6 +5225,6 @@ useEffect(() => {
   );
 }
 
-// HarmonyWheel v3.10.6 - TypeScript fix for bonus overlay SVG element cast
+// HarmonyWheel v3.11.1 - Lock button repositioned, expert mode text clickable
 
-// EOF - HarmonyWheel.tsx v3.10.6
+// EOF - HarmonyWheel.tsx v3.11.1
