@@ -1,5 +1,9 @@
 /*
- * HarmonyWheel.tsx — v3.15.2 🎯 MIDI LATCH & LEGEND FIX
+ * HarmonyWheel.tsx — v3.15.3 🎯 MIDI LATCH & LEGEND FIX
+ * 
+ * 🔧 v3.15.3 FIXES:
+ * - Hub now shows "Fmaj7", "Dm7", etc. when clicking inner zone (with 7th)
+ * - Center label properly reflects the 7th chord being played
  * 
  * 🔧 v3.15.2 FIXES:
  * - Yellow canonical voicing only shows for wedge clicks, not MIDI input
@@ -725,7 +729,7 @@ import {
   parseSongMetadata
 } from "./lib/songManager";
 
-const HW_VERSION = 'v3.15.2';
+const HW_VERSION = 'v3.15.3';
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -1248,7 +1252,7 @@ useEffect(() => {
   };
 
   const parseAndLoadSequence = ()=>{
-    const APP_VERSION = "v3.15.2-harmony-wheel";
+    const APP_VERSION = "v3.15.3-harmony-wheel";
     console.log('=== PARSE AND LOAD START ===');
     console.log('🏷️  APP VERSION:', APP_VERSION);
     console.log('Input text:', inputText);
@@ -3954,7 +3958,23 @@ useEffect(() => {
     const absRootPos = preview.absChordRootPositionFromPcs(pcs, rootPc);
     const fitted = preview.fitNotesToWindowPreserveInversion(absRootPos, KBD_LOW, KBD_HIGH);
     setLatchedAbsNotes(fitted);
-    setActiveWithTrail(fn, realizeFunction(fn, renderKey));
+    
+    // ✅ v3.15.2: Update label to show 7th if playing with 7th
+    let chordLabel = realizeFunction(fn, renderKey);
+    if (with7th && chordDef) {
+      // Add 7th suffix based on chord quality
+      if (fn === "I" || fn === "IV") {
+        chordLabel += "maj7";
+      } else if (fn === "V7" || fn === "V/V" || fn === "V/vi") {
+        // Already has 7 in the function name, don't add
+      } else if (fn === "ii" || fn === "iii" || fn === "vi") {
+        chordLabel += "7";
+      } else if (fn === "vii°") {
+        chordLabel = chordLabel.replace("°", "°7");
+      }
+    }
+    
+    setActiveWithTrail(fn, chordLabel);
     
     if (audioEnabledRef.current) {
       playChordWithVoiceLeading(pcs);
@@ -6000,6 +6020,6 @@ useEffect(() => {
   );
 }
 
-// HarmonyWheel v3.15.2 - No yellow keys for MIDI input, only for wedge clicks
+// HarmonyWheel v3.15.3 - Hub shows 7th chord names (Fmaj7, Dm7, etc.)
 
-// EOF - HarmonyWheel.tsx v3.15.2
+// EOF - HarmonyWheel.tsx v3.15.3
