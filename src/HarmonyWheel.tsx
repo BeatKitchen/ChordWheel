@@ -1,5 +1,15 @@
 /*
- * HarmonyWheel.tsx — v3.15.0 🎯 MIDI LATCH & LEGEND FIX
+ * HarmonyWheel.tsx — v3.15.2 🎯 MIDI LATCH & LEGEND FIX
+ * 
+ * 🔧 v3.15.2 FIXES:
+ * - Yellow canonical voicing only shows for wedge clicks, not MIDI input
+ * - MIDI latched chords no longer show confusing yellow keys in different octave
+ * - Blue notes disappear on release, no yellow replacement
+ * 
+ * 🔧 v3.15.1 FIXES:
+ * - Fixed multiple timers being created (only create if none exists)
+ * - Clear activeFnRef directly in timeout (fixes yellow key persistence)
+ * - Yellow keys now properly disappear after 10 seconds
  * 
  * 🎯 v3.15.0 NEW FEATURES:
  * 
@@ -715,7 +725,7 @@ import {
   parseSongMetadata
 } from "./lib/songManager";
 
-const HW_VERSION = 'v3.15.0';
+const HW_VERSION = 'v3.15.2';
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -1060,22 +1070,22 @@ useEffect(() => {
           
           // ✅ v3.15.0: Start 10-second latch timer if all notes released
           const allNotesReleased = rightHeld.current.size === 0 && rightSus.current.size === 0;
-          if (allNotesReleased) {
-            // Clear any existing timer
-            if (midiLatchTimeoutRef.current !== null) {
-              clearTimeout(midiLatchTimeoutRef.current);
-            }
-            
-            // Start new 10-second timer to clear the latched chord
-            midiLatchTimeoutRef.current = window.setTimeout(() => {
+          if (allNotesReleased && midiLatchTimeoutRef.current === null) {
+            // Only start timer if one isn't already running
+            const timerId = window.setTimeout(() => {
+              console.log('⏰ TIMEOUT FIRING - clearing everything');
               latchedChordRef.current = null;
+              activeFnRef.current = ""; // ✅ Clear ref immediately
               setActiveFn("");
               setCenterLabel("");
               setLatchedAbsNotes([]); // ✅ Clear keyboard highlights
+              lastInputWasPreviewRef.current = false; // ✅ Clear preview flag
+              midiLatchTimeoutRef.current = null;
               console.log('⏱️ MIDI latch timeout - cleared display and keyboard highlights');
             }, 10000);
             
-            console.log('⏱️ MIDI latch timer started - 10s until clear');
+            midiLatchTimeoutRef.current = timerId;
+            console.log('⏱️ MIDI latch timer started - 10s until clear, timerId:', timerId);
           }
         }, 50);
       } else if (type===0xB0 && d1===64) {
@@ -1238,7 +1248,7 @@ useEffect(() => {
   };
 
   const parseAndLoadSequence = ()=>{
-    const APP_VERSION = "v3.15.0-harmony-wheel";
+    const APP_VERSION = "v3.15.2-harmony-wheel";
     console.log('=== PARSE AND LOAD START ===');
     console.log('🏷️  APP VERSION:', APP_VERSION);
     console.log('Input text:', inputText);
@@ -2091,9 +2101,11 @@ useEffect(() => {
           midiLatchTimeoutRef.current = null;
         }
         latchedChordRef.current = null;
+        activeFnRef.current = ""; // ✅ Clear ref immediately
         setActiveFn("");
         setCenterLabel("");
         setLatchedAbsNotes([]); // ✅ Clear keyboard highlights
+        lastInputWasPreviewRef.current = false; // ✅ Clear preview flag
         console.log('❌ MIDI latch manually cleared with X key');
       }
     };
@@ -2237,9 +2249,9 @@ useEffect(() => {
     latchedChordRef.current = { fn, label };
     console.log('💾 Saved latched chord:', { fn, label });
     if (midiLatchTimeoutRef.current !== null) {
+      console.log('🚫 Cancelling existing timeout (new chord detected):', midiLatchTimeoutRef.current);
       clearTimeout(midiLatchTimeoutRef.current);
       midiLatchTimeoutRef.current = null;
-      console.log('⏱️ Cancelled existing latch timer');
     }
     
     if(activeFnRef.current && activeFnRef.current!==fn){ makeTrail(); } 
@@ -2302,6 +2314,7 @@ useEffect(() => {
     const cleaned = t.replace(/^[#@]\s*/, '').trim();
     latchedChordRef.current = { fn: "", label: cleaned };
     if (midiLatchTimeoutRef.current !== null) {
+      console.log('🚫 Cancelling existing timeout (centerOnly called):', midiLatchTimeoutRef.current);
       clearTimeout(midiLatchTimeoutRef.current);
       midiLatchTimeoutRef.current = null;
     }
@@ -4289,8 +4302,9 @@ useEffect(() => {
     if (latchedAbsNotes.length > 0 && lastInputWasPreviewRef.current) {
       return new Set(latchedAbsNotes);
     }
-    // Priority 2: If active function but no manual play, calculate root position  
-    if (activeFnRef.current && rightHeld.current.size === 0) {
+    // Priority 2: If active function but no manual play, AND in preview mode, calculate root position
+    // ✅ v3.15.1: Only show canonical voicing for wedge clicks, not MIDI input
+    if (activeFnRef.current && rightHeld.current.size === 0 && lastInputWasPreviewRef.current) {
       const dispKey = (visitorActiveRef.current ? parKey : (subdomActiveRef.current ? subKey : baseKeyRef.current)) as KeyName;
       const fn = activeFnRef.current as Fn;
       const with7th = PREVIEW_USE_SEVENTHS || fn === "V7" || fn === "V/V" || fn === "V/vi";
@@ -5986,6 +6000,6 @@ useEffect(() => {
   );
 }
 
-// HarmonyWheel v3.15.0 - MIDI latch (10s auto-clear), legend fix (Subdominant for beginners)
+// HarmonyWheel v3.15.2 - No yellow keys for MIDI input, only for wedge clicks
 
-// EOF - HarmonyWheel.tsx v3.15.0
+// EOF - HarmonyWheel.tsx v3.15.2
