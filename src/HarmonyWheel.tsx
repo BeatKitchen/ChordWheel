@@ -1,5 +1,10 @@
 /*
- * HarmonyWheel.tsx — v3.6.6 🐛 BUG FIXES (CORRECTED)
+ * HarmonyWheel.tsx — v3.6.7 🎨 ENHARMONIC & UI FIXES
+ * 
+ * 🎨 v3.6.7 FIXES:
+ * - Fixed G#dim naming: Now shows "G#dim" not "Abdim" (uses sharp spelling)
+ * - Bug was: dim fallback used flat names array instead of dimRootName logic
+ * - Bonus wedges now hidden in all skill levels except EXPERT (less confusing for students)
  * 
  * 🐛 v3.6.6 FIXES:
  * - Fixed roman numeral parsing CORRECTLY (uppercase IV now works)
@@ -341,7 +346,7 @@ import {
   parseSongMetadata
 } from "./lib/songManager";
 
-const HW_VERSION = 'v3.6.6';
+const HW_VERSION = 'v3.6.7';
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -841,7 +846,7 @@ useEffect(() => {
   };
 
   const parseAndLoadSequence = ()=>{
-    const APP_VERSION = "v3.6.6-harmony-wheel";
+    const APP_VERSION = "v3.6.7-harmony-wheel";
     console.log('=== PARSE AND LOAD START ===');
     console.log('🏷️  APP VERSION:', APP_VERSION);
     console.log('Input text:', inputText);
@@ -2809,8 +2814,12 @@ useEffect(() => {
       const pcsRH=new Set(rhs.map(pcFromMidi));
       const has7=subsetOf(sev, pcsRH) , hasTri=subsetOf(tri, pcsRH);
       if(has7 || hasTri){
-        const names = ["C","C#","D","Eb","E","F","F#","G","Ab","A","Bb","B"];
-        const label=has7?`${names[rootPc]}dim7`:`${names[rootPc]}dim`;
+        // ✅ v3.6.7 FIX: Use dimRootName for proper sharp spelling (G#dim not Abdim)
+        // Import dimRootName logic: Bb(10), Eb(3), C#(1), else use sharps
+        const dimName = (pc: number) => 
+          pc===10 ? "Bb" : (pc===3 ? "Eb" : (pc===1 ? "C#" : 
+          ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"][pc]));
+        const label=has7?`${dimName(rootPc)}dim7`:`${dimName(rootPc)}dim`;
         const mapped = visitorActiveRef.current ? (mapDim7_EbVisitor(pcsRel) || mapDimRootToFn_ByBottom(rootPc)) : mapDimRootToFn_ByBottom(rootPc);
         if(mapped){ setActiveWithTrail(mapped, label); return; }
         centerOnly(label); return;
@@ -3820,8 +3829,8 @@ useEffect(() => {
               {/* (kept exactly as in your v2.30.0 block) */}
               {/* 
               {/* -------- BEGIN BONUS BLOCK -------- */}
-{/* Persistent bonus wedges when toggle is on (50% opacity) */}
-{showBonusWedges && !bonusActive && (() => {
+{/* Persistent bonus wedges when toggle is on (50% opacity) - EXPERT only */}
+{showBonusWedges && !bonusActive && skillLevel === "EXPERT" && (() => {
   const toRad = (deg:number) => (deg - 90) * Math.PI/180;
   const arc = (cx:number, cy:number, r:number, a0:number, a1:number) => {
     const x0 = cx + r * Math.cos(toRad(a0));
@@ -4995,6 +5004,6 @@ useEffect(() => {
   );
 }
 
-// HarmonyWheel v3.6.6 - Roman numerals ACTUALLY fixed (IV → Ab, iv → Abm)
+// HarmonyWheel v3.6.7 - G#dim shows correctly, bonus wedges hidden for students
 
-// EOF - HarmonyWheel.tsx v3.6.6
+// EOF - HarmonyWheel.tsx v3.6.7
