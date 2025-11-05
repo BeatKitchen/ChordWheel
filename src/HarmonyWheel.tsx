@@ -1,5 +1,30 @@
 /*
- * HarmonyWheel.tsx — v3.17.8 🎹 Clockwise Keys + Fixed Layout!
+ * HarmonyWheel.tsx — v3.17.11 🎹 PAR Space Fix + Piano Highlights Fix!
+ * 
+ * 🐛 v3.17.11 CRITICAL BUG FIXES:
+ * - **PAR space Eb bug**: Eb/Ab/Db no longer exit PAR when already in PAR
+ * - In C minor (PAR), Eb is ♭III (diatonic) - shouldn't jump to HOME
+ * - Only enter PAR from HOME/SUB when playing Eb/Ab/Db
+ * - **Piano highlights stick**: Clear lastInputWasPreviewRef when unlatching
+ * - Yellow canonical notes now properly clear on wedge unlatch
+ * 
+ * ✨ v3.17.10 NEW FEATURES:
+ * - **Shift indicator**: Hold Shift to see 7th chord types (M7, m7, 7, ø7)
+ * - **Latch mode**: Click active wedge to clear/unlatch it
+ * - **Clear hub**: Clicking selected wedge clears center label
+ * - Shift state tracked globally with visual feedback
+ * - Performance keys show chord quality when Shift held
+ * 
+ * 🐛 v3.17.10 BUG FIX (TODO):
+ * - PAR space Eb wedge issue - investigating
+ * 
+ * 🎨 v3.17.9 UI/UX IMPROVEMENTS:
+ * - **Clear open state**: Yellow border (2px), prominent ✕ close button, label "Performance Pad"
+ * - **Clear closed state**: Gray button with hover effect, ▶ arrow indicator
+ * - **Consistent messaging**: "Performance Pad" in both states
+ * - **Better visual hierarchy**: Close button stands out, full-width drawer
+ * - **Hover feedback**: Closed button lights up on hover
+ * - No more confusion about open/closed state!
  * 
  * 🎨 v3.17.8 LAYOUT FIXES:
  * - **Clockwise key order**: Keys now match wheel clockwise from I
@@ -928,7 +953,7 @@ import {
   parseSongMetadata
 } from "./lib/songManager";
 
-const HW_VERSION = 'v3.17.8';
+const HW_VERSION = 'v3.17.11';
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -1162,6 +1187,9 @@ useEffect(() => {
   const keyboardHeldNotesRef = useRef<Set<number>>(new Set()); // Track which keyboard notes are held
   const lastPlayedWith7thRef = useRef<boolean | null>(null); // Track if last chord had 7th
   const currentHeldFnRef = useRef<Fn | null>(null); // Track which function is being held
+  
+  // ✅ v3.17.10: Shift key state for visual indicator
+  const [shiftHeld, setShiftHeld] = useState(false);
   
   // Help overlay
   const [showHelp, setShowHelp] = useState(false);
@@ -1494,7 +1522,7 @@ useEffect(() => {
   };
 
   const parseAndLoadSequence = ()=>{
-    const APP_VERSION = "v3.17.8-harmony-wheel";
+    const APP_VERSION = "v3.17.11-harmony-wheel";
     console.log('=== PARSE AND LOAD START ===');
     console.log('🏷️  APP VERSION:', APP_VERSION);
     console.log('Input text:', inputText);
@@ -2288,6 +2316,11 @@ useEffect(() => {
   // Global keyboard handler for arrow keys and Enter (when not in textarea)
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      // ✅ v3.17.10: Track shift key for visual indicator
+      if (e.key === 'Shift') {
+        setShiftHeld(true);
+      }
+      
       // Only handle if NOT in textarea or input field
       const activeTag = document.activeElement?.tagName;
       if (activeTag === 'TEXTAREA' || activeTag === 'INPUT') return;
@@ -2475,8 +2508,18 @@ useEffect(() => {
       }
     };
     
+    const handleGlobalKeyUp = (e: KeyboardEvent) => {
+      if (e.key === 'Shift') {
+        setShiftHeld(false);
+      }
+    };
+    
     window.addEventListener('keydown', handleGlobalKeyDown);
-    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+    window.addEventListener('keyup', handleGlobalKeyUp);
+    return () => {
+      window.removeEventListener('keydown', handleGlobalKeyDown);
+      window.removeEventListener('keyup', handleGlobalKeyUp);
+    };
   }, [inputText, sequence, seqIndex, centerLabel]); // Re-attach when these change
 
   // Playback timer effect
@@ -3334,7 +3377,9 @@ useEffect(() => {
         const eb   = isSubsetIn([3,7,10], S) || isSubsetIn([3,7,10,2], S);
         const ab   = isSubsetIn([8,0,3], S) || isSubsetIn([8,0,3,6], S);
         const db   = isSubsetIn([1,5,8], S) || isSubsetIn([1,5,8,11], S);
-        if (eb || ab || db){
+        
+        // ✅ v3.17.11: Don't enter PAR if already in PAR (Eb/Ab/Db are diatonic in minor)
+        if ((eb || ab || db) && !visitorActiveRef.current){
           subdomLatchedRef.current = false;
           subSpinExit();
           setSubdomActive(false);
@@ -4007,6 +4052,16 @@ useEffect(() => {
       return (
         <g key={fn} 
            onMouseDown={(e)=>{
+             // ✅ v3.17.10: Latch mode - clicking active wedge clears it
+             if (isActive) {
+               console.log('🔓 Unlatching active wedge:', fn);
+               setActiveFn("");
+               setCenterLabel("");
+               setLatchedAbsNotes([]);
+               lastInputWasPreviewRef.current = false; // ✅ v3.17.11: Clear preview flag to remove yellow highlights
+               return;
+             }
+             
              wedgeHeldRef.current = true; // Mark wedge as held
              currentHeldFnRef.current = fn; // Remember which function
              
@@ -6403,34 +6458,37 @@ useEffect(() => {
                 
                 {/* Row 1: Performance Mode */}
                 <div style={{display:'flex', gap:8, alignItems:'center', flexWrap:'wrap'}}>
-                  {/* ✅ v3.17.4: Performance Mode - musical ordering */}
+                  {/* ✅ v3.17.9: Clear open/closed states */}
                   {performanceMode ? (
+                    /* OPEN STATE - Yellow border, close button prominent */
                     <div style={{ 
                       display: 'flex', 
                       gap: 4, 
                       alignItems: 'center',
                       padding: '6px 8px',
-                      border: '1px solid #F2D74B',
+                      border: '2px solid #F2D74B',
                       borderRadius: 6,
-                      background: '#332810'
+                      background: '#332810',
+                      width: '100%'
                     }}>
-                      {/* Performance toggle inside block - no internal border */}
+                      {/* Close button - prominent X */}
                       <button
                         onClick={() => setPerformanceMode(false)}
-                        title="Disable Performance Mode"
+                        title="Close Performance Pad"
                         style={{
-                          padding:"5px 8px", 
-                          border:'none', 
+                          padding:"5px 9px", 
+                          border:'1px solid #F2D74B', 
                           borderRadius:4, 
                           background: '#1a1a1a', 
                           color: '#F2D74B',
                           cursor: 'pointer',
                           fontSize:14,
                           lineHeight: 1,
-                          marginRight: 2
+                          marginRight: 2,
+                          fontWeight: 700
                         }}
                       >
-                        🎹
+                        ✕
                       </button>
                       
                       {[
@@ -6500,36 +6558,58 @@ useEffect(() => {
                             <div style={{
                               fontSize: 9,
                               fontWeight: 600,
-                              color: isFlashing ? '#000' : '#888',
+                              color: isFlashing ? '#000' : (shiftHeld ? color : '#888'),
                               marginTop: 2,
                               lineHeight: 1,
                               whiteSpace: 'nowrap'
-                            }}>{fn}</div>
+                            }}>
+                              {shiftHeld ? (() => {
+                                // Show 7th chord type when shift held
+                                const chordType = {
+                                  'I': 'M7', 'IV': 'M7',  // Major 7th
+                                  'ii': 'm7', 'iii': 'm7', 'vi': 'm7', 'iv': 'm7',  // Minor 7th
+                                  'V': '7', 'V7': '7', 'V/V': '7', 'V/vi': '7', 'V/ii': '7',  // Dominant 7th
+                                  '♭VII': '7',
+                                  'Bm7♭5': 'ø7'  // Half-diminished
+                                }[fn] || '7';
+                                return chordType;
+                              })() : fn}
+                            </div>
                           </div>
                         );
                       })}
                     </div>
                   ) : (
-                    /* Collapsed state with hint */
+                    /* CLOSED STATE - Subtle gray button with open icon */
                     <button
                       onClick={() => setPerformanceMode(true)}
-                      title="Enable Performance Mode - Keys 1-0,- trigger chords"
+                      title="Open Performance Pad - Use keyboard 1-0,-,= to trigger chords"
                       style={{
                         padding:"8px 12px", 
-                        border:'1px solid #374151', 
+                        border:'1px solid #4B5563', 
                         borderRadius:6, 
-                        background: '#111', 
-                        color: '#9CA3AF',
+                        background: '#1F2937', 
+                        color: '#D1D5DB',
                         cursor: 'pointer',
                         fontSize:11,
                         lineHeight: 1,
                         display: 'flex',
                         alignItems: 'center',
-                        gap: 6
+                        gap: 8,
+                        transition: 'all 0.2s'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = '#374151';
+                        e.currentTarget.style.borderColor = '#6B7280';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = '#1F2937';
+                        e.currentTarget.style.borderColor = '#4B5563';
                       }}
                     >
                       <span style={{fontSize:14}}>🎹</span>
-                      <span>Keyboard Pad</span>
+                      <span style={{fontWeight: 500}}>Performance Pad</span>
+                      <span style={{fontSize:10, opacity:0.6}}>▶</span>
                     </button>
                   )}
                 </div>
@@ -6701,6 +6781,6 @@ useEffect(() => {
   );
 }
 
-// HarmonyWheel v3.17.8 - Clockwise keys + legend left + fixed scrolling
+// HarmonyWheel v3.17.11 - FIXED: PAR Eb exit bug + piano highlights sticking
 
-// EOF - HarmonyWheel.tsx v3.17.8
+// EOF - HarmonyWheel.tsx v3.17.11
