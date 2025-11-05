@@ -1,7 +1,7 @@
 /*
- * HarmonyWheel.tsx — v3.17.60 🎯 Legend INSIDE Wheel Container!
+ * HarmonyWheel.tsx — v3.17.61 🎯 Legend INSIDE Wheel Container!
  * 
- * 🎯 v3.17.60 KEY FIX:
+ * 🎯 v3.17.61 KEY FIX:
  * - **Legend moved INSIDE wheel container** (before transformed SVG child)
  * - Transform creates new stacking context - was breaking z-index
  * - Legend now: wheel container > legend (z:1) > transformed SVG
@@ -1133,7 +1133,7 @@ import {
   parseSongMetadata
 } from "./lib/songManager";
 
-const HW_VERSION = 'v3.17.60';
+const HW_VERSION = 'v3.17.61';
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -1374,7 +1374,7 @@ useEffect(() => {
   // Help overlay
   const [showHelp, setShowHelp] = useState(false);
   
-  // ✅ v3.17.60: Track window size - use 768px breakpoint (more standard)
+  // ✅ v3.17.61: Track window size - use 768px breakpoint (more standard)
   const [isDesktop, setIsDesktop] = useState(true); // Default true to avoid flicker
   
   useEffect(() => {
@@ -1386,6 +1386,28 @@ useEffect(() => {
     };
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
+  }, []);
+  
+  // ✅ v3.17.61: Initialize audio on first user interaction (mobile requirement)
+  useEffect(() => {
+    const initAudio = () => {
+      console.log('🎵 First touch - initializing audio context');
+      const ctx = getAudioContext();
+      if (ctx.state === 'suspended') {
+        ctx.resume().then(() => {
+          console.log('✅ Audio context initialized on touch');
+        });
+      }
+    };
+    
+    // Listen for first touch/click
+    document.addEventListener('touchstart', initAudio, { once: true });
+    document.addEventListener('click', initAudio, { once: true });
+    
+    return () => {
+      document.removeEventListener('touchstart', initAudio);
+      document.removeEventListener('click', initAudio);
+    };
   }, []);
   
   // ✅ v3.17.24: Button pulse animation when key pressed
@@ -1719,7 +1741,7 @@ useEffect(() => {
   };
 
   const parseAndLoadSequence = ()=>{
-    const APP_VERSION = "v3.17.60-harmony-wheel";
+    const APP_VERSION = "v3.17.61-harmony-wheel";
     console.log('=== PARSE AND LOAD START ===');
     console.log('🏷️  APP VERSION:', APP_VERSION);
     console.log('Input text:', inputText);
@@ -4260,7 +4282,7 @@ useEffect(() => {
         <g key={fn} 
            style={{touchAction: 'none', cursor: 'pointer'}}
            onPointerDown={(e)=>{
-             // ✅ v3.17.60: Touch support - pointer events work for mouse + touch
+             // ✅ v3.17.61: Touch support - pointer events work for mouse + touch
              e.preventDefault(); // Prevent default touch behaviors
              
              // ✅ v3.17.10: Latch mode - clicking active wedge clears it
@@ -4326,7 +4348,7 @@ useEffect(() => {
              previewFn(fn, playWith7th);
            }}
            onPointerEnter={(e)=>{
-             // ✅ v3.17.60: Pointer events for touch + mouse
+             // ✅ v3.17.61: Pointer events for touch + mouse
              // If dragging from another wedge, activate this wedge
              console.log('🔍 onPointerEnter:', fn, 'buttons:', e.buttons, 'wedgeHeld:', wedgeHeldRef.current, 'currentFn:', currentHeldFnRef.current);
              
@@ -4518,7 +4540,7 @@ useEffect(() => {
              }
            }}
            onPointerUp={()=>{
-             // ✅ v3.17.60: Touch support
+             // ✅ v3.17.61: Touch support
              console.log('🛑 Pointer up on wedge, releasing');
              wedgeHeldRef.current = false; // Release wedge
              currentHeldFnRef.current = null;
@@ -4540,7 +4562,7 @@ useEffect(() => {
              }
            }}
            onPointerLeave={(e)=>{
-             // ✅ v3.17.60: Touch support
+             // ✅ v3.17.61: Touch support
              // If pointer button is still down, we're dragging - don't clear refs!
              if (e.buttons === 1) {
                console.log('🔄 Pointer button still down, keeping drag state');
@@ -4798,9 +4820,14 @@ useEffect(() => {
     if (!audioContextRef.current) {
       audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
     }
-    // ✅ v3.17.60: Resume audio context on mobile (required by iOS/Android)
+    // ✅ v3.17.61: Resume audio context on mobile (required by iOS/Android)
     if (audioContextRef.current.state === 'suspended') {
-      audioContextRef.current.resume();
+      console.log('🔊 Audio context suspended, resuming...');
+      audioContextRef.current.resume().then(() => {
+        console.log('✅ Audio context resumed successfully');
+      }).catch(err => {
+        console.error('❌ Failed to resume audio context:', err);
+      });
     }
     return audioContextRef.current;
   };
@@ -4847,9 +4874,11 @@ useEffect(() => {
     
     const mainGain = ctx.createGain();
     mainGain.gain.value = 0;
-    mainGain.gain.linearRampToValueAtTime(0.6 * velocity, now + 0.015);
-    mainGain.gain.linearRampToValueAtTime(0.45 * velocity, now + 0.08);
-    mainGain.gain.linearRampToValueAtTime(0.4 * velocity, now + 0.3);
+    // ✅ v3.17.61: Boosted for mobile (was 0.6, 0.45, 0.4)
+    const mobileBoost = !isDesktop ? 1.5 : 1.0;
+    mainGain.gain.linearRampToValueAtTime(0.6 * velocity * mobileBoost, now + 0.015);
+    mainGain.gain.linearRampToValueAtTime(0.45 * velocity * mobileBoost, now + 0.08);
+    mainGain.gain.linearRampToValueAtTime(0.4 * velocity * mobileBoost, now + 0.3);
     
     const filter = ctx.createBiquadFilter();
     filter.type = 'lowpass';
@@ -5127,7 +5156,7 @@ useEffect(() => {
         WebkitTouchCallout:'none'
       }}>
 
-        {/* ✅ v3.17.60: Legend - moved up to reduce overlap */}
+        {/* ✅ v3.17.61: Legend - moved up to reduce overlap */}
         {isDesktop && (
           <div style={{
             position:'absolute',
@@ -5245,7 +5274,7 @@ useEffect(() => {
           </div>
         )}
 
-        {/* BKS Logo Header with Emblem + Help Button - v3.17.60: High z-index */}
+        {/* BKS Logo Header with Emblem + Help Button - v3.17.61: High z-index */}
         <div style={{marginBottom:0, position:'relative', zIndex:10002, display:'flex', justifyContent:'space-between', alignItems:'flex-start'}}>
           <div style={{position:'relative', marginLeft: isDesktop ? 140 : '2%'}}>
             <svg width="300" height="44" viewBox="0 0 400 70" preserveAspectRatio="xMinYMin meet" style={{opacity:0.85, display:'block'}}>
@@ -5304,7 +5333,7 @@ useEffect(() => {
           </div>
           </div>
           
-          {/* Skill Wheel only - top right - v3.17.60: High z-index for clickability */}
+          {/* Skill Wheel only - top right - v3.17.61: High z-index for clickability */}
           <div style={{
             display:'flex', 
             alignItems:'flex-start', 
@@ -5318,7 +5347,7 @@ useEffect(() => {
           </div>
         </div>
 
-        {/* Wheel - v3.17.60: Bigger on mobile, matches keyboard width */}
+        {/* Wheel - v3.17.61: Bigger on mobile, matches keyboard width */}
         <div style={{position:'relative', width:'100%', maxWidth:WHEEL_W, margin:'0 auto', marginTop:-30, zIndex:1000}}>
 
         {/* Wheel - centered as before */}
@@ -5336,7 +5365,7 @@ useEffect(() => {
              }}>
           <div style={{...wrapperStyle, position:'relative', zIndex:10}}>
             <svg width="100%" height="100%" viewBox={`0 0 ${WHEEL_W} ${WHEEL_H}`} className="select-none" style={{display:'block', userSelect: 'none', WebkitUserSelect: 'none', position:'relative', zIndex:10, maxWidth:'100%', maxHeight:'100%', touchAction:'none'}}>
-  {/* ✅ v3.17.60: Black backing circle - slightly larger for border effect */}
+  {/* ✅ v3.17.61: Black backing circle - slightly larger for border effect */}
   <circle cx={260} cy={260} r={224} fill="#111" />
   
   {/* Labels moved to status bar area */}
@@ -5573,7 +5602,7 @@ useEffect(() => {
               style={{
                 position: 'absolute',
                 right: 40,
-                bottom: isDesktop ? 120 : 60,  // ← v3.17.60: LOWER on mobile (was backwards!)
+                bottom: isDesktop ? 120 : 60,  // ← v3.17.61: LOWER on mobile (was backwards!)
                 width: 32,
                 height: 32,
                 padding: 0,
@@ -6148,7 +6177,7 @@ useEffect(() => {
                 </div>
                 </div>
                 
-                {/* Guitar Tab - v3.17.60: Always visible, scales on mobile */}
+                {/* Guitar Tab - v3.17.61: Always visible, scales on mobile */}
                 <div style={{
                   border:'1px solid #374151',
                   borderRadius:8,
@@ -7084,6 +7113,6 @@ useEffect(() => {
   );
 }
 
-// HarmonyWheel v3.17.60 - Legend inside wheel container (same stacking context as transform)
+// HarmonyWheel v3.17.61 - Legend inside wheel container (same stacking context as transform)
 
-// EOF - HarmonyWheel.tsx v3.17.60
+// EOF - HarmonyWheel.tsx v3.17.61
