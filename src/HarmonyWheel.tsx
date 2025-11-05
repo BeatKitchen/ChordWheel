@@ -1,7 +1,7 @@
 /*
- * HarmonyWheel.tsx — v3.17.48 🎯 Legend INSIDE Wheel Container!
+ * HarmonyWheel.tsx — v3.17.49 🎯 Legend INSIDE Wheel Container!
  * 
- * 🎯 v3.17.48 KEY FIX:
+ * 🎯 v3.17.49 KEY FIX:
  * - **Legend moved INSIDE wheel container** (before transformed SVG child)
  * - Transform creates new stacking context - was breaking z-index
  * - Legend now: wheel container > legend (z:1) > transformed SVG
@@ -1133,7 +1133,7 @@ import {
   parseSongMetadata
 } from "./lib/songManager";
 
-const HW_VERSION = 'v3.17.48';
+const HW_VERSION = 'v3.17.49';
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -1374,7 +1374,7 @@ useEffect(() => {
   // Help overlay
   const [showHelp, setShowHelp] = useState(false);
   
-  // ✅ v3.17.48: Track window size - use 768px breakpoint (more standard)
+  // ✅ v3.17.49: Track window size - use 768px breakpoint (more standard)
   const [isDesktop, setIsDesktop] = useState(true); // Default true to avoid flicker
   
   useEffect(() => {
@@ -1719,7 +1719,7 @@ useEffect(() => {
   };
 
   const parseAndLoadSequence = ()=>{
-    const APP_VERSION = "v3.17.48-harmony-wheel";
+    const APP_VERSION = "v3.17.49-harmony-wheel";
     console.log('=== PARSE AND LOAD START ===');
     console.log('🏷️  APP VERSION:', APP_VERSION);
     console.log('Input text:', inputText);
@@ -4260,7 +4260,7 @@ useEffect(() => {
         <g key={fn} 
            style={{touchAction: 'none', cursor: 'pointer'}}
            onPointerDown={(e)=>{
-             // ✅ v3.17.48: Touch support - pointer events work for mouse + touch
+             // ✅ v3.17.49: Touch support - pointer events work for mouse + touch
              e.preventDefault(); // Prevent default touch behaviors
              
              // ✅ v3.17.10: Latch mode - clicking active wedge clears it
@@ -4326,7 +4326,7 @@ useEffect(() => {
              previewFn(fn, playWith7th);
            }}
            onPointerEnter={(e)=>{
-             // ✅ v3.17.48: Pointer events for touch + mouse
+             // ✅ v3.17.49: Pointer events for touch + mouse
              // If dragging from another wedge, activate this wedge
              console.log('🔍 onPointerEnter:', fn, 'buttons:', e.buttons, 'wedgeHeld:', wedgeHeldRef.current, 'currentFn:', currentHeldFnRef.current);
              
@@ -4518,7 +4518,7 @@ useEffect(() => {
              }
            }}
            onPointerUp={()=>{
-             // ✅ v3.17.48: Touch support
+             // ✅ v3.17.49: Touch support
              console.log('🛑 Pointer up on wedge, releasing');
              wedgeHeldRef.current = false; // Release wedge
              currentHeldFnRef.current = null;
@@ -4540,7 +4540,7 @@ useEffect(() => {
              }
            }}
            onPointerLeave={(e)=>{
-             // ✅ v3.17.48: Touch support
+             // ✅ v3.17.49: Touch support
              // If pointer button is still down, we're dragging - don't clear refs!
              if (e.buttons === 1) {
                console.log('🔄 Pointer button still down, keeping drag state');
@@ -5094,8 +5094,8 @@ useEffect(() => {
   return (
     <div style={{background:'#111', color:'#fff', minHeight:'100vh', maxHeight:'100vh', overflow:'auto', padding:8, fontFamily:'ui-sans-serif, system-ui', userSelect:'none'}}>
       <div style={{
-        minWidth:900, 
-        width:'100%', 
+        minWidth: isDesktop ? 900 : 'auto',
+        width: isDesktop ? '100%' : 900,
         maxWidth:900,
         margin:'0 auto', 
         border:'1px solid #374151', 
@@ -5109,12 +5109,12 @@ useEffect(() => {
         marginBottom: isDesktop ? 0 : '-550px' // Compensate for scale
       }}>
 
-        {/* ✅ v3.17.48: Legend - only on desktop (>= 900px) */}
+        {/* ✅ v3.17.49: Legend - aligned with keyboard left edge */}
         {isDesktop && (
           <div style={{
             position:'absolute',
             top:110,
-            left:16,
+            left:8,
             background:'#1a1a1a',
             border:'2px solid #4B5563',
             borderRadius:8,
@@ -5228,7 +5228,7 @@ useEffect(() => {
         )}
 
         {/* BKS Logo Header with Emblem + Help Button */}
-        <div style={{marginBottom:0, paddingLeft:8, position:'relative', zIndex:1, display:'flex', justifyContent:'space-between', alignItems:'flex-start'}}>
+        <div style={{marginBottom:0, position:'relative', zIndex:1, display:'flex', justifyContent:'space-between', alignItems:'flex-start'}}>
           <div style={{position:'relative'}}>
             <svg width="300" height="44" viewBox="0 0 400 70" preserveAspectRatio="xMinYMin meet" style={{opacity:0.85, display:'block'}}>
             <g transform="matrix(0.733705,0,0,0.733705,2.67091,-1.60525)">
@@ -5293,7 +5293,7 @@ useEffect(() => {
           </div>
         </div>
 
-        {/* Wheel - v3.17.48: Fixed desktop size, responsive mobile */}
+        {/* Wheel - v3.17.49: Fixed desktop size, responsive mobile */}
         <div style={{position:'relative', width:WHEEL_W, maxWidth:'100%', margin:'0 auto', marginTop:-30, zIndex:1000}}>
 
         {/* Wheel - centered as before */}
@@ -5311,7 +5311,7 @@ useEffect(() => {
              }}>
           <div style={{...wrapperStyle, position:'relative', zIndex:10}}>
             <svg width="100%" height="100%" viewBox={`0 0 ${WHEEL_W} ${WHEEL_H}`} className="select-none" style={{display:'block', userSelect: 'none', WebkitUserSelect: 'none', position:'relative', zIndex:10, maxWidth:'100%', maxHeight:'100%', touchAction:'none'}}>
-  {/* ✅ v3.17.48: Black backing circle to block legend behind transparent wedges */}
+  {/* ✅ v3.17.49: Black backing circle to block legend behind transparent wedges */}
   <circle cx={260} cy={260} r={220} fill="#111" />
   
   {/* Labels moved to status bar area */}
@@ -7057,6 +7057,6 @@ useEffect(() => {
   );
 }
 
-// HarmonyWheel v3.17.48 - Legend inside wheel container (same stacking context as transform)
+// HarmonyWheel v3.17.49 - Legend inside wheel container (same stacking context as transform)
 
-// EOF - HarmonyWheel.tsx v3.17.48
+// EOF - HarmonyWheel.tsx v3.17.49
