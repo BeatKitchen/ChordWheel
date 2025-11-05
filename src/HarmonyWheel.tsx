@@ -1,5 +1,20 @@
 /*
- * HarmonyWheel.tsx — v3.17.85 🎯 Legend INSIDE Wheel Container!
+ * HarmonyWheel.tsx — v3.17.87 🔧 Audio Playback Fix!
+ * 
+ * 🔧 v3.17.87 CRITICAL FIX:
+ * - **Fixed stepNext audio capture timing issue**
+ * - Bug: `latchedAbsNotesRef` captured before async detect() completed
+ * - Result: Always got Array(0) notes for combined modifiers
+ * - Fix: Return notes directly from applySeqItem(), play them in stepNext/goToStart
+ * - Now @KEY Eb: Ebmaj7 plays correctly!
+ * 
+ * 🔧 v3.17.86 CRITICAL FIX:
+ * - **Removed 50ms setTimeout in KEY+chord handling**
+ * - Bug: "@KEY Eb: Ebmaj7" wasn't playing Ebmaj7 on first step
+ * - Cause: setTimeout delayed chord playback, but stepNext() captured notes immediately
+ * - Result: Captured Array(0) notes, no audio played
+ * - Fix: Play chord synchronously - key change doesn't need delay
+ * - Now "@KEY Eb: Ebmaj7" correctly plays Eb major 7 on first step!
  * 
  * 🎯 v3.17.85 KEY FIX:
  * - **Legend moved INSIDE wheel container** (before transformed SVG child)
@@ -1133,7 +1148,7 @@ import {
   parseSongMetadata
 } from "./lib/songManager";
 
-const HW_VERSION = 'v3.17.85';
+const HW_VERSION = 'v3.17.87';
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -1830,7 +1845,7 @@ useEffect(() => {
   };
 
   const parseAndLoadSequence = ()=>{
-    const APP_VERSION = "v3.17.85-harmony-wheel";
+    const APP_VERSION = "v3.17.87-harmony-wheel";
     console.log('=== PARSE AND LOAD START ===');
     console.log('🏷️  APP VERSION:', APP_VERSION);
     console.log('Input text:', inputText);
@@ -2129,18 +2144,13 @@ useEffect(() => {
     
     // Make sure it's applied (in case we backed up with <)
     console.log('Calling applySeqItem for:', sequence[currentIdx]?.raw);
-    applySeqItem(sequence[currentIdx]);
+    const notesToPlay = applySeqItem(sequence[currentIdx]);
     
-    // CRITICAL: Get the notes AFTER applying (they're now in latchedAbsNotesRef)
-    // Use the ref, not state, because state won't update until next render
-    const notesToPlay = [...latchedAbsNotesRef.current];
     console.log('📋 Captured notes to play:', notesToPlay);
     
     // Play it with the captured notes
-    const currentItem = sequence[currentIdx];
-    if (currentItem?.kind === "chord" && notesToPlay.length > 0) {
-      console.log('Playing chord:', currentItem.chord, 'notes:', notesToPlay.length);
-      // v3.5.0: Notes already transposed via effectiveBaseKey, don't transpose again
+    if (notesToPlay.length > 0 && audioEnabledRef.current) {
+      console.log('🔊 Playing:', sequence[currentIdx].raw, 'notes:', notesToPlay.length);
       playChord(notesToPlay, 1.5);
     }
     
@@ -2286,8 +2296,16 @@ useEffect(() => {
         setSeqIndex(startIdx);
         setDisplayIndex(startIdx);
         
-        // ✅ v3.17.85: Auto-play first chord when rewinding
-        applySeqItem(sequence[startIdx]);
+        // ✅ v3.17.87: Apply and get notes to play
+        const notesToPlay = applySeqItem(sequence[startIdx]);
+        
+        // Play the notes if any
+        if (notesToPlay.length > 0 && audioEnabledRef.current) {
+          console.log('🔊 Playing first item:', sequence[startIdx].raw, 'notes:', notesToPlay.length);
+          playChord(notesToPlay, 1.5);
+        }
+        
+        selectCurrentItem(startIdx);
       }
     }
     console.log('=== GO TO START END ===\n');
@@ -2373,18 +2391,19 @@ useEffect(() => {
     }
   };
 
-  const applySeqItem = (it: SeqItem)=>{
+  const applySeqItem = (it: SeqItem): number[] => {
+    // Returns MIDI notes to be played by caller
     // NEW v3.2.5: Handle combined comments (# comment: Chord)
     if (it.kind==="comment") {
       // If comment has a chord attached, play it
       if (it.chord) {
         console.log('🔄 Combined comment:', it.comment, '+ chord:', it.chord);
-        applySeqItem({ kind: "chord", raw: it.chord, chord: it.chord });
+        return applySeqItem({ kind: "chord", raw: it.chord, chord: it.chord });
       }
-      return;
+      return [];
     }
     
-    if (it.kind==="title") return; // Skip titles
+    if (it.kind==="title") return []; // Skip titles
     if (it.kind==="modifier" && it.chord){
       const [m, arg] = it.chord.split(":");
       
@@ -2399,7 +2418,7 @@ useEffect(() => {
           const chordName = arg.trim();
           console.log('🔄 Combined modifier: HOME + chord:', chordName);
           // Recursively call applySeqItem with chord item
-          applySeqItem({ kind: "chord", raw: chordName, chord: chordName });
+          return applySeqItem({ kind: "chord", raw: chordName, chord: chordName });
         }
       }
       else if (m==="SUB"){ 
@@ -2407,7 +2426,7 @@ useEffect(() => {
         if (hasChordArg) {
           const chordName = arg.trim();
           console.log('🔄 Combined modifier: SUB + chord:', chordName);
-          applySeqItem({ kind: "chord", raw: chordName, chord: chordName });
+          return applySeqItem({ kind: "chord", raw: chordName, chord: chordName });
         }
       }
       else if (m==="REL"){ 
@@ -2415,7 +2434,7 @@ useEffect(() => {
         if (hasChordArg) {
           const chordName = arg.trim();
           console.log('🔄 Combined modifier: REL + chord:', chordName);
-          applySeqItem({ kind: "chord", raw: chordName, chord: chordName });
+          return applySeqItem({ kind: "chord", raw: chordName, chord: chordName });
         }
       }
       else if (m==="PAR"){ 
@@ -2423,7 +2442,7 @@ useEffect(() => {
         if (hasChordArg) {
           const chordName = arg.trim();
           console.log('🔄 Combined modifier: PAR + chord:', chordName);
-          applySeqItem({ kind: "chord", raw: chordName, chord: chordName });
+          return applySeqItem({ kind: "chord", raw: chordName, chord: chordName });
         }
       }
       else if (m==="KEY"){ 
@@ -2439,13 +2458,11 @@ useEffect(() => {
         
         if (chordAfterKey) {
           console.log('🔄 Combined KEY change:', newKey, '+ chord:', chordAfterKey);
-          // ✅ v3.17.85: Delay to let key change settle
-          setTimeout(() => {
-            applySeqItem({ kind: "chord", raw: chordAfterKey, chord: chordAfterKey });
-          }, 50);
+          // ✅ v3.17.87: Return notes to be played by caller
+          return applySeqItem({ kind: "chord", raw: chordAfterKey, chord: chordAfterKey });
         }
       }
-      return;
+      return [];
     }
     if (it.kind==="chord" && it.chord){
       // 🎯 CRITICAL: Simulate MIDI input to use IDENTICAL detection logic!
@@ -2458,7 +2475,7 @@ useEffect(() => {
       const match = chordName.match(/^([A-G][#b]?)(.*)?$/);
       if (!match) {
         console.warn('⚠️ Could not parse chord:', chordName);
-        return;
+        return [];
       }
       
       let root = match[1];
@@ -2483,7 +2500,7 @@ useEffect(() => {
       const rootPc = NAME_TO_PC[root as KeyName];
       if (rootPc === undefined) {
         console.warn('⚠️ Unknown root:', root, 'Available keys:', Object.keys(NAME_TO_PC));
-        return;
+        return [];
       }
       
       console.log('✅ Root PC:', rootPc);
@@ -2549,15 +2566,12 @@ useEffect(() => {
       
       console.log('✅ Sequencer detection complete');
       
-      // 🎵 NOW PLAY THE AUDIO!
-      // detect() handles wedge lighting and space activation
-      // But we still need to actually PLAY the notes
-      // v3.5.0: midiNotes already transposed above, don't transpose again
-      if (audioEnabledRef.current) {
-        console.log('🔊 Playing sequencer chord:', midiNotes);
-        playChord(midiNotes, 1.5);
-      }
+      // ✅ v3.17.87: Return notes instead of playing here
+      // Caller (stepNext/goToStart) will play them
+      return midiNotes;
     }
+    
+    return []; // No notes to play
   };
 
   // Highlight current chord in editor
@@ -7102,7 +7116,7 @@ useEffect(() => {
                         border: '2px solid #60A5FA',
                         borderRadius: 8,
                         padding: 8,
-                        zIndex: 10000,
+                        zIndex: 99999,
                         minWidth: 250,
                         maxHeight: 400,
                         overflowY: 'auto'
@@ -7629,6 +7643,6 @@ useEffect(() => {
   );
 }
 
-// HarmonyWheel v3.17.85 - Legend inside wheel container (same stacking context as transform)
+// HarmonyWheel v3.17.87 - Fixed audio playback for combined modifiers
 
-// EOF - HarmonyWheel.tsx v3.17.85
+// EOF - HarmonyWheel.tsx v3.17.87
