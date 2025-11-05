@@ -1,5 +1,193 @@
 /*
- * HarmonyWheel.tsx — v3.15.5 🎯 MIDI LATCH & LEGEND FIX
+ * HarmonyWheel.tsx — v3.17.8 🎹 Clockwise Keys + Fixed Layout!
+ * 
+ * 🎨 v3.17.8 LAYOUT FIXES:
+ * - **Clockwise key order**: Keys now match wheel clockwise from I
+ *   1-=: I, ii, V/V, iii, V/vi, iv, IV, V, V/ii, vi, Bm7♭5, ♭VII
+ * - **Legend repositioned**: Moved to LEFT under logo (left:8px)
+ * - **Wheel can overlap**: Legend has z-index:1, wheel overlaps if needed
+ * - **No bleed**: Legend stays inside frame
+ * - **Fixed scrolling**: Changed minHeight:100vh to height:100% + overflow:hidden
+ * - Inner content scrolls, outer frame doesn't force scroll
+ * 
+ * 🐛 v3.17.7 CRITICAL BUG FIX:
+ * - **FIXED CRASH**: Line 4796 - "Cannot read properties of undefined (reading '0')"
+ * - Added safety check when preview.chordPcsForFn returns undefined
+ * - Falls back to CHORD_DEFINITIONS when preview module doesn't know chord
+ * - **Added Bm7♭5 to CHORD_DEFINITIONS** - was missing!
+ * - Now all 13 chords in Fn type have definitions
+ * - V chord (key 2) now works without crashing! ✅
+ * 
+ * 🎹 v3.17.6 CRITICAL FIXES:
+ * - **12 keys restored**: Added Bdim (Bm7♭5) on = key
+ * - **Smaller keys**: 28×34px (was 32×36) to fit all 12
+ * - **Momentary flash**: Keys light up 500ms, NOT synced to wedge trail
+ * - **Piano highlights clear**: Fixed latching - clear after 500ms
+ * - **Bonus button always visible**: Auto-lit (green) in performance mode
+ * - **Non-clickable when auto**: Bonus button disabled in perf mode
+ * - Reduced padding/fonts to fit: 3px padding, 12px/9px fonts
+ * 
+ * Layout: I, V, V/vi, vi, V/ii, ii, V/V, IV, iv, ♭VII, iii, Bdim
+ * 
+ * 🎹 v3.17.5 MAJOR IMPROVEMENTS:
+ * - **Musical ordering**: Dominants next to targets!
+ *   Keys: I, V, V/vi, vi, V/ii, ii, V/V, IV, iv, ♭VII, iii
+ * - **Auto-enable bonus**: Performance mode shows all wedges
+ * - **Bonus button moved**: Now in bottom row (before Help)
+ * - **Shorter labels**: "Allow Bonus" / "Reveal Bonus"
+ * - **11 keys**: Removed ii/vi (was 12th key)
+ * - Updated keyboard mapping to match new layout
+ * 
+ * 📌 Known Issue: Keyboard highlights don't fade (investigating)
+ * 
+ * 🎹 v3.17.4 FIXES:
+ * - Changed icon back to **🎹** (keyboard)
+ * - Removed 12th key (= / V/ii) - now 11 keys total
+ * - Keys: 1-0, - (removed =)
+ * - Cleaner layout, fits better
+ * 
+ * 🎛️ v3.17.3 IMPROVEMENTS:
+ * - **Larger keys**: 32×36px (was 26×32) - more room to tap
+ * - **Larger fonts**: 13px numbers, 10px functions
+ * - **More padding**: 4px all around keys, 6×8px container
+ * - **Removed internal border**: Toggle button has no yellow border
+ * - **Collapsed hint**: Shows "🎛️ Keyboard Pad" when off
+ * - Cleaner visual hierarchy
+ * 
+ * 🎛️ v3.17.2 LAYOUT REDESIGN:
+ * - **Row 1**: Performance mode pad (🎛️ + 12 keys)
+ * - **Row 2**: [🔊] IN: [dropdown] OUT: [dropdown] [spacer] [?]
+ * - Removed 📤 OUT button (now just dropdown with "None" option)
+ * - Added "IN:" and "OUT:" labels before MIDI dropdowns
+ * - Audio button moved to bottom left
+ * - Help button moved to bottom right
+ * - Clean, organized, two-row layout
+ * 
+ * 🎛️ v3.17.1 FIXES:
+ * - Reorganized keys: 1-5 = I,ii,iii,IV,V  6-0 = vi,V7,♭VII,V/V,V/vi
+ * - Performance button (🎛️) now INSIDE the number block (left edge)
+ * - Button collapses back to small icon when disabled
+ * - Force line break: MIDI controls wrap to next line
+ * - Fixed: Key 5=V, Key 6=vi, Key 7=V7 (more logical)
+ * - Better icon: 🎛️ (drum pad / mixer) instead of 🎹
+ * 
+ * 📤 v3.17.0 NEW FEATURE: MIDI Output!
+ * - Send chords to external MIDI instruments/DAW
+ * - 📤 OUT button toggles MIDI output
+ * - Output device selector (appears when enabled)
+ * - Sends note on/off messages on channel 1
+ * - Works with performance mode, wheel clicks, and sequencer
+ * - Concurrent with internal audio (both can be active)
+ * - Perfect for controlling hardware synths or recording in DAW!
+ * 
+ * 🎹 v3.16.6 PERFORMANCE MODE:
+ * - **Much smaller**: 20px wide keys (was 26px)
+ * - **Tight gaps**: 2px between keys (was 8px default)
+ * - **Fixed height**: 28px total
+ * - **Balanced fonts**: 10px numbers, 8px functions
+ * - Wrapped in container with gap:2 to override parent gap:8
+ * - Added detailed Shift debugging logs
+ * - Should fit in single row now!
+ * 
+ * 🎹 v3.16.5 FIXES:
+ * - **Shift now works!** Detects shifted characters (!, @, #, etc.)
+ * - Much smaller keys: 26px wide (fits within bounds)
+ * - Reduced padding: 3px vertical, 4px horizontal
+ * - Numbers: 11px, Functions: 8px (more readable balance)
+ * - Stays within tablature frame width
+ * - Added whiteSpace: nowrap to prevent label wrapping
+ * 
+ * 🎹 v3.16.4 LAYOUT:
+ * - Tray expands inline from performance button
+ * - Stays on same row as 🔊 and 🎹
+ * - Pushes MIDI/Help buttons to next line when active
+ * - 12 keys flow naturally with flexbox wrap
+ * - Single row expansion (no dedicated line)
+ * - Readable: 14px numbers, 9px functions, 36px keys
+ * 
+ * 🎹 v3.16.3 IMPROVEMENTS:
+ * - Full-width tray on dedicated line above controls
+ * - Much more readable: 16px numbers, 10px function labels
+ * - Larger keys: 42px min width (was 18px)
+ * - Centered layout with flex wrapping
+ * - 12 keys span full width of control panel
+ * - Toggle button stays in main controls
+ * - Tray only shows when performance mode enabled
+ * 
+ * 🎹 v3.16.2 IMPROVEMENTS:
+ * - Changed to **Alt key** for 7ths (Shift produces !, @, # in browsers)
+ * - Miniaturized tray now inline with 🎹 button
+ * - Removed "Performance" text - just icon
+ * - Compact 12-key tray expands in control panel
+ * - Pushes MIDI selector to the right when active
+ * - Tiny keys (18px) with number + function label
+ * - Removed redundant large tray below wheel
+ * 
+ * 🎹 v3.16.1 FIXES:
+ * - Shift now works! (moved skill shortcuts inside performance mode check)
+ * - Fixed label showing wrong chord (D vs D7, G vs G7)
+ * - Added color-coded visual tray below wheel
+ * - Keys light up when active (matches wedge colors)
+ * - Shows key number on top, function below
+ * - Tray only visible when performance mode enabled
+ * 
+ * 🎹 v3.16.0 NEW FEATURES:
+ * - Performance Mode: Keyboard pad controller for songwriting
+ * - Keys 1-0,-,= trigger I, ii, iii, IV, V, V7, vi, ♭VII, V/V, V/vi, iv, V/ii
+ * - Shift+Key adds 7th to chord (triggers 4-note version)
+ * - Works with step record for rapid composition
+ * - Adapts to current baseKey (transpose-aware)
+ * - Toggle button in control panel (🎹)
+ * 
+ * 🎯 v3.15.12 CRITICAL FIX:
+ * - V/V and V/vi NO LONGER gated by "Allow Bonus Chords" toggle
+ * - They have dedicated wedges, so should always work
+ * - shouldTriggerBonus only gates ii/vi and V/ii (overlay-only chords)
+ * - D major in C → V/V always ✅ (was requiring toggle in ADVANCED)
+ * 
+ * 🔥 v3.15.11 CRITICAL FIXES:
+ * - V/V and V/vi NO LONGER require the 7th to trigger
+ * - D major in C → V/V ✅ (was requiring D7)
+ * - E major in C → V/vi ✅ (was requiring E7)
+ * - G major in F → V/V ✅
+ * - Label shows "D" for triad, "D7" when 7th present
+ * - My sincere apologies for the confusion about D major vs D minor
+ * 
+ * 🔥 v3.15.10 CRITICAL FIXES:
+ * - Restored ii, iii, vi triad detection (was missing after removing C-specific code)
+ * - Now calculated RELATIVE to baseKey (works in all keys)
+ * - D major in C → ii ✅
+ * - E minor in C → iii ✅
+ * - A minor in C → vi ✅
+ * - Same patterns work in F, G, etc.
+ * 
+ * 🔥 v3.15.9 CRITICAL FIXES:
+ * - Moved V/V and V/vi detection from SUBDOM section to HOME section
+ * - They were only running in subdominant mode (broken for normal play!)
+ * - Now runs in HOME space BEFORE main pattern matcher
+ * - D7 in C, A7 in F, etc. should now trigger correctly
+ * - Regular diatonic chords (iii, ii, vi) now work in all keys
+ * 
+ * 🔥 v3.15.8 CRITICAL FIXES:
+ * - Removed C-major-specific dm/am/em/fm checks that were breaking other keys
+ * - D7 in C now correctly triggers V/V (was blocked by dm check)
+ * - F#m7♭5 in G no longer incorrectly triggers Am (was C-specific check)
+ * - All diatonic chords now handled by main pattern matcher (works in all keys)
+ * - Only secondary dominants (V/V, V/vi) use the fast path now
+ * 
+ * 🔥 v3.15.7 CRITICAL FIXES:
+ * - V/V and V/vi now work in ALL keys (not just C major!)
+ * - In F: G major → V/V (was broken)
+ * - In F: A7 → V/vi (was broken)  
+ * - Calculates secondary dominants relative to baseKey
+ * - Fixed diminished substitution (e.g., G#dim for E7) in all keys
+ * - This was a pre-existing architectural bug, NOT introduced by our changes
+ * 
+ * 🔧 v3.15.6 FIXES:
+ * - Enter key exits BPM input field
+ * - Enter key closes transpose/key selector dropdowns
+ * - Click outside closes transpose/key selector dropdowns
+ * - Better UX for input field and dropdown interactions
  * 
  * 🔧 v3.15.5 FIXES:
  * - Keyboard shortcuts (skill levels 1-5, etc.) now ignore input fields
@@ -740,7 +928,7 @@ import {
   parseSongMetadata
 } from "./lib/songManager";
 
-const HW_VERSION = 'v3.15.5';
+const HW_VERSION = 'v3.17.8';
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -985,6 +1173,18 @@ useEffect(() => {
   const [stepRecord, setStepRecord] = useState(false); // v3.3.1: Renamed from autoRecord
   const stepRecordRef = useRef(false); // v3.3.1: Renamed from stepRecordRef
   
+  // ✅ v3.16.0: Performance Mode - keyboard pad controller
+  const [performanceMode, setPerformanceMode] = useState(false);
+  const performanceModeRef = useRef(false);
+  
+  // ✅ v3.17.6: Momentary flash for performance keys (500ms, independent of wedge trail)
+  const [performanceFlashKey, setPerformanceFlashKey] = useState<string>('');
+  const performanceFlashTimeoutRef = useRef<number | null>(null); // Browser timeout returns number
+  
+  // ✅ v3.15.5: Refs for click-outside detection
+  const transposeDropdownRef = useRef<HTMLDivElement>(null);
+  const keyDropdownRef = useRef<HTMLDivElement>(null);
+  
   const [trailFn, setTrailFn] = useState<Fn|"">("");
   const [trailTick, setTrailTick] = useState(0);
   const [trailOn] = useState(true);
@@ -1006,6 +1206,12 @@ useEffect(() => {
   const midiAccessRef=useRef<any>(null);
   const [inputs, setInputs] = useState<any[]>([]);
   const [selectedId, setSelectedId] = useState<string>("");
+  
+  // ✅ v3.17.0: MIDI Output support
+  const [outputs, setOutputs] = useState<any[]>([]);
+  const [selectedOutputId, setSelectedOutputId] = useState<string>("");
+  const [midiOutputEnabled, setMidiOutputEnabled] = useState(false);
+  const midiOutputRef = useRef<any>(null);
 
   const rightHeld=useRef<Set<number>>(new Set());
   const rightSus=useRef<Set<number>>(new Set());
@@ -1125,9 +1331,21 @@ useEffect(() => {
       try{
         const acc:any=await (navigator as any).requestMIDIAccess({sysex:false});
         midiAccessRef.current=acc;
+        
+        // Setup inputs
         const list=Array.from(acc.inputs.values());
         setInputs(list as any[]);
         if(list.length>0){ bindToInput((list[0] as any).id, acc); } else { setMidiConnected(false); setMidiName(""); }
+        
+        // ✅ v3.17.0: Setup outputs
+        const outputList=Array.from(acc.outputs.values());
+        setOutputs(outputList as any[]);
+        if(outputList.length>0){ 
+          const firstOutput = outputList[0] as any;
+          setSelectedOutputId(firstOutput.id);
+          midiOutputRef.current = firstOutput;
+        }
+        
         acc.onstatechange=()=>{
           const fresh=Array.from(acc.inputs.values());
           setInputs(fresh as any[]);
@@ -1135,10 +1353,23 @@ useEffect(() => {
             if(fresh[0]) bindToInput((fresh[0] as any).id, acc);
             else { setSelectedId(""); setMidiConnected(false); setMidiName(""); }
           }
+          
+          // Update outputs
+          const freshOutputs=Array.from(acc.outputs.values());
+          setOutputs(freshOutputs as any[]);
+          if(selectedOutputId && !freshOutputs.find((o:any)=>o.id===selectedOutputId)){
+            if(freshOutputs[0]) {
+              setSelectedOutputId((freshOutputs[0] as any).id);
+              midiOutputRef.current = freshOutputs[0];
+            } else {
+              setSelectedOutputId("");
+              midiOutputRef.current = null;
+            }
+          }
         };
       }catch{/* ignore */}
     })();
-  },[selectedId]);
+  },[selectedId, selectedOutputId]);
 
   /* ---------- v3: Sequence / input ---------- */
   const [inputText, setInputText] = useState(defaultSong);
@@ -1263,7 +1494,7 @@ useEffect(() => {
   };
 
   const parseAndLoadSequence = ()=>{
-    const APP_VERSION = "v3.15.5-harmony-wheel";
+    const APP_VERSION = "v3.17.8-harmony-wheel";
     console.log('=== PARSE AND LOAD START ===');
     console.log('🏷️  APP VERSION:', APP_VERSION);
     console.log('Input text:', inputText);
@@ -2004,12 +2235,146 @@ useEffect(() => {
     setTimeout(() => parseAndLoadSequence(), 100);
   };
 
+  // ✅ v3.15.5: Click-outside detection for dropdowns
+  useEffect(() => {
+    performanceModeRef.current = performanceMode;
+  }, [performanceMode]);
+
+  // ✅ v3.17.5: Auto-enable bonus wedges when performance mode turns on
+  useEffect(() => {
+    if (performanceMode && !showBonusWedges) {
+      setShowBonusWedges(true);
+    }
+  }, [performanceMode]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      // Close transpose dropdown if click outside
+      if (showTransposeDropdown && 
+          transposeDropdownRef.current && 
+          !transposeDropdownRef.current.contains(event.target as Node)) {
+        setShowTransposeDropdown(false);
+      }
+      
+      // Close key dropdown if click outside
+      if (showKeyDropdown && 
+          keyDropdownRef.current && 
+          !keyDropdownRef.current.contains(event.target as Node)) {
+        setShowKeyDropdown(false);
+      }
+    };
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showTransposeDropdown, showKeyDropdown]);
+
+  // ✅ v3.15.5: Enter key to close dropdowns
+  useEffect(() => {
+    const handleEnterKey = (e: KeyboardEvent) => {
+      if (e.key === 'Enter') {
+        if (showTransposeDropdown) {
+          setShowTransposeDropdown(false);
+        }
+        if (showKeyDropdown) {
+          setShowKeyDropdown(false);
+        }
+      }
+    };
+    
+    document.addEventListener('keydown', handleEnterKey);
+    return () => document.removeEventListener('keydown', handleEnterKey);
+  }, [showTransposeDropdown, showKeyDropdown]);
+
   // Global keyboard handler for arrow keys and Enter (when not in textarea)
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
       // Only handle if NOT in textarea or input field
       const activeTag = document.activeElement?.tagName;
       if (activeTag === 'TEXTAREA' || activeTag === 'INPUT') return;
+      
+      // ✅ v3.17.8: Performance Mode - Clockwise from I (matches wheel)
+      if (performanceModeRef.current) {
+        // Map both normal and shifted keys
+        const keyMap: Record<string, Fn> = {
+          '1': 'I', '!': 'I',
+          '2': 'ii', '@': 'ii',
+          '3': 'V/V', '#': 'V/V',
+          '4': 'iii', '$': 'iii',
+          '5': 'V/vi', '%': 'V/vi',
+          '6': 'iv', '^': 'iv',
+          '7': 'IV', '&': 'IV',
+          '8': 'V', '*': 'V',
+          '9': 'V/ii', '(': 'V/ii',
+          '0': 'vi', ')': 'vi',
+          '-': 'Bm7♭5', '_': 'Bm7♭5',
+          '=': '♭VII', '+': '♭VII'
+        };
+        
+        const fn = keyMap[e.key];
+        if (fn) {
+          e.preventDefault();
+          e.stopPropagation();
+          // Detect 7th by checking if shifted key was pressed
+          const shiftedKeys = ['!', '@', '#', '$', '%', '^', '&', '*', '(', ')', '_', '+'];
+          const with7th = shiftedKeys.includes(e.key);
+          console.log('🎹 Performance Mode:', { 
+            rawKey: e.key, 
+            code: e.code,
+            shiftKey: e.shiftKey,
+            fn, 
+            with7th, 
+            isShiftedChar: shiftedKeys.includes(e.key),
+            detectedAs7th: with7th
+          });
+          
+          // Flash the key
+          if (performanceFlashTimeoutRef.current) {
+            clearTimeout(performanceFlashTimeoutRef.current);
+          }
+          // Find which key number this is
+          const keyNumber = Object.keys(keyMap).find(k => keyMap[k] === fn && !shiftedKeys.includes(k));
+          if (keyNumber) {
+            setPerformanceFlashKey(keyNumber);
+            performanceFlashTimeoutRef.current = setTimeout(() => {
+              setPerformanceFlashKey('');
+            }, 500);
+          }
+          
+          previewFn(fn, with7th);
+          
+          // Clear piano highlights after 500ms
+          setTimeout(() => {
+            setLatchedAbsNotes([]);
+          }, 500);
+          
+          return; // Stop processing - don't run other shortcuts
+        }
+      }
+      
+      // Skill level shortcuts: 1-5 (only when NOT in performance mode)
+      if (!performanceModeRef.current) {
+        if (e.key === '1') {
+          e.preventDefault();
+          setSkillLevel('ROOKIE');
+          return;
+        } else if (e.key === '2') {
+          e.preventDefault();
+          setSkillLevel('NOVICE');
+          return;
+        } else if (e.key === '3') {
+          e.preventDefault();
+          setSkillLevel('SOPHOMORE');
+          return;
+        } else if (e.key === '4') {
+          e.preventDefault();
+          setSkillLevel('ADVANCED');
+          return;
+        } else if (e.key === '5') {
+          e.preventDefault();
+          setSkillLevel('EXPERT');
+          return;
+        }
+      }
       
       // Navigation shortcuts
       if (e.shiftKey && e.key === '<') { // Shift+, (which is <)
@@ -2058,22 +2423,6 @@ useEffect(() => {
       } else if ((e.ctrlKey || e.metaKey) && (e.key === 'h' || e.key === 'H')) {
         e.preventDefault();
         resetAll();
-      // Skill level shortcuts: 1-5
-      } else if (e.key === '1') {
-        e.preventDefault();
-        setSkillLevel('ROOKIE');
-      } else if (e.key === '2') {
-        e.preventDefault();
-        setSkillLevel('NOVICE');
-      } else if (e.key === '3') {
-        e.preventDefault();
-        setSkillLevel('SOPHOMORE');
-      } else if (e.key === '4') {
-        e.preventDefault();
-        setSkillLevel('ADVANCED');
-      } else if (e.key === '5') {
-        e.preventDefault();
-        setSkillLevel('EXPERT');
       // Legacy arrow navigation (still work)
       } else if (e.key === 'ArrowLeft') {
         e.preventDefault();
@@ -2999,39 +3348,6 @@ useEffect(() => {
           return;
         }
 
-        const dm   = isSubsetIn([2,5,9], S) || isSubsetIn([2,5,9,0], S);
-        const am   = isSubsetIn([9,0,4], S) || isSubsetIn([9,0,4,7], S);
-        const em   = isSubsetIn([4,7,11], S) || isSubsetIn([4,7,11,2], S);
-        const d7   = isSubsetIn([2,6,9,0], S);
-        const e7   = isSubsetIn([4,8,11,2], S);
-        
-        // v3.5.0: Add G#dim and G#dim7 to V/vi family (functions like E7)
-        const bassNote = absHeld.length > 0 ? Math.min(...absHeld) : null;
-        const bassPc = bassNote !== null ? (bassNote % 12) : null;
-        const gSharpDim = isSubsetIn([8,11,2], S) && (S.size === 3 || (S.size === 4 && bassPc === 8)); // G#dim triad or G#dim7 in root position
-        
-        const fm   = isSubsetIn([5,8,0], S) || isSubsetIn([5,8,0,3], S); // iv chord - exit immediately
-
-        if (dm || am || em || d7 || e7 || gSharpDim || fm){
-          subdomLatchedRef.current = false;
-          subSpinExit();
-          setSubdomActive(false);
-          setVisitorActive(false); setRelMinorActive(false);
-          homeSuppressUntilRef.current = 0;
-
-          if (dm){ setActiveWithTrail("ii",  absName || (isSubsetIn([2,5,9,0], S)?"Dm7":"Dm")); return; }
-          if (am){ setActiveWithTrail("vi",  absName || (isSubsetIn([9,0,4,7], S)?"Am7":"Am")); return; }
-          if (em){ setActiveWithTrail("iii", absName || (isSubsetIn([4,7,11,2], S)?"Em7":"Em")); return; }
-          if (d7 && shouldTriggerBonus("V/V")){ setActiveWithTrail("V/V", "D7"); return; }
-          if ((e7 || gSharpDim) && shouldTriggerBonus("V/vi")){ 
-            // v3.5.0: E7 family includes G#dim and G#dim7 (both function as V/vi)
-            const chordName = gSharpDim ? displayName : "E7";
-            setActiveWithTrail("V/vi", chordName); 
-            return; 
-          }
-          if (fm){ setActiveWithTrail("iv",  absName || (isSubsetIn([5,8,0,3], S)?"Fm7":"Fm")); return; }
-        }
-
         if (subdomLatchedRef.current && S.size < 3) {
           homeSuppressUntilRef.current = performance.now() + RECENT_PC_WINDOW_MS;
           return;
@@ -3258,6 +3574,78 @@ useEffect(() => {
       // v3.5.1: Get bass note for diminished chord function detection
       const bassNote = absHeld.length > 0 ? Math.min(...absHeld) : null;
       const bassPc = bassNote !== null ? (bassNote % 12) : null;
+      
+      // ✅ v3.15.8: Check secondary dominants BEFORE main pattern matching
+      // Calculate relative to baseKey (not C-specific)
+      const baseKeyPC = NAME_TO_PC[baseKeyRef.current];
+      
+      // V/V = V of V = dominant of scale degree 5 = scale degree 2
+      // In C: D or D7 (2,6,9) or (2,6,9,0). In F: G or G7 (7,11,2) or (7,11,2,5).
+      const vOfV_root = (baseKeyPC + 2) % 12;
+      const vOfV_triad = [(vOfV_root + 0) % 12, (vOfV_root + 4) % 12, (vOfV_root + 7) % 12];
+      const vOfV_seventh = (vOfV_root + 10) % 12;
+      const vOfV_hasTriad = isSubsetIn(vOfV_triad, pcsAbs);
+      const vOfV_has7th = isSubsetIn([vOfV_seventh], pcsAbs);
+      const vOfV = vOfV_hasTriad; // Trigger on triad alone OR with 7th
+      
+      // V/vi = V of vi = dominant of scale degree 6 (relative minor) = scale degree 4  
+      // In C: E or E7 (4,8,11) or (4,8,11,2). In F: A or A7 (9,1,4) or (9,1,4,7).
+      const vOfVi_root = (baseKeyPC + 4) % 12;
+      const vOfVi_triad = [(vOfVi_root + 0) % 12, (vOfVi_root + 4) % 12, (vOfVi_root + 7) % 12];
+      const vOfVi_seventh = (vOfVi_root + 10) % 12;
+      const vOfVi_hasTriad = isSubsetIn(vOfVi_triad, pcsAbs);
+      const vOfVi_has7th = isSubsetIn([vOfVi_seventh], pcsAbs);
+      const vOfVi = vOfVi_hasTriad; // Trigger on triad alone OR with 7th
+      
+      // V/vi also includes diminished substitution (e.g., G#dim for E7 in C)
+      const vOfVi_dimSub_root = (vOfVi_root + 4) % 12; // Minor third above V/vi root
+      const vOfVi_dimTriad = [(vOfVi_dimSub_root + 0) % 12, (vOfVi_dimSub_root + 3) % 12, (vOfVi_dimSub_root + 6) % 12];
+      const vOfVi_dimSub = isSubsetIn(vOfVi_dimTriad, pcsAbs) && (pcsAbs.size === 3 || (pcsAbs.size === 4 && bassPc === vOfVi_dimSub_root));
+
+      // ✅ v3.15.11: V/V and V/vi ALWAYS trigger (have dedicated wedges)
+      // shouldTriggerBonus only gates bonus overlays (ii/vi, V/ii) without wedges
+      if (vOfV){ 
+        const vOfV_rootName = pcNameForKey(vOfV_root, baseKeyRef.current);
+        const chordLabel = vOfV_has7th ? `${vOfV_rootName}7` : vOfV_rootName;
+        setActiveWithTrail("V/V", chordLabel); 
+        return; 
+      }
+      if (vOfVi || vOfVi_dimSub){ 
+        let chordName: string;
+        if (vOfVi_dimSub) {
+          chordName = displayName;
+        } else {
+          const rootName = pcNameForKey(vOfVi_root, baseKeyRef.current);
+          chordName = vOfVi_has7th ? `${rootName}7` : rootName;
+        }
+        setActiveWithTrail("V/vi", chordName); 
+        return; 
+      }
+      
+      // ✅ v3.15.9: Check common diatonic triads (ii, iii, vi) - pattern matcher may not have them
+      // These are RELATIVE to baseKey (scale degrees), not absolute pitch classes
+      const ii_triad = isSubsetIn([2, 5, 9], pcsRel);
+      const ii_7th = isSubsetIn([2, 5, 9, 0], pcsRel);
+      const iii_triad = isSubsetIn([4, 7, 11], pcsRel);
+      const iii_7th = isSubsetIn([4, 7, 11, 2], pcsRel);
+      const vi_triad = isSubsetIn([9, 0, 4], pcsRel);
+      const vi_7th = isSubsetIn([9, 0, 4, 7], pcsRel);
+      
+      if (ii_triad || ii_7th) {
+        const chordName = absName || realizeFunction("ii" as Fn, baseKeyRef.current);
+        setActiveWithTrail("ii", ii_7th ? `${chordName}7` : chordName);
+        return;
+      }
+      if (iii_triad || iii_7th) {
+        const chordName = absName || realizeFunction("iii" as Fn, baseKeyRef.current);
+        setActiveWithTrail("iii", iii_7th ? `${chordName}7` : chordName);
+        return;
+      }
+      if (vi_triad || vi_7th) {
+        const chordName = absName || realizeFunction("vi" as Fn, baseKeyRef.current);
+        setActiveWithTrail("vi", vi_7th ? `${chordName}7` : chordName);
+        return;
+      }
       
       // ✅ v3.6.1 FIX: REMOVED hardcoded E/E7 and G/G7 checks
       // Old code checked for patterns [4,8,11] (E) and [7,11,2] (G) in C
@@ -3952,6 +4340,7 @@ useEffect(() => {
     "V/V":   {triad: [2, 6, 9],   seventh: 0},   // D-F#-A (C) = D7
     "V/vi":  {triad: [4, 8, 11],  seventh: 2},   // E-G#-B (D) = E7
     "V/ii":  {triad: [9, 1, 4],   seventh: 7},   // A-C#-E (G) = A7
+    "Bm7♭5": {triad: [11, 2, 5],  seventh: 9},   // B-D-F (A)  = Bm7b5 (vii°)
   };
   
   // Bonus wedge definitions
@@ -4001,17 +4390,29 @@ useEffect(() => {
     const fitted = preview.fitNotesToWindowPreserveInversion(absRootPos, KBD_LOW, KBD_HIGH);
     setLatchedAbsNotes(fitted);
     
-    // ✅ v3.15.2: Update label to show 7th if playing with 7th
+    // ✅ v3.16.0: Update label based on ACTUAL notes played
     let chordLabel = realizeFunction(fn, renderKey);
-    if (with7th && chordDef) {
+    
+    // Only add 7th suffix if we're actually playing with 7th
+    if (with7th && chordDef && chordDef.seventh !== undefined) {
       // Add 7th suffix based on chord quality
       if (fn === "I" || fn === "IV") {
         chordLabel += "maj7";
-      } else if (fn === "V7" || fn === "V/V" || fn === "V/vi") {
-        // Already has 7 in the function name, don't add
-      } else if (fn === "ii" || fn === "iii" || fn === "vi") {
+      } else if (fn === "V7") {
+        // V7 always shows as V7 (name already has it)
+      } else if (fn === "V/V" || fn === "V/vi" || fn === "V/ii") {
+        // Secondary dominants: show "D7" when with7th, "D" when triad
+        if (!chordLabel.endsWith("7")) {
+          chordLabel += "7";
+        }
+      } else if (fn === "ii" || fn === "iii" || fn === "vi" || fn === "iv") {
+        chordLabel += "7";
+      } else if (fn === "♭VII") {
         chordLabel += "7";
       }
+    } else if (fn === "V7") {
+      // Special case: V7 played as triad should show as "G" not "G7"
+      chordLabel = chordLabel.replace("7", "");
     }
     
     setActiveWithTrail(fn, chordLabel);
@@ -4293,8 +4694,40 @@ useEffect(() => {
     }, duration * 1000);
   };
 
+  // ✅ v3.17.0: MIDI Output - Send notes to external device
+  const activeMidiNotesRef = useRef<Set<number>>(new Set());
+  
+  const sendMidiNoteOn = (note: number, velocity: number = 100) => {
+    if (!midiOutputEnabled || !midiOutputRef.current) return;
+    try {
+      // MIDI note on: [0x90 = note on channel 1, note, velocity]
+      midiOutputRef.current.send([0x90, note, velocity]);
+      activeMidiNotesRef.current.add(note);
+      console.log('📤 MIDI OUT: Note ON', note, 'vel', velocity);
+    } catch (e) {
+      console.error('Failed to send MIDI:', e);
+    }
+  };
+  
+  const sendMidiNoteOff = (note: number) => {
+    if (!midiOutputEnabled || !midiOutputRef.current) return;
+    try {
+      // MIDI note off: [0x80 = note off channel 1, note, velocity 0]
+      midiOutputRef.current.send([0x80, note, 0]);
+      activeMidiNotesRef.current.delete(note);
+      console.log('📤 MIDI OUT: Note OFF', note);
+    } catch (e) {
+      console.error('Failed to send MIDI:', e);
+    }
+  };
+  
+  const stopAllMidiNotes = () => {
+    activeMidiNotesRef.current.forEach(note => sendMidiNoteOff(note));
+    activeMidiNotesRef.current.clear();
+  };
+
   const playChordWithVoiceLeading = (chordPitchClasses: number[]) => {
-    if (!audioEnabledRef.current) return;  // Use ref!
+    if (!audioEnabledRef.current && !midiOutputEnabled) return;  // Skip if both disabled
     
     console.log('🎼 Playing chord. PCs:', chordPitchClasses);
     
@@ -4324,33 +4757,42 @@ useEffect(() => {
     notesToPlay.sort((a, b) => a - b);
     console.log('🎵 MIDI notes to play:', notesToPlay);
     
-    const ctx = audioContextRef.current;
-    if (ctx) {
-      const now = ctx.currentTime;
-      const FAST_FADE = 0.1;
-      
-      // Stop ALL previous chord notes
-      console.log('🔇 Stopping', activeChordNoteIdsRef.current.size, 'previous notes');
-      activeChordNoteIdsRef.current.forEach(noteId => {
-        const nodes = activeNotesRef.current.get(noteId);
-        if (nodes) {
-          nodes.gain.gain.cancelScheduledValues(now);
-          nodes.gain.gain.setValueAtTime(nodes.gain.gain.value, now);
-          nodes.gain.gain.linearRampToValueAtTime(0, now + FAST_FADE);
-          setTimeout(() => stopNoteById(noteId), FAST_FADE * 1000 + 50);
-        }
-      });
-      
-      activeChordNoteIdsRef.current.clear();
-      
-      // Play all notes
-      console.log('🔊 Playing', notesToPlay.length, 'notes');
-      notesToPlay.forEach(note => {
-        const noteId = playNote(note, 0.6, true);
-        if (noteId) {
-          activeChordNoteIdsRef.current.add(noteId);
-        }
-      });
+    // ✅ v3.17.0: Send to MIDI output if enabled
+    if (midiOutputEnabled) {
+      stopAllMidiNotes(); // Stop previous chord
+      notesToPlay.forEach(note => sendMidiNoteOn(note, 100));
+    }
+    
+    // Internal audio playback
+    if (audioEnabledRef.current) {
+      const ctx = audioContextRef.current;
+      if (ctx) {
+        const now = ctx.currentTime;
+        const FAST_FADE = 0.1;
+        
+        // Stop ALL previous chord notes
+        console.log('🔇 Stopping', activeChordNoteIdsRef.current.size, 'previous notes');
+        activeChordNoteIdsRef.current.forEach(noteId => {
+          const nodes = activeNotesRef.current.get(noteId);
+          if (nodes) {
+            nodes.gain.gain.cancelScheduledValues(now);
+            nodes.gain.gain.setValueAtTime(nodes.gain.gain.value, now);
+            nodes.gain.gain.linearRampToValueAtTime(0, now + FAST_FADE);
+            setTimeout(() => stopNoteById(noteId), FAST_FADE * 1000 + 50);
+          }
+        });
+        
+        activeChordNoteIdsRef.current.clear();
+        
+        // Play all notes
+        console.log('🔊 Playing', notesToPlay.length, 'notes');
+        notesToPlay.forEach(note => {
+          const noteId = playNote(note, 0.6, true);
+          if (noteId) {
+            activeChordNoteIdsRef.current.add(noteId);
+          }
+        });
+      }
     }
     
     previousVoicingRef.current = notesToPlay;
@@ -4369,6 +4811,21 @@ useEffect(() => {
       const fn = activeFnRef.current as Fn;
       const with7th = PREVIEW_USE_SEVENTHS || fn === "V7" || fn === "V/V" || fn === "V/vi";
       const pcs = preview.chordPcsForFn(fn, dispKey, with7th);
+      
+      // ✅ v3.17.6: Safety check - if preview module doesn't know this chord, use CHORD_DEFINITIONS
+      if (!pcs || pcs.length === 0) {
+        const chordDef = CHORD_DEFINITIONS[fn];
+        if (chordDef) {
+          const keyPc = NAME_TO_PC[dispKey];
+          const transposedPcs = chordDef.triad.map(pc => (pc + keyPc) % 12);
+          const rootPc = transposedPcs[0];
+          const absRootPos = preview.absChordRootPositionFromPcs(transposedPcs, rootPc);
+          const fitted = preview.fitNotesToWindowPreserveInversion(absRootPos, KBD_LOW, KBD_HIGH);
+          return new Set(fitted);
+        }
+        return new Set<number>(); // Fallback if chord unknown
+      }
+      
       const rootPc = pcs[0];
       const absRootPos = preview.absChordRootPositionFromPcs(pcs, rootPc);
       const fitted = preview.fitNotesToWindowPreserveInversion(absRootPos, KBD_LOW, KBD_HIGH);
@@ -4379,8 +4836,8 @@ useEffect(() => {
   })();
 
   return (
-    <div style={{background:'#111', color:'#fff', minHeight:'100vh', padding:8, fontFamily:'ui-sans-serif, system-ui'}}>
-      <div style={{maxWidth:800, margin:'0 auto', border:'1px solid #374151', borderRadius:12, padding:8}}>
+    <div style={{background:'#111', color:'#fff', height:'100%', maxHeight:'100vh', overflow:'hidden', padding:8, fontFamily:'ui-sans-serif, system-ui'}}>
+      <div style={{maxWidth:800, margin:'0 auto', border:'1px solid #374151', borderRadius:12, padding:8, height:'100%', overflow:'auto'}}>
 
         {/* BKS Logo Header with Emblem + Help Button */}
         <div style={{marginBottom:0, paddingLeft:8, position:'relative', zIndex:10, display:'flex', justifyContent:'space-between', alignItems:'flex-start'}}>
@@ -4448,20 +4905,21 @@ useEffect(() => {
           </div>
         </div>
 
-        {/* Wheel with Legend - Legend positioned absolutely to not shift wheel */}
+        {/* Wheel with Legend - v3.17.8: Legend moved to left under logo */}
         <div style={{position:'relative', width:WHEEL_W, margin:'0 auto', marginTop:-30}}>
           
-          {/* Functional Harmony Legend - Absolutely positioned left */}
+          {/* Functional Harmony Legend - Left aligned under logo, wheel can overlap */}
           <div style={{
             position:'absolute',
-            left:-140,
+            left:8,
             top:30,
             background:'#0a0a0a',
             border:'1px solid #374151',
             borderRadius:8,
             padding:'10px',
             width:110,
-            fontSize:10
+            fontSize:10,
+            zIndex:1  // Behind wheel (wheel is z-index 10)
           }}>
             <div style={{fontWeight:600, marginBottom:6, color:'#9CA3AF', fontSize:9, textTransform:'uppercase', letterSpacing:'0.05em'}}>
               Function
@@ -5072,7 +5530,7 @@ useEffect(() => {
                       
                       {/* Dropdown */}
                       {showKeyDropdown && (
-                        <div style={{
+                        <div ref={keyDropdownRef} style={{
                           position:'absolute',
                           top:'100%',
                           left:0,
@@ -5408,31 +5866,6 @@ useEffect(() => {
                   </button>
                 )}
                 
-                {/* Show/Allow/Reveal Bonus - ADVANCED/EXPERT */}
-                {bonusWedgesAllowed && (
-                  <button 
-                    onClick={() => setShowBonusWedges(!showBonusWedges)}
-                    title={skillLevel === "EXPERT" 
-                      ? "Reveal bonus wedges persistently for teaching" 
-                      : "Allow bonus wedges to trigger dynamically"}
-                    style={{
-                      padding:'6px 10px', 
-                      border:`1px solid ${showBonusWedges ? '#39FF14' : '#374151'}`, 
-                      borderRadius:6, 
-                      background: showBonusWedges ? '#1a3310' : '#1f2937', 
-                      color: showBonusWedges ? '#39FF14' : '#9CA3AF', 
-                      cursor:'pointer',
-                      fontSize:11,
-                      fontWeight: showBonusWedges ? 600 : 400
-                    }}
-                  >
-                    {skillLevel === "EXPERT" 
-                      ? (showBonusWedges ? '✓ Reveal Bonus Chords' : 'Reveal Bonus Chords')
-                      : (showBonusWedges ? '✓ Allow Bonus Chords' : 'Allow Bonus Chords')
-                    }
-                  </button>
-                )}
-                
                 {/* Transpose - v3.5.0: Disabled when @KEY present */}
                 {(skillLevel === "EXPERT" || transpose !== 0) && (() => {
                   const hasKeyDirective = loadedSongText.includes('@KEY');
@@ -5460,7 +5893,7 @@ useEffect(() => {
                     </button>
                     
                     {showTransposeDropdown && !hasKeyDirective && (
-                      <div style={{
+                      <div ref={transposeDropdownRef} style={{
                         position:'absolute',
                         bottom:'100%',
                         left:0,
@@ -5710,6 +6143,11 @@ useEffect(() => {
                     onChange={(e) => {
                       const val = parseInt(e.target.value) || 60;
                       setTempo(Math.max(1, Math.min(240, val)));
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.currentTarget.blur(); // Exit input on Enter
+                      }
                     }}
                     style={{
                       width: 50,
@@ -5962,11 +6400,144 @@ useEffect(() => {
                 </div>
               )}
               <div style={{marginTop: 12, paddingTop: 12, borderTop: '1px solid #374151'}}>
-                {/* Single line: Controls + Status */}
-                <div style={{display:'flex', gap:8, alignItems:'center', flexWrap:'wrap', justifyContent:'space-between'}}>
-                  {/* Left: Controls */}
-                  <div style={{display:'flex', gap:8, alignItems:'center'}}>
-                    <button 
+                
+                {/* Row 1: Performance Mode */}
+                <div style={{display:'flex', gap:8, alignItems:'center', flexWrap:'wrap'}}>
+                  {/* ✅ v3.17.4: Performance Mode - musical ordering */}
+                  {performanceMode ? (
+                    <div style={{ 
+                      display: 'flex', 
+                      gap: 4, 
+                      alignItems: 'center',
+                      padding: '6px 8px',
+                      border: '1px solid #F2D74B',
+                      borderRadius: 6,
+                      background: '#332810'
+                    }}>
+                      {/* Performance toggle inside block - no internal border */}
+                      <button
+                        onClick={() => setPerformanceMode(false)}
+                        title="Disable Performance Mode"
+                        style={{
+                          padding:"5px 8px", 
+                          border:'none', 
+                          borderRadius:4, 
+                          background: '#1a1a1a', 
+                          color: '#F2D74B',
+                          cursor: 'pointer',
+                          fontSize:14,
+                          lineHeight: 1,
+                          marginRight: 2
+                        }}
+                      >
+                        🎹
+                      </button>
+                      
+                      {[
+                        { key: '1', fn: 'I', color: FN_COLORS['I'] },
+                        { key: '2', fn: 'ii', color: FN_COLORS['ii'] },
+                        { key: '3', fn: 'V/V', color: FN_COLORS['V/V'] },
+                        { key: '4', fn: 'iii', color: FN_COLORS['iii'] },
+                        { key: '5', fn: 'V/vi', color: FN_COLORS['V/vi'] },
+                        { key: '6', fn: 'iv', color: FN_COLORS['iv'] },
+                        { key: '7', fn: 'IV', color: FN_COLORS['IV'] },
+                        { key: '8', fn: 'V', color: FN_COLORS['V'] },
+                        { key: '9', fn: 'V/ii', color: FN_COLORS['iv'] },
+                        { key: '0', fn: 'vi', color: FN_COLORS['vi'] },
+                        { key: '-', fn: 'Bm7♭5', color: '#0EA5E9' },
+                        { key: '=', fn: '♭VII', color: FN_COLORS['♭VII'] }
+                      ].map(({ key, fn, color }) => {
+                        // Use flash state for momentary highlight (500ms)
+                        const isFlashing = performanceFlashKey === key;
+                        return (
+                          <div 
+                            key={key} 
+                            onClick={(e) => {
+                              const with7th = e.shiftKey;
+                              // Clear any existing timeout
+                              if (performanceFlashTimeoutRef.current) {
+                                clearTimeout(performanceFlashTimeoutRef.current);
+                              }
+                              // Flash this key
+                              setPerformanceFlashKey(key);
+                              performanceFlashTimeoutRef.current = setTimeout(() => {
+                                setPerformanceFlashKey('');
+                              }, 500);
+                              // Play the chord
+                              previewFn(fn as Fn, with7th);
+                              // Clear piano highlights after 500ms
+                              setTimeout(() => {
+                                setLatchedAbsNotes([]);
+                              }, 500);
+                            }}
+                            onMouseDown={(e) => e.preventDefault()}
+                            style={{
+                              display: 'flex',
+                              flexDirection: 'column',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              padding: '3px 3px',
+                              borderRadius: 3,
+                              background: isFlashing ? color : '#1a1a1a',
+                              border: `1px solid ${isFlashing ? color : '#2a2a2a'}`,
+                              width: 28,
+                              height: 34,
+                              flex: '0 0 auto',
+                              transition: 'all 0.1s',
+                              opacity: isFlashing ? 1 : 0.7,
+                              cursor: 'pointer',
+                              userSelect: 'none'
+                            }}
+                            title={`${fn} - Click for triad, Shift+Click for 7th`}
+                          >
+                            <div style={{
+                              fontSize: 12,
+                              fontWeight: 700,
+                              color: isFlashing ? '#000' : color,
+                              fontFamily: 'monospace',
+                              lineHeight: 1
+                            }}>{key}</div>
+                            <div style={{
+                              fontSize: 9,
+                              fontWeight: 600,
+                              color: isFlashing ? '#000' : '#888',
+                              marginTop: 2,
+                              lineHeight: 1,
+                              whiteSpace: 'nowrap'
+                            }}>{fn}</div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    /* Collapsed state with hint */
+                    <button
+                      onClick={() => setPerformanceMode(true)}
+                      title="Enable Performance Mode - Keys 1-0,- trigger chords"
+                      style={{
+                        padding:"8px 12px", 
+                        border:'1px solid #374151', 
+                        borderRadius:6, 
+                        background: '#111', 
+                        color: '#9CA3AF',
+                        cursor: 'pointer',
+                        fontSize:11,
+                        lineHeight: 1,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 6
+                      }}
+                    >
+                      <span style={{fontSize:14}}>🎹</span>
+                      <span>Keyboard Pad</span>
+                    </button>
+                  )}
+                </div>
+                
+                {/* Row 2: Audio + MIDI + Help */}
+                <div style={{display:'flex', gap:8, alignItems:'center', marginTop:8}}>
+                  {/* Audio button */}
+                  <button 
                     onClick={async () => {
                       const newState = !audioEnabled;
                       setAudioEnabled(newState);
@@ -5997,13 +6568,83 @@ useEffect(() => {
                   </button>
 
                   {MIDI_SUPPORTED && (
-                    <select value={selectedId} onChange={(e)=>{ const acc=midiAccessRef.current; if(acc) bindToInput(e.target.value, acc); }}
-                      style={{padding:"4px 6px", border:"1px solid #374151", borderRadius:6, background:"#111", color:"#fff", fontSize:11}}>
-                      {inputs.length===0 && <option value="">No MIDI inputs</option>}
-                      {inputs.map((i:any)=>(<option key={i.id} value={i.id}>{i.name || `Input ${i.id}`}</option>))}
-                    </select>
+                    <>
+                      {/* MIDI Input */}
+                      <span style={{fontSize:11, color:'#9CA3AF', marginLeft:4}}>IN:</span>
+                      <select value={selectedId} onChange={(e)=>{ const acc=midiAccessRef.current; if(acc) bindToInput(e.target.value, acc); }}
+                        style={{padding:"4px 6px", border:"1px solid #374151", borderRadius:6, background:"#111", color:"#fff", fontSize:11}}>
+                        {inputs.length===0 && <option value="">None</option>}
+                        {inputs.map((i:any)=>(<option key={i.id} value={i.id}>{i.name || `Input ${i.id}`}</option>))}
+                      </select>
+                      
+                      {/* MIDI Output */}
+                      <span style={{fontSize:11, color:'#9CA3AF', marginLeft:8}}>OUT:</span>
+                      <select 
+                        value={midiOutputEnabled ? selectedOutputId : ""} 
+                        onChange={(e)=>{ 
+                          const acc=midiAccessRef.current;
+                          if(acc) {
+                            if (e.target.value === "") {
+                              setMidiOutputEnabled(false);
+                              midiOutputRef.current = null;
+                            } else {
+                              const output = acc.outputs.get(e.target.value);
+                              if(output) {
+                                setSelectedOutputId(e.target.value);
+                                midiOutputRef.current = output;
+                                setMidiOutputEnabled(true);
+                              }
+                            }
+                          }
+                        }}
+                        style={{padding:"4px 6px", border:"1px solid #374151", borderRadius:6, background:"#111", color:"#fff", fontSize:11}}>
+                        <option value="">None</option>
+                        {outputs.map((o:any)=>(<option key={o.id} value={o.id}>{o.name || `Output ${o.id}`}</option>))}
+                      </select>
+                    </>
                   )}
-                  </div>
+                  
+                  {/* Spacer */}
+                  <div style={{flex:1}} />
+                  
+                  {/* ✅ v3.17.6: Allow Bonus Chords - always visible, auto-lit in perf mode */}
+                  {bonusWedgesAllowed && (
+                    <button 
+                      onClick={() => !performanceMode && setShowBonusWedges(!showBonusWedges)}
+                      title={performanceMode
+                        ? "Bonus enabled (auto-on in Performance Mode)"
+                        : (skillLevel === "EXPERT" 
+                          ? "Reveal bonus wedges persistently for teaching" 
+                          : "Allow bonus wedges to trigger dynamically")}
+                      style={{
+                        padding:'4px 8px', 
+                        border:`1px solid ${(showBonusWedges || performanceMode) ? '#39FF14' : '#374151'}`, 
+                        borderRadius:6, 
+                        background: (showBonusWedges || performanceMode) ? '#1a3310' : '#111', 
+                        color: (showBonusWedges || performanceMode) ? '#39FF14' : '#9CA3AF', 
+                        cursor: performanceMode ? 'default' : 'pointer',
+                        fontSize:11,
+                        fontWeight: (showBonusWedges || performanceMode) ? 600 : 400,
+                        opacity: performanceMode ? 0.7 : 1
+                      }}
+                    >
+                      {skillLevel === "EXPERT" 
+                        ? ((showBonusWedges || performanceMode) ? '✓ Reveal Bonus' : 'Reveal Bonus')
+                        : ((showBonusWedges || performanceMode) ? '✓ Allow Bonus' : 'Allow Bonus')
+                      }
+                    </button>
+                  )}
+                  
+                  {/* Help button */}
+                  <button onClick={()=>setShowHelp(true)}
+                    style={{padding:"4px 8px", border:"1px solid #374151", borderRadius:6, background:"#111", color:"#9CA3AF", cursor:"pointer", fontSize:14}}>
+                    ?
+                  </button>
+                </div>
+                
+                {/* Old controls removed - replaced above */}
+                <div style={{display:'none'}}>
+
                   
                   {/* Right: Status + Help */}
                   <div style={{display:'flex', gap:8, alignItems:'center'}}>
@@ -6060,6 +6701,6 @@ useEffect(() => {
   );
 }
 
-// HarmonyWheel v3.15.5 - Keyboard shortcuts ignore input fields (tempo, text)
+// HarmonyWheel v3.17.8 - Clockwise keys + legend left + fixed scrolling
 
-// EOF - HarmonyWheel.tsx v3.15.5
+// EOF - HarmonyWheel.tsx v3.17.8

@@ -1,7 +1,11 @@
 /*
- * types.ts — v3.10.0
+ * types.ts — v3.17.6
  * 
  * Type definitions for HarmonyWheel
+ * 
+ * v3.17.6 CHANGES:
+ * - Added "Bm7♭5" to Fn type (diminished 7th chord, bonus wedge)
+ * - Used in performance mode key layout (= key)
  * 
  * v3.10.0 CHANGES:
  * - Added "V/ii" to Fn type (secondary dominant: A7 in key of C)
@@ -24,14 +28,15 @@ export type Fn =
   | "V/V"    // Secondary dominant (D7 in key of C)
   | "iii" 
   | "V/vi"   // Secondary dominant (E7 in key of C)
-  | "V/ii"   // ← ADDED v3.10.0! Secondary dominant (A7 in key of C)
+  | "V/ii"   // Secondary dominant (A7 in key of C)
   | "iv"     // Minor iv
   | "IV"     // Major IV
-  | "V"      // ← ADDED v3.1.3! Plain V triad (G in key of C)
-  | "V7"     // ← ADDED v3.1.3! Dominant 7th (G7 in key of C)
+  | "V"      // Plain V triad (G in key of C)
+  | "V7"     // Dominant 7th (G7 in key of C)
   | "vi" 
-  | "♭VII";  // Borrowed from parallel minor
+  | "♭VII"   // Borrowed from parallel minor
+  | "Bm7♭5"; // ← ADDED v3.17.6! Diminished 7th (bonus chord)
 
 export type SizeSpec = Partial<Record<Fn, number>>;
 
-// EOF - types.ts v3.10.0
+// EOF - types.ts v3.17.6
