@@ -1,7 +1,7 @@
 /*
- * HarmonyWheel.tsx — v3.17.38 🎯 Legend INSIDE Wheel Container!
+ * HarmonyWheel.tsx — v3.17.40 🎯 Legend INSIDE Wheel Container!
  * 
- * 🎯 v3.17.38 KEY FIX:
+ * 🎯 v3.17.40 KEY FIX:
  * - **Legend moved INSIDE wheel container** (before transformed SVG child)
  * - Transform creates new stacking context - was breaking z-index
  * - Legend now: wheel container > legend (z:1) > transformed SVG
@@ -1133,7 +1133,7 @@ import {
   parseSongMetadata
 } from "./lib/songManager";
 
-const HW_VERSION = 'v3.17.38';
+const HW_VERSION = 'v3.17.40';
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -1705,7 +1705,7 @@ useEffect(() => {
   };
 
   const parseAndLoadSequence = ()=>{
-    const APP_VERSION = "v3.17.38-harmony-wheel";
+    const APP_VERSION = "v3.17.40-harmony-wheel";
     console.log('=== PARSE AND LOAD START ===');
     console.log('🏷️  APP VERSION:', APP_VERSION);
     console.log('Input text:', inputText);
@@ -5073,9 +5073,9 @@ useEffect(() => {
 
   return (
     <div style={{background:'#111', color:'#fff', height:'100%', maxHeight:'100vh', overflow:'hidden', padding:8, fontFamily:'ui-sans-serif, system-ui', userSelect:'none'}}>
-      <div style={{maxWidth:900, margin:'0 auto', border:'1px solid #374151', borderRadius:12, padding:8, height:'100%', overflow:'auto', position:'relative'}}>
+      <div style={{maxWidth:900, width:'100%', margin:'0 auto', border:'1px solid #374151', borderRadius:12, padding:8, height:'100%', overflow:'auto', position:'relative'}}>
 
-        {/* ✅ v3.17.38: Legend back in parent, positioned left of centered wheel */}
+        {/* ✅ v3.17.40: Legend back in parent, positioned left of centered wheel */}
         <div style={{
           position:'absolute',
           top:110,
@@ -5257,16 +5257,25 @@ useEffect(() => {
           </div>
         </div>
 
-        {/* Wheel - v3.17.38: Explicit z-index to force above legend */}
-        <div style={{position:'relative', width:WHEEL_W, margin:'0 auto', marginTop:-30, zIndex:1000}}>
+        {/* Wheel - v3.17.40: Fixed desktop size, responsive mobile */}
+        <div style={{position:'relative', width:WHEEL_W, maxWidth:'100%', margin:'0 auto', marginTop:-30, zIndex:1000}}>
 
         {/* Wheel - centered as before */}
         <div className="relative"
-             style={{width:WHEEL_W,height:WHEEL_H, margin:'0 auto', marginTop:-30,
-                     transform:`scale(1.15)`, transformOrigin:'center top', position:'relative', zIndex:10}}>
+             style={{
+               width:WHEEL_W,
+               height:WHEEL_H,
+               maxWidth:'100%',
+               margin:'0 auto', 
+               marginTop:-30,
+               transform:`scale(1.15)`,
+               transformOrigin:'center top',
+               position:'relative',
+               zIndex:10
+             }}>
           <div style={{...wrapperStyle, position:'relative', zIndex:10}}>
-            <svg width={WHEEL_W} height={WHEEL_H} viewBox={`0 0 ${WHEEL_W} ${WHEEL_H}`} className="select-none" style={{display:'block', userSelect: 'none', WebkitUserSelect: 'none', position:'relative', zIndex:10}}>
-  {/* ✅ v3.17.38: Black backing circle to block legend behind transparent wedges */}
+            <svg width="100%" height="100%" viewBox={`0 0 ${WHEEL_W} ${WHEEL_H}`} className="select-none" style={{display:'block', userSelect: 'none', WebkitUserSelect: 'none', position:'relative', zIndex:10, maxWidth:'100%', maxHeight:'100%'}}>
+  {/* ✅ v3.17.40: Black backing circle to block legend behind transparent wedges */}
   <circle cx={260} cy={260} r={220} fill="#111" />
   
   {/* Labels moved to status bar area */}
@@ -7005,6 +7014,6 @@ useEffect(() => {
   );
 }
 
-// HarmonyWheel v3.17.38 - Legend inside wheel container (same stacking context as transform)
+// HarmonyWheel v3.17.40 - Legend inside wheel container (same stacking context as transform)
 
-// EOF - HarmonyWheel.tsx v3.17.38
+// EOF - HarmonyWheel.tsx v3.17.40
