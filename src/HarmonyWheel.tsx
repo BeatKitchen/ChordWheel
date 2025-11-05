@@ -1,5 +1,19 @@
 /*
- * HarmonyWheel.tsx — v3.17.13 🐛 CRITICAL: V Chord + Bonus Wedges Fixed!
+ * HarmonyWheel.tsx — v3.17.15 🎨 Legend Positioning Balanced!
+ * 
+ * 🎨 v3.17.15 LAYOUT FIX:
+ * - **Legend at left:-90px**: Compromise between iframe and local
+ * - **Container width 900px**: Was 800px, more room for legend
+ * - Works in both iframe (constrained) and local (full width)
+ * - Minimal wheel overlap
+ * - No bleeding outside frame
+ * 
+ * 🎨 v3.17.14 IFRAME FIX:
+ * - **Legend moved inside**: Changed left:-120px to left:8px
+ * - Legend now fully visible in iframe
+ * - No bleeding outside container
+ * - Wheel still overlaps legend (z-index:0)
+ * - Works on beatkitchen.io embed
  * 
  * 🐛 v3.17.13 CRITICAL BUG FIXES:
  * - **V chord missing**: Added "V" (plain triad) to ALL skill levels
@@ -972,7 +986,7 @@ import {
   parseSongMetadata
 } from "./lib/songManager";
 
-const HW_VERSION = 'v3.17.13';
+const HW_VERSION = 'v3.17.15';
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -1541,7 +1555,7 @@ useEffect(() => {
   };
 
   const parseAndLoadSequence = ()=>{
-    const APP_VERSION = "v3.17.13-harmony-wheel";
+    const APP_VERSION = "v3.17.15-harmony-wheel";
     console.log('=== PARSE AND LOAD START ===');
     console.log('🏷️  APP VERSION:', APP_VERSION);
     console.log('Input text:', inputText);
@@ -4911,7 +4925,7 @@ useEffect(() => {
 
   return (
     <div style={{background:'#111', color:'#fff', height:'100%', maxHeight:'100vh', overflow:'hidden', padding:8, fontFamily:'ui-sans-serif, system-ui', userSelect:'none'}}>
-      <div style={{maxWidth:800, margin:'0 auto', border:'1px solid #374151', borderRadius:12, padding:8, height:'100%', overflow:'auto'}}>
+      <div style={{maxWidth:900, margin:'0 auto', border:'1px solid #374151', borderRadius:12, padding:8, height:'100%', overflow:'auto'}}>
 
         {/* BKS Logo Header with Emblem + Help Button */}
         <div style={{marginBottom:0, paddingLeft:8, position:'relative', zIndex:10, display:'flex', justifyContent:'space-between', alignItems:'flex-start'}}>
@@ -4979,13 +4993,13 @@ useEffect(() => {
           </div>
         </div>
 
-        {/* Wheel with Legend - v3.17.8: Legend moved to left under logo */}
+        {/* Wheel with Legend - v3.17.15: Positioned for both iframe and local */}
         <div style={{position:'relative', width:WHEEL_W, margin:'0 auto', marginTop:-30}}>
           
-          {/* Functional Harmony Legend - Further left, behind wheel */}
+          {/* Functional Harmony Legend - Left side, minimal overlap */}
           <div style={{
             position:'absolute',
-            left:-120,
+            left:-90,
             top:30,
             background:'#0a0a0a',
             border:'1px solid #374151',
@@ -6813,6 +6827,6 @@ useEffect(() => {
   );
 }
 
-// HarmonyWheel v3.17.13 - FIXED: V chord missing + bonus wedges not showing
+// HarmonyWheel v3.17.15 - Legend at -90px, container 900px wide
 
-// EOF - HarmonyWheel.tsx v3.17.13
+// EOF - HarmonyWheel.tsx v3.17.15
