@@ -4908,10 +4908,10 @@ useEffect(() => {
         {/* Wheel with Legend - v3.17.8: Legend moved to left under logo */}
         <div style={{position:'relative', width:WHEEL_W, margin:'0 auto', marginTop:-30}}>
           
-          {/* Functional Harmony Legend - Left aligned under logo, wheel can overlap */}
+          {/* Functional Harmony Legend - Further left, behind wheel */}
           <div style={{
             position:'absolute',
-            left:8,
+            left:-120,
             top:30,
             background:'#0a0a0a',
             border:'1px solid #374151',
@@ -4919,7 +4919,7 @@ useEffect(() => {
             padding:'10px',
             width:110,
             fontSize:10,
-            zIndex:1  // Behind wheel (wheel is z-index 10)
+            zIndex:0  // Behind wheel (wheel is higher z-index)
           }}>
             <div style={{fontWeight:600, marginBottom:6, color:'#9CA3AF', fontSize:9, textTransform:'uppercase', letterSpacing:'0.05em'}}>
               Function
