@@ -1,7 +1,7 @@
 /*
- * HarmonyWheel.tsx — v3.17.71 🎯 Legend INSIDE Wheel Container!
+ * HarmonyWheel.tsx — v3.17.72 🎯 Legend INSIDE Wheel Container!
  * 
- * 🎯 v3.17.71 KEY FIX:
+ * 🎯 v3.17.72 KEY FIX:
  * - **Legend moved INSIDE wheel container** (before transformed SVG child)
  * - Transform creates new stacking context - was breaking z-index
  * - Legend now: wheel container > legend (z:1) > transformed SVG
@@ -1133,7 +1133,7 @@ import {
   parseSongMetadata
 } from "./lib/songManager";
 
-const HW_VERSION = 'v3.17.71';
+const HW_VERSION = 'v3.17.72';
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -1307,10 +1307,10 @@ useEffect(() => {
   
   // Audio playback
   const [audioEnabled, setAudioEnabled] = useState(true); // Start with audio enabled
-  const [audioInitialized, setAudioInitialized] = useState(false); // ✅ v3.17.71: Track if audio is ready
-  const [showAudioPrompt, setShowAudioPrompt] = useState(false); // ✅ v3.17.71: iOS audio prompt
+  const [audioInitialized, setAudioInitialized] = useState(false); // ✅ v3.17.72: Track if audio is ready
+  const [showAudioPrompt, setShowAudioPrompt] = useState(false); // ✅ v3.17.72: iOS audio prompt
   const audioEnabledRef = useRef(true); // Ref for MIDI callback closure
-  const [audioReady, setAudioReady] = useState(false); // ✅ v3.17.71: Start false, set true when initialized
+  const [audioReady, setAudioReady] = useState(false); // ✅ v3.17.72: Start false, set true when initialized
   
   // Sync audioReady with audioInitialized
   useEffect(() => {
@@ -1371,8 +1371,8 @@ useEffect(() => {
   const previousVoicingRef = useRef<number[]>([60, 64, 67]); // Default C major [C4, E4, G4]
   const activeChordNoteIdsRef = useRef<Set<string>>(new Set()); // Track note IDs instead of MIDI numbers
   const wedgeHeldRef = useRef(false); // Track if wedge is being held down
-  const lastWedgeClickTimeRef = useRef<number>(0); // ✅ v3.17.71: Track click timing
-  const wedgeClickFnRef = useRef<Fn | "">(""); // ✅ v3.17.71: Track which wedge was clicked
+  const lastWedgeClickTimeRef = useRef<number>(0); // ✅ v3.17.72: Track click timing
+  const wedgeClickFnRef = useRef<Fn | "">(""); // ✅ v3.17.72: Track which wedge was clicked
   const keyboardHeldNotesRef = useRef<Set<number>>(new Set()); // Track which keyboard notes are held
   const lastPlayedWith7thRef = useRef<boolean | null>(null); // Track if last chord had 7th
   const currentHeldFnRef = useRef<Fn | null>(null); // Track which function is being held
@@ -1383,7 +1383,7 @@ useEffect(() => {
   // Help overlay
   const [showHelp, setShowHelp] = useState(false);
   
-  // ✅ v3.17.71: Track window size - use 768px breakpoint (more standard)
+  // ✅ v3.17.72: Track window size - use 768px breakpoint (more standard)
   const [isDesktop, setIsDesktop] = useState(true); // Default true to avoid flicker
   
   useEffect(() => {
@@ -1397,7 +1397,7 @@ useEffect(() => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
   
-  // ✅ v3.17.71: Initialize audio on first user interaction (mobile requirement)
+  // ✅ v3.17.72: Initialize audio on first user interaction (mobile requirement)
   useEffect(() => {
     const initAudio = () => {
       const ctx = initAudioContext();
@@ -1430,40 +1430,46 @@ useEffect(() => {
     };
   }, [audioInitialized, isDesktop]);
   
-  // ✅ v3.17.71: Load song from URL on mount
+  // ✅ v3.17.72: Load song from URL on mount
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const songParam = params.get('song');
     if (songParam) {
       const songData = decodeSongFromURL(songParam);
-      if (songData) {
+      if (songData && songData.text) {
         // Clean text - remove array brackets if present
-        let cleanText = songData.text;
+        let cleanText = songData.text.trim();
         if (cleanText.startsWith('[') && cleanText.endsWith(']')) {
-          cleanText = cleanText.slice(1, -1);
+          cleanText = cleanText.slice(1, -1).trim();
         }
         
-        setInputText(cleanText);
-        setBaseKey(songData.key);
-        setSkillLevel('EXPERT'); // Force expert mode to show editor
-        console.log('📥 Loaded shared song:', songData.title);
+        console.log('📥 Loading shared song:', songData.title);
+        console.log('📝 Clean text:', cleanText);
         
-        // Auto-parse and load the sequence
+        setInputText(cleanText);
+        setBaseKey(songData.key || 'C');
+        setSkillLevel('EXPERT'); // Force expert mode to show editor
+        
+        // Auto-parse after state updates
+        // Use a longer timeout to ensure React has updated
         setTimeout(() => {
+          console.log('🎵 Auto-parsing loaded song');
           parseAndLoadSequence();
-        }, 100);
+        }, 300);
       }
+
     }
   }, []);
   
   // ✅ v3.17.24: Button pulse animation when key pressed
   const [pulsingButton, setPulsingButton] = useState<string | null>(null);
-  const [pulsingWedge, setPulsingWedge] = useState<Fn | "">(""); // ✅ v3.17.71: Visual feedback on click
+  const [pulsingWedge, setPulsingWedge] = useState<Fn | "">(""); // ✅ v3.17.72: Visual feedback on click
   const [showKeyDropdown, setShowKeyDropdown] = useState(false);
   const [showTransposeDropdown, setShowTransposeDropdown] = useState(false);
   const [showSongMenu, setShowSongMenu] = useState(false);
   const [shareURL, setShareURL] = useState<string>('');
-  const [showShareCopied, setShowShareCopied] = useState(false); // ✅ v3.17.71: Share feedback
+  const [showShareCopied, setShowShareCopied] = useState(false); // ✅ v3.17.72: Share feedback
+  const [showShareModal, setShowShareModal] = useState(false); // ✅ v3.17.72: Share options modal
   const [keyChangeFlash, setKeyChangeFlash] = useState(false);
   const [stepRecord, setStepRecord] = useState(false); // v3.3.1: Renamed from autoRecord
   const stepRecordRef = useRef(false); // v3.3.1: Renamed from stepRecordRef
@@ -1789,7 +1795,7 @@ useEffect(() => {
   };
 
   const parseAndLoadSequence = ()=>{
-    const APP_VERSION = "v3.17.71-harmony-wheel";
+    const APP_VERSION = "v3.17.72-harmony-wheel";
     console.log('=== PARSE AND LOAD START ===');
     console.log('🏷️  APP VERSION:', APP_VERSION);
     console.log('Input text:', inputText);
@@ -2589,7 +2595,7 @@ useEffect(() => {
       }
       
       // ✅ v3.17.23: Handle . and , for sequencer BEFORE checking if in textarea
-      // ✅ v3.17.71: Changed to Shift+comma/period (< >) to avoid editor conflict
+      // ✅ v3.17.72: Changed to Shift+comma/period (< >) to avoid editor conflict
       if (e.shiftKey && (e.key === '<' || e.key === '>')) {
         e.preventDefault();
         if (e.key === '<') { // Shift+,
@@ -4330,10 +4336,10 @@ useEffect(() => {
         <g key={fn} 
            style={{touchAction: 'none', cursor: 'pointer'}}
            onPointerDown={(e)=>{
-             // ✅ v3.17.71: Touch support - pointer events work for mouse + touch
+             // ✅ v3.17.72: Touch support - pointer events work for mouse + touch
              e.preventDefault(); // Prevent default touch behaviors
              
-             // ✅ v3.17.71: Click-to-clear with timer - only clear if clicking same wedge after delay
+             // ✅ v3.17.72: Click-to-clear with timer - only clear if clicking same wedge after delay
              const now = Date.now();
              const timeSinceLastClick = now - lastWedgeClickTimeRef.current;
              const sameWedge = wedgeClickFnRef.current === fn;
@@ -4354,7 +4360,7 @@ useEffect(() => {
              lastWedgeClickTimeRef.current = now;
              wedgeClickFnRef.current = fn;
              
-             // ✅ v3.17.71: Visual pulse feedback
+             // ✅ v3.17.72: Visual pulse feedback
              setPulsingWedge(fn);
              setTimeout(() => setPulsingWedge(""), 300);
              
@@ -4412,7 +4418,7 @@ useEffect(() => {
              previewFn(fn, playWith7th);
            }}
            onPointerEnter={(e)=>{
-             // ✅ v3.17.71: Pointer events for touch + mouse
+             // ✅ v3.17.72: Pointer events for touch + mouse
              // If dragging from another wedge, activate this wedge
              console.log('🔍 onPointerEnter:', fn, 'buttons:', e.buttons, 'wedgeHeld:', wedgeHeldRef.current, 'currentFn:', currentHeldFnRef.current);
              
@@ -4604,7 +4610,7 @@ useEffect(() => {
              }
            }}
            onPointerUp={()=>{
-             // ✅ v3.17.71: Touch support
+             // ✅ v3.17.72: Touch support
              console.log('🛑 Pointer up on wedge, releasing');
              wedgeHeldRef.current = false; // Release wedge
              currentHeldFnRef.current = null;
@@ -4626,7 +4632,7 @@ useEffect(() => {
              }
            }}
            onPointerLeave={(e)=>{
-             // ✅ v3.17.71: Touch support
+             // ✅ v3.17.72: Touch support
              // If pointer button is still down, we're dragging - don't clear refs!
              if (e.buttons === 1) {
                console.log('🔄 Pointer button still down, keeping drag state');
@@ -4885,7 +4891,7 @@ useEffect(() => {
     if (!audioContextRef.current) {
       audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
     }
-    // ✅ v3.17.71: Resume audio context on mobile (required by iOS/Android)
+    // ✅ v3.17.72: Resume audio context on mobile (required by iOS/Android)
     if (audioContextRef.current.state === 'suspended') {
       console.log('🔊 Audio context suspended, resuming...');
       audioContextRef.current.resume().then(() => {
@@ -4939,7 +4945,7 @@ useEffect(() => {
     
     const mainGain = ctx.createGain();
     mainGain.gain.value = 0;
-    // ✅ v3.17.71: Reduced to prevent clipping (chords = multiple notes adding up)
+    // ✅ v3.17.72: Reduced to prevent clipping (chords = multiple notes adding up)
     const mobileBoost = !isDesktop ? 1.5 : 1.0;
     const chordSafety = 0.5; // Divide by 2 since chords can have 3-4 notes
     mainGain.gain.linearRampToValueAtTime(0.6 * velocity * mobileBoost * chordSafety, now + 0.015);
@@ -5081,7 +5087,7 @@ useEffect(() => {
     activeMidiNotesRef.current.clear();
   };
 
-  // ✅ v3.17.71: Song sharing via URL
+  // ✅ v3.17.72: Song sharing via URL
   const encodeSongToURL = () => {
     const songData = {
       text: inputText,
@@ -5237,9 +5243,9 @@ useEffect(() => {
       WebkitTouchCallout:'none',
       MozUserSelect:'none',
       msUserSelect:'none',
-      touchAction: 'pan-y' // ✅ v3.17.71: Allow vertical scrolling on background
+      touchAction: 'pan-y' // ✅ v3.17.72: Allow vertical scrolling on background
     }}>
-      {/* ✅ v3.17.71: iOS Audio Prompt with silent note trick */}
+      {/* ✅ v3.17.72: iOS Audio Prompt with silent note trick */}
       {showAudioPrompt && (
         <div
           onClick={() => {
@@ -5281,6 +5287,98 @@ useEffect(() => {
         </div>
       )}
       
+      {/* ✅ v3.17.72: Share Modal */}
+      {showShareModal && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0,0,0,0.8)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 99999
+          }}
+          onClick={() => setShowShareModal(false)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: '#1a1a1a',
+              border: '2px solid #60A5FA',
+              borderRadius: 12,
+              padding: 24,
+              maxWidth: 500,
+              width: '90%',
+              textAlign: 'center'
+            }}
+          >
+            <div style={{ fontSize: 48, marginBottom: 16 }}>✉️</div>
+            <div style={{ fontSize: 20, fontWeight: 700, marginBottom: 8, color: '#fff' }}>
+              Share This Song
+            </div>
+            <div style={{ fontSize: 14, color: '#9CA3AF', marginBottom: 20 }}>
+              {songTitle || 'Your sequence'} will be shared via URL
+            </div>
+            
+            <button
+              onClick={() => {
+                handleShareSong();
+                setShowShareModal(false);
+              }}
+              style={{
+                width: '100%',
+                padding: '12px 20px',
+                background: '#60A5FA',
+                border: 'none',
+                borderRadius: 8,
+                color: '#fff',
+                fontSize: 16,
+                fontWeight: 600,
+                cursor: 'pointer',
+                marginBottom: 12
+              }}
+            >
+              📋 Copy Link to Clipboard
+            </button>
+            
+            <button
+              onClick={() => setShowShareModal(false)}
+              style={{
+                width: '100%',
+                padding: '12px 20px',
+                background: 'transparent',
+                border: '2px solid #374151',
+                borderRadius: 8,
+                color: '#9CA3AF',
+                fontSize: 14,
+                fontWeight: 600,
+                cursor: 'pointer'
+              }}
+            >
+              Cancel
+            </button>
+            
+            {showShareCopied && (
+              <div style={{
+                marginTop: 16,
+                padding: '8px 12px',
+                background: '#1a3310',
+                border: '1px solid #39FF14',
+                borderRadius: 6,
+                color: '#39FF14',
+                fontSize: 14
+              }}>
+                ✓ Link copied! Send it to anyone.
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+      
       <div style={{
         width: isDesktop ? '100%' : '100vw',
         maxWidth: isDesktop ? 900 : 'none',
@@ -5298,7 +5396,7 @@ useEffect(() => {
         WebkitTouchCallout:'none'
       }}>
 
-        {/* ✅ v3.17.71: Legend - moved up to reduce overlap */}
+        {/* ✅ v3.17.72: Legend - moved up to reduce overlap */}
         {isDesktop && (
           <div style={{
             position:'absolute',
@@ -5416,7 +5514,7 @@ useEffect(() => {
           </div>
         )}
 
-        {/* BKS Logo Header with Emblem + Help Button - v3.17.71: High z-index */}
+        {/* BKS Logo Header with Emblem + Help Button - v3.17.72: High z-index */}
         <div style={{marginBottom:0, position:'relative', zIndex:10002, display:'flex', justifyContent:'space-between', alignItems:'flex-start'}}>
           <div style={{position:'relative', marginLeft: isDesktop ? 140 : '2%'}}>
             <svg width="300" height="44" viewBox="0 0 400 70" preserveAspectRatio="xMinYMin meet" style={{opacity:0.85, display:'block'}}>
@@ -5475,7 +5573,7 @@ useEffect(() => {
           </div>
           </div>
           
-          {/* Skill Wheel only - top right - v3.17.71: High z-index for clickability */}
+          {/* Skill Wheel only - top right - v3.17.72: High z-index for clickability */}
           <div style={{
             display:'flex', 
             alignItems:'flex-start', 
@@ -5489,7 +5587,7 @@ useEffect(() => {
           </div>
         </div>
 
-        {/* Wheel - v3.17.71: Bigger on mobile, matches keyboard width */}
+        {/* Wheel - v3.17.72: Bigger on mobile, matches keyboard width */}
         <div style={{position:'relative', width:'100%', maxWidth:WHEEL_W, margin:'0 auto', marginTop:-30, zIndex:1000}}>
 
         {/* Wheel - centered as before */}
@@ -5507,7 +5605,7 @@ useEffect(() => {
              }}>
           <div style={{...wrapperStyle, position:'relative', zIndex:10}}>
             <svg width="100%" height="100%" viewBox={`0 0 ${WHEEL_W} ${WHEEL_H}`} className="select-none" style={{display:'block', userSelect: 'none', WebkitUserSelect: 'none', position:'relative', zIndex:10, maxWidth:'100%', maxHeight:'100%', touchAction:'pan-y'}}>
-  {/* ✅ v3.17.71: Black backing circle - pointer-events none for scrolling */}
+  {/* ✅ v3.17.72: Black backing circle - pointer-events none for scrolling */}
   <circle cx={260} cy={260} r={224} fill="#111" style={{pointerEvents: 'none'}} />
   
   {/* Labels moved to status bar area */}
@@ -5744,7 +5842,7 @@ useEffect(() => {
               style={{
                 position: 'absolute',
                 right: 40,
-                bottom: isDesktop ? 120 : 60,  // ← v3.17.71: LOWER on mobile (was backwards!)
+                bottom: isDesktop ? 120 : 60,  // ← v3.17.72: LOWER on mobile (was backwards!)
                 width: 32,
                 height: 32,
                 padding: 0,
@@ -6319,7 +6417,7 @@ useEffect(() => {
                 </div>
                 </div>
                 
-                {/* Guitar Tab - v3.17.71: Always visible, scales on mobile */}
+                {/* Guitar Tab - v3.17.72: Always visible, scales on mobile */}
                 <div style={{
                   border:'1px solid #374151',
                   borderRadius:8,
@@ -6707,7 +6805,7 @@ useEffect(() => {
               
               {/* Row 2: Sequencer + Buttons - EXPERT ONLY */}
               {skillLevel === "EXPERT" && (
-                <div style={{marginBottom: 6, display:'flex', gap:8, alignItems:'stretch'}}>
+                <div style={{marginBottom: 6, display:'flex', gap:8, alignItems:'stretch', maxWidth:'100%', overflow:'hidden'}}>
                   <textarea
                     ref={textareaRef}
                     placeholder={'Type chords, modifiers, and comments...\nExamples:\n@TITLE Sequence Name, @KEY C\nC, Am7, F, G7\n@SUB F, Bb, C7, @HOME\n@REL Em, Am, @PAR Cm, Fm\n@KEY G, D, G, C\n# Verse: lyrics or theory note'}
@@ -6724,7 +6822,7 @@ useEffect(() => {
                       borderRadius:8,
                       fontFamily:'ui-sans-serif, system-ui',
                       resize:'vertical',
-                      fontSize: isDesktop ? 12 : 16, // ✅ v3.17.71: 16px on mobile prevents iOS zoom
+                      fontSize: isDesktop ? 12 : 16, // ✅ v3.17.72: 16px on mobile prevents iOS zoom
                       lineHeight: '1.5', // v3.2.5: Explicit line-height for better click targets
                       userSelect: 'text' // ✅ v3.17.12: Allow text selection in editor
                     }}
@@ -6758,8 +6856,8 @@ useEffect(() => {
                     )}
                   </button>
                   
-                  {/* ✅ v3.17.71: Vertical button stack - Load & Share */}
-                  <div style={{display:'flex', flexDirection:'column', gap:6}}>
+                  {/* ✅ v3.17.72: Vertical button stack - Load & Share */}
+                  <div style={{display:'flex', flexDirection:'column', gap:8}}>
                     {/* Load/Menu Button */}
                     <div style={{position:'relative'}}>
                       <button 
@@ -6924,7 +7022,7 @@ useEffect(() => {
                   
                   {/* Share Button */}
                   <button
-                    onClick={handleShareSong}
+                    onClick={() => setShowShareModal(true)}
                     style={{
                       width:60,
                       height:35,
@@ -7136,7 +7234,7 @@ useEffect(() => {
                         if (ctx.state === 'suspended') {
                           await ctx.resume();
                         }
-                        // ✅ v3.17.71: Play silent note to fully unlock iOS audio in iframe
+                        // ✅ v3.17.72: Play silent note to fully unlock iOS audio in iframe
                         const osc = ctx.createOscillator();
                         const gain = ctx.createGain();
                         gain.gain.value = 0.001; // Nearly silent
@@ -7301,6 +7399,6 @@ useEffect(() => {
   );
 }
 
-// HarmonyWheel v3.17.71 - Legend inside wheel container (same stacking context as transform)
+// HarmonyWheel v3.17.72 - Legend inside wheel container (same stacking context as transform)
 
-// EOF - HarmonyWheel.tsx v3.17.71
+// EOF - HarmonyWheel.tsx v3.17.72
