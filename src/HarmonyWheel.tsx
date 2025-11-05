@@ -1,7 +1,7 @@
 /*
- * HarmonyWheel.tsx — v3.17.61 🎯 Legend INSIDE Wheel Container!
+ * HarmonyWheel.tsx — v3.17.62 🎯 Legend INSIDE Wheel Container!
  * 
- * 🎯 v3.17.61 KEY FIX:
+ * 🎯 v3.17.62 KEY FIX:
  * - **Legend moved INSIDE wheel container** (before transformed SVG child)
  * - Transform creates new stacking context - was breaking z-index
  * - Legend now: wheel container > legend (z:1) > transformed SVG
@@ -1133,7 +1133,7 @@ import {
   parseSongMetadata
 } from "./lib/songManager";
 
-const HW_VERSION = 'v3.17.61';
+const HW_VERSION = 'v3.17.62';
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -1307,8 +1307,14 @@ useEffect(() => {
   
   // Audio playback
   const [audioEnabled, setAudioEnabled] = useState(true); // Start with audio enabled
+  const [audioInitialized, setAudioInitialized] = useState(false); // ✅ v3.17.62: Track if audio is ready
   const audioEnabledRef = useRef(true); // Ref for MIDI callback closure
-  const [audioReady, setAudioReady] = useState(true); // Start ready since audio enabled by default
+  const [audioReady, setAudioReady] = useState(false); // ✅ v3.17.62: Start false, set true when initialized
+  
+  // Sync audioReady with audioInitialized
+  useEffect(() => {
+    setAudioReady(audioInitialized && audioEnabled);
+  }, [audioInitialized, audioEnabled]);
   
   // Initialize audio context on mount since we start with audio enabled
   useEffect(() => {
@@ -1364,6 +1370,8 @@ useEffect(() => {
   const previousVoicingRef = useRef<number[]>([60, 64, 67]); // Default C major [C4, E4, G4]
   const activeChordNoteIdsRef = useRef<Set<string>>(new Set()); // Track note IDs instead of MIDI numbers
   const wedgeHeldRef = useRef(false); // Track if wedge is being held down
+  const lastWedgeClickTimeRef = useRef<number>(0); // ✅ v3.17.62: Track click timing
+  const wedgeClickFnRef = useRef<Fn | "">(""); // ✅ v3.17.62: Track which wedge was clicked
   const keyboardHeldNotesRef = useRef<Set<number>>(new Set()); // Track which keyboard notes are held
   const lastPlayedWith7thRef = useRef<boolean | null>(null); // Track if last chord had 7th
   const currentHeldFnRef = useRef<Fn | null>(null); // Track which function is being held
@@ -1374,7 +1382,7 @@ useEffect(() => {
   // Help overlay
   const [showHelp, setShowHelp] = useState(false);
   
-  // ✅ v3.17.61: Track window size - use 768px breakpoint (more standard)
+  // ✅ v3.17.62: Track window size - use 768px breakpoint (more standard)
   const [isDesktop, setIsDesktop] = useState(true); // Default true to avoid flicker
   
   useEffect(() => {
@@ -1388,15 +1396,16 @@ useEffect(() => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
   
-  // ✅ v3.17.61: Initialize audio on first user interaction (mobile requirement)
+  // ✅ v3.17.62: Initialize audio on first user interaction (mobile requirement)
   useEffect(() => {
     const initAudio = () => {
-      console.log('🎵 First touch - initializing audio context');
-      const ctx = getAudioContext();
+      const ctx = initAudioContext();
       if (ctx.state === 'suspended') {
         ctx.resume().then(() => {
-          console.log('✅ Audio context initialized on touch');
+          setAudioInitialized(true);
         });
+      } else {
+        setAudioInitialized(true);
       }
     };
     
@@ -1741,7 +1750,7 @@ useEffect(() => {
   };
 
   const parseAndLoadSequence = ()=>{
-    const APP_VERSION = "v3.17.61-harmony-wheel";
+    const APP_VERSION = "v3.17.62-harmony-wheel";
     console.log('=== PARSE AND LOAD START ===');
     console.log('🏷️  APP VERSION:', APP_VERSION);
     console.log('Input text:', inputText);
@@ -4282,19 +4291,31 @@ useEffect(() => {
         <g key={fn} 
            style={{touchAction: 'none', cursor: 'pointer'}}
            onPointerDown={(e)=>{
-             // ✅ v3.17.61: Touch support - pointer events work for mouse + touch
+             // ✅ v3.17.62: Touch support - pointer events work for mouse + touch
              e.preventDefault(); // Prevent default touch behaviors
              
-             // ✅ v3.17.10: Latch mode - clicking active wedge clears it
-             if (isActive) {
-               console.log('🔓 Unlatching active wedge:', fn);
+             // ✅ v3.17.62: Click-to-clear with timer - only clear if clicking same wedge after delay
+             const now = Date.now();
+             const timeSinceLastClick = now - lastWedgeClickTimeRef.current;
+             const sameWedge = wedgeClickFnRef.current === fn;
+             
+             if (isActive && sameWedge && timeSinceLastClick > 1500) {
+               // Long delay between clicks on same active wedge = clear it
+               console.log('🔓 Unlatching active wedge (1.5s+ since last click):', fn);
                setActiveFn("");
                setCenterLabel("");
                setLatchedAbsNotes([]);
-               lastInputWasPreviewRef.current = false; // ✅ v3.17.11: Clear preview flag to remove yellow highlights
+               lastInputWasPreviewRef.current = false;
+               lastWedgeClickTimeRef.current = 0;
+               wedgeClickFnRef.current = "";
                return;
              }
              
+             // Track this click for next time
+             lastWedgeClickTimeRef.current = now;
+             wedgeClickFnRef.current = fn;
+             
+             // Quick clicks or different wedge = play normally
              wedgeHeldRef.current = true; // Mark wedge as held
              currentHeldFnRef.current = fn; // Remember which function
              
@@ -4348,7 +4369,7 @@ useEffect(() => {
              previewFn(fn, playWith7th);
            }}
            onPointerEnter={(e)=>{
-             // ✅ v3.17.61: Pointer events for touch + mouse
+             // ✅ v3.17.62: Pointer events for touch + mouse
              // If dragging from another wedge, activate this wedge
              console.log('🔍 onPointerEnter:', fn, 'buttons:', e.buttons, 'wedgeHeld:', wedgeHeldRef.current, 'currentFn:', currentHeldFnRef.current);
              
@@ -4540,7 +4561,7 @@ useEffect(() => {
              }
            }}
            onPointerUp={()=>{
-             // ✅ v3.17.61: Touch support
+             // ✅ v3.17.62: Touch support
              console.log('🛑 Pointer up on wedge, releasing');
              wedgeHeldRef.current = false; // Release wedge
              currentHeldFnRef.current = null;
@@ -4562,7 +4583,7 @@ useEffect(() => {
              }
            }}
            onPointerLeave={(e)=>{
-             // ✅ v3.17.61: Touch support
+             // ✅ v3.17.62: Touch support
              // If pointer button is still down, we're dragging - don't clear refs!
              if (e.buttons === 1) {
                console.log('🔄 Pointer button still down, keeping drag state');
@@ -4820,7 +4841,7 @@ useEffect(() => {
     if (!audioContextRef.current) {
       audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
     }
-    // ✅ v3.17.61: Resume audio context on mobile (required by iOS/Android)
+    // ✅ v3.17.62: Resume audio context on mobile (required by iOS/Android)
     if (audioContextRef.current.state === 'suspended') {
       console.log('🔊 Audio context suspended, resuming...');
       audioContextRef.current.resume().then(() => {
@@ -4874,7 +4895,7 @@ useEffect(() => {
     
     const mainGain = ctx.createGain();
     mainGain.gain.value = 0;
-    // ✅ v3.17.61: Boosted for mobile (was 0.6, 0.45, 0.4)
+    // ✅ v3.17.62: Boosted for mobile (was 0.6, 0.45, 0.4)
     const mobileBoost = !isDesktop ? 1.5 : 1.0;
     mainGain.gain.linearRampToValueAtTime(0.6 * velocity * mobileBoost, now + 0.015);
     mainGain.gain.linearRampToValueAtTime(0.45 * velocity * mobileBoost, now + 0.08);
@@ -5156,7 +5177,7 @@ useEffect(() => {
         WebkitTouchCallout:'none'
       }}>
 
-        {/* ✅ v3.17.61: Legend - moved up to reduce overlap */}
+        {/* ✅ v3.17.62: Legend - moved up to reduce overlap */}
         {isDesktop && (
           <div style={{
             position:'absolute',
@@ -5274,7 +5295,7 @@ useEffect(() => {
           </div>
         )}
 
-        {/* BKS Logo Header with Emblem + Help Button - v3.17.61: High z-index */}
+        {/* BKS Logo Header with Emblem + Help Button - v3.17.62: High z-index */}
         <div style={{marginBottom:0, position:'relative', zIndex:10002, display:'flex', justifyContent:'space-between', alignItems:'flex-start'}}>
           <div style={{position:'relative', marginLeft: isDesktop ? 140 : '2%'}}>
             <svg width="300" height="44" viewBox="0 0 400 70" preserveAspectRatio="xMinYMin meet" style={{opacity:0.85, display:'block'}}>
@@ -5333,7 +5354,7 @@ useEffect(() => {
           </div>
           </div>
           
-          {/* Skill Wheel only - top right - v3.17.61: High z-index for clickability */}
+          {/* Skill Wheel only - top right - v3.17.62: High z-index for clickability */}
           <div style={{
             display:'flex', 
             alignItems:'flex-start', 
@@ -5347,7 +5368,7 @@ useEffect(() => {
           </div>
         </div>
 
-        {/* Wheel - v3.17.61: Bigger on mobile, matches keyboard width */}
+        {/* Wheel - v3.17.62: Bigger on mobile, matches keyboard width */}
         <div style={{position:'relative', width:'100%', maxWidth:WHEEL_W, margin:'0 auto', marginTop:-30, zIndex:1000}}>
 
         {/* Wheel - centered as before */}
@@ -5365,7 +5386,7 @@ useEffect(() => {
              }}>
           <div style={{...wrapperStyle, position:'relative', zIndex:10}}>
             <svg width="100%" height="100%" viewBox={`0 0 ${WHEEL_W} ${WHEEL_H}`} className="select-none" style={{display:'block', userSelect: 'none', WebkitUserSelect: 'none', position:'relative', zIndex:10, maxWidth:'100%', maxHeight:'100%', touchAction:'none'}}>
-  {/* ✅ v3.17.61: Black backing circle - slightly larger for border effect */}
+  {/* ✅ v3.17.62: Black backing circle - slightly larger for border effect */}
   <circle cx={260} cy={260} r={224} fill="#111" />
   
   {/* Labels moved to status bar area */}
@@ -5602,7 +5623,7 @@ useEffect(() => {
               style={{
                 position: 'absolute',
                 right: 40,
-                bottom: isDesktop ? 120 : 60,  // ← v3.17.61: LOWER on mobile (was backwards!)
+                bottom: isDesktop ? 120 : 60,  // ← v3.17.62: LOWER on mobile (was backwards!)
                 width: 32,
                 height: 32,
                 padding: 0,
@@ -6177,7 +6198,7 @@ useEffect(() => {
                 </div>
                 </div>
                 
-                {/* Guitar Tab - v3.17.61: Always visible, scales on mobile */}
+                {/* Guitar Tab - v3.17.62: Always visible, scales on mobile */}
                 <div style={{
                   border:'1px solid #374151',
                   borderRadius:8,
@@ -6582,7 +6603,7 @@ useEffect(() => {
                       borderRadius:8,
                       fontFamily:'ui-sans-serif, system-ui',
                       resize:'vertical',
-                      fontSize:12,
+                      fontSize: isDesktop ? 12 : 16, // ✅ v3.17.62: 16px on mobile prevents iOS zoom
                       lineHeight: '1.5', // v3.2.5: Explicit line-height for better click targets
                       userSelect: 'text' // ✅ v3.17.12: Allow text selection in editor
                     }}
@@ -7113,6 +7134,6 @@ useEffect(() => {
   );
 }
 
-// HarmonyWheel v3.17.61 - Legend inside wheel container (same stacking context as transform)
+// HarmonyWheel v3.17.62 - Legend inside wheel container (same stacking context as transform)
 
-// EOF - HarmonyWheel.tsx v3.17.61
+// EOF - HarmonyWheel.tsx v3.17.62
