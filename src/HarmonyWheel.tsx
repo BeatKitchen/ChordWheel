@@ -1,7 +1,7 @@
 /*
- * HarmonyWheel.tsx — v3.17.51 🎯 Legend INSIDE Wheel Container!
+ * HarmonyWheel.tsx — v3.17.52 🎯 Legend INSIDE Wheel Container!
  * 
- * 🎯 v3.17.51 KEY FIX:
+ * 🎯 v3.17.52 KEY FIX:
  * - **Legend moved INSIDE wheel container** (before transformed SVG child)
  * - Transform creates new stacking context - was breaking z-index
  * - Legend now: wheel container > legend (z:1) > transformed SVG
@@ -1133,7 +1133,7 @@ import {
   parseSongMetadata
 } from "./lib/songManager";
 
-const HW_VERSION = 'v3.17.51';
+const HW_VERSION = 'v3.17.52';
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -1374,7 +1374,7 @@ useEffect(() => {
   // Help overlay
   const [showHelp, setShowHelp] = useState(false);
   
-  // ✅ v3.17.51: Track window size - use 768px breakpoint (more standard)
+  // ✅ v3.17.52: Track window size - use 768px breakpoint (more standard)
   const [isDesktop, setIsDesktop] = useState(true); // Default true to avoid flicker
   
   useEffect(() => {
@@ -1719,7 +1719,7 @@ useEffect(() => {
   };
 
   const parseAndLoadSequence = ()=>{
-    const APP_VERSION = "v3.17.51-harmony-wheel";
+    const APP_VERSION = "v3.17.52-harmony-wheel";
     console.log('=== PARSE AND LOAD START ===');
     console.log('🏷️  APP VERSION:', APP_VERSION);
     console.log('Input text:', inputText);
@@ -4260,7 +4260,7 @@ useEffect(() => {
         <g key={fn} 
            style={{touchAction: 'none', cursor: 'pointer'}}
            onPointerDown={(e)=>{
-             // ✅ v3.17.51: Touch support - pointer events work for mouse + touch
+             // ✅ v3.17.52: Touch support - pointer events work for mouse + touch
              e.preventDefault(); // Prevent default touch behaviors
              
              // ✅ v3.17.10: Latch mode - clicking active wedge clears it
@@ -4326,7 +4326,7 @@ useEffect(() => {
              previewFn(fn, playWith7th);
            }}
            onPointerEnter={(e)=>{
-             // ✅ v3.17.51: Pointer events for touch + mouse
+             // ✅ v3.17.52: Pointer events for touch + mouse
              // If dragging from another wedge, activate this wedge
              console.log('🔍 onPointerEnter:', fn, 'buttons:', e.buttons, 'wedgeHeld:', wedgeHeldRef.current, 'currentFn:', currentHeldFnRef.current);
              
@@ -4518,7 +4518,7 @@ useEffect(() => {
              }
            }}
            onPointerUp={()=>{
-             // ✅ v3.17.51: Touch support
+             // ✅ v3.17.52: Touch support
              console.log('🛑 Pointer up on wedge, releasing');
              wedgeHeldRef.current = false; // Release wedge
              currentHeldFnRef.current = null;
@@ -4540,7 +4540,7 @@ useEffect(() => {
              }
            }}
            onPointerLeave={(e)=>{
-             // ✅ v3.17.51: Touch support
+             // ✅ v3.17.52: Touch support
              // If pointer button is still down, we're dragging - don't clear refs!
              if (e.buttons === 1) {
                console.log('🔄 Pointer button still down, keeping drag state');
@@ -5092,11 +5092,10 @@ useEffect(() => {
   })();
 
   return (
-    <div style={{background:'#111', color:'#fff', minHeight:'100vh', maxHeight:'100vh', overflow:'auto', padding:8, fontFamily:'ui-sans-serif, system-ui', userSelect:'none'}}>
+    <div style={{background:'#111', color:'#fff', minHeight:'100vh', overflow:'auto', padding:8, fontFamily:'ui-sans-serif, system-ui', userSelect:'none'}}>
       <div style={{
-        minWidth: isDesktop ? 900 : 'auto',
-        width: isDesktop ? '100%' : 900,
-        maxWidth:900,
+        width: isDesktop ? '100%' : '100vw',
+        maxWidth: isDesktop ? 900 : 'none',
         margin:'0 auto', 
         border:'1px solid #374151', 
         borderRadius:12, 
@@ -5104,12 +5103,11 @@ useEffect(() => {
         minHeight:'fit-content',
         overflow:'visible', 
         position:'relative',
-        transform: isDesktop ? 'none' : 'scale(0.42)',
-        transformOrigin: 'top center',
-        marginBottom: isDesktop ? 0 : '-550px' // Compensate for scale
+        fontSize: isDesktop ? '16px' : 'min(2.2vw, 16px)',
+        boxSizing: 'border-box'
       }}>
 
-        {/* ✅ v3.17.51: Legend - aligned with keyboard/content */}
+        {/* ✅ v3.17.52: Legend - aligned with keyboard/content */}
         {isDesktop && (
           <div style={{
             position:'absolute',
@@ -5229,7 +5227,7 @@ useEffect(() => {
 
         {/* BKS Logo Header with Emblem + Help Button */}
         <div style={{marginBottom:0, position:'relative', zIndex:1, display:'flex', justifyContent:'space-between', alignItems:'flex-start'}}>
-          <div style={{position:'relative', marginLeft:140}}>
+          <div style={{position:'relative', marginLeft: isDesktop ? 140 : 8}}>
             <svg width="300" height="44" viewBox="0 0 400 70" preserveAspectRatio="xMinYMin meet" style={{opacity:0.85, display:'block'}}>
             <g transform="matrix(0.733705,0,0,0.733705,2.67091,-1.60525)">
               <g transform="matrix(-1,0,0,1,99.7819,4.76996e-06)">
@@ -5287,31 +5285,31 @@ useEffect(() => {
           </div>
           
           {/* Skill Wheel only - top right */}
-          <div style={{display:'flex', alignItems:'flex-start', position:'relative', zIndex:10, marginRight:200}}>
+          <div style={{display:'flex', alignItems:'flex-start', position:'relative', zIndex:10, marginRight: isDesktop ? 200 : 8}}>
             {/* Circular Skill Selector */}
             <SkillWheel current={skillLevel} onChange={setSkillLevel} />
           </div>
         </div>
 
-        {/* Wheel - v3.17.51: Fixed desktop size, responsive mobile */}
-        <div style={{position:'relative', width:WHEEL_W, maxWidth:'100%', margin:'0 auto', marginTop:-30, zIndex:1000}}>
+        {/* Wheel - v3.17.52: Responsive scaling without transform issues */}
+        <div style={{position:'relative', width:'100%', maxWidth:WHEEL_W, margin:'0 auto', marginTop:-30, zIndex:1000}}>
 
         {/* Wheel - centered as before */}
         <div className="relative"
              style={{
-               width:WHEEL_W,
-               height:WHEEL_H,
-               maxWidth:'100%',
+               width:'100%',
+               maxWidth:WHEEL_W,
+               aspectRatio: '1/1',
                margin:'0 auto', 
                marginTop:-30,
-               transform:`scale(1.15)`,
+               transform: isDesktop ? `scale(1.15)` : 'scale(1.0)',
                transformOrigin:'center top',
                position:'relative',
                zIndex:10
              }}>
           <div style={{...wrapperStyle, position:'relative', zIndex:10}}>
             <svg width="100%" height="100%" viewBox={`0 0 ${WHEEL_W} ${WHEEL_H}`} className="select-none" style={{display:'block', userSelect: 'none', WebkitUserSelect: 'none', position:'relative', zIndex:10, maxWidth:'100%', maxHeight:'100%', touchAction:'none'}}>
-  {/* ✅ v3.17.51: Black backing circle to block legend behind transparent wedges */}
+  {/* ✅ v3.17.52: Black backing circle to block legend behind transparent wedges */}
   <circle cx={260} cy={260} r={220} fill="#111" />
   
   {/* Labels moved to status bar area */}
@@ -7057,6 +7055,6 @@ useEffect(() => {
   );
 }
 
-// HarmonyWheel v3.17.51 - Legend inside wheel container (same stacking context as transform)
+// HarmonyWheel v3.17.52 - Legend inside wheel container (same stacking context as transform)
 
-// EOF - HarmonyWheel.tsx v3.17.51
+// EOF - HarmonyWheel.tsx v3.17.52
