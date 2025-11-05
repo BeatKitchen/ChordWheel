@@ -1,7 +1,7 @@
 /*
- * HarmonyWheel.tsx — v3.17.65 🎯 Legend INSIDE Wheel Container!
+ * HarmonyWheel.tsx — v3.17.70 🎯 Legend INSIDE Wheel Container!
  * 
- * 🎯 v3.17.65 KEY FIX:
+ * 🎯 v3.17.70 KEY FIX:
  * - **Legend moved INSIDE wheel container** (before transformed SVG child)
  * - Transform creates new stacking context - was breaking z-index
  * - Legend now: wheel container > legend (z:1) > transformed SVG
@@ -1133,7 +1133,7 @@ import {
   parseSongMetadata
 } from "./lib/songManager";
 
-const HW_VERSION = 'v3.17.65';
+const HW_VERSION = 'v3.17.70';
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -1307,10 +1307,10 @@ useEffect(() => {
   
   // Audio playback
   const [audioEnabled, setAudioEnabled] = useState(true); // Start with audio enabled
-  const [audioInitialized, setAudioInitialized] = useState(false); // ✅ v3.17.65: Track if audio is ready
-  const [showAudioPrompt, setShowAudioPrompt] = useState(false); // ✅ v3.17.65: iOS audio prompt
+  const [audioInitialized, setAudioInitialized] = useState(false); // ✅ v3.17.70: Track if audio is ready
+  const [showAudioPrompt, setShowAudioPrompt] = useState(false); // ✅ v3.17.70: iOS audio prompt
   const audioEnabledRef = useRef(true); // Ref for MIDI callback closure
-  const [audioReady, setAudioReady] = useState(false); // ✅ v3.17.65: Start false, set true when initialized
+  const [audioReady, setAudioReady] = useState(false); // ✅ v3.17.70: Start false, set true when initialized
   
   // Sync audioReady with audioInitialized
   useEffect(() => {
@@ -1371,8 +1371,8 @@ useEffect(() => {
   const previousVoicingRef = useRef<number[]>([60, 64, 67]); // Default C major [C4, E4, G4]
   const activeChordNoteIdsRef = useRef<Set<string>>(new Set()); // Track note IDs instead of MIDI numbers
   const wedgeHeldRef = useRef(false); // Track if wedge is being held down
-  const lastWedgeClickTimeRef = useRef<number>(0); // ✅ v3.17.65: Track click timing
-  const wedgeClickFnRef = useRef<Fn | "">(""); // ✅ v3.17.65: Track which wedge was clicked
+  const lastWedgeClickTimeRef = useRef<number>(0); // ✅ v3.17.70: Track click timing
+  const wedgeClickFnRef = useRef<Fn | "">(""); // ✅ v3.17.70: Track which wedge was clicked
   const keyboardHeldNotesRef = useRef<Set<number>>(new Set()); // Track which keyboard notes are held
   const lastPlayedWith7thRef = useRef<boolean | null>(null); // Track if last chord had 7th
   const currentHeldFnRef = useRef<Fn | null>(null); // Track which function is being held
@@ -1383,7 +1383,7 @@ useEffect(() => {
   // Help overlay
   const [showHelp, setShowHelp] = useState(false);
   
-  // ✅ v3.17.65: Track window size - use 768px breakpoint (more standard)
+  // ✅ v3.17.70: Track window size - use 768px breakpoint (more standard)
   const [isDesktop, setIsDesktop] = useState(true); // Default true to avoid flicker
   
   useEffect(() => {
@@ -1397,7 +1397,7 @@ useEffect(() => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
   
-  // ✅ v3.17.65: Initialize audio on first user interaction (mobile requirement)
+  // ✅ v3.17.70: Initialize audio on first user interaction (mobile requirement)
   useEffect(() => {
     const initAudio = () => {
       const ctx = initAudioContext();
@@ -1430,12 +1430,28 @@ useEffect(() => {
     };
   }, [audioInitialized, isDesktop]);
   
+  // ✅ v3.17.70: Load song from URL on mount
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const songParam = params.get('song');
+    if (songParam) {
+      const songData = decodeSongFromURL(songParam);
+      if (songData) {
+        setInputText(songData.text);
+        setBaseKey(songData.key);
+        console.log('📥 Loaded shared song:', songData.title);
+      }
+    }
+  }, []);
+  
   // ✅ v3.17.24: Button pulse animation when key pressed
   const [pulsingButton, setPulsingButton] = useState<string | null>(null);
+  const [pulsingWedge, setPulsingWedge] = useState<Fn | "">(""); // ✅ v3.17.70: Visual feedback on click
   const [showKeyDropdown, setShowKeyDropdown] = useState(false);
   const [showTransposeDropdown, setShowTransposeDropdown] = useState(false);
   const [showSongMenu, setShowSongMenu] = useState(false);
   const [shareURL, setShareURL] = useState<string>('');
+  const [showShareCopied, setShowShareCopied] = useState(false); // ✅ v3.17.70: Share feedback
   const [keyChangeFlash, setKeyChangeFlash] = useState(false);
   const [stepRecord, setStepRecord] = useState(false); // v3.3.1: Renamed from autoRecord
   const stepRecordRef = useRef(false); // v3.3.1: Renamed from stepRecordRef
@@ -1761,7 +1777,7 @@ useEffect(() => {
   };
 
   const parseAndLoadSequence = ()=>{
-    const APP_VERSION = "v3.17.65-harmony-wheel";
+    const APP_VERSION = "v3.17.70-harmony-wheel";
     console.log('=== PARSE AND LOAD START ===');
     console.log('🏷️  APP VERSION:', APP_VERSION);
     console.log('Input text:', inputText);
@@ -2561,14 +2577,14 @@ useEffect(() => {
       }
       
       // ✅ v3.17.23: Handle . and , for sequencer BEFORE checking if in textarea
-      // These keys should control sequencer, not enter text
-      if (e.key === '.' || e.key === ',') {
+      // ✅ v3.17.70: Changed to Shift+comma/period (< >) to avoid editor conflict
+      if (e.shiftKey && (e.key === '<' || e.key === '>')) {
         e.preventDefault();
-        if (e.key === ',') {
+        if (e.key === '<') { // Shift+,
           setPulsingButton('prev');
           setTimeout(() => setPulsingButton(null), 300);
           stepPrev();
-        } else {
+        } else { // Shift+.
           setPulsingButton('next');
           setTimeout(() => setPulsingButton(null), 300);
           stepNext();
@@ -4302,17 +4318,17 @@ useEffect(() => {
         <g key={fn} 
            style={{touchAction: 'none', cursor: 'pointer'}}
            onPointerDown={(e)=>{
-             // ✅ v3.17.65: Touch support - pointer events work for mouse + touch
+             // ✅ v3.17.70: Touch support - pointer events work for mouse + touch
              e.preventDefault(); // Prevent default touch behaviors
              
-             // ✅ v3.17.65: Click-to-clear with timer - only clear if clicking same wedge after delay
+             // ✅ v3.17.70: Click-to-clear with timer - only clear if clicking same wedge after delay
              const now = Date.now();
              const timeSinceLastClick = now - lastWedgeClickTimeRef.current;
              const sameWedge = wedgeClickFnRef.current === fn;
              
-             if (isActive && sameWedge && timeSinceLastClick > 1500) {
-               // Long delay between clicks on same active wedge = clear it
-               console.log('🔓 Unlatching active wedge (1.5s+ since last click):', fn);
+             if (isActive && sameWedge && timeSinceLastClick > 10000) {
+               // Long delay (10s+) between clicks on same active wedge = clear it
+               console.log('🔓 Unlatching active wedge (10s+ since last click):', fn);
                setActiveFn("");
                setCenterLabel("");
                setLatchedAbsNotes([]);
@@ -4325,6 +4341,10 @@ useEffect(() => {
              // Track this click for next time
              lastWedgeClickTimeRef.current = now;
              wedgeClickFnRef.current = fn;
+             
+             // ✅ v3.17.70: Visual pulse feedback
+             setPulsingWedge(fn);
+             setTimeout(() => setPulsingWedge(""), 300);
              
              // Quick clicks or different wedge = play normally
              wedgeHeldRef.current = true; // Mark wedge as held
@@ -4380,7 +4400,7 @@ useEffect(() => {
              previewFn(fn, playWith7th);
            }}
            onPointerEnter={(e)=>{
-             // ✅ v3.17.65: Pointer events for touch + mouse
+             // ✅ v3.17.70: Pointer events for touch + mouse
              // If dragging from another wedge, activate this wedge
              console.log('🔍 onPointerEnter:', fn, 'buttons:', e.buttons, 'wedgeHeld:', wedgeHeldRef.current, 'currentFn:', currentHeldFnRef.current);
              
@@ -4572,7 +4592,7 @@ useEffect(() => {
              }
            }}
            onPointerUp={()=>{
-             // ✅ v3.17.65: Touch support
+             // ✅ v3.17.70: Touch support
              console.log('🛑 Pointer up on wedge, releasing');
              wedgeHeldRef.current = false; // Release wedge
              currentHeldFnRef.current = null;
@@ -4594,7 +4614,7 @@ useEffect(() => {
              }
            }}
            onPointerLeave={(e)=>{
-             // ✅ v3.17.65: Touch support
+             // ✅ v3.17.70: Touch support
              // If pointer button is still down, we're dragging - don't clear refs!
              if (e.buttons === 1) {
                console.log('🔄 Pointer button still down, keeping drag state');
@@ -4625,6 +4645,7 @@ useEffect(() => {
           <path d={path} fill={fnFillColor(fn)} opacity={fillOpacity} stroke="#ffffff" strokeWidth={2}/>
           {isActive && <path d={path} fill="none" stroke="#39FF14" strokeWidth={5} opacity={1} />}
           {isTrailing && !isActive && <path d={path} fill="none" stroke="#39FF14" strokeWidth={ringTrailWidth} opacity={ringTrailOpacity} />}
+          {pulsingWedge === fn && <path d={path} fill="none" stroke="#FFFFFF" strokeWidth={8} opacity={0.8} style={{animation: 'pulse 0.3s ease-out'}} />}
           {SHOW_WEDGE_LABELS && (
             <text x={labelPos.x} y={labelPos.y-6} textAnchor="middle" fontSize={16}
               style={{ fill: FN_LABEL_COLORS[fn], fontWeight:600, paintOrder:"stroke", stroke:'#000', strokeWidth:0.9 }}>
@@ -4636,7 +4657,7 @@ useEffect(() => {
       );
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  },[layout, activeFn, trailFn, trailTick, trailOn, effectiveBaseKey, visitorActive, relMinorActive, subdomActive, labelKey, dimFadeOn, dimFadeTick, skillLevel]);
+  },[layout, activeFn, trailFn, trailTick, trailOn, effectiveBaseKey, visitorActive, relMinorActive, subdomActive, labelKey, dimFadeOn, dimFadeTick, skillLevel, pulsingWedge]);
 
   const activeBtnStyle = (on:boolean, spaceColor?:string): React.CSSProperties =>
     ({padding:"6px 10px", border:`2px solid ${on ? (spaceColor || "#39FF14") : "#374151"}`, borderRadius:8, background:"#111", color:"#fff", cursor:"pointer"});
@@ -4852,7 +4873,7 @@ useEffect(() => {
     if (!audioContextRef.current) {
       audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
     }
-    // ✅ v3.17.65: Resume audio context on mobile (required by iOS/Android)
+    // ✅ v3.17.70: Resume audio context on mobile (required by iOS/Android)
     if (audioContextRef.current.state === 'suspended') {
       console.log('🔊 Audio context suspended, resuming...');
       audioContextRef.current.resume().then(() => {
@@ -4906,7 +4927,7 @@ useEffect(() => {
     
     const mainGain = ctx.createGain();
     mainGain.gain.value = 0;
-    // ✅ v3.17.65: Reduced to prevent clipping (chords = multiple notes adding up)
+    // ✅ v3.17.70: Reduced to prevent clipping (chords = multiple notes adding up)
     const mobileBoost = !isDesktop ? 1.5 : 1.0;
     const chordSafety = 0.5; // Divide by 2 since chords can have 3-4 notes
     mainGain.gain.linearRampToValueAtTime(0.6 * velocity * mobileBoost * chordSafety, now + 0.015);
@@ -5048,6 +5069,39 @@ useEffect(() => {
     activeMidiNotesRef.current.clear();
   };
 
+  // ✅ v3.17.70: Song sharing via URL
+  const encodeSongToURL = () => {
+    const songData = {
+      text: inputText,
+      key: baseKey,
+      title: "Shared Song"
+    };
+    const json = JSON.stringify(songData);
+    const base64 = btoa(unescape(encodeURIComponent(json)));
+    const url = `${window.location.origin}${window.location.pathname}?song=${base64}`;
+    return url;
+  };
+
+  const decodeSongFromURL = (base64: string) => {
+    try {
+      const json = decodeURIComponent(escape(atob(base64)));
+      const songData = JSON.parse(json);
+      return songData;
+    } catch (e) {
+      console.error('Failed to decode song:', e);
+      return null;
+    }
+  };
+
+  const handleShareSong = () => {
+    const url = encodeSongToURL();
+    navigator.clipboard.writeText(url).then(() => {
+      setShareURL(url);
+      setShowShareCopied(true);
+      setTimeout(() => setShowShareCopied(false), 3000);
+    });
+  };
+
   const playChordWithVoiceLeading = (chordPitchClasses: number[]) => {
     if (!audioEnabledRef.current && !midiOutputEnabled) return;  // Skip if both disabled
     
@@ -5171,9 +5225,9 @@ useEffect(() => {
       WebkitTouchCallout:'none',
       MozUserSelect:'none',
       msUserSelect:'none',
-      touchAction: 'pan-y' // ✅ v3.17.65: Allow vertical scrolling on background
+      touchAction: 'pan-y' // ✅ v3.17.70: Allow vertical scrolling on background
     }}>
-      {/* ✅ v3.17.65: iOS Audio Prompt with silent note trick */}
+      {/* ✅ v3.17.70: iOS Audio Prompt with silent note trick */}
       {showAudioPrompt && (
         <div
           onClick={() => {
@@ -5232,7 +5286,7 @@ useEffect(() => {
         WebkitTouchCallout:'none'
       }}>
 
-        {/* ✅ v3.17.65: Legend - moved up to reduce overlap */}
+        {/* ✅ v3.17.70: Legend - moved up to reduce overlap */}
         {isDesktop && (
           <div style={{
             position:'absolute',
@@ -5350,7 +5404,7 @@ useEffect(() => {
           </div>
         )}
 
-        {/* BKS Logo Header with Emblem + Help Button - v3.17.65: High z-index */}
+        {/* BKS Logo Header with Emblem + Help Button - v3.17.70: High z-index */}
         <div style={{marginBottom:0, position:'relative', zIndex:10002, display:'flex', justifyContent:'space-between', alignItems:'flex-start'}}>
           <div style={{position:'relative', marginLeft: isDesktop ? 140 : '2%'}}>
             <svg width="300" height="44" viewBox="0 0 400 70" preserveAspectRatio="xMinYMin meet" style={{opacity:0.85, display:'block'}}>
@@ -5409,7 +5463,7 @@ useEffect(() => {
           </div>
           </div>
           
-          {/* Skill Wheel only - top right - v3.17.65: High z-index for clickability */}
+          {/* Skill Wheel only - top right - v3.17.70: High z-index for clickability */}
           <div style={{
             display:'flex', 
             alignItems:'flex-start', 
@@ -5423,7 +5477,7 @@ useEffect(() => {
           </div>
         </div>
 
-        {/* Wheel - v3.17.65: Bigger on mobile, matches keyboard width */}
+        {/* Wheel - v3.17.70: Bigger on mobile, matches keyboard width */}
         <div style={{position:'relative', width:'100%', maxWidth:WHEEL_W, margin:'0 auto', marginTop:-30, zIndex:1000}}>
 
         {/* Wheel - centered as before */}
@@ -5441,7 +5495,7 @@ useEffect(() => {
              }}>
           <div style={{...wrapperStyle, position:'relative', zIndex:10}}>
             <svg width="100%" height="100%" viewBox={`0 0 ${WHEEL_W} ${WHEEL_H}`} className="select-none" style={{display:'block', userSelect: 'none', WebkitUserSelect: 'none', position:'relative', zIndex:10, maxWidth:'100%', maxHeight:'100%', touchAction:'pan-y'}}>
-  {/* ✅ v3.17.65: Black backing circle - pointer-events none for scrolling */}
+  {/* ✅ v3.17.70: Black backing circle - pointer-events none for scrolling */}
   <circle cx={260} cy={260} r={224} fill="#111" style={{pointerEvents: 'none'}} />
   
   {/* Labels moved to status bar area */}
@@ -5678,7 +5732,7 @@ useEffect(() => {
               style={{
                 position: 'absolute',
                 right: 40,
-                bottom: isDesktop ? 120 : 60,  // ← v3.17.65: LOWER on mobile (was backwards!)
+                bottom: isDesktop ? 120 : 60,  // ← v3.17.70: LOWER on mobile (was backwards!)
                 width: 32,
                 height: 32,
                 padding: 0,
@@ -5695,7 +5749,7 @@ useEffect(() => {
                 transition: 'all 0.2s',
                 zIndex: 10,
               }}
-              title={spaceLocked ? "Unlock spaces & rotation" : "Lock spaces & rotation"}
+              title={spaceLocked ? "🔒 Spaces locked - click to unlock" : "🔓 Click to lock spaces"}
             >
               {spaceLocked ? '🔒' : '🔓'}
             </button>
@@ -6253,7 +6307,7 @@ useEffect(() => {
                 </div>
                 </div>
                 
-                {/* Guitar Tab - v3.17.65: Always visible, scales on mobile */}
+                {/* Guitar Tab - v3.17.70: Always visible, scales on mobile */}
                 <div style={{
                   border:'1px solid #374151',
                   borderRadius:8,
@@ -6658,7 +6712,7 @@ useEffect(() => {
                       borderRadius:8,
                       fontFamily:'ui-sans-serif, system-ui',
                       resize:'vertical',
-                      fontSize: isDesktop ? 12 : 16, // ✅ v3.17.65: 16px on mobile prevents iOS zoom
+                      fontSize: isDesktop ? 12 : 16, // ✅ v3.17.70: 16px on mobile prevents iOS zoom
                       lineHeight: '1.5', // v3.2.5: Explicit line-height for better click targets
                       userSelect: 'text' // ✅ v3.17.12: Allow text selection in editor
                     }}
@@ -6676,10 +6730,11 @@ useEffect(() => {
                       color:'#fff',
                       cursor:'pointer',
                       display:'flex',
-                      flexDirection:'column', // v3.4.3: Column layout for icon + text
+                      flexDirection:'column',
                       alignItems:'center',
                       justifyContent:'center',
-                      gap: 2
+                      gap: 2,
+                      alignSelf: 'stretch'
                     }}
                     title={inputText !== loadedSongText ? "Load changes (Enter)" : "Load sequence (Enter)"}
                   >
@@ -6691,31 +6746,37 @@ useEffect(() => {
                     )}
                   </button>
                   
-                  {/* Sequencer Menu Button - v3.3.4: Moved after Enter button */}
-                  <div style={{position:'relative'}}>
-                    <button 
-                      onClick={() => setShowSongMenu(!showSongMenu)}
-                      style={{
-                        width:60,
-                        height:'100%',
-                        padding:'6px',
-                        border:'2px solid #60A5FA',
-                        borderRadius:8,
-                        background:'#111',
-                        color:'#fff',
-                        cursor:'pointer',
-                        fontSize:24,
-                        display:'flex',
-                        alignItems:'center',
-                        justifyContent:'center'
-                      }}
-                      title="Sequencer menu"
-                    >
-                      📁
-                    </button>
+                  {/* ✅ v3.17.70: Vertical button stack - Load & Share */}
+                  <div style={{display:'flex', flexDirection:'column', gap:6}}>
+                    {/* Load/Menu Button */}
+                    <div style={{position:'relative'}}>
+                      <button 
+                        onClick={() => setShowSongMenu(!showSongMenu)}
+                        style={{
+                          width:60,
+                          height:35,
+                          padding:'4px 6px',
+                          border:'2px solid #60A5FA',
+                          borderRadius:8,
+                          background:'#111',
+                          color:'#60A5FA',
+                          cursor:'pointer',
+                          fontSize:10,
+                          fontWeight:600,
+                          display:'flex',
+                          flexDirection:'column',
+                          alignItems:'center',
+                          justifyContent:'center',
+                          gap:2
+                        }}
+                        title="Load saved songs"
+                      >
+                        <span style={{fontSize:16}}>📁</span>
+                        <span>LOAD</span>
+                      </button>
                     
-                    {/* Sequencer Menu Dropdown - v3.3.1: Renamed from Song Menu */}
-                    {showSongMenu && (
+                      {/* Sequencer Menu Dropdown - v3.3.1: Renamed from Song Menu */}
+                      {showSongMenu && (
                       <div style={{
                         position: 'absolute',
                         top: '100%',
@@ -6848,6 +6909,33 @@ useEffect(() => {
                       </div>
                     )}
                   </div>
+                  
+                  {/* Share Button */}
+                  <button
+                    onClick={handleShareSong}
+                    style={{
+                      width:60,
+                      height:35,
+                      padding:'4px 6px',
+                      border: `2px solid ${showShareCopied ? '#39FF14' : '#60A5FA'}`,
+                      borderRadius:8,
+                      background: showShareCopied ? '#1a3310' : '#111',
+                      color: showShareCopied ? '#39FF14' : '#60A5FA',
+                      cursor:'pointer',
+                      fontSize:10,
+                      fontWeight:600,
+                      display:'flex',
+                      flexDirection:'column',
+                      alignItems:'center',
+                      justifyContent:'center',
+                      gap:2
+                    }}
+                    title="Share this song"
+                  >
+                    <span style={{fontSize:16}}>{showShareCopied ? '✓' : '✉️'}</span>
+                    <span>{showShareCopied ? 'SENT' : 'SHARE'}</span>
+                  </button>
+                </div>
                 </div>
               )}
               <div style={{marginTop: 12, paddingTop: 12, borderTop: '1px solid #374151'}}>
@@ -7036,7 +7124,7 @@ useEffect(() => {
                         if (ctx.state === 'suspended') {
                           await ctx.resume();
                         }
-                        // ✅ v3.17.65: Play silent note to fully unlock iOS audio in iframe
+                        // ✅ v3.17.70: Play silent note to fully unlock iOS audio in iframe
                         const osc = ctx.createOscillator();
                         const gain = ctx.createGain();
                         gain.gain.value = 0.001; // Nearly silent
@@ -7201,6 +7289,6 @@ useEffect(() => {
   );
 }
 
-// HarmonyWheel v3.17.65 - Legend inside wheel container (same stacking context as transform)
+// HarmonyWheel v3.17.70 - Legend inside wheel container (same stacking context as transform)
 
-// EOF - HarmonyWheel.tsx v3.17.65
+// EOF - HarmonyWheel.tsx v3.17.70
