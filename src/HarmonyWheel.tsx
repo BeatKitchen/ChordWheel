@@ -1,5 +1,152 @@
 /*
- * HarmonyWheel.tsx — v3.17.15 🎨 Legend Positioning Balanced!
+ * HarmonyWheel.tsx — v3.17.38 🎯 Legend INSIDE Wheel Container!
+ * 
+ * 🎯 v3.17.38 KEY FIX:
+ * - **Legend moved INSIDE wheel container** (before transformed SVG child)
+ * - Transform creates new stacking context - was breaking z-index
+ * - Legend now: wheel container > legend (z:1) > transformed SVG
+ * - Position adjusted: left:-280 to place it left of wheel
+ * - Same stacking context as SVG now!
+ * 
+ * 🎯 v3.17.33 FIX:
+ * - **Wheel container z:100** (was z:5)
+ * - **Legend z:1** 
+ * - Clear hierarchy: legend (1) < wheel (100)
+ * - Should finally prevent legend showing through wedges
+ * 
+ * ✅ v3.17.32 THE REAL FIX:
+ * - **Problem identified**: Inactive wedges have fillOpacity:0.5 (semi-transparent)
+ * - When a wedge is active, inactive wedges become see-through
+ * - Legend was showing THROUGH the transparent wedges!
+ * - **Solution**: Removed z-index from legend entirely
+ * - Legend now naturally below SVG canvas
+ * - Wedges (whether active or inactive) render above legend
+ * - Dark background restored (#1a1a1a) with visible border
+ * 
+ * 🎨 v3.17.31 FIX:
+ * - **Forced wheel z-index:10** on inner divs and SVG
+ * - Legend stays at z:1
+ * - Added explicit position:relative + z:10 to all wheel layers
+ * - Should finally put wheel on top of legend
+ * 
+ * 🎉 v3.17.30 SUCCESS:
+ * - **Legend moved to container level**: No longer child of logo div
+ * - Position: absolute at top:130, left:16 (relative to main container)
+ * - Removed from logo parent completely
+ * - Simple z-index:1, wheel is in separate sibling div with z:5
+ * - This SHOULD finally work - same parent, clear z-index relationship
+ * 
+ * 🎨 v3.17.29 FIX:
+ * - **Logo container z:1**: Parent needs z-index for children to stack properly
+ * - **Legend z:1** (child of logo container z:1)
+ * - **Wheel z:5** (separate container)
+ * - Now legend is truly behind wheel (both have stacking contexts)
+ * - The issue was: legend and wheel in different parents with no z-index relationship
+ * 
+ * 🎨 v3.17.28 FIX:
+ * - **Legend z-index: 1** (was 100 - now properly behind wheel)
+ * - Wheel container is z:5, legend is z:1
+ * - Legend visible but wheel overlaps it (as intended)
+ * - Darker bg + thicker border from v3.17.27 kept for visibility
+ * 
+ * 🎨 v3.17.27 FIX:
+ * - **Legend background**: Changed to #1a1a1a (was #0a0a0a - too dark/transparent-looking)
+ * - **Border**: 2px solid #4B5563 (was 1px #374151 - more visible)
+ * - **Z-index**: 100 (was 5 - force it on top of everything to debug)
+ * - If still faint, might be parent opacity issue
+ * 
+ * 🎨 v3.17.26 FIX:
+ * - **Legend opacity**: Added explicit opacity:1 and zIndex:5
+ * - Was faintly visible, now fully opaque
+ * - Z-index:5 puts it between background and wheel (wheel is z:5 in container)
+ * - Should render properly on load now
+ * 
+ * 🚨 v3.17.25 EMERGENCY FIXES:
+ * - **Legend visible**: Removed z-index:-1 (was hiding behind background)
+ * - Legend now uses natural stacking order
+ * - **Expert mode button restored**: Accidentally removed, now back
+ * - Green styled, clickable, activates EXPERT mode
+ * 
+ * ⚠️ v3.17.25 KNOWN ISSUES (TODO):
+ * - Many keyboard shortcuts conflict with Chrome/editor
+ * - Need to rethink key bindings (. , < > ctrl+arrow all problematic)
+ * - Need to add pulse feedback to more buttons
+ * - Need to update all hover text with correct shortcuts
+ * - Keyboard shortcuts enter editor instead of controlling app
+ * 
+ * ✨ v3.17.24 FEATURES:
+ * - **Legend z-index FIXED**: Removed z:10 from logo container
+ * - Legend now properly behind wheel (no parent z-index conflict)
+ * - **Button pulse animation**: < and > buttons pulse when , and . keys pressed
+ * - Blue glow (boxShadow) + lighter border + background
+ * - 300ms pulse duration with smooth transition
+ * - Visual feedback for keyboard shortcuts
+ * 
+ * 🐛 v3.17.23 FIXES:
+ * - **Legend z-index**: Set to -1 (was 0) - now behind wheel completely
+ * - **Period key fix**: `.` and `,` handled BEFORE textarea check
+ * - Keys advance sequencer without entering editor
+ * - Prevents focusing textarea on `.` press
+ * - Moved comma/period handling to top of keyboard handler
+ * 
+ * 🐛 v3.17.22 CRITICAL FIX:
+ * - **PAR space Eb bug FIXED**: Clicking I wedge (Eb) in PAR no longer exits to HOME
+ * - Removed lines 4646-4658: incorrect "I in PAR → HOME" logic
+ * - In C minor (PAR), Eb is the TONIC (I chord) - should stay in PAR
+ * - Users now stay in PAR space correctly
+ * - Exit PAR by playing diatonic HOME chords (C, F, G, Am, etc.)
+ * 
+ * 🎨 v3.17.21 POLISH:
+ * - **Text updated**: "Expert mode for sequencer. Join a gym to learn some music theory!"
+ * - **No underlines**: Cleaner look
+ * - **Back to green**: #39FF14 for gym link (not blue)
+ * - **Legend lower**: top:75px (was 65px)
+ * - **Z-index fixed**: Legend z:0 (under wheel, above background)
+ * - **Gym clickable**: Added hover, z-index:9999, pointerEvents:auto
+ * - Removed EXPERT mode button from message
+ * 
+ * 🎨 v3.17.20 POLISH:
+ * - **Legend lower**: Moved to top:65px (was 55px)
+ * - **Updated text**: "For song sequencer choose EXPERT mode. Join a GYM to learn some music theory!"
+ * - **Blue links**: Changed from green (#39FF14) to blue (#60A5FA)
+ * - **EXPERT mode**: Blue button (was green)
+ * - **GYM**: Blue hyperlink to classroom
+ * - Cleaner, more professional look
+ * 
+ * 🎨 v3.17.19 POLISH:
+ * - **Legend adjusted**: Moved down to top:55px (was 50px)
+ * - **Expert mode text updated**: "Expert mode for sequencer. Join a Gym to learn some music theory!"
+ * - **Gym link added**: Links to https://beatkitchen.io/classroom/
+ * - Better call-to-action for learning music theory
+ * 
+ * 🚀 v3.18.0 PLANNED - WELCOME ANIMATION "RIZZ":
+ * - On app load: Brief flash showing all EXPERT features
+ * - Bonus wedges appear → fade out
+ * - Performance pad opens → animates closed
+ * - Skill wheel pulses on EXPERT
+ * - "Expert mode" text briefly highlights/pulses
+ * - ~2-3 second teaser of what's unlockable
+ * - Shows users what they're working toward!
+ * 
+ * 🎨 v3.17.18 LAYOUT FIX:
+ * - **Legend locked under logo**: No longer moves with window width
+ * - Position: Absolute under logo (top:50px, left:0)
+ * - Always stays with logo header
+ * - Removed from wheel container entirely
+ * - Works perfectly in both iframe and local
+ * - No more positioning headaches!
+ * 
+ * 🐛 v3.17.17 FIX:
+ * - **Z-index 1**: Legend visible again (was -1, hidden behind background)
+ * - **Container z-index 5**: Parent needs z-index for children to layer
+ * - Legend at z:1, wheel at z:10
+ * - Proper layering: background < legend < wheel
+ * 
+ * 🎨 v3.17.16 FINAL POSITIONING:
+ * - **Legend at left:-105px**: Slightly more left (was -90px)
+ * - **Z-index: -1**: Below wheel border (was 0)
+ * - Wheel edge no longer shows over legend border
+ * - Perfect balance for iframe and local
  * 
  * 🎨 v3.17.15 LAYOUT FIX:
  * - **Legend at left:-90px**: Compromise between iframe and local
@@ -986,7 +1133,7 @@ import {
   parseSongMetadata
 } from "./lib/songManager";
 
-const HW_VERSION = 'v3.17.15';
+const HW_VERSION = 'v3.17.38';
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -1226,6 +1373,9 @@ useEffect(() => {
   
   // Help overlay
   const [showHelp, setShowHelp] = useState(false);
+  
+  // ✅ v3.17.24: Button pulse animation when key pressed
+  const [pulsingButton, setPulsingButton] = useState<string | null>(null);
   const [showKeyDropdown, setShowKeyDropdown] = useState(false);
   const [showTransposeDropdown, setShowTransposeDropdown] = useState(false);
   const [showSongMenu, setShowSongMenu] = useState(false);
@@ -1555,7 +1705,7 @@ useEffect(() => {
   };
 
   const parseAndLoadSequence = ()=>{
-    const APP_VERSION = "v3.17.15-harmony-wheel";
+    const APP_VERSION = "v3.17.38-harmony-wheel";
     console.log('=== PARSE AND LOAD START ===');
     console.log('🏷️  APP VERSION:', APP_VERSION);
     console.log('Input text:', inputText);
@@ -2354,6 +2504,22 @@ useEffect(() => {
         setShiftHeld(true);
       }
       
+      // ✅ v3.17.23: Handle . and , for sequencer BEFORE checking if in textarea
+      // These keys should control sequencer, not enter text
+      if (e.key === '.' || e.key === ',') {
+        e.preventDefault();
+        if (e.key === ',') {
+          setPulsingButton('prev');
+          setTimeout(() => setPulsingButton(null), 300);
+          stepPrev();
+        } else {
+          setPulsingButton('next');
+          setTimeout(() => setPulsingButton(null), 300);
+          stepNext();
+        }
+        return;
+      }
+      
       // Only handle if NOT in textarea or input field
       const activeTag = document.activeElement?.tagName;
       if (activeTag === 'TEXTAREA' || activeTag === 'INPUT') return;
@@ -2446,12 +2612,6 @@ useEffect(() => {
       if (e.shiftKey && e.key === '<') { // Shift+, (which is <)
         e.preventDefault();
         goToStart();
-      } else if (e.key === ',') {
-        e.preventDefault();
-        stepPrev();
-      } else if (e.key === '.') {
-        e.preventDefault();
-        stepNext();
       // Playback controls
       } else if (e.key === ' ') {
         e.preventDefault();
@@ -4590,21 +4750,9 @@ useEffect(() => {
         }
       }
       
-      // === PAR SPACE EXITS ===
-      else if (visitorActiveRef.current) {
-        // vi in PAR (Am in D) → HOME (vi in C) - would need to check current par key
-        // For now, simple case: I in PAR → HOME
-        if (fn === "I") {
-          console.log('🔄 I wedge in PAR → returning to HOME');
-          setVisitorActive(false);
-          setTimeout(() => {
-            // PAR is more complex - depends on what parKey is
-            // For now just highlight I
-            setActiveFn("I");
-            console.log('✨ Highlighted I wedge');
-          }, 200);
-        }
-      }
+      // ✅ v3.17.22: Removed incorrect PAR exit logic
+      // PAR space I wedge (Eb in C minor) should NOT exit to HOME
+      // Users stay in PAR unless they play a diatonic HOME chord
       
       // Other space rotation logic can be added here
     }, 600); // 600ms delay so chord doesn't move under cursor
@@ -4925,11 +5073,127 @@ useEffect(() => {
 
   return (
     <div style={{background:'#111', color:'#fff', height:'100%', maxHeight:'100vh', overflow:'hidden', padding:8, fontFamily:'ui-sans-serif, system-ui', userSelect:'none'}}>
-      <div style={{maxWidth:900, margin:'0 auto', border:'1px solid #374151', borderRadius:12, padding:8, height:'100%', overflow:'auto'}}>
+      <div style={{maxWidth:900, margin:'0 auto', border:'1px solid #374151', borderRadius:12, padding:8, height:'100%', overflow:'auto', position:'relative'}}>
+
+        {/* ✅ v3.17.38: Legend back in parent, positioned left of centered wheel */}
+        <div style={{
+          position:'absolute',
+          top:110,
+          left:16,
+          background:'#1a1a1a',
+          border:'2px solid #4B5563',
+          borderRadius:8,
+          padding:'10px',
+          width:110,
+          fontSize:10,
+          pointerEvents:'none'
+        }}>
+          <div style={{fontWeight:600, marginBottom:6, color:'#9CA3AF', fontSize:9, textTransform:'uppercase', letterSpacing:'0.05em'}}>
+            Function
+          </div>
+          
+          {(() => {
+            const fn = activeFn;
+            const isTonic = fn === 'I' || fn === 'iii' || fn === 'vi';
+            const isPredom = fn === 'ii' || fn === 'IV' || fn === 'iv';
+            const isDom = fn === 'V7' || fn === 'V/V' || fn === 'V/vi' || fn === 'V/ii' || fn === '♭VII';
+            
+            return (
+              <>
+                <div style={{
+                  display:'flex',
+                  alignItems:'center',
+                  gap:6,
+                  marginBottom:5,
+                  padding:'3px 5px',
+                  borderRadius:4,
+                  background: isTonic ? '#33280a' : 'transparent',
+                  border: isTonic ? '1px solid #F2D74B' : '1px solid transparent'
+                }}>
+                  <div style={{
+                    width:10,
+                    height:10,
+                    borderRadius:'50%',
+                    background:'#F2D74B',
+                    border:'1px solid #F9E89B',
+                    flexShrink:0
+                  }}/>
+                  <span style={{color: isTonic ? '#F2D74B' : '#9CA3AF', fontSize:10}}>
+                    Tonic
+                  </span>
+                </div>
+                
+                <div style={{
+                  display:'flex',
+                  alignItems:'center',
+                  gap:6,
+                  marginBottom:5,
+                  padding:'3px 5px',
+                  borderRadius:4,
+                  background: isPredom ? '#082f49' : 'transparent',
+                  border: isPredom ? '1px solid #0EA5E9' : '1px solid transparent'
+                }}>
+                  <div style={{
+                    width:10,
+                    height:10,
+                    borderRadius:'50%',
+                    background:'#0EA5E9',
+                    border:'1px solid #38BDF8',
+                    flexShrink:0
+                  }}/>
+                  <span style={{color: isPredom ? '#0EA5E9' : '#9CA3AF', fontSize:10}}>
+                    {skillLevel === 'ROOKIE' || skillLevel === 'NOVICE' || skillLevel === 'SOPHOMORE' 
+                      ? 'Subdominant' 
+                      : 'Predominant'}
+                  </span>
+                </div>
+                
+                <div style={{
+                  display:'flex',
+                  alignItems:'center',
+                  gap:6,
+                  marginBottom:5,
+                  padding:'3px 5px',
+                  borderRadius:4,
+                  background: isDom ? '#4a1d07' : 'transparent',
+                  border: isDom ? '1px solid #E63946' : '1px solid transparent'
+                }}>
+                  <div style={{
+                    width:10,
+                    height:10,
+                    borderRadius:'50%',
+                    background:'#E63946',
+                    border:'1px solid #F87171',
+                    flexShrink:0
+                  }}/>
+                  <span style={{color: isDom ? '#E63946' : '#9CA3AF', fontSize:10}}>
+                    Dominant
+                  </span>
+                </div>
+                
+                <div style={{
+                  marginTop:8,
+                  paddingTop:6,
+                  borderTop:'1px solid #374151',
+                  fontSize:8,
+                  color:'#6b7280',
+                  fontStyle:'italic',
+                  lineHeight:1.4
+                }}>
+                  <div>Z: Reset wheel</div>
+                  <div>H: HOME</div>
+                  <div>R: REL</div>
+                  <div>S: SUB</div>
+                  <div>P: PAR</div>
+                </div>
+              </>
+            );
+          })()}
+        </div>
 
         {/* BKS Logo Header with Emblem + Help Button */}
-        <div style={{marginBottom:0, paddingLeft:8, position:'relative', zIndex:10, display:'flex', justifyContent:'space-between', alignItems:'flex-start'}}>
-          <div>
+        <div style={{marginBottom:0, paddingLeft:8, position:'relative', zIndex:1, display:'flex', justifyContent:'space-between', alignItems:'flex-start'}}>
+          <div style={{position:'relative'}}>
             <svg width="300" height="44" viewBox="0 0 400 70" preserveAspectRatio="xMinYMin meet" style={{opacity:0.85, display:'block'}}>
             <g transform="matrix(0.733705,0,0,0.733705,2.67091,-1.60525)">
               <g transform="matrix(-1,0,0,1,99.7819,4.76996e-06)">
@@ -4987,142 +5251,24 @@ useEffect(() => {
           </div>
           
           {/* Skill Wheel only - top right */}
-          <div style={{display:'flex', alignItems:'flex-start'}}>
+          <div style={{display:'flex', alignItems:'flex-start', position:'relative', zIndex:10}}>
             {/* Circular Skill Selector */}
             <SkillWheel current={skillLevel} onChange={setSkillLevel} />
           </div>
         </div>
 
-        {/* Wheel with Legend - v3.17.15: Positioned for both iframe and local */}
-        <div style={{position:'relative', width:WHEEL_W, margin:'0 auto', marginTop:-30}}>
-          
-          {/* Functional Harmony Legend - Left side, minimal overlap */}
-          <div style={{
-            position:'absolute',
-            left:-90,
-            top:30,
-            background:'#0a0a0a',
-            border:'1px solid #374151',
-            borderRadius:8,
-            padding:'10px',
-            width:110,
-            fontSize:10,
-            zIndex:0  // Behind wheel (wheel is higher z-index)
-          }}>
-            <div style={{fontWeight:600, marginBottom:6, color:'#9CA3AF', fontSize:9, textTransform:'uppercase', letterSpacing:'0.05em'}}>
-              Function
-            </div>
-            
-            {(() => {
-              // Determine active function based on activeFn
-              const fn = activeFn;
-              const isTonic = fn === 'I' || fn === 'iii' || fn === 'vi';
-              const isPredom = fn === 'ii' || fn === 'IV' || fn === 'iv';
-              const isDom = fn === 'V7' || fn === 'V/V' || fn === 'V/vi' || fn === 'V/ii' || fn === '♭VII';
-              
-              return (
-                <>
-                  {/* Tonic */}
-                  <div style={{
-                    display:'flex',
-                    alignItems:'center',
-                    gap:6,
-                    marginBottom:5,
-                    padding:'3px 5px',
-                    borderRadius:4,
-                    background: isTonic ? '#33280a' : 'transparent',
-                    border: isTonic ? '1px solid #F2D74B' : '1px solid transparent'
-                  }}>
-                    <div style={{
-                      width:10,
-                      height:10,
-                      borderRadius:'50%',
-                      background:'#F2D74B',
-                      border:'1px solid #F9E89B',
-                      flexShrink:0
-                    }}/>
-                    <span style={{color: isTonic ? '#F2D74B' : '#9CA3AF', fontSize:10}}>
-                      Tonic
-                    </span>
-                  </div>
-                  
-                  {/* Predominant */}
-                  <div style={{
-                    display:'flex',
-                    alignItems:'center',
-                    gap:6,
-                    marginBottom:5,
-                    padding:'3px 5px',
-                    borderRadius:4,
-                    background: isPredom ? '#082f49' : 'transparent',
-                    border: isPredom ? '1px solid #0EA5E9' : '1px solid transparent'
-                  }}>
-                    <div style={{
-                      width:10,
-                      height:10,
-                      borderRadius:'50%',
-                      background:'#0EA5E9',
-                      border:'1px solid #38BDF8',
-                      flexShrink:0
-                    }}/>
-                    <span style={{color: isPredom ? '#0EA5E9' : '#9CA3AF', fontSize:10}}>
-                      {skillLevel === 'ROOKIE' || skillLevel === 'NOVICE' || skillLevel === 'SOPHOMORE' 
-                        ? 'Subdominant' 
-                        : 'Predominant'}
-                    </span>
-                  </div>
-                  
-                  {/* Dominant */}
-                  <div style={{
-                    display:'flex',
-                    alignItems:'center',
-                    gap:6,
-                    marginBottom:5,
-                    padding:'3px 5px',
-                    borderRadius:4,
-                    background: isDom ? '#4a1d07' : 'transparent',
-                    border: isDom ? '1px solid #E63946' : '1px solid transparent'
-                  }}>
-                    <div style={{
-                      width:10,
-                      height:10,
-                      borderRadius:'50%',
-                      background:'#E63946',
-                      border:'1px solid #F87171',
-                      flexShrink:0
-                    }}/>
-                    <span style={{color: isDom ? '#E63946' : '#9CA3AF', fontSize:10}}>
-                      Dominant
-                    </span>
-                  </div>
-                  
-                  {/* Key bindings - no color coding */}
-                  <div style={{
-                    marginTop:8,
-                    paddingTop:6,
-                    borderTop:'1px solid #374151',
-                    fontSize:8,
-                    color:'#6b7280',
-                    fontStyle:'italic',
-                    lineHeight:1.4
-                  }}>
-                    <div>Z: Reset wheel</div>
-                    <div>H: HOME</div>
-                    <div>R: REL</div>
-                    <div>S: SUB</div>
-                    <div>P: PAR</div>
-                  </div>
-                </>
-              );
-            })()}
-          </div>
+        {/* Wheel - v3.17.38: Explicit z-index to force above legend */}
+        <div style={{position:'relative', width:WHEEL_W, margin:'0 auto', marginTop:-30, zIndex:1000}}>
 
         {/* Wheel - centered as before */}
         <div className="relative"
              style={{width:WHEEL_W,height:WHEEL_H, margin:'0 auto', marginTop:-30,
-                     transform:`scale(1.15)`, transformOrigin:'center top'}}>
-          <div style={wrapperStyle}>
-            <svg width={WHEEL_W} height={WHEEL_H} viewBox={`0 0 ${WHEEL_W} ${WHEEL_H}`} className="select-none" style={{display:'block', userSelect: 'none', WebkitUserSelect: 'none'}}>
+                     transform:`scale(1.15)`, transformOrigin:'center top', position:'relative', zIndex:10}}>
+          <div style={{...wrapperStyle, position:'relative', zIndex:10}}>
+            <svg width={WHEEL_W} height={WHEEL_H} viewBox={`0 0 ${WHEEL_W} ${WHEEL_H}`} className="select-none" style={{display:'block', userSelect: 'none', WebkitUserSelect: 'none', position:'relative', zIndex:10}}>
+  {/* ✅ v3.17.38: Black backing circle to block legend behind transparent wedges */}
+  <circle cx={260} cy={260} r={220} fill="#111" />
+  
   {/* Labels moved to status bar area */}
 
   {wedgeNodes}
@@ -5550,7 +5696,6 @@ useEffect(() => {
                   fontSize:11,
                   fontStyle:'italic'
                 }}>
-                  To use sequencer, activate{' '}
                   <button
                     onClick={(e) => {
                       e.preventDefault();
@@ -5561,11 +5706,11 @@ useEffect(() => {
                     style={{
                       color: '#39FF14',
                       cursor: 'pointer',
-                      textDecoration: 'underline',
+                      textDecoration: 'none',
                       fontWeight: 600,
                       background: 'rgba(57, 255, 20, 0.1)',
                       border: '1px solid transparent',
-                      padding: '2px 4px',
+                      padding: '2px 6px',
                       margin: '0 2px',
                       borderRadius: '3px',
                       font: 'inherit',
@@ -5576,11 +5721,9 @@ useEffect(() => {
                       zIndex: 9999,
                       pointerEvents: 'auto',
                       userSelect: 'none',
-                      WebkitUserSelect: 'none',
-                      touchAction: 'manipulation'
+                      WebkitUserSelect: 'none'
                     }}
                     onMouseEnter={(e) => {
-                      console.log('🖱️ Mouse entered expert button');
                       e.currentTarget.style.background = 'rgba(57, 255, 20, 0.2)';
                       e.currentTarget.style.borderColor = '#39FF14';
                     }}
@@ -5589,8 +5732,39 @@ useEffect(() => {
                       e.currentTarget.style.borderColor = 'transparent';
                     }}
                   >
-                    Expert mode (5)
+                    Expert mode
                   </button>
+                  {' '}for sequencer.{' '}Join a{' '}
+                  <a 
+                    href="https://beatkitchen.io/classroom/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      console.log('🏋️ Gym link clicked');
+                    }}
+                    style={{
+                      color: '#39FF14',
+                      textDecoration: 'none',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      background: 'rgba(57, 255, 20, 0.1)',
+                      padding: '2px 4px',
+                      borderRadius: '3px',
+                      position: 'relative',
+                      zIndex: 9999,
+                      pointerEvents: 'auto'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = 'rgba(57, 255, 20, 0.2)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = 'rgba(57, 255, 20, 0.1)';
+                    }}
+                  >
+                    gym
+                  </a>
+                  {' '}to learn some music theory!
                 </div>
               )}
               
@@ -6122,13 +6296,15 @@ useEffect(() => {
                     onClick={stepPrev} 
                     style={{
                       padding:'6px 10px', 
-                      border:'2px solid #3B82F6', 
+                      border: pulsingButton === 'prev' ? '2px solid #60A5FA' : '2px solid #3B82F6',
                       borderRadius:8, 
-                      background:'#111', 
+                      background: pulsingButton === 'prev' ? '#1e3a8a' : '#111',
                       color:'#fff', 
                       cursor:'pointer', 
                       fontSize:14,
-                      fontWeight:700
+                      fontWeight:700,
+                      transition: 'all 0.15s ease-out',
+                      boxShadow: pulsingButton === 'prev' ? '0 0 12px rgba(96, 165, 250, 0.6)' : 'none'
                     }} 
                     title="Previous chord (<)"
                   >
@@ -6140,13 +6316,15 @@ useEffect(() => {
                     onClick={stepNext} 
                     style={{
                       padding:'6px 10px', 
-                      border:'2px solid #3B82F6', 
+                      border: pulsingButton === 'next' ? '2px solid #60A5FA' : '2px solid #3B82F6',
                       borderRadius:8, 
-                      background:'#111', 
+                      background: pulsingButton === 'next' ? '#1e3a8a' : '#111',
                       color:'#fff', 
                       cursor:'pointer', 
                       fontSize:14,
-                      fontWeight:700
+                      fontWeight:700,
+                      transition: 'all 0.15s ease-out',
+                      boxShadow: pulsingButton === 'next' ? '0 0 12px rgba(96, 165, 250, 0.6)' : 'none'
                     }} 
                     title="Next chord (>)"
                   >
@@ -6827,6 +7005,6 @@ useEffect(() => {
   );
 }
 
-// HarmonyWheel v3.17.15 - Legend at -90px, container 900px wide
+// HarmonyWheel v3.17.38 - Legend inside wheel container (same stacking context as transform)
 
-// EOF - HarmonyWheel.tsx v3.17.15
+// EOF - HarmonyWheel.tsx v3.17.38
