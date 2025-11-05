@@ -1,7 +1,7 @@
 /*
- * HarmonyWheel.tsx — v3.17.55 🎯 Legend INSIDE Wheel Container!
+ * HarmonyWheel.tsx — v3.17.56 🎯 Legend INSIDE Wheel Container!
  * 
- * 🎯 v3.17.55 KEY FIX:
+ * 🎯 v3.17.56 KEY FIX:
  * - **Legend moved INSIDE wheel container** (before transformed SVG child)
  * - Transform creates new stacking context - was breaking z-index
  * - Legend now: wheel container > legend (z:1) > transformed SVG
@@ -1133,7 +1133,7 @@ import {
   parseSongMetadata
 } from "./lib/songManager";
 
-const HW_VERSION = 'v3.17.55';
+const HW_VERSION = 'v3.17.56';
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -1374,7 +1374,7 @@ useEffect(() => {
   // Help overlay
   const [showHelp, setShowHelp] = useState(false);
   
-  // ✅ v3.17.55: Track window size - use 768px breakpoint (more standard)
+  // ✅ v3.17.56: Track window size - use 768px breakpoint (more standard)
   const [isDesktop, setIsDesktop] = useState(true); // Default true to avoid flicker
   
   useEffect(() => {
@@ -1719,7 +1719,7 @@ useEffect(() => {
   };
 
   const parseAndLoadSequence = ()=>{
-    const APP_VERSION = "v3.17.55-harmony-wheel";
+    const APP_VERSION = "v3.17.56-harmony-wheel";
     console.log('=== PARSE AND LOAD START ===');
     console.log('🏷️  APP VERSION:', APP_VERSION);
     console.log('Input text:', inputText);
@@ -4260,7 +4260,7 @@ useEffect(() => {
         <g key={fn} 
            style={{touchAction: 'none', cursor: 'pointer'}}
            onPointerDown={(e)=>{
-             // ✅ v3.17.55: Touch support - pointer events work for mouse + touch
+             // ✅ v3.17.56: Touch support - pointer events work for mouse + touch
              e.preventDefault(); // Prevent default touch behaviors
              
              // ✅ v3.17.10: Latch mode - clicking active wedge clears it
@@ -4326,7 +4326,7 @@ useEffect(() => {
              previewFn(fn, playWith7th);
            }}
            onPointerEnter={(e)=>{
-             // ✅ v3.17.55: Pointer events for touch + mouse
+             // ✅ v3.17.56: Pointer events for touch + mouse
              // If dragging from another wedge, activate this wedge
              console.log('🔍 onPointerEnter:', fn, 'buttons:', e.buttons, 'wedgeHeld:', wedgeHeldRef.current, 'currentFn:', currentHeldFnRef.current);
              
@@ -4518,7 +4518,7 @@ useEffect(() => {
              }
            }}
            onPointerUp={()=>{
-             // ✅ v3.17.55: Touch support
+             // ✅ v3.17.56: Touch support
              console.log('🛑 Pointer up on wedge, releasing');
              wedgeHeldRef.current = false; // Release wedge
              currentHeldFnRef.current = null;
@@ -4540,7 +4540,7 @@ useEffect(() => {
              }
            }}
            onPointerLeave={(e)=>{
-             // ✅ v3.17.55: Touch support
+             // ✅ v3.17.56: Touch support
              // If pointer button is still down, we're dragging - don't clear refs!
              if (e.buttons === 1) {
                console.log('🔄 Pointer button still down, keeping drag state');
@@ -5092,14 +5092,14 @@ useEffect(() => {
   })();
 
   return (
-    <div style={{background:'#111', color:'#fff', minHeight:'100vh', overflow:'auto', padding:8, fontFamily:'ui-sans-serif, system-ui', userSelect:'none'}}>
+    <div style={{background:'#111', color:'#fff', minHeight:'100vh', overflow:'auto', padding: isDesktop ? 8 : 0, fontFamily:'ui-sans-serif, system-ui', userSelect:'none'}}>
       <div style={{
         width: isDesktop ? '100%' : '100vw',
         maxWidth: isDesktop ? 900 : 'none',
         margin:'0 auto', 
-        border:'1px solid #374151', 
-        borderRadius:12, 
-        padding:8, 
+        border: isDesktop ? '1px solid #374151' : 'none',
+        borderRadius: isDesktop ? 12 : 0,
+        padding: isDesktop ? 8 : 4,
         minHeight:'fit-content',
         overflow:'visible', 
         position:'relative',
@@ -5107,7 +5107,7 @@ useEffect(() => {
         boxSizing: 'border-box'
       }}>
 
-        {/* ✅ v3.17.55: Legend - moved up to reduce overlap */}
+        {/* ✅ v3.17.56: Legend - moved up to reduce overlap */}
         {isDesktop && (
           <div style={{
             position:'absolute',
@@ -5284,7 +5284,7 @@ useEffect(() => {
           </div>
           </div>
           
-          {/* Skill Wheel only - top right - v3.17.55: Absolute positioned */}
+          {/* Skill Wheel only - top right - v3.17.56: Absolute positioned */}
           <div style={{
             display:'flex', 
             alignItems:'flex-start', 
@@ -5298,7 +5298,7 @@ useEffect(() => {
           </div>
         </div>
 
-        {/* Wheel - v3.17.55: Bigger on mobile, matches keyboard width */}
+        {/* Wheel - v3.17.56: Bigger on mobile, matches keyboard width */}
         <div style={{position:'relative', width:'100%', maxWidth:WHEEL_W, margin:'0 auto', marginTop:-30, zIndex:1000}}>
 
         {/* Wheel - centered as before */}
@@ -5316,7 +5316,7 @@ useEffect(() => {
              }}>
           <div style={{...wrapperStyle, position:'relative', zIndex:10}}>
             <svg width="100%" height="100%" viewBox={`0 0 ${WHEEL_W} ${WHEEL_H}`} className="select-none" style={{display:'block', userSelect: 'none', WebkitUserSelect: 'none', position:'relative', zIndex:10, maxWidth:'100%', maxHeight:'100%', touchAction:'none'}}>
-  {/* ✅ v3.17.55: Black backing circle - slightly larger for border effect */}
+  {/* ✅ v3.17.56: Black backing circle - slightly larger for border effect */}
   <circle cx={260} cy={260} r={224} fill="#111" />
   
   {/* Labels moved to status bar area */}
@@ -5553,7 +5553,7 @@ useEffect(() => {
               style={{
                 position: 'absolute',
                 right: 40,
-                bottom: 120,  // ← v3.17.55: Moved up to avoid overlapping controls
+                bottom: isDesktop ? 120 : 180,  // ← v3.17.56: Higher on mobile to avoid overlap
                 width: 32,
                 height: 32,
                 padding: 0,
@@ -6128,7 +6128,7 @@ useEffect(() => {
                 </div>
                 </div>
                 
-                {/* Guitar Tab - v3.17.55: Always visible, scales on mobile */}
+                {/* Guitar Tab - v3.17.56: Always visible, scales on mobile */}
                 <div style={{
                   border:'1px solid #374151',
                   borderRadius:8,
@@ -7064,6 +7064,6 @@ useEffect(() => {
   );
 }
 
-// HarmonyWheel v3.17.55 - Legend inside wheel container (same stacking context as transform)
+// HarmonyWheel v3.17.56 - Legend inside wheel container (same stacking context as transform)
 
-// EOF - HarmonyWheel.tsx v3.17.55
+// EOF - HarmonyWheel.tsx v3.17.56
