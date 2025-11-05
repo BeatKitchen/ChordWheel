@@ -1,5 +1,12 @@
 /*
- * HarmonyWheel.tsx — v3.17.87 🔧 Audio Playback Fix!
+ * HarmonyWheel.tsx — v3.17.88 🎯 THE ACTUAL FIX!
+ * 
+ * 🎯 v3.17.88 THE REAL BUG:
+ * - **Fixed modifier argument parsing** - was only getting first part after colon
+ * - Bug: `it.chord.split(":")` only returned 2 elements, lost rest
+ * - "KEY:Eb:Ebmaj7" → m="KEY", arg="Eb" ← LOST "Ebmaj7"!
+ * - Fix: Use spread operator to get ALL parts: `const [m, ...rest] = split; const arg = rest.join(":")`
+ * - Now "KEY:Eb:Ebmaj7" → m="KEY", arg="Eb:Ebmaj7" ✅
  * 
  * 🔧 v3.17.87 CRITICAL FIX:
  * - **Fixed stepNext audio capture timing issue**
@@ -1148,7 +1155,7 @@ import {
   parseSongMetadata
 } from "./lib/songManager";
 
-const HW_VERSION = 'v3.17.87';
+const HW_VERSION = 'v3.17.88';
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -1845,7 +1852,7 @@ useEffect(() => {
   };
 
   const parseAndLoadSequence = ()=>{
-    const APP_VERSION = "v3.17.87-harmony-wheel";
+    const APP_VERSION = "v3.17.88-harmony-wheel";
     console.log('=== PARSE AND LOAD START ===');
     console.log('🏷️  APP VERSION:', APP_VERSION);
     console.log('Input text:', inputText);
@@ -2405,7 +2412,10 @@ useEffect(() => {
     
     if (it.kind==="title") return []; // Skip titles
     if (it.kind==="modifier" && it.chord){
-      const [m, arg] = it.chord.split(":");
+      // ✅ v3.17.88: Split modifier properly - get ALL parts after first colon
+      // "KEY:Eb:Ebmaj7" → m="KEY", arg="Eb:Ebmaj7"
+      const [m, ...restParts] = it.chord.split(":");
+      const arg = restParts.join(":");
       
       // NEW v3.2.4: Check if arg is a chord name (combined space+chord)
       const isSpaceModifier = m === "HOME" || m === "SUB" || m === "REL" || m === "PAR";
@@ -7643,6 +7653,6 @@ useEffect(() => {
   );
 }
 
-// HarmonyWheel v3.17.87 - Fixed audio playback for combined modifiers
+// HarmonyWheel v3.17.88 - Fixed modifier argument parsing (was losing chord after colon)
 
-// EOF - HarmonyWheel.tsx v3.17.87
+// EOF - HarmonyWheel.tsx v3.17.88
