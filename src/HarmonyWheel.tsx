@@ -1,7 +1,7 @@
 /*
- * HarmonyWheel.tsx — v3.17.72 🎯 Legend INSIDE Wheel Container!
+ * HarmonyWheel.tsx — v3.17.73 🎯 Legend INSIDE Wheel Container!
  * 
- * 🎯 v3.17.72 KEY FIX:
+ * 🎯 v3.17.73 KEY FIX:
  * - **Legend moved INSIDE wheel container** (before transformed SVG child)
  * - Transform creates new stacking context - was breaking z-index
  * - Legend now: wheel container > legend (z:1) > transformed SVG
@@ -1133,7 +1133,7 @@ import {
   parseSongMetadata
 } from "./lib/songManager";
 
-const HW_VERSION = 'v3.17.72';
+const HW_VERSION = 'v3.17.73';
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -1307,10 +1307,10 @@ useEffect(() => {
   
   // Audio playback
   const [audioEnabled, setAudioEnabled] = useState(true); // Start with audio enabled
-  const [audioInitialized, setAudioInitialized] = useState(false); // ✅ v3.17.72: Track if audio is ready
-  const [showAudioPrompt, setShowAudioPrompt] = useState(false); // ✅ v3.17.72: iOS audio prompt
+  const [audioInitialized, setAudioInitialized] = useState(false); // ✅ v3.17.73: Track if audio is ready
+  const [showAudioPrompt, setShowAudioPrompt] = useState(false); // ✅ v3.17.73: iOS audio prompt
   const audioEnabledRef = useRef(true); // Ref for MIDI callback closure
-  const [audioReady, setAudioReady] = useState(false); // ✅ v3.17.72: Start false, set true when initialized
+  const [audioReady, setAudioReady] = useState(false); // ✅ v3.17.73: Start false, set true when initialized
   
   // Sync audioReady with audioInitialized
   useEffect(() => {
@@ -1371,8 +1371,8 @@ useEffect(() => {
   const previousVoicingRef = useRef<number[]>([60, 64, 67]); // Default C major [C4, E4, G4]
   const activeChordNoteIdsRef = useRef<Set<string>>(new Set()); // Track note IDs instead of MIDI numbers
   const wedgeHeldRef = useRef(false); // Track if wedge is being held down
-  const lastWedgeClickTimeRef = useRef<number>(0); // ✅ v3.17.72: Track click timing
-  const wedgeClickFnRef = useRef<Fn | "">(""); // ✅ v3.17.72: Track which wedge was clicked
+  const lastWedgeClickTimeRef = useRef<number>(0); // ✅ v3.17.73: Track click timing
+  const wedgeClickFnRef = useRef<Fn | "">(""); // ✅ v3.17.73: Track which wedge was clicked
   const keyboardHeldNotesRef = useRef<Set<number>>(new Set()); // Track which keyboard notes are held
   const lastPlayedWith7thRef = useRef<boolean | null>(null); // Track if last chord had 7th
   const currentHeldFnRef = useRef<Fn | null>(null); // Track which function is being held
@@ -1383,7 +1383,7 @@ useEffect(() => {
   // Help overlay
   const [showHelp, setShowHelp] = useState(false);
   
-  // ✅ v3.17.72: Track window size - use 768px breakpoint (more standard)
+  // ✅ v3.17.73: Track window size - use 768px breakpoint (more standard)
   const [isDesktop, setIsDesktop] = useState(true); // Default true to avoid flicker
   
   useEffect(() => {
@@ -1397,7 +1397,7 @@ useEffect(() => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
   
-  // ✅ v3.17.72: Initialize audio on first user interaction (mobile requirement)
+  // ✅ v3.17.73: Initialize audio on first user interaction (mobile requirement)
   useEffect(() => {
     const initAudio = () => {
       const ctx = initAudioContext();
@@ -1430,46 +1430,61 @@ useEffect(() => {
     };
   }, [audioInitialized, isDesktop]);
   
-  // ✅ v3.17.72: Load song from URL on mount
+  // ✅ v3.17.73: Load song from URL on mount - FIXED JSON leak
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const songParam = params.get('song');
     if (songParam) {
+      console.log('📨 Received song param');
       const songData = decodeSongFromURL(songParam);
-      if (songData && songData.text) {
-        // Clean text - remove array brackets if present
+      
+      if (songData && typeof songData === 'object' && typeof songData.text === 'string') {
+        // CRITICAL: Only extract the text field, not the whole object
         let cleanText = songData.text.trim();
+        
+        // Remove array brackets if present
         if (cleanText.startsWith('[') && cleanText.endsWith(']')) {
           cleanText = cleanText.slice(1, -1).trim();
         }
         
+        // Remove any JSON-like wrappers if they leaked through
+        if (cleanText.startsWith('{') && cleanText.endsWith('}')) {
+          console.warn('⚠️ JSON object detected in text field, attempting to extract...');
+          try {
+            const nested = JSON.parse(cleanText);
+            if (nested.text) cleanText = nested.text;
+          } catch(e) {
+            // Not parseable, use as-is
+          }
+        }
+        
         console.log('📥 Loading shared song:', songData.title);
-        console.log('📝 Clean text:', cleanText);
+        console.log('📝 Final clean text:', cleanText);
         
         setInputText(cleanText);
         setBaseKey(songData.key || 'C');
         setSkillLevel('EXPERT'); // Force expert mode to show editor
         
         // Auto-parse after state updates
-        // Use a longer timeout to ensure React has updated
         setTimeout(() => {
           console.log('🎵 Auto-parsing loaded song');
           parseAndLoadSequence();
         }, 300);
+      } else {
+        console.error('Invalid song data:', songData);
       }
-
     }
   }, []);
   
   // ✅ v3.17.24: Button pulse animation when key pressed
   const [pulsingButton, setPulsingButton] = useState<string | null>(null);
-  const [pulsingWedge, setPulsingWedge] = useState<Fn | "">(""); // ✅ v3.17.72: Visual feedback on click
+  const [pulsingWedge, setPulsingWedge] = useState<Fn | "">(""); // ✅ v3.17.73: Visual feedback on click
   const [showKeyDropdown, setShowKeyDropdown] = useState(false);
   const [showTransposeDropdown, setShowTransposeDropdown] = useState(false);
   const [showSongMenu, setShowSongMenu] = useState(false);
   const [shareURL, setShareURL] = useState<string>('');
-  const [showShareCopied, setShowShareCopied] = useState(false); // ✅ v3.17.72: Share feedback
-  const [showShareModal, setShowShareModal] = useState(false); // ✅ v3.17.72: Share options modal
+  const [showShareCopied, setShowShareCopied] = useState(false); // ✅ v3.17.73: Share feedback
+  const [showShareModal, setShowShareModal] = useState(false); // ✅ v3.17.73: Share options modal
   const [keyChangeFlash, setKeyChangeFlash] = useState(false);
   const [stepRecord, setStepRecord] = useState(false); // v3.3.1: Renamed from autoRecord
   const stepRecordRef = useRef(false); // v3.3.1: Renamed from stepRecordRef
@@ -1795,7 +1810,7 @@ useEffect(() => {
   };
 
   const parseAndLoadSequence = ()=>{
-    const APP_VERSION = "v3.17.72-harmony-wheel";
+    const APP_VERSION = "v3.17.73-harmony-wheel";
     console.log('=== PARSE AND LOAD START ===');
     console.log('🏷️  APP VERSION:', APP_VERSION);
     console.log('Input text:', inputText);
@@ -2595,7 +2610,7 @@ useEffect(() => {
       }
       
       // ✅ v3.17.23: Handle . and , for sequencer BEFORE checking if in textarea
-      // ✅ v3.17.72: Changed to Shift+comma/period (< >) to avoid editor conflict
+      // ✅ v3.17.73: Changed to Shift+comma/period (< >) to avoid editor conflict
       if (e.shiftKey && (e.key === '<' || e.key === '>')) {
         e.preventDefault();
         if (e.key === '<') { // Shift+,
@@ -3433,6 +3448,19 @@ useEffect(() => {
       }
     }
     
+    // ✅ v3.17.73 FIX: Bm7b5 ABSOLUTE PRIORITY - must check before diatonic
+    // Bm7b5 [11,2,5,9] shares notes with Dm7 [2,5,9,0] - must catch it early!
+    if (pcsRel.has(11) && pcsRel.has(2) && pcsRel.has(5) && pcsRel.has(9) && pcsRel.size === 4) {
+      if (shouldShowBonusOverlay()) {
+        console.log('✅ Bm7♭5 EARLY CHECK → ii/vi bonus');
+        setActiveFn("");
+        setCenterLabel(displayName);
+        setBonusActive(true);
+        setBonusLabel("Bm7♭5");
+        return;
+      }
+    }
+    
     // Bdim7 [11,2,5,8] with B bass → V7 wedge (exception!)
     if (currentPcsRel.size >= 4 && [11,2,5,8].every(pc => currentPcsRel.has(pc)) && bassPc === 11) {
       console.log('✅ Bdim7 ALWAYS detected (all 4 notes held) → V7');
@@ -3440,14 +3468,15 @@ useEffect(() => {
       return;
     }
     
-    // C#dim7 [1,4,7,10] with C# bass → V/ii bonus
-    if (currentPcsRel.size >= 4 && [1,4,7,10].every(pc => currentPcsRel.has(pc)) && bassPc === 1) {
+    // ✅ v3.17.73 FIX: C#dim7 [1,4,7,10] → V/ii bonus (removed bass requirement for sequencer)
+    if (currentPcsRel.size >= 4 && [1,4,7,10].every(pc => currentPcsRel.has(pc))) {
       if (shouldShowBonusOverlay()) {
-        console.log('✅ C#dim7 ALWAYS detected (all 4 notes held) → V/ii bonus');
+        console.log('✅ C#dim7 EARLY CHECK (any inversion) → V/ii bonus');
         setActiveFn("");
         setCenterLabel(displayName);
         setBonusActive(true);
-        setBonusLabel(displayName);
+        setBonusLabel("A7"); // Functional label
+
         return;
       }
     }
@@ -4034,6 +4063,20 @@ useEffect(() => {
       }
       
       if (exactSet([6,9,0,4]) && shouldTriggerBonus("V/V")){ setActiveWithTrail("V/V","F#m7♭5"); return; }
+      
+      // ✅ v3.17.73 FIX #3: DEFENSIVE - Don't let bonus chords match diatonic
+      // If bonus chord present but permission denied, show in hub without lighting wedge
+      const isBonusChordPattern = 
+        (pcsRel.has(11) && pcsRel.has(2) && pcsRel.has(5) && (pcsRel.size === 3 || (pcsRel.has(9) && pcsRel.size === 4))) || // Bdim/Bm7b5
+        (pcsRel.has(1) && pcsRel.has(4) && pcsRel.has(7) && pcsRel.has(10) && pcsRel.size === 4) || // C#dim7
+        (pcsRel.has(9) && pcsRel.has(1) && pcsRel.has(4) && (pcsRel.size === 3 || (pcsRel.has(7) && pcsRel.size === 4))); // A/A7
+        
+      if (isBonusChordPattern && !shouldShowBonusOverlay()) {
+        console.log('🛡️ DEFENSIVE: Bonus chord detected but permission denied - showing in hub only');
+        centerOnly(displayName);
+        return;
+      }
+      
       const m7 = firstMatch(homeDiatonic.req7, pcsRel); 
       if(m7){ 
         // Prefer displayName for 7th chords (with corrected spelling)
@@ -4336,10 +4379,10 @@ useEffect(() => {
         <g key={fn} 
            style={{touchAction: 'none', cursor: 'pointer'}}
            onPointerDown={(e)=>{
-             // ✅ v3.17.72: Touch support - pointer events work for mouse + touch
+             // ✅ v3.17.73: Touch support - pointer events work for mouse + touch
              e.preventDefault(); // Prevent default touch behaviors
              
-             // ✅ v3.17.72: Click-to-clear with timer - only clear if clicking same wedge after delay
+             // ✅ v3.17.73: Click-to-clear with timer - only clear if clicking same wedge after delay
              const now = Date.now();
              const timeSinceLastClick = now - lastWedgeClickTimeRef.current;
              const sameWedge = wedgeClickFnRef.current === fn;
@@ -4360,7 +4403,7 @@ useEffect(() => {
              lastWedgeClickTimeRef.current = now;
              wedgeClickFnRef.current = fn;
              
-             // ✅ v3.17.72: Visual pulse feedback
+             // ✅ v3.17.73: Visual pulse feedback
              setPulsingWedge(fn);
              setTimeout(() => setPulsingWedge(""), 300);
              
@@ -4418,7 +4461,7 @@ useEffect(() => {
              previewFn(fn, playWith7th);
            }}
            onPointerEnter={(e)=>{
-             // ✅ v3.17.72: Pointer events for touch + mouse
+             // ✅ v3.17.73: Pointer events for touch + mouse
              // If dragging from another wedge, activate this wedge
              console.log('🔍 onPointerEnter:', fn, 'buttons:', e.buttons, 'wedgeHeld:', wedgeHeldRef.current, 'currentFn:', currentHeldFnRef.current);
              
@@ -4610,7 +4653,7 @@ useEffect(() => {
              }
            }}
            onPointerUp={()=>{
-             // ✅ v3.17.72: Touch support
+             // ✅ v3.17.73: Touch support
              console.log('🛑 Pointer up on wedge, releasing');
              wedgeHeldRef.current = false; // Release wedge
              currentHeldFnRef.current = null;
@@ -4632,7 +4675,7 @@ useEffect(() => {
              }
            }}
            onPointerLeave={(e)=>{
-             // ✅ v3.17.72: Touch support
+             // ✅ v3.17.73: Touch support
              // If pointer button is still down, we're dragging - don't clear refs!
              if (e.buttons === 1) {
                console.log('🔄 Pointer button still down, keeping drag state');
@@ -4891,7 +4934,7 @@ useEffect(() => {
     if (!audioContextRef.current) {
       audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
     }
-    // ✅ v3.17.72: Resume audio context on mobile (required by iOS/Android)
+    // ✅ v3.17.73: Resume audio context on mobile (required by iOS/Android)
     if (audioContextRef.current.state === 'suspended') {
       console.log('🔊 Audio context suspended, resuming...');
       audioContextRef.current.resume().then(() => {
@@ -4945,7 +4988,7 @@ useEffect(() => {
     
     const mainGain = ctx.createGain();
     mainGain.gain.value = 0;
-    // ✅ v3.17.72: Reduced to prevent clipping (chords = multiple notes adding up)
+    // ✅ v3.17.73: Reduced to prevent clipping (chords = multiple notes adding up)
     const mobileBoost = !isDesktop ? 1.5 : 1.0;
     const chordSafety = 0.5; // Divide by 2 since chords can have 3-4 notes
     mainGain.gain.linearRampToValueAtTime(0.6 * velocity * mobileBoost * chordSafety, now + 0.015);
@@ -5087,7 +5130,7 @@ useEffect(() => {
     activeMidiNotesRef.current.clear();
   };
 
-  // ✅ v3.17.72: Song sharing via URL
+  // ✅ v3.17.73: Song sharing via URL
   const encodeSongToURL = () => {
     const songData = {
       text: inputText,
@@ -5102,8 +5145,21 @@ useEffect(() => {
 
   const decodeSongFromURL = (base64: string) => {
     try {
-      const json = decodeURIComponent(escape(atob(base64)));
+      // Clean the base64 string - remove any leading/trailing whitespace or characters
+      const cleanBase64 = base64.trim().replace(/[^A-Za-z0-9+/=]/g, '');
+      
+      const json = decodeURIComponent(escape(atob(cleanBase64)));
+      console.log('🔍 Decoded JSON:', json);
+      
       const songData = JSON.parse(json);
+      console.log('🔍 Parsed songData:', songData);
+      
+      // Validate it's an object with text property
+      if (typeof songData !== 'object' || !songData.text) {
+        console.error('Invalid song data format');
+        return null;
+      }
+      
       return songData;
     } catch (e) {
       console.error('Failed to decode song:', e);
@@ -5243,9 +5299,9 @@ useEffect(() => {
       WebkitTouchCallout:'none',
       MozUserSelect:'none',
       msUserSelect:'none',
-      touchAction: 'pan-y' // ✅ v3.17.72: Allow vertical scrolling on background
+      touchAction: 'pan-y' // ✅ v3.17.73: Allow vertical scrolling on background
     }}>
-      {/* ✅ v3.17.72: iOS Audio Prompt with silent note trick */}
+      {/* ✅ v3.17.73: iOS Audio Prompt with silent note trick */}
       {showAudioPrompt && (
         <div
           onClick={() => {
@@ -5287,7 +5343,7 @@ useEffect(() => {
         </div>
       )}
       
-      {/* ✅ v3.17.72: Share Modal */}
+      {/* ✅ v3.17.73: Share Modal */}
       {showShareModal && (
         <div
           style={{
@@ -5396,7 +5452,7 @@ useEffect(() => {
         WebkitTouchCallout:'none'
       }}>
 
-        {/* ✅ v3.17.72: Legend - moved up to reduce overlap */}
+        {/* ✅ v3.17.73: Legend - moved up to reduce overlap */}
         {isDesktop && (
           <div style={{
             position:'absolute',
@@ -5514,7 +5570,7 @@ useEffect(() => {
           </div>
         )}
 
-        {/* BKS Logo Header with Emblem + Help Button - v3.17.72: High z-index */}
+        {/* BKS Logo Header with Emblem + Help Button - v3.17.73: High z-index */}
         <div style={{marginBottom:0, position:'relative', zIndex:10002, display:'flex', justifyContent:'space-between', alignItems:'flex-start'}}>
           <div style={{position:'relative', marginLeft: isDesktop ? 140 : '2%'}}>
             <svg width="300" height="44" viewBox="0 0 400 70" preserveAspectRatio="xMinYMin meet" style={{opacity:0.85, display:'block'}}>
@@ -5573,7 +5629,7 @@ useEffect(() => {
           </div>
           </div>
           
-          {/* Skill Wheel only - top right - v3.17.72: High z-index for clickability */}
+          {/* Skill Wheel only - top right - v3.17.73: High z-index for clickability */}
           <div style={{
             display:'flex', 
             alignItems:'flex-start', 
@@ -5587,7 +5643,7 @@ useEffect(() => {
           </div>
         </div>
 
-        {/* Wheel - v3.17.72: Bigger on mobile, matches keyboard width */}
+        {/* Wheel - v3.17.73: Bigger on mobile, matches keyboard width */}
         <div style={{position:'relative', width:'100%', maxWidth:WHEEL_W, margin:'0 auto', marginTop:-30, zIndex:1000}}>
 
         {/* Wheel - centered as before */}
@@ -5605,7 +5661,7 @@ useEffect(() => {
              }}>
           <div style={{...wrapperStyle, position:'relative', zIndex:10}}>
             <svg width="100%" height="100%" viewBox={`0 0 ${WHEEL_W} ${WHEEL_H}`} className="select-none" style={{display:'block', userSelect: 'none', WebkitUserSelect: 'none', position:'relative', zIndex:10, maxWidth:'100%', maxHeight:'100%', touchAction:'pan-y'}}>
-  {/* ✅ v3.17.72: Black backing circle - pointer-events none for scrolling */}
+  {/* ✅ v3.17.73: Black backing circle - pointer-events none for scrolling */}
   <circle cx={260} cy={260} r={224} fill="#111" style={{pointerEvents: 'none'}} />
   
   {/* Labels moved to status bar area */}
@@ -5842,7 +5898,7 @@ useEffect(() => {
               style={{
                 position: 'absolute',
                 right: 40,
-                bottom: isDesktop ? 120 : 60,  // ← v3.17.72: LOWER on mobile (was backwards!)
+                bottom: isDesktop ? 120 : 60,  // ← v3.17.73: LOWER on mobile (was backwards!)
                 width: 32,
                 height: 32,
                 padding: 0,
@@ -6417,7 +6473,7 @@ useEffect(() => {
                 </div>
                 </div>
                 
-                {/* Guitar Tab - v3.17.72: Always visible, scales on mobile */}
+                {/* Guitar Tab - v3.17.73: Always visible, scales on mobile */}
                 <div style={{
                   border:'1px solid #374151',
                   borderRadius:8,
@@ -6822,7 +6878,7 @@ useEffect(() => {
                       borderRadius:8,
                       fontFamily:'ui-sans-serif, system-ui',
                       resize:'vertical',
-                      fontSize: isDesktop ? 12 : 16, // ✅ v3.17.72: 16px on mobile prevents iOS zoom
+                      fontSize: isDesktop ? 12 : 16, // ✅ v3.17.73: 16px on mobile prevents iOS zoom
                       lineHeight: '1.5', // v3.2.5: Explicit line-height for better click targets
                       userSelect: 'text' // ✅ v3.17.12: Allow text selection in editor
                     }}
@@ -6856,7 +6912,7 @@ useEffect(() => {
                     )}
                   </button>
                   
-                  {/* ✅ v3.17.72: Vertical button stack - Load & Share */}
+                  {/* ✅ v3.17.73: Vertical button stack - Load & Share */}
                   <div style={{display:'flex', flexDirection:'column', gap:8}}>
                     {/* Load/Menu Button */}
                     <div style={{position:'relative'}}>
@@ -7234,7 +7290,7 @@ useEffect(() => {
                         if (ctx.state === 'suspended') {
                           await ctx.resume();
                         }
-                        // ✅ v3.17.72: Play silent note to fully unlock iOS audio in iframe
+                        // ✅ v3.17.73: Play silent note to fully unlock iOS audio in iframe
                         const osc = ctx.createOscillator();
                         const gain = ctx.createGain();
                         gain.gain.value = 0.001; // Nearly silent
@@ -7399,6 +7455,6 @@ useEffect(() => {
   );
 }
 
-// HarmonyWheel v3.17.72 - Legend inside wheel container (same stacking context as transform)
+// HarmonyWheel v3.17.73 - Legend inside wheel container (same stacking context as transform)
 
-// EOF - HarmonyWheel.tsx v3.17.72
+// EOF - HarmonyWheel.tsx v3.17.73
