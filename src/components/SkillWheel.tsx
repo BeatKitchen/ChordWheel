@@ -1,7 +1,11 @@
 /*
- * SkillWheel.tsx - v3.3.0 IMPROVED GRID
+ * SkillWheel.tsx - v3.3.1 USABILITY FIX
  * 
- * Grid layout that opens on hover:
+ * Changes:
+ * - Increased timeout from 200ms to 2000ms (2 seconds)
+ * - Much easier to select skills without menu disappearing
+ * 
+ * v3.3.0 Grid layout that opens on hover:
  * - Closed state: Square border (not circle), bigger icon (40px)
  * - Selected skill color shown in text
  * - Expert shows "EXPERT\n(all functions)" 
@@ -58,7 +62,7 @@ export default function SkillWheel({ current, onChange }: SkillWheelProps) {
   const handleMouseLeave = () => {
     timeoutRef.current = window.setTimeout(() => {
       setIsOpen(false);
-    }, 200);
+    }, 2000); // ✅ v3.3.1: Increased from 200ms - much easier to use!
   };
 
   const handleTouchStart = (e: React.TouchEvent) => {
