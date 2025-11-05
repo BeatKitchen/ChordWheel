@@ -1,5 +1,24 @@
 /*
- * HarmonyWheel.tsx — v3.17.11 🎹 PAR Space Fix + Piano Highlights Fix!
+ * HarmonyWheel.tsx — v3.17.13 🐛 CRITICAL: V Chord + Bonus Wedges Fixed!
+ * 
+ * 🐛 v3.17.13 CRITICAL BUG FIXES:
+ * - **V chord missing**: Added "V" (plain triad) to ALL skill levels
+ * - Key 8 (V) now works in all keys! Was showing V7 but not V
+ * - **Bonus wedges visible**: Added V/ii and Bm7♭5 to ADVANCED/EXPERT arrays
+ * - Bonus wedges now show when enabled (were filtered out by isFunctionVisible)
+ * - Performance mode bonus wedges now actually appear
+ * 
+ * ✅ v3.17.13 CONFIRMED INTENTIONAL:
+ * - Bdim7 → V7 wedge: YES, this is correct! (vii°7 = dominant substitute)
+ * - Line 3161-3166: Bdim7 with B bass activates V7 (music theory correct)
+ * 
+ * ✨ v3.17.12 UX IMPROVEMENTS:
+ * - **Show both function AND 7th**: Function name stays, tiny 7th type below
+ * - When Shift held: "ii" shows with "m7" underneath (7px font)
+ * - See what changes when pressing Shift without losing context
+ * - **No accidental text selection**: userSelect:'none' on all UI
+ * - Editor still selectable (userSelect:'text')
+ * - No more selecting button icons or labels when dragging
  * 
  * 🐛 v3.17.11 CRITICAL BUG FIXES:
  * - **PAR space Eb bug**: Eb/Ab/Db no longer exit PAR when already in PAR
@@ -953,7 +972,7 @@ import {
   parseSongMetadata
 } from "./lib/songManager";
 
-const HW_VERSION = 'v3.17.11';
+const HW_VERSION = 'v3.17.13';
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -981,12 +1000,12 @@ export default function HarmonyWheel(){
   
   // Define which functions are visible at each level (cumulative)
   const SKILL_LEVEL_FUNCTIONS: Record<SkillLevel, Fn[]> = {
-    "ROOKIE": ["I", "IV", "V7"],  // 3 chords
-    "NOVICE": ["I", "IV", "V7", "vi"],  // 4 chords - add relative minor
-    "SOPHOMORE": ["I", "IV", "V7", "vi", "V/V", "V/vi"],  // 6 chords - add secondary dominants
-    "INTERMEDIATE": ["I", "IV", "V7", "vi", "V/V", "V/vi", "ii", "iii", "♭VII", "iv"],  // 10 chords - full
-    "ADVANCED": ["I", "IV", "V7", "vi", "V/V", "V/vi", "ii", "iii", "♭VII", "iv"],  // Same as INTERMEDIATE
-    "EXPERT": ["I", "IV", "V7", "vi", "V/V", "V/vi", "ii", "iii", "♭VII", "iv"]  // Same + bonus wedges enabled
+    "ROOKIE": ["I", "IV", "V", "V7"],  // ✅ v3.17.13: Added V (plain triad)
+    "NOVICE": ["I", "IV", "V", "V7", "vi"],  
+    "SOPHOMORE": ["I", "IV", "V", "V7", "vi", "V/V", "V/vi"],  
+    "INTERMEDIATE": ["I", "IV", "V", "V7", "vi", "V/V", "V/vi", "ii", "iii", "♭VII", "iv"],  
+    "ADVANCED": ["I", "IV", "V", "V7", "vi", "V/V", "V/vi", "V/ii", "ii", "iii", "♭VII", "iv", "Bm7♭5"],  // ✅ v3.17.13: Added V/ii and Bm7♭5
+    "EXPERT": ["I", "IV", "V", "V7", "vi", "V/V", "V/vi", "V/ii", "ii", "iii", "♭VII", "iv", "Bm7♭5"]  // ✅ v3.17.13: Added V/ii and Bm7♭5
   };
   
   // Check if a function is visible at current skill level
@@ -1522,7 +1541,7 @@ useEffect(() => {
   };
 
   const parseAndLoadSequence = ()=>{
-    const APP_VERSION = "v3.17.11-harmony-wheel";
+    const APP_VERSION = "v3.17.13-harmony-wheel";
     console.log('=== PARSE AND LOAD START ===');
     console.log('🏷️  APP VERSION:', APP_VERSION);
     console.log('Input text:', inputText);
@@ -4891,7 +4910,7 @@ useEffect(() => {
   })();
 
   return (
-    <div style={{background:'#111', color:'#fff', height:'100%', maxHeight:'100vh', overflow:'hidden', padding:8, fontFamily:'ui-sans-serif, system-ui'}}>
+    <div style={{background:'#111', color:'#fff', height:'100%', maxHeight:'100vh', overflow:'hidden', padding:8, fontFamily:'ui-sans-serif, system-ui', userSelect:'none'}}>
       <div style={{maxWidth:800, margin:'0 auto', border:'1px solid #374151', borderRadius:12, padding:8, height:'100%', overflow:'auto'}}>
 
         {/* BKS Logo Header with Emblem + Help Button */}
@@ -6264,7 +6283,8 @@ useEffect(() => {
                       fontFamily:'ui-sans-serif, system-ui',
                       resize:'vertical',
                       fontSize:12,
-                      lineHeight: '1.5' // v3.2.5: Explicit line-height for better click targets
+                      lineHeight: '1.5', // v3.2.5: Explicit line-height for better click targets
+                      userSelect: 'text' // ✅ v3.17.12: Allow text selection in editor
                     }}
                   />
                   
@@ -6558,23 +6578,35 @@ useEffect(() => {
                             <div style={{
                               fontSize: 9,
                               fontWeight: 600,
-                              color: isFlashing ? '#000' : (shiftHeld ? color : '#888'),
+                              color: isFlashing ? '#000' : '#888',
                               marginTop: 2,
                               lineHeight: 1,
                               whiteSpace: 'nowrap'
                             }}>
-                              {shiftHeld ? (() => {
-                                // Show 7th chord type when shift held
-                                const chordType = {
-                                  'I': 'M7', 'IV': 'M7',  // Major 7th
-                                  'ii': 'm7', 'iii': 'm7', 'vi': 'm7', 'iv': 'm7',  // Minor 7th
-                                  'V': '7', 'V7': '7', 'V/V': '7', 'V/vi': '7', 'V/ii': '7',  // Dominant 7th
-                                  '♭VII': '7',
-                                  'Bm7♭5': 'ø7'  // Half-diminished
-                                }[fn] || '7';
-                                return chordType;
-                              })() : fn}
+                              {fn}
                             </div>
+                            {/* ✅ v3.17.12: Show 7th type below function when shift held */}
+                            {shiftHeld && (
+                              <div style={{
+                                fontSize: 7,
+                                fontWeight: 500,
+                                color: isFlashing ? '#000' : color,
+                                marginTop: 1,
+                                lineHeight: 1,
+                                opacity: 0.8
+                              }}>
+                                {(() => {
+                                  const chordType = {
+                                    'I': 'M7', 'IV': 'M7',  // Major 7th
+                                    'ii': 'm7', 'iii': 'm7', 'vi': 'm7', 'iv': 'm7',  // Minor 7th
+                                    'V': '7', 'V7': '7', 'V/V': '7', 'V/vi': '7', 'V/ii': '7',  // Dominant 7th
+                                    '♭VII': '7',
+                                    'Bm7♭5': 'ø7'  // Half-diminished
+                                  }[fn] || '7';
+                                  return chordType;
+                                })()}
+                              </div>
+                            )}
                           </div>
                         );
                       })}
@@ -6781,6 +6813,6 @@ useEffect(() => {
   );
 }
 
-// HarmonyWheel v3.17.11 - FIXED: PAR Eb exit bug + piano highlights sticking
+// HarmonyWheel v3.17.13 - FIXED: V chord missing + bonus wedges not showing
 
-// EOF - HarmonyWheel.tsx v3.17.11
+// EOF - HarmonyWheel.tsx v3.17.13
