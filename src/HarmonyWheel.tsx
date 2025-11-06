@@ -1,5 +1,9 @@
 /*
- * HarmonyWheel.tsx — v3.17.95 🎯 Critical UI Fixes Only!
+ * HarmonyWheel.tsx — v3.17.96 📏 No Scrollbar!
+ * 
+ * 📏 v3.17.96 SCROLLBAR FINALLY FIXED:
+ * - **Removed marginBottom:6** from bottom containers (textarea wrapper + transport controls)
+ * - Those 6px were causing the scrollbar!
  * 
  * 🎯 v3.17.95 CRITICAL UI FIXES:
  * - **Load menu visibility**: Changed parent overflow:hidden → overflow:visible
@@ -1180,7 +1184,7 @@ import {
   parseSongMetadata
 } from "./lib/songManager";
 
-const HW_VERSION = 'v3.17.95';
+const HW_VERSION = 'v3.17.96';
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -1877,7 +1881,7 @@ useEffect(() => {
   };
 
   const parseAndLoadSequence = ()=>{
-    const APP_VERSION = "v3.17.95-harmony-wheel";
+    const APP_VERSION = "v3.17.96-harmony-wheel";
     console.log('=== PARSE AND LOAD START ===');
     console.log('🏷️  APP VERSION:', APP_VERSION);
     console.log('Input text:', inputText);
@@ -6882,7 +6886,7 @@ useEffect(() => {
               
               {/* Row: Transport Controls + Step Record - v3.4.3: Fixed missing buttons */}
               {skillLevel === "EXPERT" && sequence.length > 0 && (
-                <div style={{display:'flex', gap:8, alignItems:'center', marginTop:6, marginBottom:6, flexWrap:'wrap'}}>
+                <div style={{display:'flex', gap:8, alignItems:'center', marginTop:6, marginBottom:0, flexWrap:'wrap'  /* ✅ v3.17.96: marginBottom:0 to prevent scrollbar */}}>
                   {/* 1. Go to start */}
                   <button 
                     onClick={goToStart} 
@@ -7066,7 +7070,7 @@ useEffect(() => {
               
               {/* Row 2: Sequencer + Buttons - EXPERT ONLY */}
               {skillLevel === "EXPERT" && (
-                <div style={{marginBottom: 6, display:'flex', gap:8, alignItems:'stretch', maxWidth:'100%', overflow:'visible'  /* ✅ v3.17.95: visible so load menu can show above */}}>
+                <div style={{marginBottom: 0, display:'flex', gap:8, alignItems:'stretch', maxWidth:'100%', overflow:'visible'  /* ✅ v3.17.95: visible so load menu can show above, marginBottom:0 to prevent scrollbar */}}>
                   <textarea
                     ref={textareaRef}
                     placeholder={'Type chords, modifiers, and comments...\nExamples:\n@TITLE Sequence Name, @KEY C\nC, Am7, F, G7\n@SUB F, Bb, C7, @HOME\n@REL Em, Am, @PAR Cm, Fm\n@KEY G, D, G, C\n# Verse: lyrics or theory note'}
@@ -7682,6 +7686,6 @@ useEffect(() => {
   );
 }
 
-// HarmonyWheel v3.17.95 - Fixed load menu visibility and scrollbar (reverted rhythm notation)
+// HarmonyWheel v3.17.96 - Removed marginBottom to eliminate scrollbar
 
-// EOF - HarmonyWheel.tsx v3.17.95
+// EOF - HarmonyWheel.tsx v3.17.96
