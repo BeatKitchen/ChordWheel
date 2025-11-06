@@ -1,5 +1,11 @@
 /*
- * HarmonyWheel.tsx — v3.17.97 📏 Margin Hunt Complete!
+ * HarmonyWheel.tsx — v3.17.98 🧪 Modal Commented Out (TEST)
+ * 
+ * 🧪 v3.17.98 TESTING - MODAL DISABLED:
+ * - **Audio prompt modal COMMENTED OUT** - Testing if it blocks iOS shared URLs
+ * - This is temporary to diagnose the issue
+ * - Audio will need manual initialization (tap play button)
+ * - Should allow shared URLs to load properly on iOS
  * 
  * 📏 v3.17.97 REMOVED ALL MARGINBOTTOM:
  * - Line 6219: Sequence display container
@@ -1191,7 +1197,7 @@ import {
   parseSongMetadata
 } from "./lib/songManager";
 
-const HW_VERSION = 'v3.17.97';
+const HW_VERSION = 'v3.17.98';
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -1888,7 +1894,7 @@ useEffect(() => {
   };
 
   const parseAndLoadSequence = ()=>{
-    const APP_VERSION = "v3.17.97-harmony-wheel";
+    const APP_VERSION = "v3.17.98-harmony-wheel";
     console.log('=== PARSE AND LOAD START ===');
     console.log('🏷️  APP VERSION:', APP_VERSION);
     console.log('Input text:', inputText);
@@ -5515,7 +5521,7 @@ useEffect(() => {
       msUserSelect:'none',
       touchAction: 'pan-y' // ✅ v3.17.85: Allow vertical scrolling on background
     }}>
-      {/* ✅ v3.17.85: iOS Audio Prompt with silent note trick */}
+      {/* ✅ v3.17.98: TEMPORARILY COMMENTED OUT - Testing if modal blocks iOS shared URLs
       {showAudioPrompt && (
         <div
           onClick={() => {
@@ -5556,6 +5562,7 @@ useEffect(() => {
           <div style={{ fontSize: 12, color: '#9CA3AF' }}>iOS requires user interaction to play audio</div>
         </div>
       )}
+      */}
       
       {/* ✅ v3.17.85: Share Modal */}
       {showShareModal && (
@@ -7693,6 +7700,6 @@ useEffect(() => {
   );
 }
 
-// HarmonyWheel v3.17.97 - Removed all marginBottom values (24px total!)
+// HarmonyWheel v3.17.98 - TESTING: Audio modal commented out to diagnose iOS issue
 
-// EOF - HarmonyWheel.tsx v3.17.97
+// EOF - HarmonyWheel.tsx v3.17.98
