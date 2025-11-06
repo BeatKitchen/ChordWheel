@@ -1388,7 +1388,6 @@ useEffect(() => {
   const [audioEnabled, setAudioEnabled] = useState(true); // Start with audio enabled
   const [audioInitialized, setAudioInitialized] = useState(false); // ✅ v3.17.85: Track if audio is ready
   const [showAudioPrompt, setShowAudioPrompt] = useState(false); // ✅ v3.17.85: iOS audio prompt
-  const [debugInfo, setDebugInfo] = useState<string>(''); // ✅ v3.17.99: Visible debug for iOS
   const audioEnabledRef = useRef(true); // Ref for MIDI callback closure
   const [audioReady, setAudioReady] = useState(false); // ✅ v3.17.85: Start false, set true when initialized
   
@@ -1534,9 +1533,6 @@ useEffect(() => {
     
     console.log('📨 Received song param:', songParam.substring(0, 50) + '...');
     
-    // ✅ v3.17.99: Add visible debug for iOS
-    setDebugInfo(`Loading song: ${songParam.substring(0, 30)}...`);
-    
     const songData = decodeSongFromURL(songParam);
     
     if (songData && typeof songData === 'object' && typeof songData.text === 'string') {
@@ -1561,9 +1557,6 @@ useEffect(() => {
       console.log('📥 Loading shared song:', songData.title);
       console.log('📝 Final clean text:', cleanText);
       
-      // ✅ v3.17.99: Update debug
-      setDebugInfo(`Parsed: ${songData.title || 'Untitled'} - ${cleanText.substring(0, 30)}...`);
-      
       // Set states - text will appear in editor
       setBaseKey(songData.key || 'C');
       setSkillLevel('EXPERT');
@@ -1574,15 +1567,12 @@ useEffect(() => {
       // Auto-parse after states settle
       setTimeout(() => {
         console.log('🎵 Auto-parsing shared song');
-        setDebugInfo(`Parsing sequence...`);
         parseAndLoadSequence();
-        setTimeout(() => setDebugInfo(`✅ Loaded: ${songData.title || 'Untitled'}`), 500);
       }, 200);
       
       console.log('✅ Shared song loaded - will auto-parse');
     } else {
       console.error('Invalid song data:', songData);
-      setDebugInfo(`❌ Invalid song data`);
     }
   }, [urlSearchParam, hasLoadedFromURL]);
   
@@ -5591,26 +5581,6 @@ useEffect(() => {
         </div>
       )}
       */}
-      
-      {/* ✅ v3.17.99: Visible iOS Debug Banner */}
-      {debugInfo && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          background: '#39FF14',
-          color: '#000',
-          padding: '8px',
-          textAlign: 'center',
-          fontWeight: 600,
-          fontSize: 12,
-          zIndex: 99998,
-          boxShadow: '0 2px 8px rgba(0,0,0,0.3)'
-        }}>
-          🐛 DEBUG: {debugInfo}
-        </div>
-      )}
       
       {/* ✅ v3.17.85: Share Modal */}
       {showShareModal && (
