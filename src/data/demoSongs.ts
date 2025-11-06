@@ -3,21 +3,59 @@
 // Installation: Place this file in src/data/ directory
 // Import in HarmonyWheel.tsx: import { defaultSong, demoSongs } from "./data/demoSongs";
 
-// ✅ v3.18.5: Added rhythm patterns to all demo songs
+// ✅ v3.18.43: Added bannerMessage support for promotional messages
+
+/*
+ * BANNER MESSAGE INSTRUCTIONS
+ * ============================
+ * 
+ * You can add custom promotional messages that appear when non-Expert users
+ * load demo songs. Users CANNOT create these - only you via this file.
+ * 
+ * HOW TO ADD A BANNER:
+ * Add a `bannerMessage` property to any song:
+ * 
+ * {
+ *   title: "Song Name",
+ *   content: "...",
+ *   bannerMessage: "Your message here with [[links|url]]"
+ * }
+ * 
+ * LINK SYNTAX:
+ * [[link text|url]] - Creates a clickable green link
+ * 
+ * EXAMPLES:
+ * - [[Black Friday Sale|https://beatkitchen.io/sale]] - External link
+ * - [[Expert mode|expert]] - Button that enables Expert mode
+ * - [[gym|https://beatkitchen.io/classroom]] - Opens classroom
+ * 
+ * TIPS:
+ * - Keep under 80 characters for best display
+ * - Messages only show when NOT in Expert mode
+ * - Green links match the app's signature color
+ * - Links with "expert" become buttons instead of links
+ * 
+ * DEFAULT MESSAGE (if no bannerMessage):
+ * "[[Expert mode|expert]] for sequencer. Join a [[gym|https://beatkitchen.io/classroom]] to learn some music theory!"
+ */
 
 export interface DemoSong {
   title: string;
   content: string;
+  bannerMessage?: string;  // ✅ v3.18.43: Optional promotional message
 }
 
 export const demoSongs: DemoSong[] = [
   {
     title: "DEBUG TEST",
     content: "@TITLE Hello World, @Key G, #hello darkness my old friend, B7, Em\n\n@RHYTHM1 |x x x x|\n@RHYTHM2 |x / x /|\n@RHYTHM3 |x x / x x x / x|"
+    // No banner - uses default message
   },
   {
     title: "Simple Progression",
     content: "@TITLE Simple Song, @KEY C, # Verse, C, Am, F, G, C, Am, F, G, # Chorus, F, G, C, Am, F, G, C, C\n\n@RHYTHM1 |x x x x|\n@RHYTHM2 |x / x /|\n@RHYTHM3 |x x / x x x / x|"
+    // Example: Add banner like this:
+    // bannerMessage: "Try [[Expert mode|expert]] to unlock the sequencer!"
   },
   {
     title: "Autumn Leaves",
@@ -57,3 +95,34 @@ export function getSongByTitle(title: string): string | undefined {
 export function getSongTitles(): string[] {
   return demoSongs.map(song => song.title);
 }
+
+/*
+ * QUICK REFERENCE - BANNER MESSAGE EXAMPLES
+ * ==========================================
+ * 
+ * PROMOTION:
+ * bannerMessage: "🎉 [[50% off all courses|https://beatkitchen.io/sale]] this week!"
+ * 
+ * ANNOUNCEMENT:
+ * bannerMessage: "New! [[Expert mode|expert]] includes chord progressions."
+ * 
+ * CALL TO ACTION:
+ * bannerMessage: "Love this? [[Join our community|https://beatkitchen.io/discord]]"
+ * 
+ * SEASONAL:
+ * bannerMessage: "Happy holidays! Use code HARMONY25 at [[checkout|https://beatkitchen.io/shop]]"
+ * 
+ * MULTIPLE LINKS:
+ * bannerMessage: "Try [[Expert mode|expert]] or join a [[gym|https://beatkitchen.io/classroom]]!"
+ * 
+ * SIMPLE TEXT (no links):
+ * bannerMessage: "Thanks for using Harmony Wheel! 🎵"
+ * 
+ * ==========================================
+ * 
+ * REMEMBER:
+ * - Users can't see or edit bannerMessage in the app
+ * - Only you can add/change them via this file
+ * - Perfect for promotions, announcements, CTAs
+ * - Keep messages concise (~80 chars max)
+ */

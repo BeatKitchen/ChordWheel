@@ -1,5 +1,37 @@
 /*
- * HarmonyWheel.tsx — v3.18.41 🎯 No More Shift!
+ * HarmonyWheel.tsx — v3.18.44 🌐 Neutral Browser Display
+ * 
+ * 🌐 v3.18.44 BROWSER DISPLAY:
+ * - **Neutral detection**: Shows "Safari" or "Chrome/Other" in gray
+ * - **No negative indicators**: Removed red "✗ Not Safari"  
+ * - **Clean legend**: Version + browser + copyright
+ * 
+ * 🔐 v3.18.43 ADMIN-ONLY BANNER:
+ * - **Removed @BANNER from parser**: Users can't create banners in text input
+ * - **demoSongs only**: Banner messages only work from demoSongs.ts file
+ * - **Link syntax**: [[link text|url]] for clickable green links
+ * - **Expert button**: [[Expert mode|expert]] creates activation button
+ * - **Admin control**: Only you can add promotional/announcement messages
+ * - See BANNER_SYSTEM.md for complete documentation
+ * 
+ * Usage in demoSongs.ts:
+ * {
+ *   title: "Song Name",
+ *   content: `@TITLE Song\n@KEY C\nI, IV, V`,
+ *   bannerMessage: "🎉 [[Black Friday Sale|https://beatkitchen.io/sale]]!"
+ * }
+ * 
+ * 📣 v3.18.42 BANNER MESSAGE SYSTEM:
+ * - **@BANNER directive**: Add custom messages to songs
+ * - **Link syntax**: [[link text|url]] for clickable links
+ * - **Expert button**: [[Expert mode|expert]] creates button to enable Expert
+ * - **Green links**: All links styled in signature green
+ * - **Mobile Safari fixes**: Skill button repositioned (top:12, right:8)
+ * - **Reduced padding**: Mobile Safari paddingTop reduced to 8px
+ * 
+ * Usage in demoSongs:
+ * @BANNER Check out our [[Black Friday Sale|https://beatkitchen.io/sale]]!
+ * @BANNER [[Expert mode|expert]] unlocks the sequencer. Join a [[gym|https://beatkitchen.io/classroom]]!
  * 
  * 🎯 v3.18.41 LAYOUT SHIFT FIXED:
  * - **Found the culprit**: Non-expert message had marginTop:-20
@@ -1502,7 +1534,7 @@ import {
   parseSongMetadata
 } from "./lib/songManager";
 
-const HW_VERSION = 'v3.18.41';
+const HW_VERSION = 'v3.18.44';
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -2172,6 +2204,7 @@ useEffect(() => {
   const [loopEnabled, setLoopEnabled] = useState(false);
   const playbackTimerRef = useRef<number | null>(null);
   const [songTitle, setSongTitle] = useState(""); // Static song title from @TITLE
+  const [bannerMessage, setBannerMessage] = useState(""); // ✅ v3.18.42: Configurable banner message from @BANNER
   
   // Autoload preloaded playlist on mount
   useEffect(() => {
@@ -2293,7 +2326,7 @@ useEffect(() => {
   };
 
   const parseAndLoadSequence = ()=>{
-    const APP_VERSION = "v3.18.41-harmony-wheel";
+    const APP_VERSION = "v3.18.44-harmony-wheel";
     console.log('=== PARSE AND LOAD START ===');
     console.log('🏷️  APP VERSION:', APP_VERSION);
     console.log('Input text:', inputText);
@@ -2305,6 +2338,7 @@ useEffect(() => {
       setSeqIndex(-1);
       setDisplayIndex(-1);
       setSongTitle("");
+      setBannerMessage(""); // ✅ v3.18.42: Clear banner
       // ✅ v3.6.0 FIX: Only reset key for truly empty input
       // Don't reset when loading actual sequences - preserve key selector setting
       setBaseKey("C");
@@ -3180,8 +3214,9 @@ useEffect(() => {
     }
   };
   
-  const handleLoadDemoSong = (songContent: string) => {
+  const handleLoadDemoSong = (songContent: string, bannerMsg?: string) => {
     setInputText(songContent);
+    setBannerMessage(bannerMsg || ""); // ✅ v3.18.43: Set banner from demoSongs
     setShowSongMenu(false);
     setTimeout(() => parseAndLoadSequence(), 100);
   };
@@ -6492,7 +6527,7 @@ useEffect(() => {
         border: isDesktop ? '1px solid #374151' : 'none',
         borderRadius: isDesktop ? 12 : 0,
         padding: isDesktop ? 8 : 4,
-        paddingTop: isDesktop ? 8 : 12,
+        paddingTop: isDesktop ? 8 : (isSafariBrowser ? 8 : 12),
         minHeight:'fit-content',
         overflow: 'visible',
         position:'relative',
@@ -6634,9 +6669,9 @@ useEffect(() => {
               Harmony Wheel
             </div>
             <div>{HW_VERSION}</div>
-            {/* DEBUG: Show Safari detection */}
-            <div style={{ color: isSafariBrowser ? '#39FF14' : '#DC2626', fontSize: 7 }}>
-              {isSafariBrowser ? '✓ Safari (state)' : '✗ Not Safari'}
+            {/* ✅ v3.18.44: Neutral browser detection for debugging */}
+            <div style={{ color: '#6b7280', fontSize: 7 }}>
+              {isSafariBrowser ? 'Safari' : 'Chrome/Other'}
             </div>
             <div style={{ marginTop: 4, fontSize: 7 }}>
               © Beat Kitchen LLC, 2025
@@ -6723,13 +6758,13 @@ useEffect(() => {
         )}
         {/* END TESTING - Logo hidden */}
         
-        {/* ✅ v3.18.40: Skill button - reserve space to prevent shift */}
+        {/* ✅ v3.18.42: Skill button - mobile Safari adjustments */}
         <div style={{
           display:'flex', 
           alignItems:'flex-start',
           position:'absolute',
-          right: isDesktop ? 12 : 12,
-          top: isDesktop ? 12 : (isSafariBrowser ? 60 : 52),
+          right: isDesktop ? 12 : (isSafariBrowser ? 8 : 12),
+          top: isDesktop ? 12 : (isSafariBrowser ? 12 : 52),
           zIndex:10001,
           minHeight: 72
         }}>
@@ -7214,75 +7249,118 @@ useEffect(() => {
                   overflow:'hidden',
                   textOverflow:'ellipsis'
                 }}>
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      console.log('🎯 Expert mode button clicked!');
-                      setSkillLevel('EXPERT');
-                    }}
-                    style={{
-                      color: '#39FF14',
-                      cursor: 'pointer',
-                      textDecoration: 'none',
-                      fontWeight: 600,
-                      background: 'rgba(57, 255, 20, 0.1)',
-                      border: '1px solid transparent',
-                      padding: '2px 6px',
-                      margin: '0 2px',
-                      borderRadius: '3px',
-                      font: 'inherit',
-                      fontSize: 11,
-                      fontStyle: 'normal',
-                      display: 'inline-block',
-                      position: 'relative',
-                      zIndex: 9999,
-                      pointerEvents: 'auto',
-                      userSelect: 'none',
-                      WebkitUserSelect: 'none'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = 'rgba(57, 255, 20, 0.2)';
-                      e.currentTarget.style.borderColor = '#39FF14';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = 'rgba(57, 255, 20, 0.1)';
-                      e.currentTarget.style.borderColor = 'transparent';
-                    }}
-                  >
-                    Expert mode
-                  </button>
-                  {' '}for sequencer.{' '}Join a{' '}
-                  <a 
-                    href="https://beatkitchen.io/classroom/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      console.log('🏋️ Gym link clicked');
-                    }}
-                    style={{
-                      color: '#39FF14',
-                      textDecoration: 'none',
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                      background: 'rgba(57, 255, 20, 0.1)',
-                      padding: '2px 4px',
-                      borderRadius: '3px',
-                      position: 'relative',
-                      zIndex: 9999,
-                      pointerEvents: 'auto'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = 'rgba(57, 255, 20, 0.2)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = 'rgba(57, 255, 20, 0.1)';
-                    }}
-                  >
-                    gym
-                  </a>
-                  {' '}to learn some music theory!
+                  {/* ✅ v3.18.42: Dynamic banner message with link parsing */}
+                  {(() => {
+                    // Use custom banner if set, otherwise default message
+                    const message = bannerMessage || "Expert mode for sequencer. Join a gym to learn some music theory!";
+                    
+                    // Parse [[link text|url]] format
+                    const linkRegex = /\[\[([^\|]+)\|([^\]]+)\]\]/g;
+                    const parts = [];
+                    let lastIndex = 0;
+                    let match;
+                    
+                    while ((match = linkRegex.exec(message)) !== null) {
+                      // Add text before link
+                      if (match.index > lastIndex) {
+                        parts.push(
+                          <span key={`text-${lastIndex}`}>
+                            {message.substring(lastIndex, match.index)}
+                          </span>
+                        );
+                      }
+                      
+                      // Add link
+                      const [, linkText, url] = match;
+                      const isExpertButton = linkText.toLowerCase().includes('expert');
+                      
+                      if (isExpertButton) {
+                        parts.push(
+                          <button
+                            key={`link-${match.index}`}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setSkillLevel('EXPERT');
+                            }}
+                            style={{
+                              color: '#39FF14',
+                              cursor: 'pointer',
+                              textDecoration: 'none',
+                              fontWeight: 600,
+                              background: 'rgba(57, 255, 20, 0.1)',
+                              border: '1px solid transparent',
+                              padding: '2px 6px',
+                              margin: '0 2px',
+                              borderRadius: '3px',
+                              font: 'inherit',
+                              fontSize: 11,
+                              fontStyle: 'normal',
+                              display: 'inline-block',
+                              position: 'relative',
+                              zIndex: 9999,
+                              pointerEvents: 'auto',
+                              userSelect: 'none',
+                              WebkitUserSelect: 'none'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.background = 'rgba(57, 255, 20, 0.2)';
+                              e.currentTarget.style.borderColor = '#39FF14';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.background = 'rgba(57, 255, 20, 0.1)';
+                              e.currentTarget.style.borderColor = 'transparent';
+                            }}
+                          >
+                            {linkText}
+                          </button>
+                        );
+                      } else {
+                        parts.push(
+                          <a
+                            key={`link-${match.index}`}
+                            href={url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            style={{
+                              color: '#39FF14',
+                              textDecoration: 'none',
+                              fontWeight: 600,
+                              cursor: 'pointer',
+                              background: 'rgba(57, 255, 20, 0.1)',
+                              padding: '2px 4px',
+                              borderRadius: '3px',
+                              position: 'relative',
+                              zIndex: 9999,
+                              pointerEvents: 'auto'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.background = 'rgba(57, 255, 20, 0.2)';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.background = 'rgba(57, 255, 20, 0.1)';
+                            }}
+                          >
+                            {linkText}
+                          </a>
+                        );
+                      }
+                      
+                      lastIndex = linkRegex.lastIndex;
+                    }
+                    
+                    // Add remaining text
+                    if (lastIndex < message.length) {
+                      parts.push(
+                        <span key={`text-${lastIndex}`}>
+                          {message.substring(lastIndex)}
+                        </span>
+                      );
+                    }
+                    
+                    return parts.length > 0 ? parts : message;
+                  })()}
                 </div>
               )}
               
@@ -8087,7 +8165,7 @@ useEffect(() => {
                           {demoSongs.map((song, idx) => (
                             <button
                               key={idx}
-                              onClick={() => handleLoadDemoSong(song.content)}
+                              onClick={() => handleLoadDemoSong(song.content, song.bannerMessage)}
                               style={{
                                 width:'100%',
                                 padding: '6px 8px',
@@ -8732,6 +8810,6 @@ useEffect(() => {
   );
 }
 
-// HarmonyWheel v3.18.41 - Rhythm patterns finally work! @directives parsed before bar notation
+// HarmonyWheel v3.18.44 - Rhythm patterns finally work! @directives parsed before bar notation
 
-// EOF - HarmonyWheel.tsx v3.18.41
+// EOF - HarmonyWheel.tsx v3.18.44
