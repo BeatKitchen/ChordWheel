@@ -1,5 +1,14 @@
 /*
- * HarmonyWheel.tsx — v3.18.3 🔇 Rests Work Now!
+ * HarmonyWheel.tsx — v3.18.4 🎹 Performance Rhythm Patterns!
+ * 
+ * 🎹 v3.18.4 RHYTHM PATTERN TRIGGERS:
+ * - **@RHYTHM1/2/3 directives**: Define patterns in song editor
+ * - **Syntax**: |x x / x * * x /| (x=play, /=rest, *=hold/tie)
+ * - **Triggers**: [ ] \ keys in performance mode
+ * - **Works with latched chord**: Press number key, then [ to play pattern
+ * - **Tempo fixed**: Default 120 BPM (was 60)
+ * - **Spacebar guard**: Won't trigger play/pause when typing in editor
+ * - Example: @RHYTHM1 |x x x x / / x x| creates syncopated pattern
  * 
  * 🔇 v3.18.3 REST PLAYBACK FIX:
  * - **Rests now create silence** - playback waits for rest duration
@@ -1233,7 +1242,7 @@ import {
   parseSongMetadata
 } from "./lib/songManager";
 
-const HW_VERSION = 'v3.18.3';
+const HW_VERSION = 'v3.18.4';
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -1825,7 +1834,13 @@ useEffect(() => {
   
   // Playback controls
   const [isPlaying, setIsPlaying] = useState(false);
-  const [tempo, setTempo] = useState(60); // BPM (beats per minute)
+  const [tempo, setTempo] = useState(120); // BPM (beats per minute) - ✅ v3.18.4: Changed default from 60 to 120
+  
+  // ✅ v3.18.4: Rhythm patterns for performance mode
+  type RhythmAction = { action: 'play' | 'hold' | 'rest'; duration: number };
+  const [rhythmPattern1, setRhythmPattern1] = useState<RhythmAction[]>([]);
+  const [rhythmPattern2, setRhythmPattern2] = useState<RhythmAction[]>([]);
+  const [rhythmPattern3, setRhythmPattern3] = useState<RhythmAction[]>([]);
   
   // Debug: Log transpose changes
   useEffect(() => {
@@ -1937,8 +1952,29 @@ useEffect(() => {
     }, 0);
   };
 
+  // ✅ v3.18.4: Parse rhythm pattern syntax
+  // Syntax: |x x / x * * x /|
+  // x = play, * = hold/tie, / = rest
+  const parseRhythmPattern = (patternText: string): RhythmAction[] => {
+    // Remove bar delimiters and normalize whitespace
+    const cleaned = patternText.replace(/\|/g, '').trim().replace(/\s+/g, ' ');
+    if (!cleaned) return [];
+    
+    // Split by space
+    const symbols = cleaned.split(' ');
+    const durationEach = 1.0 / symbols.length; // Split bar evenly
+    
+    return symbols.map(sym => {
+      if (sym === 'x') return { action: 'play' as const, duration: durationEach };
+      if (sym === '*') return { action: 'hold' as const, duration: durationEach };
+      if (sym === '/') return { action: 'rest' as const, duration: durationEach };
+      // Default to play if unrecognized
+      return { action: 'play' as const, duration: durationEach };
+    });
+  };
+
   const parseAndLoadSequence = ()=>{
-    const APP_VERSION = "v3.18.3-harmony-wheel";
+    const APP_VERSION = "v3.18.4-harmony-wheel";
     console.log('=== PARSE AND LOAD START ===');
     console.log('🏷️  APP VERSION:', APP_VERSION);
     console.log('Input text:', inputText);
@@ -2053,6 +2089,26 @@ useEffect(() => {
         }
         
         const upper = (cmd||"").toUpperCase().trim();
+        
+        // ✅ v3.18.4: Check for RHYTHM patterns
+        if (upper === "RHYTHM1" || upper === "R1") {
+          const pattern = parseRhythmPattern(arg);
+          setRhythmPattern1(pattern);
+          console.log('🎵 Rhythm Pattern 1:', arg, '→', pattern);
+          return { kind:"modifier", raw:tok, chord: `RHYTHM1:${arg}` };
+        }
+        if (upper === "RHYTHM2" || upper === "R2") {
+          const pattern = parseRhythmPattern(arg);
+          setRhythmPattern2(pattern);
+          console.log('🎵 Rhythm Pattern 2:', arg, '→', pattern);
+          return { kind:"modifier", raw:tok, chord: `RHYTHM2:${arg}` };
+        }
+        if (upper === "RHYTHM3" || upper === "R3") {
+          const pattern = parseRhythmPattern(arg);
+          setRhythmPattern3(pattern);
+          console.log('🎵 Rhythm Pattern 3:', arg, '→', pattern);
+          return { kind:"modifier", raw:tok, chord: `RHYTHM3:${arg}` };
+        }
         
         // Check for TITLE
         if (upper === "TITLE" || upper === "TI") {
@@ -2923,6 +2979,26 @@ useEffect(() => {
           
           return; // Stop processing - don't run other shortcuts
         }
+        
+        // ✅ v3.18.4: Rhythm pattern triggers in performance mode
+        if (e.key === '[' && rhythmPattern1.length > 0 && latchedAbsNotes.length > 0) {
+          e.preventDefault();
+          console.log('🎵 Triggering rhythm pattern 1');
+          playRhythmPattern(rhythmPattern1, latchedAbsNotes);
+          return;
+        }
+        if (e.key === ']' && rhythmPattern2.length > 0 && latchedAbsNotes.length > 0) {
+          e.preventDefault();
+          console.log('🎵 Triggering rhythm pattern 2');
+          playRhythmPattern(rhythmPattern2, latchedAbsNotes);
+          return;
+        }
+        if (e.key === '\\' && rhythmPattern3.length > 0 && latchedAbsNotes.length > 0) {
+          e.preventDefault();
+          console.log('🎵 Triggering rhythm pattern 3');
+          playRhythmPattern(rhythmPattern3, latchedAbsNotes);
+          return;
+        }
       }
       
       // Skill level shortcuts: 1-5 (only when NOT in performance mode)
@@ -2959,7 +3035,10 @@ useEffect(() => {
       }
       
       // Playback controls
+      // ✅ v3.18.4: Guard spacebar - don't trigger play/pause if typing in editor
       if (e.key === ' ') {
+        const activeTag = document.activeElement?.tagName;
+        if (activeTag === 'TEXTAREA' || activeTag === 'INPUT') return; // Don't hijack spacebar in editor
         e.preventDefault();
         togglePlayPause();
       } else if (e.key === 'Escape') {
@@ -5408,6 +5487,35 @@ useEffect(() => {
     activeMidiNotesRef.current.clear();
   };
 
+  // ✅ v3.18.4: Play rhythm pattern with current latched chord
+  const playRhythmPattern = (pattern: RhythmAction[], chordNotes: number[]) => {
+    if (pattern.length === 0 || chordNotes.length === 0) return;
+    
+    console.log('🎵 Playing rhythm pattern:', pattern, 'with chord:', chordNotes);
+    
+    let currentTime = 0;
+    const beatsPerBar = 4;
+    const beatDuration = 60 / tempo; // seconds per beat
+    
+    pattern.forEach((step, index) => {
+      const stepDurationSeconds = step.duration * beatsPerBar * beatDuration;
+      
+      setTimeout(() => {
+        if (step.action === 'play') {
+          // Play the chord
+          playChord(chordNotes, stepDurationSeconds * 0.8);
+        } else if (step.action === 'rest') {
+          // Silence - do nothing
+        } else if (step.action === 'hold') {
+          // Hold - chord should still be ringing from previous play
+          // Could add sustain logic here if needed
+        }
+      }, currentTime * 1000); // Convert to milliseconds
+      
+      currentTime += stepDurationSeconds;
+    });
+  };
+
   // ✅ v3.17.85: Song sharing via URL
   const encodeSongToURL = () => {
     const songData = {
@@ -7804,6 +7912,6 @@ useEffect(() => {
   );
 }
 
-// HarmonyWheel v3.18.3 - Fixed rest playback to create actual silence
+// HarmonyWheel v3.18.4 - Performance rhythm patterns with [ ] \ triggers
 
-// EOF - HarmonyWheel.tsx v3.18.3
+// EOF - HarmonyWheel.tsx v3.18.4
