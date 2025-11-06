@@ -1,5 +1,25 @@
 /*
- * HarmonyWheel.tsx — v3.18.4 🎹 Performance Rhythm Patterns!
+ * HarmonyWheel.tsx — v3.18.7 🔧 Buttons Fixed!
+ * 
+ * 🔧 v3.18.7 Z-INDEX FIXES:
+ * - Key dropdown: z-index 100001 (above button grid)
+ * - Transpose dropdown: z-index 100001 (above button grid)
+ * - Buttons now clickable again!
+ * 
+ * ⚠️ CRITICAL Z-INDEX HIERARCHY (DO NOT BREAK):
+ * - Wheel outer container: 10 (overlaps buttons with marginTop:-30)
+ * - Wheel inner/SVG: 10
+ * - Button container (key/space): 50 (MUST be > wheel!)
+ * - Button grid (enter/load): 100000 (for load menu to show)
+ * - Load menu dropdown: 99999 (below grid, but grid is small)
+ * - Key/transpose dropdowns: 100001 (above everything!)
+ * If buttons stop working, check this hierarchy!
+ * 
+ * 🎯 v3.18.6 STABLE (removed buggy rhythm indicators):
+ * - Newline support: Parser strips \n
+ * - Rhythm patterns work: [ ] \ keys trigger patterns
+ * - No visual indicators (they broke JSX)
+ * - Everything else from v3.18.4 working
  * 
  * 🎹 v3.18.4 RHYTHM PATTERN TRIGGERS:
  * - **@RHYTHM1/2/3 directives**: Define patterns in song editor
@@ -1242,7 +1262,7 @@ import {
   parseSongMetadata
 } from "./lib/songManager";
 
-const HW_VERSION = 'v3.18.4';
+const HW_VERSION = 'v3.18.7';
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -1974,7 +1994,7 @@ useEffect(() => {
   };
 
   const parseAndLoadSequence = ()=>{
-    const APP_VERSION = "v3.18.4-harmony-wheel";
+    const APP_VERSION = "v3.18.7-harmony-wheel";
     console.log('=== PARSE AND LOAD START ===');
     console.log('🏷️  APP VERSION:', APP_VERSION);
     console.log('Input text:', inputText);
@@ -1993,6 +2013,9 @@ useEffect(() => {
       return;
     }
     
+    // ✅ v3.18.6: Strip newlines - visual only
+    const cleanedInput = inputText.replace(/\n/g, ' ').trim();
+    
     // ✅ v3.18.2: RHYTHM NOTATION - Backward compatible
     // Old style: C, Am, F, G  (comma-separated, 1 bar each)
     // New style: |C Am F G|  (bar-delimited, space-separated)
@@ -2001,7 +2024,7 @@ useEffect(() => {
     const rawTokens: Array<{text: string; duration: number}> = [];
     
     // First pass: split by commas (backward compatible)
-    const segments = inputText.split(',').map(s => s.trim()).filter(Boolean);
+    const segments = cleanedInput.split(',').map(s => s.trim()).filter(Boolean);
     
     for (const segment of segments) {
       // Check if this segment contains bar delimiters
@@ -4734,7 +4757,7 @@ useEffect(() => {
       const ringTrailOpacity = 1 - 0.9*k; const ringTrailWidth = 5 - 3*k;
       return (
         <g key={fn} 
-           style={{touchAction: 'none', cursor: 'pointer'}}
+           style={{touchAction: 'none', cursor: 'pointer', pointerEvents: 'auto'}}
            onPointerDown={(e)=>{
              // ✅ v3.17.85: Touch support - pointer events work for mouse + touch
              e.preventDefault(); // Prevent default touch behaviors
@@ -6077,7 +6100,7 @@ useEffect(() => {
         </div>
 
         {/* Wheel - v3.17.85: Bigger on mobile, matches keyboard width */}
-        <div style={{position:'relative', width:'100%', maxWidth:WHEEL_W, margin:'0 auto', marginTop:-30, zIndex:1000}}>
+        <div style={{position:'relative', width:'100%', maxWidth:WHEEL_W, margin:'0 auto', marginTop:-30, zIndex:10}}>
 
         {/* Wheel - centered as before */}
         <div className="relative"
@@ -6093,7 +6116,7 @@ useEffect(() => {
                zIndex:10
              }}>
           <div style={{...wrapperStyle, position:'relative', zIndex:10}}>
-            <svg width="100%" height="100%" viewBox={`0 0 ${WHEEL_W} ${WHEEL_H}`} className="select-none" style={{display:'block', userSelect: 'none', WebkitUserSelect: 'none', position:'relative', zIndex:10, maxWidth:'100%', maxHeight:'100%', touchAction:'pan-y'}}>
+            <svg width="100%" height="100%" viewBox={`0 0 ${WHEEL_W} ${WHEEL_H}`} className="select-none" style={{display:'block', userSelect: 'none', WebkitUserSelect: 'none', position:'relative', zIndex:10, maxWidth:'100%', maxHeight:'100%', touchAction:'pan-y', pointerEvents:'none'}}>
   {/* ✅ v3.17.85: Black backing circle - pointer-events none for scrolling */}
   <circle cx={260} cy={260} r={224} fill="#111" style={{pointerEvents: 'none'}} />
   
@@ -6251,7 +6274,7 @@ useEffect(() => {
           <g 
             key={w.label} 
             onMouseDown={handleClick}
-            style={{cursor: 'pointer'}}
+            style={{cursor: 'pointer', pointerEvents: 'auto'}}
           >
             <path d={pathD} 
                   fill={w.label === 'Bm7♭5' ? '#0EA5E9' : BONUS_FILL} 
@@ -6604,9 +6627,10 @@ useEffect(() => {
                 display:'grid', 
                 gridTemplateColumns: '65% 35%',
                 columnGap:12, 
-                marginBottom:0,  // ✅ v3.17.97: Remove margin to prevent scrollbar
+                marginBottom:0,
                 position: 'relative',
-                zIndex: 1  // ✅ v3.17.90: Stay below load menu (99999)
+                zIndex: 50,  // ✅ v3.18.7: Above wheel (10) but below button grid (100000)
+                pointerEvents: 'auto'  // ✅ v3.18.7: Force clickability
               }}>
                 {/* Left: Key Button + Space Buttons + Keyboard */}
                 <div style={{display:'flex', flexDirection:'column', gap:8}}>
@@ -6640,7 +6664,7 @@ useEffect(() => {
                           border:'1px solid #39FF14',
                           borderRadius:6,
                           padding:4,
-                          zIndex:1000,
+                          zIndex:100001,  // ✅ v3.18.7: Above button grid (100000)
                           display:'grid',
                           gridTemplateColumns:'repeat(4, 1fr)',
                           gap:4,
@@ -7003,7 +7027,7 @@ useEffect(() => {
                         border: transpose !== 0 ? '1px solid #F2D74B' : '1px solid #60A5FA',
                         borderRadius:6,
                         padding:8,
-                        zIndex:1000,
+                        zIndex:100001,  // ✅ v3.18.7: Above button grid (100000)
                         display:'grid',
                         gridTemplateColumns:'repeat(13, 1fr)', // 2 rows: positive top, negative bottom
                         gridTemplateRows:'repeat(2, 1fr)',
@@ -7912,6 +7936,6 @@ useEffect(() => {
   );
 }
 
-// HarmonyWheel v3.18.4 - Performance rhythm patterns with [ ] \ triggers
+// HarmonyWheel v3.18.7 - Fixed z-index so key/transpose buttons are clickable
 
-// EOF - HarmonyWheel.tsx v3.18.4
+// EOF - HarmonyWheel.tsx v3.18.7
