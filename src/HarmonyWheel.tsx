@@ -1,5 +1,13 @@
 /*
- * HarmonyWheel.tsx — v3.17.99 🐛 iOS Debug Mode!
+ * HarmonyWheel.tsx — v3.18.0 🔗 Share URL Fixed!
+ * 
+ * 🔗 v3.18.0 SHARE URL FIX (MAJOR):
+ * - **Uses current domain** instead of hardcoded beatkitchen.io
+ * - Share from Vercel → stays on Vercel
+ * - Share from beatkitchen → stays on beatkitchen  
+ * - Share from localhost → stays on localhost
+ * - window.location.origin + pathname + ?song=...
+ * - THIS SHOULD FIX iOS SHARED URLS!
  * 
  * 🐛 v3.17.99 VISIBLE iOS DEBUGGING:
  * - **Green debug banner** shows URL loading progress
@@ -1204,7 +1212,7 @@ import {
   parseSongMetadata
 } from "./lib/songManager";
 
-const HW_VERSION = 'v3.17.99';
+const HW_VERSION = 'v3.18.0';
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -1912,7 +1920,7 @@ useEffect(() => {
   };
 
   const parseAndLoadSequence = ()=>{
-    const APP_VERSION = "v3.17.99-harmony-wheel";
+    const APP_VERSION = "v3.18.0-harmony-wheel";
     console.log('=== PARSE AND LOAD START ===');
     console.log('🏷️  APP VERSION:', APP_VERSION);
     console.log('Input text:', inputText);
@@ -5333,8 +5341,10 @@ useEffect(() => {
     };
     const json = JSON.stringify(songData);
     const base64 = btoa(unescape(encodeURIComponent(json)));
-    // ✅ v3.17.85: Use beatkitchen.io/harmony instead of current origin
-    const url = `https://beatkitchen.io/harmony?song=${base64}`;
+    // ✅ v3.18.0: Use current domain so sharing works on Vercel AND beatkitchen
+    const currentOrigin = window.location.origin;
+    const currentPath = window.location.pathname.replace(/\/$/, ''); // Remove trailing slash
+    const url = `${currentOrigin}${currentPath}?song=${base64}`;
     return url;
   };
 
@@ -7738,6 +7748,6 @@ useEffect(() => {
   );
 }
 
-// HarmonyWheel v3.17.99 - Added visible iOS debug banner to diagnose shared URL loading
+// HarmonyWheel v3.18.0 - Fixed share URL to use current domain (not hardcoded beatkitchen.io)
 
-// EOF - HarmonyWheel.tsx v3.17.99
+// EOF - HarmonyWheel.tsx v3.18.0
