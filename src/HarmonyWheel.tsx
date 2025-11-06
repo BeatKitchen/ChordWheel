@@ -1,5 +1,29 @@
 /*
- * HarmonyWheel.tsx — v3.18.12 🎵 Rhythm REALLY Fixed!
+ * HarmonyWheel.tsx — v3.18.16 🎵 Seamless Rhythm Fixed!
+ * 
+ * 🐛 v3.18.16 RHYTHM HANDOFF FIXES:
+ * - **Keep position on release**: Rhythm position tracked even after key release
+ * - **Instant note clear**: No 100ms delay, immediate response
+ * - **Works as expected**: Release 4, press 6 → instant trigger!
+ * - Hold 1, press 3 while holding → seamless chord change!
+ * 
+ * 🎵 v3.18.15 SEAMLESS CHORD CHANGES:
+ * - **Rhythm position tracking**: Knows where in the pattern you are
+ * - **Seamless handoff**: Switch chords, rhythm continues from same beat!
+ * - Hold `1` (C) → press `3` (D7) → rhythm doesn't restart, picks up where it was
+ * - Uses high-resolution timestamps for perfect sync
+ * - Automatically normalizes offset if patterns have different lengths
+ * 
+ * 📝 v3.18.14 FIXES:
+ * - **Shift+Enter**: Creates newlines in editor (for multi-line songs with rhythms!)
+ * - **Enter**: Still loads sequence (no shift)
+ * 
+ * 🎹 v3.18.13 PERFORMANCE MODE POLISH:
+ * - **No overlapping notes**: stopAllNotes() when switching pads
+ * - **Address bar fix**: preventDefault on ALL keys in performance mode
+ * - **Step record support**: Pads insert functions when step recording
+ * - **Rhythm protection**: Can't insert chords after @RHYTHM directives ("line in the sand")
+ * - Cursor stays in chord area, never types after rhythms
  * 
  * 🎵 v3.18.12 RHYTHM PARSER FIX (For Real):
  * - **Parse @directives BEFORE bar notation**: Prevents "@RHYTHM1 |x x x x|" from being split
@@ -1312,7 +1336,7 @@ import {
   parseSongMetadata
 } from "./lib/songManager";
 
-const HW_VERSION = 'v3.18.12';
+const HW_VERSION = 'v3.18.16';
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -1920,6 +1944,10 @@ useEffect(() => {
   const rhythmLoopIntervalRef = useRef<number | null>(null);
   const rhythmLoopTimeoutsRef = useRef<number[]>([]);
   
+  // ✅ v3.18.15: Rhythm position tracking for seamless chord changes
+  const rhythmStartTimeRef = useRef<number | null>(null); // When current rhythm loop started
+  const rhythmPatternDurationRef = useRef<number>(0); // Total pattern duration in ms
+  
   useEffect(() => {
     activeRhythmPatternRef.current = activeRhythmPattern;
   }, [activeRhythmPattern]);
@@ -2011,8 +2039,20 @@ useEffect(() => {
   const insertCurrentChord = () => {
     if (!textareaRef.current || !currentGuitarLabel) return;
     
-    const start = textareaRef.current.selectionStart;
-    const end = textareaRef.current.selectionEnd;
+    let start = textareaRef.current.selectionStart;
+    let end = textareaRef.current.selectionEnd;
+    
+    // ✅ v3.18.13: Find "line in the sand" - don't insert after @RHYTHM directives
+    const rhythmIndex = inputText.indexOf('@RHYTHM');
+    if (rhythmIndex !== -1 && start >= rhythmIndex) {
+      // Cursor is in the rhythm section - move it before rhythms
+      const beforeRhythms = inputText.substring(0, rhythmIndex).trimEnd();
+      start = beforeRhythms.length;
+      end = start;
+      // Update cursor position
+      textareaRef.current.setSelectionRange(start, end);
+    }
+    
     const before = inputText.substring(0, start);
     const after = inputText.substring(end);
     
@@ -2056,7 +2096,7 @@ useEffect(() => {
   };
 
   const parseAndLoadSequence = ()=>{
-    const APP_VERSION = "v3.18.12-harmony-wheel";
+    const APP_VERSION = "v3.18.16-harmony-wheel";
     console.log('=== PARSE AND LOAD START ===');
     console.log('🏷️  APP VERSION:', APP_VERSION);
     console.log('Input text:', inputText);
@@ -2657,8 +2697,13 @@ useEffect(() => {
     // Only handle Return/Enter and Ctrl+I in textarea
     // Arrow keys work normally for cursor movement
     
-    // Return/Enter loads sequence (no line breaks supported)
+    // ✅ v3.18.14: Shift+Enter creates newline, plain Enter loads sequence
     if (e.key==="Enter"){ 
+      if (e.shiftKey) {
+        // Shift+Enter: Allow newline (don't prevent default)
+        return;
+      }
+      
       e.preventDefault();
       
       // v3.3.2: Exit step record when loading sequence
@@ -3029,6 +3074,11 @@ useEffect(() => {
       const activeTag = document.activeElement?.tagName;
       if (activeTag === 'TEXTAREA' || activeTag === 'INPUT') return;
       
+      // ✅ v3.18.13: In performance mode, prevent default on ALL keys to stop address bar focus
+      if (performanceModeRef.current) {
+        e.preventDefault(); // Block browser shortcuts like Ctrl+L
+      }
+      
       // ✅ v3.17.8: Performance Mode - Clockwise from I (matches wheel)
       if (performanceModeRef.current) {
         // Map both normal and shifted keys
@@ -3085,10 +3135,24 @@ useEffect(() => {
           
           previewFn(fn, with7th);
           
-          // ✅ v3.18.9: Start rhythm loop on key press (plays while held)
+          // ✅ v3.18.13: Step record - insert function name when pad pressed
+          if (stepRecordRef.current && currentGuitarLabel) {
+            insertCurrentChord();
+          }
+          
+          // ✅ v3.18.15: Start rhythm loop with seamless handoff
           if (latchedAbsNotes.length > 0) {
-            console.log('🎵 Starting rhythm loop with pattern', activeRhythmPatternRef.current);
-            startRhythmLoop(latchedAbsNotes);
+            // Calculate current position in rhythm for seamless chord change
+            let offsetMs = 0;
+            if (rhythmStartTimeRef.current !== null && rhythmPatternDurationRef.current > 0) {
+              // A rhythm is already playing - calculate how far into it we are
+              const elapsed = performance.now() - rhythmStartTimeRef.current;
+              offsetMs = elapsed % rhythmPatternDurationRef.current;
+              console.log('🔄 Seamless chord change at offset:', offsetMs.toFixed(0), 'ms');
+            } else {
+              console.log('🎵 Starting rhythm loop with pattern', activeRhythmPatternRef.current);
+            }
+            startRhythmLoop(latchedAbsNotes, offsetMs);
           } else {
             console.warn('⚠️ No latched notes to play rhythm with');
           }
@@ -3265,15 +3329,13 @@ useEffect(() => {
         setShiftHeld(false);
       }
       
-      // ✅ v3.18.9: Stop rhythm loop when releasing number keys in performance mode
+      // ✅ v3.18.16: Stop rhythm loop when releasing number keys in performance mode
       if (performanceModeRef.current) {
         const numberKeys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '='];
         if (numberKeys.includes(e.key)) {
           stopRhythmLoop();
-          // Clear piano highlights after release
-          setTimeout(() => {
-            setLatchedAbsNotes([]);
-          }, 100);
+          // ✅ v3.18.16: Clear immediately for instant response
+          setLatchedAbsNotes([]);
         }
       }
     };
@@ -5577,13 +5639,18 @@ useEffect(() => {
     });
     noteIdsToStop.forEach(id => stopNoteById(id));
   };
+  
+  const stopAllActiveNotes = () => {
+    // Stop all currently playing notes
+    const activeNotes = Array.from(activeNotesRef.current.keys());
+    activeNotes.forEach(noteId => stopNoteById(noteId));
+  };
 
   const playChord = (midiNotes: number[], duration: number = 1.0) => {
     if (!audioEnabled) return;
     
     // Stop all currently playing notes first for quick cutoff
-    const activeNotes = Array.from(activeNotesRef.current.keys());
-    activeNotes.forEach(noteId => stopNoteById(noteId));
+    stopAllActiveNotes();
     
     // Play new notes
     const noteIds: string[] = [];
@@ -5630,9 +5697,10 @@ useEffect(() => {
     activeMidiNotesRef.current.clear();
   };
 
-  // ✅ v3.18.9: Start rhythm loop - plays pattern continuously while held
-  const startRhythmLoop = (chordNotes: number[]) => {
-    console.log('🔁 startRhythmLoop called with', chordNotes.length, 'notes');
+  // ✅ v3.18.15: Start rhythm loop - plays pattern continuously while held
+  // Supports starting from an offset for seamless chord changes
+  const startRhythmLoop = (chordNotes: number[], startOffsetMs: number = 0) => {
+    console.log('🔁 startRhythmLoop called with', chordNotes.length, 'notes, offset:', startOffsetMs, 'ms');
     stopRhythmLoop(); // Clear any existing loop
     
     const getActivePattern = () => {
@@ -5642,40 +5710,71 @@ useEffect(() => {
       return rhythmPattern3;
     };
     
-    const playOnce = () => {
-      const pattern = getActivePattern();
-      console.log('🎵 Playing pattern once:', pattern.length, 'steps');
-      if (pattern.length === 0 || chordNotes.length === 0) return 0;
-      
+    const pattern = getActivePattern();
+    console.log('🎵 Pattern:', pattern.length, 'steps');
+    if (pattern.length === 0 || chordNotes.length === 0) return;
+    
+    // Calculate total pattern duration
+    const beatsPerBar = 4;
+    const beatDuration = 60 / tempo;
+    let totalDuration = 0;
+    pattern.forEach((step) => {
+      totalDuration += step.duration * beatsPerBar * beatDuration;
+    });
+    const patternDurationMs = totalDuration * 1000;
+    rhythmPatternDurationRef.current = patternDurationMs;
+    
+    // Normalize offset to be within pattern duration
+    const normalizedOffset = startOffsetMs % patternDurationMs;
+    
+    // Record start time for position tracking
+    rhythmStartTimeRef.current = performance.now() - normalizedOffset;
+    
+    const playOnce = (offsetMs: number = 0) => {
       let currentTime = 0;
-      const beatsPerBar = 4;
-      const beatDuration = 60 / tempo;
       
       pattern.forEach((step) => {
         const stepDurationSeconds = step.duration * beatsPerBar * beatDuration;
+        const stepStartMs = currentTime * 1000;
+        const stepEndMs = stepStartMs + (stepDurationSeconds * 1000);
         
-        const timeoutId = window.setTimeout(() => {
-          if (step.action === 'play') {
-            playChord(chordNotes, stepDurationSeconds * 0.8);
-          }
-        }, currentTime * 1000);
+        // Only schedule if this step overlaps with our playback window
+        if (stepEndMs > offsetMs) {
+          const delayMs = Math.max(0, stepStartMs - offsetMs);
+          
+          const timeoutId = window.setTimeout(() => {
+            if (step.action === 'play') {
+              playChord(chordNotes, stepDurationSeconds * 0.8);
+            }
+          }, delayMs);
+          
+          rhythmLoopTimeoutsRef.current.push(timeoutId);
+        }
         
-        rhythmLoopTimeoutsRef.current.push(timeoutId);
         currentTime += stepDurationSeconds;
       });
-      
-      return currentTime * 1000; // Total pattern duration in ms
     };
     
-    // Play immediately
-    const patternDuration = playOnce();
+    // Play first iteration with offset
+    playOnce(normalizedOffset);
     
-    // Loop: play again after pattern completes
-    if (patternDuration > 0) {
+    // Schedule remaining time until next loop starts
+    const timeUntilNextLoop = patternDurationMs - normalizedOffset;
+    
+    const startLoopId = window.setTimeout(() => {
+      // Update start time for the loop
+      rhythmStartTimeRef.current = performance.now();
+      
+      // Start regular looping from beginning
       rhythmLoopIntervalRef.current = window.setInterval(() => {
-        playOnce();
-      }, patternDuration);
-    }
+        playOnce(0);
+      }, patternDurationMs);
+      
+      // Play the first full loop immediately
+      playOnce(0);
+    }, timeUntilNextLoop);
+    
+    rhythmLoopTimeoutsRef.current.push(startLoopId);
   };
   
   const stopRhythmLoop = () => {
@@ -5687,6 +5786,12 @@ useEffect(() => {
     // Clear all pending timeouts
     rhythmLoopTimeoutsRef.current.forEach(id => clearTimeout(id));
     rhythmLoopTimeoutsRef.current = [];
+    
+    // ✅ v3.18.13: Stop all currently playing notes to prevent overlap
+    stopAllActiveNotes();
+    
+    // ✅ v3.18.16: DON'T clear position tracking - keep it for seamless restart!
+    // rhythmStartTimeRef.current stays set so next press can calculate offset
   };
 
   // ✅ v3.18.4: Play rhythm pattern with current latched chord (single shot)
@@ -8128,6 +8233,6 @@ useEffect(() => {
   );
 }
 
-// HarmonyWheel v3.18.7 - Fixed z-index so key/transpose buttons are clickable
+// HarmonyWheel v3.18.16 - Rhythm patterns finally work! @directives parsed before bar notation
 
-// EOF - HarmonyWheel.tsx v3.18.7
+// EOF - HarmonyWheel.tsx v3.18.16
