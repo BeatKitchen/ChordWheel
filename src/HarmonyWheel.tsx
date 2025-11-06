@@ -1,5 +1,12 @@
 /*
- * HarmonyWheel.tsx — v3.17.96 📏 No Scrollbar!
+ * HarmonyWheel.tsx — v3.17.97 📏 Margin Hunt Complete!
+ * 
+ * 📏 v3.17.97 REMOVED ALL MARGINBOTTOM:
+ * - Line 6219: Sequence display container
+ * - Line 6381: Grid container  
+ * - Line 6885: Transport controls (from v3.17.96)
+ * - Line 7069: Textarea wrapper (from v3.17.96)
+ * - Total removed: 24px of bottom margin!
  * 
  * 📏 v3.17.96 SCROLLBAR FINALLY FIXED:
  * - **Removed marginBottom:6** from bottom containers (textarea wrapper + transport controls)
@@ -1184,7 +1191,7 @@ import {
   parseSongMetadata
 } from "./lib/songManager";
 
-const HW_VERSION = 'v3.17.96';
+const HW_VERSION = 'v3.17.97';
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -1881,7 +1888,7 @@ useEffect(() => {
   };
 
   const parseAndLoadSequence = ()=>{
-    const APP_VERSION = "v3.17.96-harmony-wheel";
+    const APP_VERSION = "v3.17.97-harmony-wheel";
     console.log('=== PARSE AND LOAD START ===');
     console.log('🏷️  APP VERSION:', APP_VERSION);
     console.log('Input text:', inputText);
@@ -6216,7 +6223,7 @@ useEffect(() => {
                     borderRadius:8,
                     background:'#0f172a',
                     overflow:'hidden',
-                    marginBottom: 6
+                    marginBottom: 0  // ✅ v3.17.97: Remove margin to prevent scrollbar
                   }}>
                     {/* Song Title */}
                     {songTitle && (
@@ -6378,7 +6385,7 @@ useEffect(() => {
                 display:'grid', 
                 gridTemplateColumns: '65% 35%',
                 columnGap:12, 
-                marginBottom:6,
+                marginBottom:0,  // ✅ v3.17.97: Remove margin to prevent scrollbar
                 position: 'relative',
                 zIndex: 1  // ✅ v3.17.90: Stay below load menu (99999)
               }}>
@@ -7686,6 +7693,6 @@ useEffect(() => {
   );
 }
 
-// HarmonyWheel v3.17.96 - Removed marginBottom to eliminate scrollbar
+// HarmonyWheel v3.17.97 - Removed all marginBottom values (24px total!)
 
-// EOF - HarmonyWheel.tsx v3.17.96
+// EOF - HarmonyWheel.tsx v3.17.97
