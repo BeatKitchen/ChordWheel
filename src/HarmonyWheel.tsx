@@ -1,14 +1,10 @@
 /*
- * HarmonyWheel.tsx — v3.17.93 🎵 Rhythm Notation!
+ * HarmonyWheel.tsx — v3.17.95 🎯 Critical UI Fixes Only!
  * 
- * 🎵 v3.17.93 RHYTHM NOTATION SYSTEM:
- * - **Bar line delimiters**: | a l I
- * - **Inside bars**: |Am, D7| splits bar evenly (2 chords = half notes)
- * - **Outside bars**: Each chord = 1 full bar (whole notes) 
- * - **Rest character**: / creates silent beats
- * - Duration stored in SeqItem.duration (1 = whole bar, 0.5 = half, etc.)
- * - Playback timing uses duration * tempo
- * - Examples: |Am, D7| = half notes, |Am, /, D7, /| = quarter notes with rests
+ * 🎯 v3.17.95 CRITICAL UI FIXES:
+ * - **Load menu visibility**: Changed parent overflow:hidden → overflow:visible
+ * - **Scrollbar fix**: Added maxHeight:100vh and boxSizing:border-box
+ * - **Reverted rhythm notation** (needs more design work - pin for later)
  * 
  * 📏 v3.17.92 SCROLLBAR FIX:
  * - **height:100vh** - Changed from minHeight to height to fit iframe exactly
@@ -1184,7 +1180,7 @@ import {
   parseSongMetadata
 } from "./lib/songManager";
 
-const HW_VERSION = 'v3.17.93';
+const HW_VERSION = 'v3.17.95';
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -1761,14 +1757,7 @@ useEffect(() => {
   /* ---------- v3: Sequence / input ---------- */
   const [inputText, setInputText] = useState(defaultSong);
   const [loadedSongText, setLoadedSongText] = useState(defaultSong); // Track what's actually loaded
-  type SeqItem = { 
-    kind: "chord" | "modifier" | "comment" | "title"; 
-    raw: string; 
-    chord?: string; 
-    comment?: string; 
-    title?: string;
-    duration?: number; // ✅ v3.17.93: Duration in bars (1 = whole bar, 0.5 = half bar, etc.)
-  };
+  type SeqItem = { kind: "chord" | "modifier" | "comment" | "title"; raw: string; chord?: string; comment?: string; title?: string; };
   const [sequence, setSequence] = useState<SeqItem[]>([]);
   const [seqIndex, setSeqIndex] = useState(-1); // What's loaded in hub (ready to play next)
   const [displayIndex, setDisplayIndex] = useState(-1); // What we're showing/highlighting (what was just played)
@@ -1888,7 +1877,7 @@ useEffect(() => {
   };
 
   const parseAndLoadSequence = ()=>{
-    const APP_VERSION = "v3.17.93-harmony-wheel";
+    const APP_VERSION = "v3.17.95-harmony-wheel";
     console.log('=== PARSE AND LOAD START ===');
     console.log('🏷️  APP VERSION:', APP_VERSION);
     console.log('Input text:', inputText);
@@ -1907,73 +1896,14 @@ useEffect(() => {
       return;
     }
     
-    // ✅ v3.17.93: RHYTHM NOTATION - Parse bar lines and calculate durations
-    // Bar delimiters: | a l I
-    // Inside bars: |Am, D7| = split bar evenly
-    // Rest character: / = silent beat
-    const BAR_DELIMITERS = /[\|alI]/g;
-    
-    // First pass: identify bar-delimited sections
-    const rawTokens: Array<{text: string; hasBarLine: boolean}> = [];
-    let currentSection = "";
-    let insideBar = false;
-    
-    for (let i = 0; i < inputText.length; i++) {
-      const char = inputText[i];
-      
-      if (['|', 'a', 'l', 'I'].includes(char)) {
-        if (currentSection.trim()) {
-          rawTokens.push({text: currentSection.trim(), hasBarLine: insideBar});
-          currentSection = "";
-        }
-        insideBar = !insideBar;
-      } else if (char === ',' && !insideBar) {
-        // Comma outside bars: end of token
-        if (currentSection.trim()) {
-          rawTokens.push({text: currentSection.trim(), hasBarLine: false});
-          currentSection = "";
-        }
-      } else {
-        currentSection += char;
-      }
-    }
-    
-    // Don't forget last section
-    if (currentSection.trim()) {
-      rawTokens.push({text: currentSection.trim(), hasBarLine: insideBar});
-    }
-    
-    // Second pass: split bar-delimited sections by comma and calculate durations
-    const tokens: Array<{text: string; duration: number}> = [];
-    for (const section of rawTokens) {
-      if (section.hasBarLine) {
-        // Inside bars: split evenly
-        const chords = section.text.split(',').map(s => s.trim()).filter(Boolean);
-        const durationEach = 1.0 / chords.length; // Split 1 bar evenly
-        for (const chord of chords) {
-          tokens.push({text: chord, duration: durationEach});
-        }
-      } else {
-        // Outside bars: full bar each
-        tokens.push({text: section.text, duration: 1.0});
-      }
-    }
-    
-    console.log('Parsed tokens with rhythm:', tokens);
+    const tokens = inputText.split(",").map(t=>t.trim()).filter(Boolean);
+    console.log('Parsed tokens:', tokens);
     let title = "";
     // ✅ v3.6.0 FIX: Start from current baseKey, don't reset to C
     // This preserves manual key selector changes
     let currentKey: KeyName = baseKey; // Track key for functional notation
     
-    const items: SeqItem[] = tokens.map(tokenObj => {
-      const tok = tokenObj.text;
-      const dur = tokenObj.duration;
-      
-      // Handle rest character
-      if (tok === '/') {
-        return { kind:"comment", raw:tok, comment: "(rest)", duration: dur };
-      }
-      
+    const items: SeqItem[] = tokens.map(tok=>{
       // Comments start with #
       if (tok.startsWith("#")) {
         const commentText = tok.slice(1).trim();
@@ -2149,14 +2079,14 @@ useEffect(() => {
           console.log('[PARSER] ✅ Converted roman numeral:', tok, '→', chordName, 'in key', currentKey);
           
           // Return as chord with original functional notation as raw
-          return { kind:"chord", raw:tok, chord: chordName, duration: dur };
+          return { kind:"chord", raw:tok, chord: chordName };
         } else {
           console.log('[PARSER] ❌ Failed to convert roman numeral - degree undefined');
         }
       }
       
       // Everything else is a literal chord
-      return { kind:"chord", raw:tok, chord: tok, duration: dur };
+      return { kind:"chord", raw:tok, chord: tok };
     });
     
     setSongTitle(title);
@@ -3046,17 +2976,13 @@ useEffect(() => {
     // Play current chord immediately (if it's a chord)
     const currentItem = sequence[seqIndex];
     if (currentItem?.kind === "chord" && currentItem.chord && latchedAbsNotes.length > 0) {
-      // ✅ v3.17.93: Use duration from SeqItem (in bars)
-      const barsPerBeat = 4; // 4/4 time signature
-      const itemDuration = currentItem.duration || 1.0; // Default to 1 bar
-      const noteDuration = (60 / tempo) * barsPerBeat * itemDuration * 0.8; // 80% of duration
+      // v3.5.0: Notes already transposed, don't transpose again
+      const noteDuration = (60 / tempo) * 0.8; // 80% of beat duration
       playChord(latchedAbsNotes, noteDuration);
     }
     
-    // ✅ v3.17.93: Calculate interval using duration from current item
-    const itemDuration = currentItem?.duration || 1.0; // Default to 1 bar if not specified
-    const barsPerBeat = 4; // 4/4 time signature  
-    const interval = (60 / tempo) * barsPerBeat * itemDuration * 1000; // milliseconds
+    // Calculate interval based on tempo (60 BPM = 1 second per beat)
+    const interval = (60 / tempo) * 1000; // milliseconds per beat
     
     // Wait, then advance to next
     playbackTimerRef.current = window.setTimeout(() => {
@@ -5566,8 +5492,10 @@ useEffect(() => {
       background:'#111', 
       color:'#fff', 
       height: isDesktop ? '100vh' : 'auto',  // ✅ v3.17.92: Changed from minHeight to height
+      maxHeight: isDesktop ? '100vh' : 'none',  // ✅ v3.17.95: Enforce max height
       overflow: isDesktop ? 'hidden' : 'hidden',  // ✅ v3.17.90: Prevent scroll in iframe
       padding: isDesktop ? 0 : 0,  // ✅ v3.17.90: No padding to prevent iframe scrollbar
+      boxSizing: 'border-box',  // ✅ v3.17.95: Include border in height calc
       fontFamily:'ui-sans-serif, system-ui', 
       userSelect:'none',
       WebkitUserSelect:'none',
@@ -7138,7 +7066,7 @@ useEffect(() => {
               
               {/* Row 2: Sequencer + Buttons - EXPERT ONLY */}
               {skillLevel === "EXPERT" && (
-                <div style={{marginBottom: 6, display:'flex', gap:8, alignItems:'stretch', maxWidth:'100%', overflow:'hidden'}}>
+                <div style={{marginBottom: 6, display:'flex', gap:8, alignItems:'stretch', maxWidth:'100%', overflow:'visible'  /* ✅ v3.17.95: visible so load menu can show above */}}>
                   <textarea
                     ref={textareaRef}
                     placeholder={'Type chords, modifiers, and comments...\nExamples:\n@TITLE Sequence Name, @KEY C\nC, Am7, F, G7\n@SUB F, Bb, C7, @HOME\n@REL Em, Am, @PAR Cm, Fm\n@KEY G, D, G, C\n# Verse: lyrics or theory note'}
@@ -7754,6 +7682,6 @@ useEffect(() => {
   );
 }
 
-// HarmonyWheel v3.17.93 - Added rhythm notation with bar lines and rests
+// HarmonyWheel v3.17.95 - Fixed load menu visibility and scrollbar (reverted rhythm notation)
 
-// EOF - HarmonyWheel.tsx v3.17.93
+// EOF - HarmonyWheel.tsx v3.17.95
