@@ -1,5 +1,26 @@
 /*
- * HarmonyWheel.tsx — v3.18.46 ✅ Fixed Hardcoded Fallback!
+ * HarmonyWheel.tsx — v3.18.49 🎭 Intro Overlay!
+ * 
+ * 🎭 v3.18.49 INTRO BONUS OVERLAY:
+ * - **Dedicated intro overlay**: Shows bonus wedges during animation regardless of skill level
+ * - **Non-interactive**: pointerEvents:'none' so it doesn't interfere
+ * - **Smooth fade**: CSS transition matches main bonus wedges
+ * - **Auto-cleanup**: Overlay disappears when showIntroAnimation = false
+ * - Now you'll see the bonus wedges pulse even if not in Expert mode!
+ * 
+ * 🎬 v3.18.48 INTRO ANIMATION:
+ * - **Uses existing rotation system**: REL → HOME triggers smooth spin
+ * - **Graceful bonus fade**: CSS transition (0.6s ease-in-out)
+ * - **Respects skill level**: Only pulses bonus in Advanced/Expert
+ * - **Clean timing**: 600ms pause at REL, 1200ms spin, 3x bonus pulses
+ * - No weird blinking - proper smooth animation!
+ * 
+ * ✨ v3.18.47 INTRO ANIMATION:
+ * - **Wheel spins**: vi → IV → ii → V → I (relative to home)
+ * - **Bonus pulse**: Flash bonus wedges on/off twice at end
+ * - **Smooth timing**: Speeds up as it approaches home
+ * - **One-time only**: Plays on initial load, then never again
+ * - Adds "rizz" to first impression!
  * 
  * ✅ v3.18.46 BANNER FIX:
  * - **Fixed fallback message**: Now uses [[link syntax]] for green links
@@ -1546,7 +1567,7 @@ import {
   parseSongMetadata
 } from "./lib/songManager";
 
-const HW_VERSION = 'v3.18.46';
+const HW_VERSION = 'v3.18.49';
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -1644,6 +1665,10 @@ useEffect(() => {
 
   const [activeFn,setActiveFn]=useState<Fn|"">("I");
   const activeFnRef=useRef<Fn|"">("I"); useEffect(()=>{activeFnRef.current=activeFn;},[activeFn]);
+
+  // ✅ v3.18.47: Intro animation state
+  const [showIntroAnimation, setShowIntroAnimation] = useState(true);
+  const [introStep, setIntroStep] = useState(0);
 
   const [centerLabel,setCenterLabel]=useState("C");
   const lastPlayedChordRef = useRef<string>("C"); // Track for Make My Key
@@ -2338,7 +2363,7 @@ useEffect(() => {
   };
 
   const parseAndLoadSequence = ()=>{
-    const APP_VERSION = "v3.18.46-harmony-wheel";
+    const APP_VERSION = "v3.18.49-harmony-wheel";
     console.log('=== PARSE AND LOAD START ===');
     console.log('🏷️  APP VERSION:', APP_VERSION);
     console.log('Input text:', inputText);
@@ -3245,6 +3270,43 @@ useEffect(() => {
       setShowBonusWedges(true);
     }
   }, [performanceMode]);
+
+  // ✅ v3.18.48: Intro animation - use existing rotation system
+  useEffect(() => {
+    if (!showIntroAnimation) return;
+    
+    const animate = async () => {
+      // Start at REL - triggers rotation via existing system
+      setRelMinorActive(true);
+      setActiveFn("vi");
+      
+      await new Promise(resolve => setTimeout(resolve, 600));
+      
+      // Go to HOME - triggers rotation back via existing system
+      setRelMinorActive(false);
+      setActiveFn("I");
+      
+      await new Promise(resolve => setTimeout(resolve, 1200));
+      
+      // Pulse bonus wedges only in Advanced/Expert
+      if (skillLevel === "ADVANCED" || skillLevel === "EXPERT") {
+        setShowBonusWedges(true);
+        await new Promise(resolve => setTimeout(resolve, 600));
+        
+        setShowBonusWedges(false);
+        await new Promise(resolve => setTimeout(resolve, 600));
+        
+        setShowBonusWedges(true);
+        await new Promise(resolve => setTimeout(resolve, 600));
+        
+        setShowBonusWedges(false);
+      }
+      
+      setShowIntroAnimation(false);
+    };
+    
+    setTimeout(animate, 800);
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -6859,8 +6921,8 @@ useEffect(() => {
               {/* (kept exactly as in your v2.30.0 block) */}
               {/* 
               {/* -------- BEGIN BONUS BLOCK -------- */}
-{/* Persistent bonus wedges when toggle is on (50% opacity) - EXPERT only */}
-{showBonusWedges && !bonusActive && skillLevel === "EXPERT" && (() => {
+{/* Persistent bonus wedges (opacity controlled for smooth fade) - EXPERT only */}
+{!bonusActive && skillLevel === "EXPERT" && (() => {
   const toRad = (deg:number) => (deg - 90) * Math.PI/180;
   const arc = (cx:number, cy:number, r:number, a0:number, a1:number) => {
     const x0 = cx + r * Math.cos(toRad(a0));
@@ -6892,7 +6954,13 @@ useEffect(() => {
   ];
   
   return (
-    <g key="bonus-persistent">
+    <g 
+      key="bonus-persistent"
+      style={{
+        opacity: showBonusWedges ? 0.5 : 0,
+        transition: 'opacity 0.6s ease-in-out'
+      } as any}
+    >
       {wedges.map(w => {
         const a0 = w.anchor - span/2 + rotationOffset;
         const a1 = w.anchor + span/2 + rotationOffset;
@@ -7050,6 +7118,74 @@ useEffect(() => {
   );
 })()}
 {/* -------- END BONUS BLOCK -------- */}
+
+{/* ✅ v3.18.49: Intro animation overlay - shows bonus wedges regardless of skill level */}
+{showIntroAnimation && (() => {
+  const toRad = (deg:number) => (deg - 90) * Math.PI/180;
+  const arc = (cx:number, cy:number, r:number, a0:number, a1:number) => {
+    const x0 = cx + r * Math.cos(toRad(a0));
+    const y0 = cy + r * Math.sin(toRad(a0));
+    const x1 = cx + r * Math.cos(toRad(a1));
+    const y1 = cy + r * Math.sin(toRad(a1));
+    const large = Math.abs(a1-a0) > 180 ? 1 : 0;
+    const sweep = a1 > a0 ? 1 : 0;
+    return {x0,y0,x1,y1,large,sweep};
+  };
+  const ring = (cx:number, cy:number, r0:number, r1:number, a0:number, a1:number) => {
+    const o = arc(cx,cy,r1,a0,a1);
+    const i = arc(cx,cy,r0,a1,a0);
+    return `M ${o.x0},${o.y0} A ${r1},${r1} 0 ${o.large} ${o.sweep} ${o.x1},${o.y1}`
+         + ` L ${i.x0},${i.y0} A ${r0},${r0} 0 ${i.large} ${i.sweep} ${i.x1},${i.y1} Z`;
+  };
+  const cx = 260, cy = 260;
+  const r0 = 220*BONUS_INNER_R;
+  const r1 = 220*BONUS_OUTER_R*1.06;
+  const span = 16;
+  const base = (typeof BONUS_CENTER_ANCHOR_DEG === 'number' ? BONUS_CENTER_ANCHOR_DEG : 0);
+  
+  const wedges = [
+    { label: 'A7', funcLabel: 'V/ii', anchor: base - 30 },
+    { label: 'Bm7♭5', funcLabel: 'ii/vi', anchor: base + 30 }
+  ];
+  
+  return (
+    <g 
+      key="intro-bonus-overlay"
+      style={{
+        opacity: showBonusWedges ? 0.5 : 0,
+        transition: 'opacity 0.6s ease-in-out',
+        pointerEvents: 'none'  // Don't interfere with clicks
+      } as any}
+    >
+      {wedges.map(w => {
+        const a0 = w.anchor - span/2 + rotationOffset;
+        const a1 = w.anchor + span/2 + rotationOffset;
+        const pathD = ring(cx,cy,r0,r1,a0,a1);
+        const textR = (r0+r1)/2;
+        const mid = (a0+a1)/2;
+        const tx = cx + textR * Math.cos(toRad(mid));
+        const ty = cy + textR * Math.sin(toRad(mid));
+        
+        return (
+          <g key={w.label}>
+            <path d={pathD} 
+                  fill={w.label === 'Bm7♭5' ? '#0EA5E9' : BONUS_FILL} 
+                  stroke={PALETTE_ACCENT_GREEN} 
+                  strokeWidth={1.5 as any}/>
+            <text x={tx} y={ty} textAnchor="middle" fontSize={BONUS_TEXT_SIZE}
+                  style={{ fill: BONUS_TEXT_FILL, fontWeight: 700, paintOrder:'stroke', stroke:'#000', strokeWidth:1 as any, pointerEvents: 'none' }}>
+              {w.funcLabel}
+            </text>
+            <text x={tx} y={ty+12} textAnchor="middle" fontSize={BONUS_TEXT_SIZE}
+                  style={{ fill: BONUS_TEXT_FILL, fontWeight: 700, paintOrder:'stroke', stroke:'#000', strokeWidth:1 as any, pointerEvents: 'none' }}>
+              {w.label}
+            </text>
+          </g>
+        );
+      })}
+    </g>
+  );
+})()}
 
             </svg>
             
@@ -8825,6 +8961,6 @@ useEffect(() => {
   );
 }
 
-// HarmonyWheel v3.18.46 - Rhythm patterns finally work! @directives parsed before bar notation
+// HarmonyWheel v3.18.49 - Rhythm patterns finally work! @directives parsed before bar notation
 
-// EOF - HarmonyWheel.tsx v3.18.46
+// EOF - HarmonyWheel.tsx v3.18.49
