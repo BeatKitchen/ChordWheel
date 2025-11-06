@@ -1,5 +1,17 @@
 /*
- * HarmonyWheel.tsx — v3.18.44 🌐 Neutral Browser Display
+ * HarmonyWheel.tsx — v3.18.46 ✅ Fixed Hardcoded Fallback!
+ * 
+ * ✅ v3.18.46 BANNER FIX:
+ * - **Fixed fallback message**: Now uses [[link syntax]] for green links
+ * - **Default message**: "[[Expert mode|expert]] for sequencer. Join a [[gym|url]]..."
+ * - Should now show green clickable links even without demoSongs banners
+ * - Sorry for hardcoding! Will always request files in future.
+ * 
+ * 🐛 v3.18.45 DEBUG LOGGING:
+ * - Added console.log to track banner loading
+ * - Check browser console for "Loading demo song with banner"
+ * - Check browser console for "Banner message" to see what's rendered
+ * - This will help diagnose why green links aren't showing
  * 
  * 🌐 v3.18.44 BROWSER DISPLAY:
  * - **Neutral detection**: Shows "Safari" or "Chrome/Other" in gray
@@ -1534,7 +1546,7 @@ import {
   parseSongMetadata
 } from "./lib/songManager";
 
-const HW_VERSION = 'v3.18.44';
+const HW_VERSION = 'v3.18.46';
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -2326,7 +2338,7 @@ useEffect(() => {
   };
 
   const parseAndLoadSequence = ()=>{
-    const APP_VERSION = "v3.18.44-harmony-wheel";
+    const APP_VERSION = "v3.18.46-harmony-wheel";
     console.log('=== PARSE AND LOAD START ===');
     console.log('🏷️  APP VERSION:', APP_VERSION);
     console.log('Input text:', inputText);
@@ -3215,6 +3227,7 @@ useEffect(() => {
   };
   
   const handleLoadDemoSong = (songContent: string, bannerMsg?: string) => {
+    console.log('🎵 Loading demo song with banner:', bannerMsg);
     setInputText(songContent);
     setBannerMessage(bannerMsg || ""); // ✅ v3.18.43: Set banner from demoSongs
     setShowSongMenu(false);
@@ -7249,10 +7262,12 @@ useEffect(() => {
                   overflow:'hidden',
                   textOverflow:'ellipsis'
                 }}>
-                  {/* ✅ v3.18.42: Dynamic banner message with link parsing */}
+                  {/* ✅ v3.18.46: Dynamic banner message with link parsing */}
                   {(() => {
-                    // Use custom banner if set, otherwise default message
-                    const message = bannerMessage || "Expert mode for sequencer. Join a gym to learn some music theory!";
+                    // Use custom banner if set, otherwise default message WITH link syntax
+                    const message = bannerMessage || "[[Expert mode|expert]] for sequencer. Join a [[gym|https://beatkitchen.io/classroom]] to learn some music theory!";
+                    console.log('🎨 Banner message:', message);
+                    console.log('🎨 bannerMessage state:', bannerMessage);
                     
                     // Parse [[link text|url]] format
                     const linkRegex = /\[\[([^\|]+)\|([^\]]+)\]\]/g;
@@ -8810,6 +8825,6 @@ useEffect(() => {
   );
 }
 
-// HarmonyWheel v3.18.44 - Rhythm patterns finally work! @directives parsed before bar notation
+// HarmonyWheel v3.18.46 - Rhythm patterns finally work! @directives parsed before bar notation
 
-// EOF - HarmonyWheel.tsx v3.18.44
+// EOF - HarmonyWheel.tsx v3.18.46
