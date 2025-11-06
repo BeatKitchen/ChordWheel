@@ -1,5 +1,19 @@
 /*
- * HarmonyWheel.tsx — v3.18.22 📐 Layout Fixed!
+ * HarmonyWheel.tsx — v3.18.24 ✨ Final Layout!
+ * 
+ * ✨ v3.18.24 FINAL LAYOUT:
+ * - **Skill button restored**: Top right, z-index high (can overlap wheel)
+ * - **Left-aligned credits**: Version and copyright left-aligned in legend
+ * - **Clean header**: No logo duplication (will be on website)
+ * - **Compact & functional**: Maximum screen space for the wheel!
+ * 
+ * 🧪 v3.18.23 LAYOUT TEST:
+ * - **Logo hidden**: Testing without BKS logo (may be in website header)
+ * - **Legend at top**: Moved to top-left (8px, 8px)
+ * - **Version in legend**: "Harmony Wheel v3.18.23 © Beat Kitchen Studios"
+ * - **More vertical space**: Everything moves up ~80px
+ * 
+ * Test this vs v3.18.22 to see which layout you prefer!
  * 
  * 📐 v3.18.22 LAYOUT IMPROVEMENTS:
  * - **Logo centered**: Removed excessive 140px left margin
@@ -1378,7 +1392,7 @@ import {
   parseSongMetadata
 } from "./lib/songManager";
 
-const HW_VERSION = 'v3.18.22';
+const HW_VERSION = 'v3.18.24';
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -2153,7 +2167,7 @@ useEffect(() => {
   };
 
   const parseAndLoadSequence = ()=>{
-    const APP_VERSION = "v3.18.22-harmony-wheel";
+    const APP_VERSION = "v3.18.24-harmony-wheel";
     console.log('=== PARSE AND LOAD START ===');
     console.log('🏷️  APP VERSION:', APP_VERSION);
     console.log('Input text:', inputText);
@@ -6359,11 +6373,11 @@ useEffect(() => {
         WebkitTouchCallout:'none'
       }}>
 
-        {/* ✅ v3.18.22: Legend - responsive positioning, shows on all sizes when space available */}
+        {/* ✅ v3.18.23: Legend moved to top (replaces logo position) */}
         {(isDesktop || window.innerWidth > 800) && (
           <div style={{
             position:'absolute',
-            top: 90,
+            top: 8,
             left: 8,
             background:'#1a1a1a',
             border:'2px solid #4B5563',
@@ -6475,10 +6489,31 @@ useEffect(() => {
               </>
             );
           })()}
+          
+          {/* ✅ v3.18.24: Version and copyright - left aligned */}
+          <div style={{
+            marginTop: 10,
+            paddingTop: 8,
+            borderTop: '1px solid #374151',
+            fontSize: 8,
+            color: '#6b7280',
+            textAlign: 'left',
+            lineHeight: 1.3
+          }}>
+            <div style={{ fontWeight: 600, marginBottom: 2 }}>
+              Harmony Wheel
+            </div>
+            <div>{HW_VERSION}</div>
+            <div style={{ marginTop: 4, fontSize: 7 }}>
+              © Beat Kitchen LLC, 2025
+            </div>
+          </div>
           </div>
         )}
 
+        {/* ✅ v3.18.23: TESTING - Logo temporarily hidden (may be on website header) */}
         {/* BKS Logo Header with Emblem + Help Button - v3.18.22: Centered layout */}
+        {false && (
         <div style={{marginBottom:0, position:'relative', zIndex:10002, display:'flex', justifyContent:'space-between', alignItems:'flex-start'}}>
           <div style={{position:'relative', marginLeft: isDesktop ? 8 : 8}}>
             <svg width="300" height="44" viewBox="0 0 400 70" preserveAspectRatio="xMinYMin meet" style={{opacity:0.85, display:'block'}}>
@@ -6550,6 +6585,20 @@ useEffect(() => {
             {/* Circular Skill Selector */}
             <SkillWheel current={skillLevel} onChange={setSkillLevel} />
           </div>
+        </div>
+        )}
+        {/* END TESTING - Logo hidden */}
+        
+        {/* ✅ v3.18.24: Skill button restored - top right, can overlap wheel */}
+        <div style={{
+          display:'flex', 
+          alignItems:'center',  
+          position:'absolute',
+          right: 8,
+          top: 8,
+          zIndex:10001
+        }}>
+          <SkillWheel current={skillLevel} onChange={setSkillLevel} />
         </div>
 
         {/* Wheel - v3.17.85: Bigger on mobile, matches keyboard width */}
@@ -8497,6 +8546,6 @@ useEffect(() => {
   );
 }
 
-// HarmonyWheel v3.18.22 - Rhythm patterns finally work! @directives parsed before bar notation
+// HarmonyWheel v3.18.24 - Rhythm patterns finally work! @directives parsed before bar notation
 
-// EOF - HarmonyWheel.tsx v3.18.22
+// EOF - HarmonyWheel.tsx v3.18.24
