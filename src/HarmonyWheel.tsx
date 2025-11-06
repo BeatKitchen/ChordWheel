@@ -1,5 +1,115 @@
 /*
- * HarmonyWheel.tsx — v3.18.24 ✨ Final Layout!
+ * HarmonyWheel.tsx — v3.18.41 🎯 No More Shift!
+ * 
+ * 🎯 v3.18.41 LAYOUT SHIFT FIXED:
+ * - **Found the culprit**: Non-expert message had marginTop:-20
+ * - **Fixed**: Changed to marginTop:0 to match expert sequence display
+ * - **Result**: No more up/down shift when toggling Expert mode!
+ * - Skill button line break was innocent - it was the message margin all along
+ * 
+ * 📜 v3.18.40 SAFARI SCROLLING FIX:
+ * - **Scroll enabled**: overflow:'auto' on Safari with height:100vh + maxHeight:100vh
+ * - **Smooth scrolling**: Added WebkitOverflowScrolling:'touch'
+ * - **Reserved space**: minHeight:72 on skill button container prevents layout shift
+ * - **Alignment**: Changed to alignItems:'flex-start' to prevent centering issues
+ * - Safari should now scroll properly when Expert mode expands!
+ * 
+ * 🎯 v3.18.39 SAFARI REFINEMENTS:
+ * - **Skill button top spacing**: +8px on Safari (52→60) for breathing room
+ * - **Legend top spacing**: +8px on Safari (8→16) for better spacing
+ * - **Removed fixed height**: Let skill button expand naturally with line break
+ * - **Safari height**: fit-content + minHeight:100vh + paddingBottom:40 for scrolling
+ * - **Safari overflow**: 'visible' to allow full content access
+ * - Keep the Expert mode line break - it's intentional design!
+ * 
+ * 🔧 v3.18.38 EXPERT MODE FIXES:
+ * - **Safari scrolling**: Added minHeight:100vh for Safari to allow full content expansion
+ * - **Skill button reflow**: Fixed height:52px wrapper prevents layout shift
+ * - **No more jumping**: Expert mode toggle no longer causes content to shift
+ * - **Full access**: Can now scroll to see all Expert mode content in Safari
+ * 
+ * 📚 v3.18.37 FINAL SPACING + DOCS:
+ * - **Safari marginTop**: 55 (perfect spacing!)
+ * - **Chrome marginTop**: 25 (unchanged)
+ * - **Documentation**: Created HARMONY_WHEEL_QUIRKS.md with ALL known issues
+ * - Ready for launch! 🚀
+ * 
+ * See HARMONY_WHEEL_QUIRKS.md for complete documentation of:
+ * - Safari layout bugs and fixes
+ * - Skill button reflow issue
+ * - Expert mode cutoff
+ * - Button tap difficulties
+ * - Bass note detection quirks
+ * - Z-index stack reference
+ * - Testing checklist
+ * 
+ * 📏 v3.18.36 SAFARI SPACING:
+ * - **Safari marginTop**: 50 (push controls DOWN)
+ * - **Chrome marginTop**: 25 (unchanged)
+ * - **Difference**: +25px more space on Safari
+ * - Moving in the right direction!
+ * 
+ * 🎯 v3.18.35 GOLDILOCKS ZONE:
+ * - **Safari marginTop**: 0 (not -80, not 25)
+ * - **Chrome marginTop**: 25 (unchanged)
+ * - **Difference**: -25px on Safari = gentle pull up
+ * - Should be just right between overlapping and too much gap!
+ * 
+ * 🎯 v3.18.34 CORRECT FIX:
+ * - **DON'T move wheel**: Wheel stays at normal position
+ * - **DO move controls**: Transport container marginTop: -80 on Safari
+ * - **Pull controls UP**: Negative margin moves keyboard away from wheel
+ * - Previous versions were moving wheel down, not controls up!
+ * 
+ * 🍎 v3.18.33 STATE-BASED SAFARI DETECTION:
+ * - **Uses useState**: Safari detection in state triggers re-render
+ * - **useEffect sets state**: After mount, applies correct styles
+ * - **Console log**: Shows Safari detection in console
+ * - **Legend shows**: "✓ Safari (state)" to confirm state is working
+ * - Should force Safari to re-render with correct margins!
+ * 
+ * 🔍 v3.18.32 DEBUG INDICATOR:
+ * - **Legend shows Safari detection**: Green "✓ Safari" or Red "✗ Not Safari"
+ * - Check legend to see if Safari is being detected
+ * - If it says "✗ Not Safari" in Safari, the regex is failing
+ * - This will tell us if the issue is detection or CSS
+ * 
+ * 🍎 v3.18.31 SAFARI AGGRESSIVE SPACING:
+ * - **Outer margin**: 60px on Safari (was 25)
+ * - **Outer padding**: +20px on Safari
+ * - **Inner margin**: 0 on Safari (no negative)
+ * - This should be VERY noticeable - if it's not, Safari detection may be failing
+ * 
+ * 🍎 v3.18.30 SAFARI SPACING FIX:
+ * - **Positive margins on Safari**: +25 instead of -30 (both containers)
+ * - **Pushes wheel down**: Creates space for controls above
+ * - **Chrome unchanged**: Still uses -30 for compact layout
+ * - Safari no longer compressed!
+ * 
+ * 🍎 v3.18.29 SAFARI-SPECIFIC FIX:
+ * - **Reduced negative margins on Safari**: Outer -30 → -10, Inner -30 → 0
+ * - **Chrome unchanged**: Still uses -30/-30 for tight layout
+ * - **Wheel positioning**: Safari handles negative margins differently
+ * - Controls no longer overlap wheel in Safari!
+ * 
+ * 🌊 v3.18.28 OVERFLOW FIXES:
+ * - **Root overflow**: Changed from 'hidden' to 'auto' on mobile - allows scrolling
+ * - **Container overflow**: 'visible' on all sizes - no clipping
+ * - **Performance Pad**: Bottom buttons accessible when expanded
+ * - **Safari fix**: Lower section no longer compressed
+ * 
+ * 📱 v3.18.27 MOBILE LAYOUT:
+ * - **Top padding**: 12px on mobile to clear status bar
+ * - **Skill button**: Positioned at top:52px on mobile (doesn't overlap wheel when closed)
+ * - **Transport padding**: 8px horizontal on mobile (buttons don't get cut off)
+ * - All UI elements fully visible on mobile Safari
+ * 
+ * 🌐 v3.18.25 MIDI BROWSER WARNING:
+ * - **Detects Safari**: Shows warning when trying to select MIDI in Safari
+ * - **Detects MIDI support**: Checks for navigator.requestMIDIAccess
+ * - **Unobtrusive**: Only appears when user tries to use unsupported feature
+ * - **Auto-dismisses**: Warning disappears after 5 seconds
+ * - **Clear messaging**: "Safari doesn't support MIDI. Use Chrome or Edge."
  * 
  * ✨ v3.18.24 FINAL LAYOUT:
  * - **Skill button restored**: Top right, z-index high (can overlap wheel)
@@ -1392,7 +1502,7 @@ import {
   parseSongMetadata
 } from "./lib/songManager";
 
-const HW_VERSION = 'v3.18.24';
+const HW_VERSION = 'v3.18.41';
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -1823,6 +1933,22 @@ useEffect(() => {
   const [selectedOutputId, setSelectedOutputId] = useState<string>("");
   const [midiOutputEnabled, setMidiOutputEnabled] = useState(false);
   const midiOutputRef = useRef<any>(null);
+  
+  // ✅ v3.18.33: Safari detection with state to ensure re-render
+  const [isSafariBrowser, setIsSafariBrowser] = useState(false);
+  const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+  
+  // ✅ v3.18.25: MIDI warning state
+  const [showMidiWarning, setShowMidiWarning] = useState(false);
+  
+  useEffect(() => {
+    // Set Safari state after mount to trigger re-render with correct styles
+    const safariDetected = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+    setIsSafariBrowser(safariDetected);
+    console.log('🍎 Safari detection:', safariDetected);
+  }, []);
+  
+  const midiSupported = 'requestMIDIAccess' in navigator;
 
   const rightHeld=useRef<Set<number>>(new Set());
   const rightSus=useRef<Set<number>>(new Set());
@@ -2167,7 +2293,7 @@ useEffect(() => {
   };
 
   const parseAndLoadSequence = ()=>{
-    const APP_VERSION = "v3.18.24-harmony-wheel";
+    const APP_VERSION = "v3.18.41-harmony-wheel";
     console.log('=== PARSE AND LOAD START ===');
     console.log('🏷️  APP VERSION:', APP_VERSION);
     console.log('Input text:', inputText);
@@ -6208,18 +6334,21 @@ useEffect(() => {
     <div style={{
       background:'#111', 
       color:'#fff', 
-      height: isDesktop ? '100vh' : 'auto',  // ✅ v3.17.92: Changed from minHeight to height
-      maxHeight: isDesktop ? '100vh' : 'none',  // ✅ v3.17.95: Enforce max height
-      overflow: isDesktop ? 'hidden' : 'hidden',  // ✅ v3.17.90: Prevent scroll in iframe
-      padding: isDesktop ? 0 : 0,  // ✅ v3.17.90: No padding to prevent iframe scrollbar
-      boxSizing: 'border-box',  // ✅ v3.17.95: Include border in height calc
+      height: isDesktop ? '100vh' : (isSafariBrowser ? '100vh' : 'auto'),
+      minHeight: '100vh',
+      maxHeight: isDesktop ? '100vh' : (isSafariBrowser ? '100vh' : 'none'),
+      overflow: isSafariBrowser ? 'auto' : (isDesktop ? 'hidden' : 'visible'),
+      WebkitOverflowScrolling: 'touch',
+      padding: isDesktop ? 0 : 0,
+      paddingBottom: isSafariBrowser ? 40 : 0,
+      boxSizing: 'border-box',
       fontFamily:'ui-sans-serif, system-ui', 
       userSelect:'none',
       WebkitUserSelect:'none',
       WebkitTouchCallout:'none',
       MozUserSelect:'none',
       msUserSelect:'none',
-      touchAction: 'pan-y' // ✅ v3.17.85: Allow vertical scrolling on background
+      touchAction: 'pan-y'
     }}>
       {/* ✅ v3.17.98: TEMPORARILY COMMENTED OUT - Testing if modal blocks iOS shared URLs
       {showAudioPrompt && (
@@ -6363,8 +6492,9 @@ useEffect(() => {
         border: isDesktop ? '1px solid #374151' : 'none',
         borderRadius: isDesktop ? 12 : 0,
         padding: isDesktop ? 8 : 4,
+        paddingTop: isDesktop ? 8 : 12,
         minHeight:'fit-content',
-        overflow: isDesktop ? 'visible' : 'hidden',
+        overflow: 'visible',
         position:'relative',
         fontSize: isDesktop ? '16px' : 'min(2.2vw, 16px)',
         boxSizing: 'border-box',
@@ -6373,11 +6503,11 @@ useEffect(() => {
         WebkitTouchCallout:'none'
       }}>
 
-        {/* ✅ v3.18.23: Legend moved to top (replaces logo position) */}
+        {/* ✅ v3.18.39: Legend - Safari needs more top space */}
         {(isDesktop || window.innerWidth > 800) && (
           <div style={{
             position:'absolute',
-            top: 8,
+            top: isSafariBrowser ? 16 : 8,
             left: 8,
             background:'#1a1a1a',
             border:'2px solid #4B5563',
@@ -6490,7 +6620,7 @@ useEffect(() => {
             );
           })()}
           
-          {/* ✅ v3.18.24: Version and copyright - left aligned */}
+          {/* ✅ v3.18.32: Version and copyright - left aligned */}
           <div style={{
             marginTop: 10,
             paddingTop: 8,
@@ -6504,6 +6634,10 @@ useEffect(() => {
               Harmony Wheel
             </div>
             <div>{HW_VERSION}</div>
+            {/* DEBUG: Show Safari detection */}
+            <div style={{ color: isSafariBrowser ? '#39FF14' : '#DC2626', fontSize: 7 }}>
+              {isSafariBrowser ? '✓ Safari (state)' : '✗ Not Safari'}
+            </div>
             <div style={{ marginTop: 4, fontSize: 7 }}>
               © Beat Kitchen LLC, 2025
             </div>
@@ -6589,20 +6723,28 @@ useEffect(() => {
         )}
         {/* END TESTING - Logo hidden */}
         
-        {/* ✅ v3.18.24: Skill button restored - top right, can overlap wheel */}
+        {/* ✅ v3.18.40: Skill button - reserve space to prevent shift */}
         <div style={{
           display:'flex', 
-          alignItems:'center',  
+          alignItems:'flex-start',
           position:'absolute',
-          right: 8,
-          top: 8,
-          zIndex:10001
+          right: isDesktop ? 12 : 12,
+          top: isDesktop ? 12 : (isSafariBrowser ? 60 : 52),
+          zIndex:10001,
+          minHeight: 72
         }}>
           <SkillWheel current={skillLevel} onChange={setSkillLevel} />
         </div>
 
-        {/* Wheel - v3.17.85: Bigger on mobile, matches keyboard width */}
-        <div style={{position:'relative', width:'100%', maxWidth:WHEEL_W, margin:'0 auto', marginTop:-30, zIndex:10}}>
+        {/* Wheel - v3.18.34: Keep wheel position normal, move controls instead */}
+        <div style={{
+          position:'relative', 
+          width:'100%', 
+          maxWidth:WHEEL_W, 
+          margin:'0 auto', 
+          marginTop: -30,
+          zIndex:10
+        }}>
 
         {/* Wheel - centered as before */}
         <div className="relative"
@@ -6611,7 +6753,7 @@ useEffect(() => {
                maxWidth:WHEEL_W,
                aspectRatio: '1/1',
                margin:'0 auto', 
-               marginTop:-30,
+               marginTop: -30,
                transform: isDesktop ? `scale(1.15)` : 'scale(1.1)',
                transformOrigin:'center top',
                position:'relative',
@@ -6968,7 +7110,13 @@ useEffect(() => {
           const tabSize = Math.min(rightW, HW);
 
           return (
-            <div style={{maxWidth: WHEEL_W, margin:'0 auto 0', marginTop: 25}}>
+            <div style={{
+              maxWidth: WHEEL_W, 
+              margin:'0 auto 0', 
+              marginTop: isSafariBrowser ? 55 : 25,
+              paddingLeft: isDesktop ? 0 : 8,
+              paddingRight: isDesktop ? 0 : 8
+            }}>
               {/* UNIFIED LAYOUT - Same structure always, no shifting */}
               
               
@@ -7057,7 +7205,7 @@ useEffect(() => {
                   background:'#0f172a',
                   padding:'8px 12px',
                   marginBottom: 2,
-                  marginTop: -20,
+                  marginTop: 0,
                   textAlign:'center',
                   color:'#6b7280',
                   fontSize:11,
@@ -8416,7 +8564,15 @@ useEffect(() => {
                     <>
                       {/* MIDI Input */}
                       <span style={{fontSize:11, color:'#9CA3AF', marginLeft:4}}>IN:</span>
-                      <select value={selectedId} onChange={(e)=>{ const acc=midiAccessRef.current; if(acc) bindToInput(e.target.value, acc); }}
+                      <select value={selectedId} onChange={(e)=>{ 
+                        if (!midiSupported && e.target.value) {
+                          setShowMidiWarning(true);
+                          setTimeout(() => setShowMidiWarning(false), 5000);
+                          return;
+                        }
+                        const acc=midiAccessRef.current; 
+                        if(acc) bindToInput(e.target.value, acc); 
+                      }}
                         style={{padding:"4px 6px", border:"1px solid #374151", borderRadius:6, background:"#111", color:"#fff", fontSize:11}}>
                         {inputs.length===0 && <option value="">None</option>}
                         {inputs.map((i:any)=>(<option key={i.id} value={i.id}>{i.name || `Input ${i.id}`}</option>))}
@@ -8427,6 +8583,11 @@ useEffect(() => {
                       <select 
                         value={midiOutputEnabled ? selectedOutputId : ""} 
                         onChange={(e)=>{ 
+                          if (!midiSupported && e.target.value) {
+                            setShowMidiWarning(true);
+                            setTimeout(() => setShowMidiWarning(false), 5000);
+                            return;
+                          }
                           const acc=midiAccessRef.current;
                           if(acc) {
                             if (e.target.value === "") {
@@ -8447,6 +8608,31 @@ useEffect(() => {
                         {outputs.map((o:any)=>(<option key={o.id} value={o.id}>{o.name || `Output ${o.id}`}</option>))}
                       </select>
                     </>
+                  )}
+                  
+                  {/* ✅ v3.18.25: MIDI unsupported browser warning */}
+                  {showMidiWarning && !midiSupported && (
+                    <div style={{
+                      position: 'absolute',
+                      top: 50,
+                      left: '50%',
+                      transform: 'translateX(-50%)',
+                      background: '#DC2626',
+                      border: '2px solid #EF4444',
+                      borderRadius: 8,
+                      padding: '8px 12px',
+                      color: '#FFF',
+                      fontSize: 12,
+                      fontWeight: 600,
+                      zIndex: 99999,
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+                      maxWidth: 300,
+                      textAlign: 'center'
+                    }}>
+                      {isSafari 
+                        ? '🚫 Safari doesn\'t support MIDI. Use Chrome or Edge for MIDI features.'
+                        : '🚫 MIDI not supported in this browser. Use Chrome, Edge, or Firefox.'}
+                    </div>
                   )}
                   
                   {/* Spacer */}
@@ -8546,6 +8732,6 @@ useEffect(() => {
   );
 }
 
-// HarmonyWheel v3.18.24 - Rhythm patterns finally work! @directives parsed before bar notation
+// HarmonyWheel v3.18.41 - Rhythm patterns finally work! @directives parsed before bar notation
 
-// EOF - HarmonyWheel.tsx v3.18.24
+// EOF - HarmonyWheel.tsx v3.18.41
