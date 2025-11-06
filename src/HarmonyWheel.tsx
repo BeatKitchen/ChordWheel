@@ -1,5 +1,14 @@
 /*
- * HarmonyWheel.tsx — v3.18.49 🎭 Intro Overlay!
+ * HarmonyWheel.tsx — v3.18.50 🎵 Refined Intro Timing
+ * 
+ * 🎵 v3.18.50 INTRO TIMING ADJUSTMENTS:
+ * - **Starts sooner**: 200ms delay (was 800ms)
+ * - **Slower spin**: 1800ms rotation (was 1200ms)
+ * - **Longer pause at REL**: 800ms (was 600ms)
+ * - **Single fade**: One cycle instead of three
+ * - **Longer hold**: 1200ms at full opacity
+ * - **Longer release**: 1200ms fade out with 1.2s CSS transition
+ * - More elegant, less rushed
  * 
  * 🎭 v3.18.49 INTRO BONUS OVERLAY:
  * - **Dedicated intro overlay**: Shows bonus wedges during animation regardless of skill level
@@ -1567,7 +1576,7 @@ import {
   parseSongMetadata
 } from "./lib/songManager";
 
-const HW_VERSION = 'v3.18.49';
+const HW_VERSION = 'v3.18.50';
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -2363,7 +2372,7 @@ useEffect(() => {
   };
 
   const parseAndLoadSequence = ()=>{
-    const APP_VERSION = "v3.18.49-harmony-wheel";
+    const APP_VERSION = "v3.18.50-harmony-wheel";
     console.log('=== PARSE AND LOAD START ===');
     console.log('🏷️  APP VERSION:', APP_VERSION);
     console.log('Input text:', inputText);
@@ -3271,7 +3280,7 @@ useEffect(() => {
     }
   }, [performanceMode]);
 
-  // ✅ v3.18.48: Intro animation - use existing rotation system
+  // ✅ v3.18.50: Intro animation - slower, single fade with longer release
   useEffect(() => {
     if (!showIntroAnimation) return;
     
@@ -3280,32 +3289,27 @@ useEffect(() => {
       setRelMinorActive(true);
       setActiveFn("vi");
       
-      await new Promise(resolve => setTimeout(resolve, 600));
+      await new Promise(resolve => setTimeout(resolve, 800)); // Longer pause at REL
       
       // Go to HOME - triggers rotation back via existing system
       setRelMinorActive(false);
       setActiveFn("I");
       
-      await new Promise(resolve => setTimeout(resolve, 1200));
+      await new Promise(resolve => setTimeout(resolve, 1800)); // Slower spin (was 1200ms)
       
-      // Pulse bonus wedges only in Advanced/Expert
+      // Single fade cycle with longer hold and release
       if (skillLevel === "ADVANCED" || skillLevel === "EXPERT") {
         setShowBonusWedges(true);
-        await new Promise(resolve => setTimeout(resolve, 600));
+        await new Promise(resolve => setTimeout(resolve, 1200)); // Longer hold at full opacity
         
         setShowBonusWedges(false);
-        await new Promise(resolve => setTimeout(resolve, 600));
-        
-        setShowBonusWedges(true);
-        await new Promise(resolve => setTimeout(resolve, 600));
-        
-        setShowBonusWedges(false);
+        await new Promise(resolve => setTimeout(resolve, 1200)); // Longer fade out
       }
       
       setShowIntroAnimation(false);
     };
     
-    setTimeout(animate, 800);
+    setTimeout(animate, 200); // Start sooner (was 800ms)
   }, []);
 
   useEffect(() => {
@@ -6958,7 +6962,7 @@ useEffect(() => {
       key="bonus-persistent"
       style={{
         opacity: showBonusWedges ? 0.5 : 0,
-        transition: 'opacity 0.6s ease-in-out'
+        transition: 'opacity 1.2s ease-in-out'  // Match intro overlay timing
       } as any}
     >
       {wedges.map(w => {
@@ -7153,7 +7157,7 @@ useEffect(() => {
       key="intro-bonus-overlay"
       style={{
         opacity: showBonusWedges ? 0.5 : 0,
-        transition: 'opacity 0.6s ease-in-out',
+        transition: 'opacity 1.2s ease-in-out',  // Slower transition for longer release
         pointerEvents: 'none'  // Don't interfere with clicks
       } as any}
     >
@@ -8961,6 +8965,6 @@ useEffect(() => {
   );
 }
 
-// HarmonyWheel v3.18.49 - Rhythm patterns finally work! @directives parsed before bar notation
+// HarmonyWheel v3.18.50 - Rhythm patterns finally work! @directives parsed before bar notation
 
-// EOF - HarmonyWheel.tsx v3.18.49
+// EOF - HarmonyWheel.tsx v3.18.50
