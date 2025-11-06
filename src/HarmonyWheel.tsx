@@ -2303,14 +2303,13 @@ useEffect(() => {
         setSeqIndex(startIdx);
         setDisplayIndex(startIdx);
         
-        // ✅ v3.17.87: Apply and get notes to play
+        // ✅ v3.17.88: Apply item for detection/wedge lighting, but DON'T play audio
+        // User can press > to play the first chord
         const notesToPlay = applySeqItem(sequence[startIdx]);
         
-        // Play the notes if any
-        if (notesToPlay.length > 0 && audioEnabledRef.current) {
-          console.log('🔊 Playing first item:', sequence[startIdx].raw, 'notes:', notesToPlay.length);
-          playChord(notesToPlay, 1.5);
-        }
+        // ❌ Don't play on rewind - just position
+        // User presses > to play
+        console.log('🔇 Rewind complete - positioned at start (no audio)');
         
         selectCurrentItem(startIdx);
       }
