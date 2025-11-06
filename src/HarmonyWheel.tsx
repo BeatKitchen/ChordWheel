@@ -1,5 +1,21 @@
 /*
- * HarmonyWheel.tsx — v3.17.88 🎯 THE ACTUAL FIX!
+ * HarmonyWheel.tsx — v3.17.91 🔝 Load Menu Fix!
+ * 
+ * 🔝 v3.17.91 LOAD MENU Z-INDEX FIX:
+ * - **Button grid z-index** - Added z:100000 + position:relative to 2x2 button grid
+ * - Load menu dropdown now appears ABOVE keyboard and all other elements
+ * - No more hidden load menu!
+ * 
+ * 🎨 v3.17.90 UI FIXES:
+ * - **Load menu z-index fix** - keyboard/button grid now z:1, load menu z:99999
+ * - **Iframe scrollbar fix** - removed padding, set overflow:hidden in desktop mode
+ * - Load menu now appears ABOVE keyboard and buttons
+ * - No more vertical scrollbar in beatkitchen.io iframe
+ * 
+ * 🔇 v3.17.89 REWIND FIX:
+ * - **Go to Start now silent** - positions without playing audio
+ * - User presses > to play the first chord
+ * - Removed playChord() call from goToStart()
  * 
  * 🎯 v3.17.88 THE REAL BUG:
  * - **Fixed modifier argument parsing** - was only getting first part after colon
@@ -1155,7 +1171,7 @@ import {
   parseSongMetadata
 } from "./lib/songManager";
 
-const HW_VERSION = 'v3.17.88';
+const HW_VERSION = 'v3.17.91';
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -1852,7 +1868,7 @@ useEffect(() => {
   };
 
   const parseAndLoadSequence = ()=>{
-    const APP_VERSION = "v3.17.88-harmony-wheel";
+    const APP_VERSION = "v3.17.91-harmony-wheel";
     console.log('=== PARSE AND LOAD START ===');
     console.log('🏷️  APP VERSION:', APP_VERSION);
     console.log('Input text:', inputText);
@@ -5468,8 +5484,8 @@ useEffect(() => {
       color:'#fff', 
       minHeight: isDesktop ? '100vh' : 'auto',
       height: isDesktop ? 'auto' : 'fit-content',
-      overflow: isDesktop ? 'auto' : 'hidden',
-      padding: isDesktop ? 8 : 0, 
+      overflow: isDesktop ? 'hidden' : 'hidden',  // ✅ v3.17.90: Prevent scroll in iframe
+      padding: isDesktop ? 0 : 0,  // ✅ v3.17.90: No padding to prevent iframe scrollbar
       fontFamily:'ui-sans-serif, system-ui', 
       userSelect:'none',
       WebkitUserSelect:'none',
@@ -6348,7 +6364,9 @@ useEffect(() => {
                 display:'grid', 
                 gridTemplateColumns: '65% 35%',
                 columnGap:12, 
-                marginBottom:6
+                marginBottom:6,
+                position: 'relative',
+                zIndex: 1  // ✅ v3.17.90: Stay below load menu (99999)
               }}>
                 {/* Left: Key Button + Space Buttons + Keyboard */}
                 <div style={{display:'flex', flexDirection:'column', gap:8}}>
@@ -7066,7 +7084,9 @@ useEffect(() => {
                     display: 'grid',
                     gridTemplateColumns: 'repeat(2, 120px)',
                     gap: 8,
-                    marginTop: 8
+                    marginTop: 8,
+                    position: 'relative',
+                    zIndex: 100000  // ✅ v3.17.91: High z-index so load menu appears above keyboard
                   }}>
                     {/* Top Left: Enter Button */}
                     <button 
@@ -7652,6 +7672,6 @@ useEffect(() => {
   );
 }
 
-// HarmonyWheel v3.17.88 - Fixed modifier argument parsing (was losing chord after colon)
+// HarmonyWheel v3.17.91 - Fixed load menu z-index by adding z:100000 to button grid
 
-// EOF - HarmonyWheel.tsx v3.17.88
+// EOF - HarmonyWheel.tsx v3.17.91
