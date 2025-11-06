@@ -1,5 +1,9 @@
 /*
- * HarmonyWheel.tsx — v3.17.91 🔝 Load Menu Fix!
+ * HarmonyWheel.tsx — v3.17.92 📏 No More Scrollbar!
+ * 
+ * 📏 v3.17.92 SCROLLBAR FIX:
+ * - **height:100vh** - Changed from minHeight to height to fit iframe exactly
+ * - No more vertical scrollbar in beatkitchen.io frame
  * 
  * 🔝 v3.17.91 LOAD MENU Z-INDEX FIX:
  * - **Button grid z-index** - Added z:100000 + position:relative to 2x2 button grid
@@ -1171,7 +1175,7 @@ import {
   parseSongMetadata
 } from "./lib/songManager";
 
-const HW_VERSION = 'v3.17.91';
+const HW_VERSION = 'v3.17.92';
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -1868,7 +1872,7 @@ useEffect(() => {
   };
 
   const parseAndLoadSequence = ()=>{
-    const APP_VERSION = "v3.17.91-harmony-wheel";
+    const APP_VERSION = "v3.17.92-harmony-wheel";
     console.log('=== PARSE AND LOAD START ===');
     console.log('🏷️  APP VERSION:', APP_VERSION);
     console.log('Input text:', inputText);
@@ -5482,8 +5486,7 @@ useEffect(() => {
     <div style={{
       background:'#111', 
       color:'#fff', 
-      minHeight: isDesktop ? '100vh' : 'auto',
-      height: isDesktop ? 'auto' : 'fit-content',
+      height: isDesktop ? '100vh' : 'auto',  // ✅ v3.17.92: Changed from minHeight to height
       overflow: isDesktop ? 'hidden' : 'hidden',  // ✅ v3.17.90: Prevent scroll in iframe
       padding: isDesktop ? 0 : 0,  // ✅ v3.17.90: No padding to prevent iframe scrollbar
       fontFamily:'ui-sans-serif, system-ui', 
@@ -7672,6 +7675,6 @@ useEffect(() => {
   );
 }
 
-// HarmonyWheel v3.17.91 - Fixed load menu z-index by adding z:100000 to button grid
+// HarmonyWheel v3.17.92 - Fixed scrollbar with height:100vh instead of minHeight
 
-// EOF - HarmonyWheel.tsx v3.17.91
+// EOF - HarmonyWheel.tsx v3.17.92
