@@ -1,5 +1,40 @@
 /*
- * HarmonyWheel.tsx — v3.18.16 🎵 Seamless Rhythm Fixed!
+ * HarmonyWheel.tsx — v3.18.21 🎹 Performance UI!
+ * 
+ * 🎹 v3.18.21 PERFORMANCE MODE UI:
+ * - **Two-row layout**: Number pads on top, rhythm controls below
+ * - **Rhythm toggle**: ON/OFF button (first on left) with play/pause icon
+ * - **Pattern previews**: 3 wide buttons showing rhythm notation |x x x x|
+ * - **Active pattern indicator**: Yellow border on selected pattern
+ * - **Taller panel**: Fits both rows comfortably
+ * - Click patterns to switch, click toggle for rhythm on/off!
+ * 
+ * 🐛 v3.18.20 CRITICAL FIXES:
+ * - **No stuck notes**: Always stops all notes before starting new chord
+ * - **No extra notes**: Clears all pending timeouts when switching
+ * - **Shift+number works**: Holding 1, press Shift → switches to 7th chord!
+ * - **Normalized keys**: Treats '1' and '!' as same key for stack tracking
+ * 
+ * 🎵 v3.18.19 CRITICAL FIXES:
+ * - **Immediate takeover**: New pad takes over instantly (stops old rhythm first)
+ * - **Rhythm starts first time**: Uses notes from previewFn return, no state delay
+ * - **Pattern switching**: Press [ ] \ while holding → pattern changes seamlessly!
+ * - **previewFn returns notes**: No more waiting for setState
+ * 
+ * 🎹 v3.18.18 STACK-BASED KEY HANDLING:
+ * - **Key stack**: Tracks all held keys, last pressed is active
+ * - **Automatic revert**: Release top key → reverts to previous held key!
+ * - **Example**: Hold 3 → press 6 (6 plays) → release 6 → reverts to 3!
+ * - **Seamless**: Rhythm continues from same position when reverting
+ * - **Console logging**: Shows key stack for debugging
+ * 
+ * 🎵 v3.18.17 RHYTHM FIXES:
+ * - **Track active key**: Only stops rhythm when releasing the CURRENT key
+ * - **O key**: Toggle rhythm on/off (works anywhere)
+ * - **Hold + switch**: Hold 1, press 3, release 1 → 3 keeps playing! ✅
+ * - **Better logging**: Shows when rhythm is disabled vs no notes
+ * 
+ * Next: Visual feedback UI with rhythm toggle button!
  * 
  * 🐛 v3.18.16 RHYTHM HANDOFF FIXES:
  * - **Keep position on release**: Rhythm position tracked even after key release
@@ -1336,7 +1371,7 @@ import {
   parseSongMetadata
 } from "./lib/songManager";
 
-const HW_VERSION = 'v3.18.16';
+const HW_VERSION = 'v3.18.21';
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -1717,6 +1752,21 @@ useEffect(() => {
   const [performanceMode, setPerformanceMode] = useState(false);
   const performanceModeRef = useRef(false);
   
+  // ✅ v3.18.17: Track which key is currently playing (for proper keyup handling)
+  const activePerformanceKeyRef = useRef<string | null>(null);
+  
+  // ✅ v3.18.18: Stack of held keys for proper multi-key handling
+  // Last key in array is the active one
+  const heldKeysStackRef = useRef<string[]>([]);
+  
+  // ✅ v3.18.17: Rhythm on/off toggle
+  const [rhythmEnabled, setRhythmEnabled] = useState(true);
+  const rhythmEnabledRef = useRef(true);
+  
+  useEffect(() => {
+    rhythmEnabledRef.current = rhythmEnabled;
+  }, [rhythmEnabled]);
+  
   // ✅ v3.17.6: Momentary flash for performance keys (500ms, independent of wedge trail)
   const [performanceFlashKey, setPerformanceFlashKey] = useState<string>('');
   const performanceFlashTimeoutRef = useRef<number | null>(null); // Browser timeout returns number
@@ -2096,7 +2146,7 @@ useEffect(() => {
   };
 
   const parseAndLoadSequence = ()=>{
-    const APP_VERSION = "v3.18.16-harmony-wheel";
+    const APP_VERSION = "v3.18.21-harmony-wheel";
     console.log('=== PARSE AND LOAD START ===');
     console.log('🏷️  APP VERSION:', APP_VERSION);
     console.log('Input text:', inputText);
@@ -3070,6 +3120,19 @@ useEffect(() => {
         return;
       }
       
+      // ✅ v3.18.17: O key toggles rhythm on/off
+      if (e.key === 'o' || e.key === 'O') {
+        e.preventDefault();
+        const newState = !rhythmEnabledRef.current;
+        setRhythmEnabled(newState);
+        console.log('🎵 Rhythm', newState ? 'ENABLED' : 'DISABLED');
+        // If turning off while rhythm is playing, stop it
+        if (!newState && rhythmLoopIntervalRef.current !== null) {
+          stopRhythmLoop();
+        }
+        return;
+      }
+      
       // Only handle if NOT in textarea or input field
       const activeTag = document.activeElement?.tagName;
       if (activeTag === 'TEXTAREA' || activeTag === 'INPUT') return;
@@ -3099,17 +3162,26 @@ useEffect(() => {
         
         const fn = keyMap[e.key];
         if (fn) {
-          // ✅ v3.18.10: Block OS key repeat - only respond to initial keydown
-          if (e.repeat) {
-            e.preventDefault();
-            return; // Ignore repeated keydown events from OS
-          }
-          
-          e.preventDefault();
-          e.stopPropagation();
           // Detect 7th by checking if shifted key was pressed
           const shiftedKeys = ['!', '@', '#', '$', '%', '^', '&', '*', '(', ')', '_', '+'];
           const with7th = shiftedKeys.includes(e.key);
+          
+          // ✅ v3.18.20: Normalize key to base (unshifted) version for stack tracking
+          const baseKey = with7th ? 
+            {'!': '1', '@': '2', '#': '3', '$': '4', '%': '5', '^': '6', 
+             '&': '7', '*': '8', '(': '9', ')': '0', '_': '-', '+': '='}[e.key] || e.key
+            : e.key;
+          
+          // ✅ v3.18.20: Block OS key repeat UNLESS shift state changed (7th toggle)
+          if (e.repeat && !with7th) {
+            // Regular repeat - ignore
+            e.preventDefault();
+            return;
+          }
+          // If with7th=true, this is a shift+number press - allow it to re-trigger
+          
+          e.preventDefault();
+          e.stopPropagation();
           console.log('🎹 Performance Mode:', { 
             rawKey: e.key, 
             code: e.code,
@@ -3133,15 +3205,30 @@ useEffect(() => {
             }, 500);
           }
           
-          previewFn(fn, with7th);
+          const chordNotes = previewFn(fn, with7th);
+          
+          // ✅ v3.18.20: ALWAYS stop old rhythm before starting new one
+          // This prevents stuck notes and extra rhythmic notes when switching
+          const isNewKey = !heldKeysStackRef.current.includes(baseKey);
+          if (!isNewKey || rhythmLoopIntervalRef.current !== null) {
+            // Either re-pressing same key OR switching to new key while rhythm playing
+            stopRhythmLoop();
+          }
+          
+          // ✅ v3.18.18: Push to key stack (last key takes priority)
+          if (isNewKey) {
+            heldKeysStackRef.current.push(baseKey);
+          }
+          activePerformanceKeyRef.current = baseKey;
+          console.log('🎹 Key stack:', heldKeysStackRef.current);
           
           // ✅ v3.18.13: Step record - insert function name when pad pressed
           if (stepRecordRef.current && currentGuitarLabel) {
             insertCurrentChord();
           }
           
-          // ✅ v3.18.15: Start rhythm loop with seamless handoff
-          if (latchedAbsNotes.length > 0) {
+          // ✅ v3.18.19: Start rhythm immediately with notes from previewFn
+          if (rhythmEnabledRef.current && chordNotes && chordNotes.length > 0) {
             // Calculate current position in rhythm for seamless chord change
             let offsetMs = 0;
             if (rhythmStartTimeRef.current !== null && rhythmPatternDurationRef.current > 0) {
@@ -3152,7 +3239,9 @@ useEffect(() => {
             } else {
               console.log('🎵 Starting rhythm loop with pattern', activeRhythmPatternRef.current);
             }
-            startRhythmLoop(latchedAbsNotes, offsetMs);
+            startRhythmLoop(chordNotes, offsetMs);
+          } else if (!rhythmEnabledRef.current) {
+            console.log('⏸️ Rhythm disabled - not starting loop');
           } else {
             console.warn('⚠️ No latched notes to play rhythm with');
           }
@@ -3163,23 +3252,49 @@ useEffect(() => {
           return; // Stop processing - don't run other shortcuts
         }
         
-        // ✅ v3.18.9: Rhythm pattern switchers - change pattern while holding number key
+        // ✅ v3.18.19: Rhythm pattern switchers - change pattern and restart rhythm
         if (e.key === '[') {
           e.preventDefault();
           setActiveRhythmPattern(1);
           console.log('🎵 Switched to rhythm pattern 1');
+          // Restart rhythm with new pattern if currently playing
+          if (rhythmLoopIntervalRef.current !== null && latchedAbsNotes.length > 0) {
+            let offsetMs = 0;
+            if (rhythmStartTimeRef.current !== null && rhythmPatternDurationRef.current > 0) {
+              const elapsed = performance.now() - rhythmStartTimeRef.current;
+              offsetMs = elapsed % rhythmPatternDurationRef.current;
+            }
+            // Small delay to let state update
+            setTimeout(() => startRhythmLoop(latchedAbsNotes, offsetMs), 10);
+          }
           return;
         }
         if (e.key === ']') {
           e.preventDefault();
           setActiveRhythmPattern(2);
           console.log('🎵 Switched to rhythm pattern 2');
+          if (rhythmLoopIntervalRef.current !== null && latchedAbsNotes.length > 0) {
+            let offsetMs = 0;
+            if (rhythmStartTimeRef.current !== null && rhythmPatternDurationRef.current > 0) {
+              const elapsed = performance.now() - rhythmStartTimeRef.current;
+              offsetMs = elapsed % rhythmPatternDurationRef.current;
+            }
+            setTimeout(() => startRhythmLoop(latchedAbsNotes, offsetMs), 10);
+          }
           return;
         }
         if (e.key === '\\') {
           e.preventDefault();
           setActiveRhythmPattern(3);
           console.log('🎵 Switched to rhythm pattern 3');
+          if (rhythmLoopIntervalRef.current !== null && latchedAbsNotes.length > 0) {
+            let offsetMs = 0;
+            if (rhythmStartTimeRef.current !== null && rhythmPatternDurationRef.current > 0) {
+              const elapsed = performance.now() - rhythmStartTimeRef.current;
+              offsetMs = elapsed % rhythmPatternDurationRef.current;
+            }
+            setTimeout(() => startRhythmLoop(latchedAbsNotes, offsetMs), 10);
+          }
           return;
         }
       }
@@ -3329,13 +3444,55 @@ useEffect(() => {
         setShiftHeld(false);
       }
       
-      // ✅ v3.18.16: Stop rhythm loop when releasing number keys in performance mode
+      // ✅ v3.18.18: Stack-based key handling - revert to previous key on release
       if (performanceModeRef.current) {
         const numberKeys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '='];
         if (numberKeys.includes(e.key)) {
-          stopRhythmLoop();
-          // ✅ v3.18.16: Clear immediately for instant response
-          setLatchedAbsNotes([]);
+          // Remove this key from stack
+          const index = heldKeysStackRef.current.indexOf(e.key);
+          if (index > -1) {
+            heldKeysStackRef.current.splice(index, 1);
+          }
+          
+          console.log('🎹 Key released. Stack:', heldKeysStackRef.current);
+          
+          if (heldKeysStackRef.current.length > 0) {
+            // There's still a key held - revert to it!
+            const previousKey = heldKeysStackRef.current[heldKeysStackRef.current.length - 1];
+            console.log('🔄 Reverting to previous key:', previousKey);
+            
+            // Find the function for this key
+            const keyMap: Record<string, Fn> = {
+              '1': 'I', '2': 'ii', '3': 'V/V', '4': 'iii', '5': 'V/vi',
+              '6': 'iv', '7': 'IV', '8': 'V', '9': 'V/ii', '0': 'vi',
+              '-': 'Bm7♭5', '=': '♭VII'
+            };
+            
+            const fn = keyMap[previousKey];
+            if (fn) {
+              // Re-trigger the previous key's chord
+              const shiftedKeys = ['!', '@', '#', '$', '%', '^', '&', '*', '(', ')', '_', '+'];
+              const with7th = shiftedKeys.includes(previousKey);
+              
+              activePerformanceKeyRef.current = previousKey;
+              previewFn(fn, with7th);
+              
+              // Restart rhythm from current position if enabled
+              if (rhythmEnabledRef.current && latchedAbsNotes.length > 0) {
+                let offsetMs = 0;
+                if (rhythmStartTimeRef.current !== null && rhythmPatternDurationRef.current > 0) {
+                  const elapsed = performance.now() - rhythmStartTimeRef.current;
+                  offsetMs = elapsed % rhythmPatternDurationRef.current;
+                }
+                startRhythmLoop(latchedAbsNotes, offsetMs);
+              }
+            }
+          } else {
+            // No more keys held - stop everything
+            stopRhythmLoop();
+            setLatchedAbsNotes([]);
+            activePerformanceKeyRef.current = null;
+          }
         }
       }
     };
@@ -5474,6 +5631,9 @@ useEffect(() => {
       
       // Other space rotation logic can be added here
     }, 600); // 600ms delay so chord doesn't move under cursor
+    
+    // ✅ v3.18.19: Return the notes so caller can start rhythm immediately
+    return fitted;
   };
 
   /* ---------- Render ---------- */
@@ -7888,17 +8048,19 @@ useEffect(() => {
                 <div style={{display:'flex', gap:8, alignItems:'center', flexWrap:'wrap'}}>
                   {/* ✅ v3.17.9: Clear open/closed states */}
                   {performanceMode ? (
-                    /* OPEN STATE - Yellow border, close button prominent */
+                    /* OPEN STATE - Yellow border, TWO ROWS: number pads + rhythm controls */
                     <div style={{ 
                       display: 'flex', 
-                      gap: 4, 
-                      alignItems: 'center',
+                      flexDirection: 'column',
+                      gap: 6,
                       padding: '6px 8px',
                       border: '2px solid #F2D74B',
                       borderRadius: 6,
                       background: '#332810',
                       width: '100%'
                     }}>
+                      {/* ROW 1: Close button + Number pads */}
+                      <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
                       {/* Close button - prominent X */}
                       <button
                         onClick={() => setPerformanceMode(false)}
@@ -8018,6 +8180,99 @@ useEffect(() => {
                           </div>
                         );
                       })}
+                      </div>
+                      
+                      {/* ROW 2: Rhythm controls */}
+                      <div style={{ display: 'flex', gap: 4, alignItems: 'stretch' }}>
+                        {/* Rhythm ON/OFF toggle - first on left */}
+                        <button
+                          onClick={() => {
+                            const newState = !rhythmEnabled;
+                            setRhythmEnabled(newState);
+                            if (!newState && rhythmLoopIntervalRef.current !== null) {
+                              stopRhythmLoop();
+                            }
+                          }}
+                          style={{
+                            padding: '6px 10px',
+                            border: `2px solid ${rhythmEnabled ? '#39FF14' : '#666'}`,
+                            borderRadius: 4,
+                            background: rhythmEnabled ? '#1a3310' : '#1a1a1a',
+                            color: rhythmEnabled ? '#39FF14' : '#888',
+                            cursor: 'pointer',
+                            fontSize: 10,
+                            fontWeight: 700,
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            minWidth: 45,
+                            transition: 'all 0.2s'
+                          }}
+                          title="Toggle rhythm on/off (O key)"
+                        >
+                          <div style={{ fontSize: 14, marginBottom: 2 }}>
+                            {rhythmEnabled ? '▶' : '⏸'}
+                          </div>
+                          <div style={{ fontSize: 8 }}>
+                            {rhythmEnabled ? 'ON' : 'OFF'}
+                          </div>
+                        </button>
+                        
+                        {/* Pattern buttons with previews */}
+                        {[
+                          { num: 1, pattern: rhythmPattern1, display: '|x x x x|' },
+                          { num: 2, pattern: rhythmPattern2, display: '|x / x /|' },
+                          { num: 3, pattern: rhythmPattern3, display: '|x x / x x x / x|' }
+                        ].map(({ num, pattern, display }) => {
+                          const isActive = activeRhythmPattern === num;
+                          const hasPattern = pattern.length > 0;
+                          return (
+                            <button
+                              key={num}
+                              onClick={() => {
+                                setActiveRhythmPattern(num as 1 | 2 | 3);
+                                // Restart rhythm with new pattern if currently playing
+                                if (rhythmLoopIntervalRef.current !== null && latchedAbsNotes.length > 0) {
+                                  let offsetMs = 0;
+                                  if (rhythmStartTimeRef.current !== null && rhythmPatternDurationRef.current > 0) {
+                                    const elapsed = performance.now() - rhythmStartTimeRef.current;
+                                    offsetMs = elapsed % rhythmPatternDurationRef.current;
+                                  }
+                                  setTimeout(() => startRhythmLoop(latchedAbsNotes, offsetMs), 10);
+                                }
+                              }}
+                              style={{
+                                padding: '4px 8px',
+                                border: `2px solid ${isActive ? '#F2D74B' : (hasPattern ? '#4B5563' : '#333')}`,
+                                borderRadius: 4,
+                                background: isActive ? '#332810' : '#1a1a1a',
+                                color: isActive ? '#F2D74B' : (hasPattern ? '#D1D5DB' : '#555'),
+                                cursor: hasPattern ? 'pointer' : 'default',
+                                fontSize: 9,
+                                fontWeight: 600,
+                                flex: 1,
+                                fontFamily: 'monospace',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: 2,
+                                opacity: hasPattern ? 1 : 0.4,
+                                transition: 'all 0.2s',
+                                whiteSpace: 'nowrap',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis'
+                              }}
+                              title={hasPattern ? `Pattern ${num}: ${display}` : `Pattern ${num}: Not loaded`}
+                              disabled={!hasPattern}
+                            >
+                              <div style={{ fontSize: 8, opacity: 0.7 }}>PAT {num}</div>
+                              <div style={{ fontSize: 10 }}>{display}</div>
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
                   ) : (
                     /* CLOSED STATE - Subtle gray button with open icon */
@@ -8233,6 +8488,6 @@ useEffect(() => {
   );
 }
 
-// HarmonyWheel v3.18.16 - Rhythm patterns finally work! @directives parsed before bar notation
+// HarmonyWheel v3.18.21 - Rhythm patterns finally work! @directives parsed before bar notation
 
-// EOF - HarmonyWheel.tsx v3.18.16
+// EOF - HarmonyWheel.tsx v3.18.21
