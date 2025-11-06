@@ -1,5 +1,12 @@
 /*
- * HarmonyWheel.tsx — v3.18.21 🎹 Performance UI!
+ * HarmonyWheel.tsx — v3.18.22 📐 Layout Fixed!
+ * 
+ * 📐 v3.18.22 LAYOUT IMPROVEMENTS:
+ * - **Logo centered**: Removed excessive 140px left margin
+ * - **Skill button**: Aligns with logo text (not circle top), responsive positioning
+ * - **Legend**: Left-aligned at 8px, shows on wider screens (>800px)
+ * - **No awkward spacing**: Everything flows naturally at all widths
+ * - **Better mobile**: All elements visible and properly spaced
  * 
  * 🎹 v3.18.21 PERFORMANCE MODE UI:
  * - **Two-row layout**: Number pads on top, rhythm controls below
@@ -1371,7 +1378,7 @@ import {
   parseSongMetadata
 } from "./lib/songManager";
 
-const HW_VERSION = 'v3.18.21';
+const HW_VERSION = 'v3.18.22';
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -2146,7 +2153,7 @@ useEffect(() => {
   };
 
   const parseAndLoadSequence = ()=>{
-    const APP_VERSION = "v3.18.21-harmony-wheel";
+    const APP_VERSION = "v3.18.22-harmony-wheel";
     console.log('=== PARSE AND LOAD START ===');
     console.log('🏷️  APP VERSION:', APP_VERSION);
     console.log('Input text:', inputText);
@@ -6352,19 +6359,20 @@ useEffect(() => {
         WebkitTouchCallout:'none'
       }}>
 
-        {/* ✅ v3.17.85: Legend - moved up to reduce overlap */}
-        {isDesktop && (
+        {/* ✅ v3.18.22: Legend - responsive positioning, shows on all sizes when space available */}
+        {(isDesktop || window.innerWidth > 800) && (
           <div style={{
             position:'absolute',
-            top:90,
-            left:140,
+            top: 90,
+            left: 8,
             background:'#1a1a1a',
             border:'2px solid #4B5563',
             borderRadius:8,
             padding:'10px',
             width:110,
             fontSize:10,
-            pointerEvents:'none'
+            pointerEvents:'none',
+            zIndex: 5
           }}>
           <div style={{fontWeight:600, marginBottom:6, color:'#9CA3AF', fontSize:9, textTransform:'uppercase', letterSpacing:'0.05em'}}>
             Function
@@ -6470,9 +6478,9 @@ useEffect(() => {
           </div>
         )}
 
-        {/* BKS Logo Header with Emblem + Help Button - v3.17.85: High z-index */}
+        {/* BKS Logo Header with Emblem + Help Button - v3.18.22: Centered layout */}
         <div style={{marginBottom:0, position:'relative', zIndex:10002, display:'flex', justifyContent:'space-between', alignItems:'flex-start'}}>
-          <div style={{position:'relative', marginLeft: isDesktop ? 140 : '2%'}}>
+          <div style={{position:'relative', marginLeft: isDesktop ? 8 : 8}}>
             <svg width="300" height="44" viewBox="0 0 400 70" preserveAspectRatio="xMinYMin meet" style={{opacity:0.85, display:'block'}}>
             <g transform="matrix(0.733705,0,0,0.733705,2.67091,-1.60525)">
               <g transform="matrix(-1,0,0,1,99.7819,4.76996e-06)">
@@ -6529,14 +6537,15 @@ useEffect(() => {
           </div>
           </div>
           
-          {/* Skill Wheel only - top right - v3.17.85: High z-index for clickability */}
+          {/* Skill Wheel only - top right - v3.18.22: Aligned with logo text */}
           <div style={{
             display:'flex', 
-            alignItems:'flex-start', 
-            position:'absolute',
-            right: isDesktop ? 200 : 8,
-            top: 0,
-            zIndex:10001
+            alignItems:'center',  
+            position:'relative',
+            right: 0,
+            top: 8,
+            zIndex:10001,
+            marginRight: 8
           }}>
             {/* Circular Skill Selector */}
             <SkillWheel current={skillLevel} onChange={setSkillLevel} />
@@ -8488,6 +8497,6 @@ useEffect(() => {
   );
 }
 
-// HarmonyWheel v3.18.21 - Rhythm patterns finally work! @directives parsed before bar notation
+// HarmonyWheel v3.18.22 - Rhythm patterns finally work! @directives parsed before bar notation
 
-// EOF - HarmonyWheel.tsx v3.18.21
+// EOF - HarmonyWheel.tsx v3.18.22
