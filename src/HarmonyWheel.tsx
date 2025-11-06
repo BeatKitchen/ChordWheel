@@ -1,5 +1,37 @@
 /*
- * HarmonyWheel.tsx — v3.18.7 🔧 Buttons Fixed!
+ * HarmonyWheel.tsx — v3.18.12 🎵 Rhythm REALLY Fixed!
+ * 
+ * 🎵 v3.18.12 RHYTHM PARSER FIX (For Real):
+ * - **Parse @directives BEFORE bar notation**: Prevents "@RHYTHM1 |x x x x|" from being split
+ * - Now @RHYTHM directives are treated as single tokens
+ * - Patterns will actually load!
+ * 
+ * 🎵 v3.18.11 RHYTHM PARSER FIX:
+ * - **Newlines → commas**: Each line becomes a token (fixes @RHYTHM parsing!)
+ * - Patterns now load correctly from separate lines
+ * - Hold number key → rhythm loops!
+ * 
+ * 🐛 v3.18.10 KEY REPEAT FIX:
+ * - **Block OS key repeat**: Only responds to initial keydown (e.repeat check)
+ * - Added debug logging to verify rhythm loop starts
+ * - Should finally work as intended!
+ * 
+ * 🎵 v3.18.9 RHYTHM LOOPS (Finally!):
+ * - **Hold number key** → Plays rhythm pattern continuously (not OS repeat!)
+ * - **Press [ ] \** while holding → Switches pattern mid-hold
+ * - **Release key** → Stops rhythm
+ * - Default pattern: 1 (steady quarters)
+ * - Rhythm switchers work in real-time!
+ * 
+ * 🔓 v3.18.9 ESCAPE KEY:
+ * - Closes ALL dropdowns (key, transpose)
+ * - Blurs editor
+ * - Stops playback
+ * - One key to escape everything!
+ * 
+ * 🐛 v3.18.8 CRITICAL FIXES:
+ * - **Editor focus guard**: Won't steal focus in performance mode (triple-tap bug fixed!)
+ * - **B key**: Toggle performance mode (b or B)
  * 
  * 🔧 v3.18.7 Z-INDEX FIXES:
  * - Key dropdown: z-index 100001 (above button grid)
@@ -14,6 +46,24 @@
  * - Load menu dropdown: 99999 (below grid, but grid is small)
  * - Key/transpose dropdowns: 100001 (above everything!)
  * If buttons stop working, check this hierarchy!
+ * 
+ * ⚠️ CRITICAL POINTER-EVENTS ARCHITECTURE (DO NOT BREAK):
+ * WHY THIS IS HARD:
+ * - Wheel has marginTop:-30, so it PHYSICALLY OVERLAPS buttons above it
+ * - Wheel SVG covers ~60% of viewport due to scaling (1.15x on desktop)
+ * - Without proper pointer-events, wheel blocks ALL clicks underneath it
+ * 
+ * THE SOLUTION:
+ * - Wheel SVG: pointerEvents:'none' (transparent to clicks)
+ * - Wedge <g> elements: pointerEvents:'auto' (clickable through transparent SVG)
+ * - Bonus wedge <g> elements: pointerEvents:'auto' (same)
+ * - Button container: pointerEvents:'auto' (force clickability)
+ * 
+ * If buttons/wedges stop working, check:
+ * 1. Does wheel SVG have pointerEvents:'none'? (line ~6110)
+ * 2. Do wedge <g> elements have pointerEvents:'auto'? (line ~4760)
+ * 3. Do bonus wedges have pointerEvents:'auto'? (line ~6277)
+ * 4. Does button container have pointerEvents:'auto'? (line ~6632)
  * 
  * 🎯 v3.18.6 STABLE (removed buggy rhythm indicators):
  * - Newline support: Parser strips \n
@@ -1262,7 +1312,7 @@ import {
   parseSongMetadata
 } from "./lib/songManager";
 
-const HW_VERSION = 'v3.18.7';
+const HW_VERSION = 'v3.18.12';
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -1609,7 +1659,7 @@ useEffect(() => {
       
       // Set states - text will appear in editor
       setBaseKey(songData.key || 'C');
-      setSkillLevel('EXPERT');
+      // ✅ v3.18.8: Don't override skill level - keep user's current setting
       setInputText(cleanText);
       setLoadedSongText(cleanText); // Mark as loaded (no red border)
       setHasLoadedFromURL(true);
@@ -1862,6 +1912,18 @@ useEffect(() => {
   const [rhythmPattern2, setRhythmPattern2] = useState<RhythmAction[]>([]);
   const [rhythmPattern3, setRhythmPattern3] = useState<RhythmAction[]>([]);
   
+  // ✅ v3.18.9: Active rhythm pattern selection (1, 2, or 3)
+  const [activeRhythmPattern, setActiveRhythmPattern] = useState<1 | 2 | 3>(1);
+  const activeRhythmPatternRef = useRef<1 | 2 | 3>(1);
+  
+  // ✅ v3.18.9: Rhythm loop control
+  const rhythmLoopIntervalRef = useRef<number | null>(null);
+  const rhythmLoopTimeoutsRef = useRef<number[]>([]);
+  
+  useEffect(() => {
+    activeRhythmPatternRef.current = activeRhythmPattern;
+  }, [activeRhythmPattern]);
+  
   // Debug: Log transpose changes
   useEffect(() => {
     console.log('🎹 TRANSPOSE STATE:', {
@@ -1994,7 +2056,7 @@ useEffect(() => {
   };
 
   const parseAndLoadSequence = ()=>{
-    const APP_VERSION = "v3.18.7-harmony-wheel";
+    const APP_VERSION = "v3.18.12-harmony-wheel";
     console.log('=== PARSE AND LOAD START ===');
     console.log('🏷️  APP VERSION:', APP_VERSION);
     console.log('Input text:', inputText);
@@ -2013,8 +2075,9 @@ useEffect(() => {
       return;
     }
     
-    // ✅ v3.18.6: Strip newlines - visual only
-    const cleanedInput = inputText.replace(/\n/g, ' ').trim();
+    // ✅ v3.18.11: Replace newlines with commas (each line = token)
+    // This allows @RHYTHM directives on separate lines without manual commas
+    const cleanedInput = inputText.replace(/\n/g, ',').trim();
     
     // ✅ v3.18.2: RHYTHM NOTATION - Backward compatible
     // Old style: C, Am, F, G  (comma-separated, 1 bar each)
@@ -2027,6 +2090,14 @@ useEffect(() => {
     const segments = cleanedInput.split(',').map(s => s.trim()).filter(Boolean);
     
     for (const segment of segments) {
+      // ✅ v3.18.12: Check for @directives FIRST (before bar notation)
+      // This prevents "@RHYTHM1 |x x x x|" from being split by bar notation parser
+      if (segment.trim().startsWith('@')) {
+        // This is a directive - treat as single token (don't split by bars)
+        rawTokens.push({text: segment, duration: 1.0});
+        continue;
+      }
+      
       // Check if this segment contains bar delimiters
       if (segment.includes('|')) {
         // Parse bars: "|C Am F G|" or "|C Am|F G|" or "| C Am F G" (unclosed)
@@ -2115,18 +2186,21 @@ useEffect(() => {
         
         // ✅ v3.18.4: Check for RHYTHM patterns
         if (upper === "RHYTHM1" || upper === "R1") {
+          console.log('🎵 RHYTHM1 detected. cmd:', cmd, 'arg:', arg, 'length:', arg.length);
           const pattern = parseRhythmPattern(arg);
           setRhythmPattern1(pattern);
           console.log('🎵 Rhythm Pattern 1:', arg, '→', pattern);
           return { kind:"modifier", raw:tok, chord: `RHYTHM1:${arg}` };
         }
         if (upper === "RHYTHM2" || upper === "R2") {
+          console.log('🎵 RHYTHM2 detected. cmd:', cmd, 'arg:', arg, 'length:', arg.length);
           const pattern = parseRhythmPattern(arg);
           setRhythmPattern2(pattern);
           console.log('🎵 Rhythm Pattern 2:', arg, '→', pattern);
           return { kind:"modifier", raw:tok, chord: `RHYTHM2:${arg}` };
         }
         if (upper === "RHYTHM3" || upper === "R3") {
+          console.log('🎵 RHYTHM3 detected. cmd:', cmd, 'arg:', arg, 'length:', arg.length);
           const pattern = parseRhythmPattern(arg);
           setRhythmPattern3(pattern);
           console.log('🎵 Rhythm Pattern 3:', arg, '→', pattern);
@@ -2817,7 +2891,10 @@ useEffect(() => {
         
         const tokenLength = tokens[i].length;
         textareaRef.current.setSelectionRange(charPos, charPos + tokenLength);
-        textareaRef.current.focus();
+        // ✅ v3.18.8: Don't focus editor if in performance mode
+        if (!performanceModeRef.current) {
+          textareaRef.current.focus();
+        }
         break;
       }
       tokenCount++;
@@ -2941,6 +3018,13 @@ useEffect(() => {
         return;
       }
       
+      // ✅ v3.18.8: B key toggles performance mode (works everywhere, even in editor)
+      if (e.key === 'b' || e.key === 'B') {
+        e.preventDefault();
+        setPerformanceMode(!performanceModeRef.current);
+        return;
+      }
+      
       // Only handle if NOT in textarea or input field
       const activeTag = document.activeElement?.tagName;
       if (activeTag === 'TEXTAREA' || activeTag === 'INPUT') return;
@@ -2965,6 +3049,12 @@ useEffect(() => {
         
         const fn = keyMap[e.key];
         if (fn) {
+          // ✅ v3.18.10: Block OS key repeat - only respond to initial keydown
+          if (e.repeat) {
+            e.preventDefault();
+            return; // Ignore repeated keydown events from OS
+          }
+          
           e.preventDefault();
           e.stopPropagation();
           // Detect 7th by checking if shifted key was pressed
@@ -2995,31 +3085,37 @@ useEffect(() => {
           
           previewFn(fn, with7th);
           
-          // Clear piano highlights after 500ms
-          setTimeout(() => {
-            setLatchedAbsNotes([]);
-          }, 500);
+          // ✅ v3.18.9: Start rhythm loop on key press (plays while held)
+          if (latchedAbsNotes.length > 0) {
+            console.log('🎵 Starting rhythm loop with pattern', activeRhythmPatternRef.current);
+            startRhythmLoop(latchedAbsNotes);
+          } else {
+            console.warn('⚠️ No latched notes to play rhythm with');
+          }
+          
+          // DON'T clear piano highlights - keep them while holding
+          // They'll clear on keyup
           
           return; // Stop processing - don't run other shortcuts
         }
         
-        // ✅ v3.18.4: Rhythm pattern triggers in performance mode
-        if (e.key === '[' && rhythmPattern1.length > 0 && latchedAbsNotes.length > 0) {
+        // ✅ v3.18.9: Rhythm pattern switchers - change pattern while holding number key
+        if (e.key === '[') {
           e.preventDefault();
-          console.log('🎵 Triggering rhythm pattern 1');
-          playRhythmPattern(rhythmPattern1, latchedAbsNotes);
+          setActiveRhythmPattern(1);
+          console.log('🎵 Switched to rhythm pattern 1');
           return;
         }
-        if (e.key === ']' && rhythmPattern2.length > 0 && latchedAbsNotes.length > 0) {
+        if (e.key === ']') {
           e.preventDefault();
-          console.log('🎵 Triggering rhythm pattern 2');
-          playRhythmPattern(rhythmPattern2, latchedAbsNotes);
+          setActiveRhythmPattern(2);
+          console.log('🎵 Switched to rhythm pattern 2');
           return;
         }
-        if (e.key === '\\' && rhythmPattern3.length > 0 && latchedAbsNotes.length > 0) {
+        if (e.key === '\\') {
           e.preventDefault();
-          console.log('🎵 Triggering rhythm pattern 3');
-          playRhythmPattern(rhythmPattern3, latchedAbsNotes);
+          setActiveRhythmPattern(3);
+          console.log('🎵 Switched to rhythm pattern 3');
           return;
         }
       }
@@ -3066,7 +3162,14 @@ useEffect(() => {
         togglePlayPause();
       } else if (e.key === 'Escape') {
         e.preventDefault();
+        // ✅ v3.18.9: Escape closes everything
         stopPlayback();
+        setShowKeyDropdown(false);
+        setShowTransposeDropdown(false);
+        // Blur editor if focused
+        if (document.activeElement?.tagName === 'TEXTAREA' || document.activeElement?.tagName === 'INPUT') {
+          (document.activeElement as HTMLElement).blur();
+        }
       } else if ((e.ctrlKey || e.metaKey) && e.key === 'ArrowRight') {
         e.preventDefault();
         skipToNextComment();
@@ -3111,7 +3214,8 @@ useEffect(() => {
       } else if (e.key === 'ArrowRight') {
         e.preventDefault();
         stepNext();
-      } else if (e.key === 'Enter' && inputText.trim()) {
+      } else if (e.key === 'Enter' && inputText.trim() && !performanceModeRef.current) {
+        // ✅ v3.18.8: Don't allow Enter to load in performance mode (too easy to accidentally trigger)
         e.preventDefault();
         parseAndLoadSequence();
       } else if ((e.ctrlKey || e.metaKey) && e.key === 'i') {
@@ -3159,6 +3263,18 @@ useEffect(() => {
     const handleGlobalKeyUp = (e: KeyboardEvent) => {
       if (e.key === 'Shift') {
         setShiftHeld(false);
+      }
+      
+      // ✅ v3.18.9: Stop rhythm loop when releasing number keys in performance mode
+      if (performanceModeRef.current) {
+        const numberKeys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '='];
+        if (numberKeys.includes(e.key)) {
+          stopRhythmLoop();
+          // Clear piano highlights after release
+          setTimeout(() => {
+            setLatchedAbsNotes([]);
+          }, 100);
+        }
       }
     };
     
@@ -4757,7 +4873,11 @@ useEffect(() => {
       const ringTrailOpacity = 1 - 0.9*k; const ringTrailWidth = 5 - 3*k;
       return (
         <g key={fn} 
-           style={{touchAction: 'none', cursor: 'pointer', pointerEvents: 'auto'}}
+           style={{
+             touchAction: 'none', 
+             cursor: 'pointer', 
+             pointerEvents: 'auto'  // ⚠️ CRITICAL: Must be 'auto' when parent SVG has pointerEvents:'none'
+           }}
            onPointerDown={(e)=>{
              // ✅ v3.17.85: Touch support - pointer events work for mouse + touch
              e.preventDefault(); // Prevent default touch behaviors
@@ -5510,7 +5630,66 @@ useEffect(() => {
     activeMidiNotesRef.current.clear();
   };
 
-  // ✅ v3.18.4: Play rhythm pattern with current latched chord
+  // ✅ v3.18.9: Start rhythm loop - plays pattern continuously while held
+  const startRhythmLoop = (chordNotes: number[]) => {
+    console.log('🔁 startRhythmLoop called with', chordNotes.length, 'notes');
+    stopRhythmLoop(); // Clear any existing loop
+    
+    const getActivePattern = () => {
+      const patternNum = activeRhythmPatternRef.current;
+      if (patternNum === 1) return rhythmPattern1;
+      if (patternNum === 2) return rhythmPattern2;
+      return rhythmPattern3;
+    };
+    
+    const playOnce = () => {
+      const pattern = getActivePattern();
+      console.log('🎵 Playing pattern once:', pattern.length, 'steps');
+      if (pattern.length === 0 || chordNotes.length === 0) return 0;
+      
+      let currentTime = 0;
+      const beatsPerBar = 4;
+      const beatDuration = 60 / tempo;
+      
+      pattern.forEach((step) => {
+        const stepDurationSeconds = step.duration * beatsPerBar * beatDuration;
+        
+        const timeoutId = window.setTimeout(() => {
+          if (step.action === 'play') {
+            playChord(chordNotes, stepDurationSeconds * 0.8);
+          }
+        }, currentTime * 1000);
+        
+        rhythmLoopTimeoutsRef.current.push(timeoutId);
+        currentTime += stepDurationSeconds;
+      });
+      
+      return currentTime * 1000; // Total pattern duration in ms
+    };
+    
+    // Play immediately
+    const patternDuration = playOnce();
+    
+    // Loop: play again after pattern completes
+    if (patternDuration > 0) {
+      rhythmLoopIntervalRef.current = window.setInterval(() => {
+        playOnce();
+      }, patternDuration);
+    }
+  };
+  
+  const stopRhythmLoop = () => {
+    // Clear interval
+    if (rhythmLoopIntervalRef.current !== null) {
+      clearInterval(rhythmLoopIntervalRef.current);
+      rhythmLoopIntervalRef.current = null;
+    }
+    // Clear all pending timeouts
+    rhythmLoopTimeoutsRef.current.forEach(id => clearTimeout(id));
+    rhythmLoopTimeoutsRef.current = [];
+  };
+
+  // ✅ v3.18.4: Play rhythm pattern with current latched chord (single shot)
   const playRhythmPattern = (pattern: RhythmAction[], chordNotes: number[]) => {
     if (pattern.length === 0 || chordNotes.length === 0) return;
     
@@ -6116,7 +6295,17 @@ useEffect(() => {
                zIndex:10
              }}>
           <div style={{...wrapperStyle, position:'relative', zIndex:10}}>
-            <svg width="100%" height="100%" viewBox={`0 0 ${WHEEL_W} ${WHEEL_H}`} className="select-none" style={{display:'block', userSelect: 'none', WebkitUserSelect: 'none', position:'relative', zIndex:10, maxWidth:'100%', maxHeight:'100%', touchAction:'pan-y', pointerEvents:'none'}}>
+            <svg width="100%" height="100%" viewBox={`0 0 ${WHEEL_W} ${WHEEL_H}`} className="select-none" style={{
+              display:'block', 
+              userSelect: 'none', 
+              WebkitUserSelect: 'none', 
+              position:'relative', 
+              zIndex:10, 
+              maxWidth:'100%', 
+              maxHeight:'100%', 
+              touchAction:'pan-y', 
+              pointerEvents:'none'  // ⚠️ CRITICAL: Allows clicks to pass through to buttons underneath (wheel overlaps with marginTop:-30)
+            }}>
   {/* ✅ v3.17.85: Black backing circle - pointer-events none for scrolling */}
   <circle cx={260} cy={260} r={224} fill="#111" style={{pointerEvents: 'none'}} />
   
@@ -6274,7 +6463,10 @@ useEffect(() => {
           <g 
             key={w.label} 
             onMouseDown={handleClick}
-            style={{cursor: 'pointer', pointerEvents: 'auto'}}
+            style={{
+              cursor: 'pointer', 
+              pointerEvents: 'auto'  // ⚠️ CRITICAL: Must be 'auto' when parent SVG has pointerEvents:'none'
+            }}
           >
             <path d={pathD} 
                   fill={w.label === 'Bm7♭5' ? '#0EA5E9' : BONUS_FILL} 
@@ -6630,7 +6822,7 @@ useEffect(() => {
                 marginBottom:0,
                 position: 'relative',
                 zIndex: 50,  // ✅ v3.18.7: Above wheel (10) but below button grid (100000)
-                pointerEvents: 'auto'  // ✅ v3.18.7: Force clickability
+                pointerEvents: 'auto'  // ⚠️ CRITICAL: Force clickability even when wheel SVG overlaps (marginTop:-30)
               }}>
                 {/* Left: Key Button + Space Buttons + Keyboard */}
                 <div style={{display:'flex', flexDirection:'column', gap:8}}>
