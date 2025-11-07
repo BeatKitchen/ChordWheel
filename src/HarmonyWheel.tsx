@@ -1,5 +1,11 @@
 /*
- * HarmonyWheel.tsx — v3.18.50 🎵 Refined Intro Timing
+ * HarmonyWheel.tsx — v3.18.51 📱 iOS Touch Fix
+ * 
+ * 📱 v3.18.51 IOS PERFORMANCE MODE FIX:
+ * - **Switched to onPointerDown**: Prevents double-fire on iOS Chrome
+ * - **Added stopPropagation**: Stops event bubbling
+ * - **preventDefault on onClick**: Prevents duplicate triggers
+ * - Performance mode button should no longer trigger on random touches
  * 
  * 🎵 v3.18.50 INTRO TIMING ADJUSTMENTS:
  * - **Starts sooner**: 200ms delay (was 800ms)
@@ -1576,7 +1582,7 @@ import {
   parseSongMetadata
 } from "./lib/songManager";
 
-const HW_VERSION = 'v3.18.50';
+const HW_VERSION = 'v3.18.51';
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -2372,7 +2378,7 @@ useEffect(() => {
   };
 
   const parseAndLoadSequence = ()=>{
-    const APP_VERSION = "v3.18.50-harmony-wheel";
+    const APP_VERSION = "v3.18.51-harmony-wheel";
     console.log('=== PARSE AND LOAD START ===');
     console.log('🏷️  APP VERSION:', APP_VERSION);
     console.log('Input text:', inputText);
@@ -8716,7 +8722,11 @@ useEffect(() => {
                   ) : (
                     /* CLOSED STATE - Subtle gray button with open icon */
                     <button
-                      onClick={() => setPerformanceMode(true)}
+                      onPointerDown={(e) => {
+                        e.stopPropagation();
+                        setPerformanceMode(true);
+                      }}
+                      onClick={(e) => e.preventDefault()} // Prevent double-fire on iOS
                       title="Open Performance Pad - Use keyboard 1-0,-,= to trigger chords"
                       style={{
                         padding:"8px 12px", 
@@ -8965,6 +8975,6 @@ useEffect(() => {
   );
 }
 
-// HarmonyWheel v3.18.50 - Rhythm patterns finally work! @directives parsed before bar notation
+// HarmonyWheel v3.18.51 - Rhythm patterns finally work! @directives parsed before bar notation
 
-// EOF - HarmonyWheel.tsx v3.18.50
+// EOF - HarmonyWheel.tsx v3.18.51
