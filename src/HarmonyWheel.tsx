@@ -1,12 +1,189 @@
 /*
- * HarmonyWheel.tsx — v3.18.61 🐛 PAR Space Fixes (G triad + Ab chord)
+ * HarmonyWheel.tsx — v3.18.78 📝 DEFAULT_BANNER from demoSongs
  * 
- * 🐛 v3.18.61 PAR SPACE DETECTION FIXES (modes.ts change required):
+ * 📝 v3.18.78 NO MORE HARDCODED MESSAGES:
+ * - Removed hardcoded banner fallback from HarmonyWheel.tsx (line 7866)
+ * - Now imports DEFAULT_BANNER from demoSongs.ts
+ * - ALL promotional messages now in ONE place: demoSongs.ts
+ * - Update DEFAULT_BANNER constant at top of demoSongs.ts
+ * - Never need to touch 10,000 lines of code again for messages!
+ * 
+ * 🎨 v3.18.78 BUTTON LAYOUT:
+ * - All 4 buttons now in single row: Ready, Clear, Load, Share
+ * - Changed from 2x2 grid to 4x1 grid
+ * - gridTemplateColumns: 'repeat(4, 120px)'
+ * - Cleaner, more compact layout
+ * 
+ * 🎨 v3.18.78 EMPTY DISPLAY FIX:
+ * - Clearing song content no longer makes display disappear
+ * - Banner stays visible with default message
+ * - Removed setBannerMessage("") from empty input handler
+ * - Result: Display always shows something (banner or sequence)
+ * 
+ * 🔧 v3.18.78 TYPESCRIPT FIXES:
+ * - Added explicit types to importSongFromFile callback parameters
+ * - content: string, err: Error - no more implicit any
+ * - Note: songManager.ts file needs to be in src/lib/ directory
+ * 
+ * 🔧 v3.18.78 EDITOR LAYOUT FIX:
+ * - Changed container from flex-row to flex-column
+ * - Textarea now scrolls instead of pushing buttons down
+ * - Fixed button grid height: gridTemplateRows with fixed 40px height
+ * - Buttons stay accessible and don't stretch vertically
+ * - maxHeight reduced to 240px to ensure buttons always visible
+ * 
+ * 🎵 v3.18.78 SUS CHORD FIX:
+ * - Gsus4 vs Csus4 disambiguation using lowest note
+ * - Problem: Gsus2 (G-A-D) and Csus4 (C-F-G) have ambiguous PCs
+ * - Solution: Check lowest MIDI note to determine root
+ * - Example: Playing G-C-D from bottom → Gsus4 (not Csus2)
+ * - detectDisplayTriadLabel now accepts optional midiNotes parameter
+ * 
+ * 🔧 v3.18.78 TEXTAREA RESIZE FIX:
+ * - Added maxHeight: 300px to prevent textarea stretching below buttons
+ * - Added minHeight: 72px for consistent 3-row minimum
+ * - Buttons (Ready, Clear, Share, Load) stay in place when resizing
+ * - No more losing buttons off the bottom of the screen!
+ * 
+ * 🎵 v3.18.78 AUTO-LOAD DEFAULT SONG ON MOUNT:
+ * - **What you expected**: First demo song loads automatically on refresh
+ * - **What was happening**: inputText had defaultSong, but parseAndLoadSequence never called
+ * - **The fix**: Added useEffect on mount to parse the first demo song
+ * - **Loads**: Song content + banner message + title + key + tempo + loop state
+ * 
+ * **Now on refresh you'll see:**
+ * - "WELCOME TO BEAT KITCHEN" title
+ * - Your custom banner: "Use [[EXPERT mode|expert]] for sequencer..."
+ * - Sequence ready to play: E7, Am progression
+ * - Key set to C, Tempo 120, Loop enabled
+ * 
+ * **This is what you wanted all along!**
+ * 
+ * 🎯 v3.18.78 BANNER SHOWS ON REFRESH!
+ * - **THE BUG**: bannerMessage initialized to "" (empty string), not undefined
+ * - **THE ISSUE**: Empty string is truthy for !== undefined check, so fallback never used
+ * - **THE FIX**: Check `if (bannerMessage && bannerMessage.trim())` instead
+ * - **RESULT**: Default banner now shows on initial load before any demo song loaded!
+ * 
+ * Now when you refresh, you'll see:
+ * "[[Expert mode|expert]] for sequencer. Join a [[gym|...]] to learn some music theory!"
+ * 
+ * 🎯 v3.18.78 EMPTY SEQUENCE FIX:
+ * - Song display no longer disappears on refresh
+ * - Shows placeholder: "Load a demo song or type chords above to begin"
+ * - Appears when sequence is empty in EXPERT mode
+ * - Maintains consistent UI even with no content loaded
+ * 
+ * 🎯 v3.18.78 MAJOR DIRECTIVE IMPROVEMENTS:
+ * 
+ * **1. Config directives filtered from sequence:**
+ * - RHYTHM1/2/3, LOOP, TEMPO no longer appear in playable sequence
+ * - Loop now cycles through ONLY musical content (chords/modifiers)
+ * - Display shows ONLY musical progression (no config clutter)
+ * 
+ * **2. @TEMPO directive added:**
+ * - Usage: `@TEMPO 140` or `@BPM 140` or `@T 140`
+ * - Sets tempo automatically when loading song
+ * - Accepts 1-300 BPM
+ * 
+ * **3. All directives now case-insensitive:**
+ * - @tempo, @TEMPO, @Tempo all work
+ * - @loop, @LOOP, @Loop all work
+ * - @key, @KEY, @Key all work
+ * - Aliases work: @T, @LP, @K, @R1, etc.
+ * 
+ * **4. Banner fallback logic fixed:**
+ * - Now respects empty string (means "no custom banner")
+ * - Only uses fallback if truly undefined/null
+ * - Custom banners from demoSongs.ts now work correctly
+ * 
+ * **Example song with all features:**
+ * ```
+ * @TITLE My Song
+ * @KEY C
+ * @TEMPO 120
+ * @LOOP
+ * C, Am, F, G
+ * 
+ * @RHYTHM1 |x x x x|
+ * @RHYTHM2 |x / x /|
+ * ```
+ * 
+ * Sequence will contain ONLY: C, Am, F, G (clean!)
+ * 
+ * 🎵 v3.18.78 @LOOP + Clean Display:
+ * - **@LOOP directive**: Add `@LOOP` to song text to enable loop mode automatically
+ * - **Clean display**: RHYTHM and LOOP directives no longer show in song display
+ * - **Usage**: `@TITLE Song, @KEY C, @LOOP, C, Am, F, G`
+ * - Display only shows: Title, chords, and comments (not directives)
+ * 
+ * 🎨 v3.18.78 FADE TO TRANSPARENT:
+ * - **Gradient**: Colored center (0.8) → faded (0.4) → transparent (0)
+ * - **No white ring**: Fades naturally into the wedge behind it
+ * - **Slightly larger**: 22px radius for softer fade
+ * - **Number at 1 o'clock**: Clear of cursor
+ * - Smooth, organic glow with no hard edges
+ * 
+ * 🎨 v3.18.67 GRADIENT GLOW:
+ * - **SVG radial gradient**: Colored center (cyan/magenta) fades to white edge
+ * - **Gradient stops**: 0%=color(0.8), 70%=color(0.4), 100%=white(0.6)
+ * - **Smooth fade**: No hard edges, organic glow effect
+ * - **Number position**: At 30° (1 o'clock) - clear of cursor
+ * - **Number styling**: White text with black stroke for visibility
+ * - Shows "3" for triad, "4" for 7th chord
+ * 
+ * ✨ v3.18.66 WHITE RING + NUMBER:
+ * - **White outer circle**: 20px radius, 60% opacity (visible on all wedge colors)
+ * - **Colored inner circle**: 12px radius, 80% opacity (cyan or magenta)
+ * - **Number label**: "3" for triad, "4" for 7th chord
+ * - High contrast, shows note count clearly
+ * - 400ms duration
+ * 
+ * ✨ v3.18.65 MINIMAL GLOW:
+ * - Single soft circle: 18px radius, 35% opacity
+ * - No rings, no layers, no text labels
+ * - Just a gentle color pulse at click point
+ * - Cyan (#00CED1) for triad, Magenta (#FF1493) for 7th
+ * - Clean, minimal, not distracting
+ * 
+ * 🌫️ v3.18.78 ORGANIC MISTY GLOW WITH LABELS:
+ * - **Design**: Multiple concentric circles with decreasing opacity (like dust/mist)
+ * - **Effect**: Soft diffuse glow, like unfocused flashlight beam
+ * - **Layers**: 4 circles (r=35, 25, 18, 10) with opacity 0.08 → 0.4
+ * - **Text labels**: "TRIAD" (cyan) or "7th" (magenta) at click point
+ * - **Colors**: Cyan for outer zone, Magenta for inner zone
+ * - **Style**: Organic, soft, non-geometric feel
+ * 
+ * ✨ v3.18.78 SUBTLE GLOW - FINAL VERSION:
+ * - **Outer ring**: 25px radius, 4px stroke, 50% opacity
+ * - **Middle circle**: 15px radius, 30% opacity
+ * - **Inner spot**: 8px radius, 60% opacity (bright center)
+ * - **Colors**: Cyan (#00CED1) for triad, Magenta (#FF1493) for 7th
+ * - **Duration**: 400ms fade
+ * - Removed all debug console logs
+ * - Clean, elegant, subtle visual feedback!
+ * 
+ * 🎯 v3.18.78 GLOW ACTUALLY WORKS NOW:
+ * - **THE BUG**: Glow code was in onPointerEnter (only fires when dragging between wedges)
+ * - **THE FIX**: Moved setWedgeGlow to onPointerDown (fires on every click)
+ * - **THE RESULT**: You should now see GIANT circles on every wedge click
+ * - If this doesn't work, the problem is elsewhere (rendering, z-order, coordinates)
+ * 
+ * 💡 v3.18.78 GLOW DEBUG - SUPER OBVIOUS VERSION:
+ * - Removed blur filters (CSS filter might not work in React SVG)
+ * - Made circles HUGE: outer r=50, inner r=20, white dot r=3
+ * - Full opacity, solid colors, no transparency
+ * - If you don't see giant cyan/magenta circles now, check:
+ *   1. Console for "💫 Setting glow" message
+ *   2. Coordinates (should be ~100-400 range)
+ *   3. If glowLayer is actually in DOM (inspect element)
+ * 
+ * 🐛 v3.18.78 PAR SPACE DETECTION FIXES (modes.ts change required):
  * - **Ab/Bb/Cm/etc now work in PAR**: Fixed getDiatonicTablesFor() in modes.ts
  * - Ab was showing in hub but not lighting wedge (fell through to centerOnly)
  * - Root cause: getDiatonicTablesFor() ignored key parameter, always returned C patterns
  * - Ab isn't diatonic to C, so it never matched! Should use EB_REQT when key="Eb"
- * - **REQUIRES modes.ts v3.18.61** for full fix
+ * - **REQUIRES modes.ts v3.18.78** for full fix
  * 
  * 🐛 v3.18.60 PAR SPACE DETECTION FIX + GLOW DEBUG:
  * 
@@ -1662,7 +1839,7 @@ import {
 } from "./lib/modes";
 import { BonusDebouncer } from "./lib/overlays";
 import * as preview from "./lib/preview";
-import { defaultSong, demoSongs } from "./data/demoSongs";
+import { defaultSong, demoSongs, DEFAULT_BANNER } from "./data/demoSongs";
 import { 
   generateShareableURL, 
   getSongFromURL, 
@@ -1672,7 +1849,7 @@ import {
   parseSongMetadata
 } from "./lib/songManager";
 
-const HW_VERSION = 'v3.18.61';
+const HW_VERSION = 'v3.18.78';
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -2493,7 +2670,9 @@ useEffect(() => {
       setSeqIndex(-1);
       setDisplayIndex(-1);
       setSongTitle("");
-      setBannerMessage(""); // ✅ v3.18.42: Clear banner
+      // ✅ v3.18.78: Keep banner showing when cleared (for non-EXPERT users)
+      // Don't clear banner - let it fall back to default message
+      // setBannerMessage("") was making display disappear
       // ✅ v3.6.0 FIX: Only reset key for truly empty input
       // Don't reset when loading actual sequences - preserve key selector setting
       setBaseKey("C");
@@ -2610,7 +2789,17 @@ useEffect(() => {
         
         const upper = (cmd||"").toUpperCase().trim();
         
-        // ✅ v3.18.4: Check for RHYTHM patterns
+        // ✅ v3.18.78: @TEMPO directive - Set BPM
+        if (upper === "TEMPO" || upper === "BPM" || upper === "T") {
+          const bpm = parseInt(arg);
+          if (!isNaN(bpm) && bpm > 0 && bpm <= 300) {
+            console.log('🎵 TEMPO detected:', bpm, 'BPM');
+            setTempo(bpm);
+            return { kind:"modifier", raw:tok, chord: `TEMPO:${bpm}` };
+          }
+        }
+        
+        // ✅ v3.18.4: Check for RHYTHM patterns (now case-insensitive)
         if (upper === "RHYTHM1" || upper === "R1") {
           console.log('🎵 RHYTHM1 detected. cmd:', cmd, 'arg:', arg, 'length:', arg.length);
           const pattern = parseRhythmPattern(arg);
@@ -2631,6 +2820,13 @@ useEffect(() => {
           setRhythmPattern3(pattern);
           console.log('🎵 Rhythm Pattern 3:', arg, '→', pattern);
           return { kind:"modifier", raw:tok, chord: `RHYTHM3:${arg}` };
+        }
+        
+        // ✅ v3.18.78: @LOOP directive - Enable loop mode
+        if (upper === "LOOP" || upper === "LP") {
+          console.log('🔁 LOOP detected - enabling loop mode');
+          setLoopEnabled(true);
+          return { kind:"modifier", raw:tok, chord: "LOOP" };
         }
         
         // Check for TITLE
@@ -2773,21 +2969,36 @@ useEffect(() => {
       return { kind:"chord", raw:tok, chord: tok, duration: dur };
     });
     
+    // ✅ v3.18.78: Filter out RHYTHM, LOOP, and TEMPO directives from playable sequence
+    // These are configuration, not part of the musical progression
+    const playableItems = items.filter(item => {
+      if (item.kind === "modifier" && item.chord) {
+        // Keep KEY, HOME, SUB, REL, PAR modifiers (they're part of progression)
+        // Remove RHYTHM1/2/3, LOOP, and TEMPO (they're just config)
+        return !item.chord.startsWith("RHYTHM") && 
+               item.chord !== "LOOP" && 
+               !item.chord.startsWith("TEMPO");
+      }
+      return true; // Keep everything else (chords, comments, titles)
+    });
+    
+    console.log('📋 Filtered sequence - removed', items.length - playableItems.length, 'config directives');
+    
     setSongTitle(title);
-    setSequence(items);
+    setSequence(playableItems); // Use filtered items
     setLoadedSongText(inputText); // Track what's actually loaded
     
     // Find first non-title, non-KEY item to set as initial index
     let initialIdx = 0;
-    while (initialIdx < items.length && 
-           (items[initialIdx].kind === "title" || 
-            (items[initialIdx].kind === "modifier" && items[initialIdx].chord?.startsWith("KEY:")))) {
+    while (initialIdx < playableItems.length && 
+           (playableItems[initialIdx].kind === "title" || 
+            (playableItems[initialIdx].kind === "modifier" && playableItems[initialIdx].chord?.startsWith("KEY:")))) {
       initialIdx++;
     }
     
     // Check if first item is @KEY, apply it first
-    if (items.length) {
-      const firstItem = items[0];
+    if (playableItems.length) {
+      const firstItem = playableItems[0];
       if (firstItem.kind === "modifier" && firstItem.chord?.startsWith("KEY:")) {
         // First item sets key, apply it
         applySeqItem(firstItem);
@@ -2801,12 +3012,12 @@ useEffect(() => {
       }
       
       // Set index to first playable item (but don't play it yet - v3.2.5)
-      if (initialIdx < items.length) {
-        console.log('Setting initial index to:', initialIdx, 'chord =', items[initialIdx]?.raw);
+      if (initialIdx < playableItems.length) {
+        console.log('Setting initial index to:', initialIdx, 'chord =', playableItems[initialIdx]?.raw);
         setSeqIndex(initialIdx);
         setDisplayIndex(initialIdx);
         // REMOVED v3.2.5: Don't auto-play first chord on load
-        // applySeqItem(items[initialIdx]);
+        // applySeqItem(playableItems[initialIdx]);
         selectCurrentItem(initialIdx); // Pass explicit index
         console.log('=== PARSE AND LOAD END ===\n');
       } else {
@@ -2818,6 +3029,17 @@ useEffect(() => {
       setDisplayIndex(-1);
     }
   };
+
+  // ✅ v3.18.78: Auto-load default song on mount with its banner message
+  useEffect(() => {
+    console.log('🎵 Auto-loading default song on mount');
+    const firstSong = demoSongs[0];
+    if (firstSong && firstSong.content) {
+      // Load the first demo song's content AND banner message
+      setBannerMessage(firstSong.bannerMessage || "");
+      setTimeout(() => parseAndLoadSequence(), 100);
+    }
+  }, []); // Empty deps = runs once on mount
 
   const stepPrev = ()=>{
     // v3.3.2: Exit step record when using transport controls
@@ -3360,10 +3582,10 @@ useEffect(() => {
   const handleImportSong = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      importSongFromFile(file).then(content => {
+      importSongFromFile(file).then((content: string) => {
         setInputText(content);
         parseAndLoadSequence();
-      }).catch(err => {
+      }).catch((err: Error) => {
         console.error('Failed to import song:', err);
       });
     }
@@ -4375,9 +4597,38 @@ useEffect(() => {
     return null;
   };
 
-  const detectDisplayTriadLabel = (pcsRel:Set<number>, _key:KeyName): string | null => {
+  const detectDisplayTriadLabel = (pcsRel:Set<number>, _key:KeyName, midiNotes?: number[]): string | null => {
     const names = ["C","C#","D","Eb","E","F","F#","G","Ab","A","Bb","B"];
     const norm = (x:number)=>((x%12)+12)%12;
+    
+    // ✅ v3.18.78: For sus chords, use lowest MIDI note to disambiguate
+    // Example: Gsus2 (G-A-D) vs Csus4 (C-F-G) - same PCs [0,2,7] or [0,5,7]
+    // Check if we have a sus chord pattern
+    let susCandidates: Array<{root: number, type: 'sus2'|'sus4'}> = [];
+    
+    for (let root=0; root<12; root++){
+      const sus2 = [root, norm(root+2), norm(root+7)];
+      const sus4 = [root, norm(root+5), norm(root+7)];
+      if (sus2.every(p=>pcsRel.has(p))) susCandidates.push({root, type: 'sus2'});
+      if (sus4.every(p=>pcsRel.has(p))) susCandidates.push({root, type: 'sus4'});
+    }
+    
+    // If we found sus chords and have MIDI notes, use lowest note to pick the right one
+    if (susCandidates.length > 0 && midiNotes && midiNotes.length > 0) {
+      const lowestNote = Math.min(...midiNotes);
+      const lowestPC = norm(lowestNote);
+      
+      // Find which sus chord has the lowest note as its root
+      const match = susCandidates.find(c => c.root === lowestPC);
+      if (match) {
+        return `${names[match.root]}${match.type}`;
+      }
+      
+      // Fallback: return first sus candidate if lowest note doesn't match any root
+      return `${names[susCandidates[0].root]}${susCandidates[0].type}`;
+    }
+    
+    // Original logic for non-sus or when no MIDI notes available
     for (let root=0; root<12; root++){
       const sus2 = [root, norm(root+2), norm(root+7)];
       if (sus2.every(p=>pcsRel.has(p))) return `${names[root]}sus2`;
@@ -5273,7 +5524,7 @@ useEffect(() => {
       }
     }
 
-    const triDisp = detectDisplayTriadLabel(pcsRel, baseKeyRef.current);
+    const triDisp = detectDisplayTriadLabel(pcsRel, baseKeyRef.current, absHeld);
     console.log('[DETECT] Fallback:', { triDisp, absName, displayName, result: triDisp || displayName });
     centerOnly(triDisp || displayName);
   }
@@ -5459,40 +5710,55 @@ useEffect(() => {
     fontFamily: CENTER_FONT_FAMILY, paintOrder: "stroke", stroke: "#000", strokeWidth: 1.2 as any
   };
 
-  /* ---------- glow layer (click point indicator) ---------- */
+  /* ---------- glow layer (organic misty effect) ---------- */
   const glowLayer = useMemo(() => {
-    console.log('💫 Rendering glowLayer:', wedgeGlow);
     if (!wedgeGlow) return null;
     
     const color = wedgeGlow.is7th ? "#FF1493" : "#00CED1";
-    console.log('💫 Creating glow circles at', wedgeGlow.x, wedgeGlow.y, 'color:', color);
+    const number = wedgeGlow.is7th ? "4" : "3";
+    
+    // Position number at 30 degrees (roughly 1 o'clock position)
+    const angle = 30 * (Math.PI / 180);
+    const labelRadius = 14;
+    const labelX = wedgeGlow.x + Math.cos(angle) * labelRadius;
+    const labelY = wedgeGlow.y - Math.sin(angle) * labelRadius;
     
     return (
       <g key="click-glow">
-        {/* Outer glow ring */}
+        {/* Define radial gradient from colored center fading to transparent */}
+        <defs>
+          <radialGradient id="clickGlow" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor={color} stopOpacity="0.8" />
+            <stop offset="60%" stopColor={color} stopOpacity="0.4" />
+            <stop offset="100%" stopColor={color} stopOpacity="0" />
+          </radialGradient>
+        </defs>
+        
+        {/* Circle with gradient - fades to transparent */}
         <circle 
           cx={wedgeGlow.x} 
           cy={wedgeGlow.y} 
-          r={30}
-          fill="none"
-          stroke={color}
-          strokeWidth={8}
-          opacity={0.6}
-          style={{
-            filter: 'blur(8px)'
-          } as any}
+          r={22}
+          fill="url(#clickGlow)"
         />
-        {/* Inner bright spot */}
-        <circle 
-          cx={wedgeGlow.x} 
-          cy={wedgeGlow.y} 
-          r={12}
-          fill={color}
-          opacity={0.8}
+        
+        {/* Number at 30° (1 o'clock) - clear of cursor */}
+        <text
+          x={labelX}
+          y={labelY + 4}
+          textAnchor="middle"
+          fontSize={11}
+          fontWeight={700}
+          fill="white"
           style={{
-            filter: 'blur(4px)'
+            pointerEvents: 'none',
+            paintOrder: 'stroke',
+            stroke: '#000',
+            strokeWidth: 2
           } as any}
-        />
+        >
+          {number}
+        </text>
       </g>
     );
   }, [wedgeGlow]);
@@ -5600,6 +5866,13 @@ useEffect(() => {
                threshold: SEVENTH_RADIUS_THRESHOLD,
                playWith7th
              });
+             
+             // ✅ v3.18.78: Show subtle glow at click point
+             setWedgeGlow({ x: svgP.x, y: svgP.y, is7th: playWith7th });
+             setTimeout(() => {
+               setWedgeGlow(null);
+             }, 400);
+             
              previewFn(fn, playWith7th);
            }}
            onPointerEnter={(e)=>{
@@ -5652,11 +5925,9 @@ useEffect(() => {
                const playWith7th = normalizedRadius < SEVENTH_RADIUS_THRESHOLD;
                lastPlayedWith7thRef.current = playWith7th;
                
-               // ✅ v3.18.60: Show glow at click point with debug logging
-               console.log('💫 Setting glow:', { x: svgP.x, y: svgP.y, is7th: playWith7th });
+               // ✅ v3.18.78: Show glow when dragging between wedges too
                setWedgeGlow({ x: svgP.x, y: svgP.y, is7th: playWith7th });
                setTimeout(() => {
-                 console.log('💫 Clearing glow');
                  setWedgeGlow(null);
                }, 400);
                
@@ -7482,7 +7753,7 @@ useEffect(() => {
               
               {/* Row 1: Sequence display - v3.4.3: Always visible, shows message when not EXPERT */}
               {skillLevel === "EXPERT" ? (
-                sequence.length > 0 && (
+                sequence.length > 0 ? (
                   <div style={{
                     border:'1px solid #374151',
                     borderRadius:8,
@@ -7534,8 +7805,13 @@ useEffect(() => {
                               const isCurrent = globalIdx === displayIndex;
                               const isComment = item.kind === "comment";
                               const isTitle = item.kind === "title";
+                              // ✅ v3.18.78: Hide RHYTHM, LOOP, and TEMPO directives from display
+                              const isConfig = item.kind === "modifier" && item.chord && 
+                                (item.chord.startsWith("RHYTHM") || 
+                                 item.chord === "LOOP" || 
+                                 item.chord.startsWith("TEMPO"));
                               
-                              if (isTitle) return null;
+                              if (isTitle || isConfig) return null;
                               
                               return (
                                 <span key={globalIdx} style={{
@@ -7557,6 +7833,21 @@ useEffect(() => {
                       })()}
                     </div>
                   </div>
+                ) : (
+                  // ✅ v3.18.78: Placeholder when no sequence loaded in EXPERT mode
+                  <div style={{
+                    border:'1px solid #374151',
+                    borderRadius:8,
+                    background:'#0f172a',
+                    padding:'8px 12px',
+                    marginBottom: 0,
+                    textAlign:'center',
+                    color:'#6b7280',
+                    fontSize:11,
+                    fontStyle:'italic'
+                  }}>
+                    Load a demo song or type chords above to begin
+                  </div>
                 )
               ) : (
                 <div style={{
@@ -7576,10 +7867,13 @@ useEffect(() => {
                 }}>
                   {/* ✅ v3.18.46: Dynamic banner message with link parsing */}
                   {(() => {
-                    // Use custom banner if set, otherwise default message WITH link syntax
-                    const message = bannerMessage || "[[Expert mode|expert]] for sequencer. Join a [[gym|https://beatkitchen.io/classroom]] to learn some music theory!";
+                    // ✅ v3.18.78: Use DEFAULT_BANNER from demoSongs.ts - no more hardcoded messages!
+                    const message = (bannerMessage && bannerMessage.trim())
+                      ? bannerMessage 
+                      : DEFAULT_BANNER;
                     console.log('🎨 Banner message:', message);
                     console.log('🎨 bannerMessage state:', bannerMessage);
+                    console.log('🎨 Using fallback?', bannerMessage === undefined || bannerMessage === null);
                     
                     // Parse [[link text|url]] format
                     const linkRegex = /\[\[([^\|]+)\|([^\]]+)\]\]/g;
@@ -8388,7 +8682,14 @@ useEffect(() => {
               
               {/* Row 2: Sequencer + Buttons - EXPERT ONLY */}
               {skillLevel === "EXPERT" && (
-                <div style={{marginBottom: 0, display:'flex', gap:8, alignItems:'stretch', maxWidth:'100%', overflow:'visible'  /* ✅ v3.17.95: visible so load menu can show above, marginBottom:0 to prevent scrollbar */}}>
+                <div style={{
+                  marginBottom: 0, 
+                  display:'flex', 
+                  flexDirection: 'column',
+                  gap:8, 
+                  maxWidth:'100%',
+                  position: 'relative'
+                }}>
                   <textarea
                     ref={textareaRef}
                     placeholder={'Type chords, modifiers, and comments...\nExamples:\n@TITLE Sequence Name, @KEY C\nC, Am7, F, G7\n@SUB F, Bb, C7, @HOME\n@REL Em, Am, @PAR Cm, Fm\n@KEY G, D, G, C\n# Verse: lyrics or theory note'}
@@ -8397,7 +8698,7 @@ useEffect(() => {
                     onChange={(e)=>setInputText(e.target.value)}
                     onKeyDown={handleInputKeyNav}
                     style={{
-                      flex: 1,
+                      width: '100%',
                       padding:'8px 10px',
                       border:'1px solid #374151',
                       background: '#0f172a',
@@ -8405,20 +8706,24 @@ useEffect(() => {
                       borderRadius:8,
                       fontFamily:'ui-sans-serif, system-ui',
                       resize:'vertical',
-                      fontSize: isDesktop ? 12 : 16, // ✅ v3.17.85: 16px on mobile prevents iOS zoom
-                      lineHeight: '1.5', // v3.2.5: Explicit line-height for better click targets
-                      userSelect: 'text' // ✅ v3.17.12: Allow text selection in editor
+                      minHeight: 72, // ✅ v3.18.78: Minimum 3 rows
+                      maxHeight: 240, // ✅ v3.18.78: Reduced max to keep buttons visible
+                      fontSize: isDesktop ? 12 : 16,
+                      lineHeight: '1.5',
+                      userSelect: 'text',
+                      overflow: 'auto' // ✅ v3.18.78: Scroll if content exceeds maxHeight
                     }}
                   />
                   
-                  {/* ✅ v3.17.85: 2x2 Button Grid - Constrained width */}
+                  {/* ✅ v3.18.78: Single row button layout - Ready, Clear, Load, Share */}
                   <div style={{
                     display: 'grid',
-                    gridTemplateColumns: 'repeat(2, 120px)',
+                    gridTemplateColumns: 'repeat(4, 120px)',
+                    gridTemplateRows: '40px',
                     gap: 8,
-                    marginTop: 8,
+                    flexShrink: 0,
                     position: 'relative',
-                    zIndex: 100000  // ✅ v3.17.91: High z-index so load menu appears above keyboard
+                    zIndex: 100000
                   }}>
                     {/* Top Left: Enter Button */}
                     <button 
@@ -9158,6 +9463,6 @@ useEffect(() => {
   );
 }
 
-// HarmonyWheel v3.18.61 - PAR space fixes: G triad (V/vi) + Ab chord (IV wedge). Requires modes.ts v3.18.61
+// HarmonyWheel v3.18.78 - PAR space fixes: G triad (V/vi) + Ab chord (IV wedge). Requires modes.ts v3.18.78
 
-// EOF - HarmonyWheel.tsx v3.18.61
+// EOF - HarmonyWheel.tsx v3.18.78
