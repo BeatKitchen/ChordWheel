@@ -1,5 +1,12 @@
 /*
- * HarmonyWheel.tsx — v3.18.53 🔧 Triple Fix!
+ * HarmonyWheel.tsx — v3.18.54 🎵 Explicit Rhythm Start
+ * 
+ * 🎵 v3.18.54 PERFORMANCE PAD RHYTHM FIX:
+ * - **Explicit rhythm trigger**: Performance pad now calls startRhythmLoop() directly
+ * - **50ms delay**: Waits for latchedAbsNotes to update after previewFn()
+ * - **Checks rhythm enabled**: Only starts if rhythmEnabledRef.current === true
+ * - Should fix iOS/mobile rhythm playback when holding pads
+ * - If this still doesn't work, the issue may be iOS audio context restrictions
  * 
  * 🔧 v3.18.53 THREE MAJOR FIXES:
  * 
@@ -1605,7 +1612,7 @@ import {
   parseSongMetadata
 } from "./lib/songManager";
 
-const HW_VERSION = 'v3.18.53';
+const HW_VERSION = 'v3.18.54';
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -2413,7 +2420,7 @@ useEffect(() => {
   };
 
   const parseAndLoadSequence = ()=>{
-    const APP_VERSION = "v3.18.53-harmony-wheel";
+    const APP_VERSION = "v3.18.54-harmony-wheel";
     console.log('=== PARSE AND LOAD START ===');
     console.log('🏷️  APP VERSION:', APP_VERSION);
     console.log('Input text:', inputText);
@@ -8591,10 +8598,17 @@ useEffect(() => {
                               // Flash this key
                               setPerformanceFlashKey(key);
                               
-                              // Play the chord and start rhythm if enabled
+                              // Play the chord
                               previewFn(fn as Fn, with7th);
                               
-                              // Don't auto-clear - let pointer up handle it
+                              // ✅ v3.18.54: Explicitly start rhythm for iOS/mobile
+                              if (rhythmEnabledRef.current && latchedAbsNotesRef.current.length > 0) {
+                                setTimeout(() => {
+                                  if (latchedAbsNotesRef.current.length > 0) {
+                                    startRhythmLoop(latchedAbsNotesRef.current, 0);
+                                  }
+                                }, 50);
+                              }
                             }}
                             onPointerUp={(e) => {
                               e.stopPropagation();
@@ -9020,6 +9034,6 @@ useEffect(() => {
   );
 }
 
-// HarmonyWheel v3.18.53 - Rhythm patterns finally work! @directives parsed before bar notation
+// HarmonyWheel v3.18.54 - Rhythm patterns finally work! @directives parsed before bar notation
 
-// EOF - HarmonyWheel.tsx v3.18.53
+// EOF - HarmonyWheel.tsx v3.18.54
