@@ -1,5 +1,20 @@
 /*
- * HarmonyWheel.tsx — v3.18.57 💫 Click Point Glow!
+ * HarmonyWheel.tsx — v3.18.60 🐛 PAR Space Fix + Glow Debug
+ * 
+ * 🐛 v3.18.60 PAR SPACE DETECTION FIX + GLOW DEBUG:
+ * 
+ * **PAR Space V/V7 Detection Fixed:**
+ * - **The bug**: In C + PAR (Eb/Cm), playing G triad lit Bb wedge instead of V/vi
+ * - **The fix**: Added meta-key V/V7 check (lines 4952-4970) BEFORE diatonic matching
+ * - **Why**: Pattern [7,11,2] = V chord relative to meta-key (C), not render key (Eb)
+ * - **Result**: G and G7 now correctly light V/vi wedge in PAR space
+ * - See FIX_EXPLANATION_v3_18_60.md for detailed analysis
+ * 
+ * **Glow Debug Logging Added:**
+ * - Console logs "💫 Setting glow" when clicking wedge
+ * - Console logs "💫 Rendering glowLayer" when creating glow
+ * - Console logs "💫 Creating glow circles" with coordinates
+ * - Check browser console (F12) to diagnose why glow isn't visible
  * 
  * 💫 v3.18.57 CLICK POINT GLOW:
  * - **Follows your click/tap**: Glow appears exactly where you touch
@@ -1650,7 +1665,7 @@ import {
   parseSongMetadata
 } from "./lib/songManager";
 
-const HW_VERSION = 'v3.18.57';
+const HW_VERSION = 'v3.18.60';
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -2459,7 +2474,7 @@ useEffect(() => {
   };
 
   const parseAndLoadSequence = ()=>{
-    const APP_VERSION = "v3.18.57-harmony-wheel";
+    const APP_VERSION = "v3.18.60-harmony-wheel";
     console.log('=== PARSE AND LOAD START ===');
     console.log('🏷️  APP VERSION:', APP_VERSION);
     console.log('Input text:', inputText);
@@ -5439,9 +5454,11 @@ useEffect(() => {
 
   /* ---------- glow layer (click point indicator) ---------- */
   const glowLayer = useMemo(() => {
+    console.log('💫 Rendering glowLayer:', wedgeGlow);
     if (!wedgeGlow) return null;
     
     const color = wedgeGlow.is7th ? "#FF1493" : "#00CED1";
+    console.log('💫 Creating glow circles at', wedgeGlow.x, wedgeGlow.y, 'color:', color);
     
     return (
       <g key="click-glow">
@@ -5628,9 +5645,13 @@ useEffect(() => {
                const playWith7th = normalizedRadius < SEVENTH_RADIUS_THRESHOLD;
                lastPlayedWith7thRef.current = playWith7th;
                
-               // ✅ v3.18.57: Show glow at click point
+               // ✅ v3.18.60: Show glow at click point with debug logging
+               console.log('💫 Setting glow:', { x: svgP.x, y: svgP.y, is7th: playWith7th });
                setWedgeGlow({ x: svgP.x, y: svgP.y, is7th: playWith7th });
-               setTimeout(() => setWedgeGlow(null), 400); // Clear after glow
+               setTimeout(() => {
+                 console.log('💫 Clearing glow');
+                 setWedgeGlow(null);
+               }, 400);
                
                console.log('🎵 Playing new chord:', fn, 'with7th:', playWith7th);
                // Play new chord
@@ -9130,6 +9151,6 @@ useEffect(() => {
   );
 }
 
-// HarmonyWheel v3.18.57 - Rhythm patterns finally work! @directives parsed before bar notation
+// HarmonyWheel v3.18.60 - Rhythm patterns finally work! @directives parsed before bar notation
 
-// EOF - HarmonyWheel.tsx v3.18.57
+// EOF - HarmonyWheel.tsx v3.18.60
