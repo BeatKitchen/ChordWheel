@@ -1,5 +1,22 @@
 /*
- * HarmonyWheel.tsx — v3.18.52 🎹 Performance Pad iOS Fix
+ * HarmonyWheel.tsx — v3.18.53 🔧 Triple Fix!
+ * 
+ * 🔧 v3.18.53 THREE MAJOR FIXES:
+ * 
+ * 1. **Intro Animation**: Starts sooner (100ms), opens at REL, single rotation
+ *    - Immediate start, hold at REL for 1s, rotate to HOME
+ *    - Bonus fade same timing, more elegant flow
+ * 
+ * 2. **Performance Pad Hold**: Click-and-hold now plays rhythm
+ *    - onPointerDown: Start chord + rhythm
+ *    - onPointerUp: Stop (clears notes)
+ *    - onPointerLeave: Also stops if drag off button
+ *    - Works like wedge clicks - hold to play rhythm
+ * 
+ * 3. **Space Lock Fixed**: Protection at setter level prevents bypassing
+ *    - setRelMinorActive, setVisitorActive, setSubdomActive now check spaceLocked
+ *    - No more accidental rotations from triple-taps or performance pad edge chords
+ *    - Lock icon now actually locks everything!
  * 
  * 🎹 v3.18.52 PERFORMANCE PAD TOUCH FIX:
  * - **onPointerDown for pad buttons**: Prevents iOS touch release issues
@@ -1588,7 +1605,7 @@ import {
   parseSongMetadata
 } from "./lib/songManager";
 
-const HW_VERSION = 'v3.18.52';
+const HW_VERSION = 'v3.18.53';
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -1697,16 +1714,28 @@ useEffect(() => {
 
   const [visitorActive,_setVisitorActive]=useState(false);
   const visitorActiveRef=useRef(false);
-  const setVisitorActive=(v:boolean)=>{ visitorActiveRef.current=v; _setVisitorActive(v); };
+  const setVisitorActive=(v:boolean)=>{ 
+    // ✅ v3.18.53: Space lock protection at setter level
+    if (spaceLocked && v !== visitorActiveRef.current) return;
+    visitorActiveRef.current=v; _setVisitorActive(v); 
+  };
 
   const [relMinorActive,_setRelMinorActive]=useState(false);
   const relMinorActiveRef=useRef(false);
-  const setRelMinorActive=(v:boolean)=>{ relMinorActiveRef.current=v; _setRelMinorActive(v); };
+  const setRelMinorActive=(v:boolean)=>{ 
+    // ✅ v3.18.53: Space lock protection at setter level
+    if (spaceLocked && v !== relMinorActiveRef.current) return;
+    relMinorActiveRef.current=v; _setRelMinorActive(v); 
+  };
 
   // SUB (F)
   const [subdomActive,_setSubdomActive]=useState(false);
   const subdomActiveRef=useRef(false);
-  const setSubdomActive=(v:boolean)=>{ subdomActiveRef.current=v; _setSubdomActive(v); };
+  const setSubdomActive=(v:boolean)=>{ 
+    // ✅ v3.18.53: Space lock protection at setter level
+    if (spaceLocked && v !== subdomActiveRef.current) return;
+    subdomActiveRef.current=v; _setSubdomActive(v); 
+  };
   const subdomLatchedRef = useRef(false);
   const subLastSeenFnRef = useRef<Fn>("I");
   const subExitCandidateSinceRef = useRef<number | null>(null);
@@ -2384,7 +2413,7 @@ useEffect(() => {
   };
 
   const parseAndLoadSequence = ()=>{
-    const APP_VERSION = "v3.18.52-harmony-wheel";
+    const APP_VERSION = "v3.18.53-harmony-wheel";
     console.log('=== PARSE AND LOAD START ===');
     console.log('🏷️  APP VERSION:', APP_VERSION);
     console.log('Input text:', inputText);
@@ -3292,36 +3321,36 @@ useEffect(() => {
     }
   }, [performanceMode]);
 
-  // ✅ v3.18.50: Intro animation - slower, single fade with longer release
+  // ✅ v3.18.53: Intro animation - start at REL, single rotation to HOME
   useEffect(() => {
     if (!showIntroAnimation) return;
     
     const animate = async () => {
-      // Start at REL - triggers rotation via existing system
+      // Open directly at REL - no delay
       setRelMinorActive(true);
       setActiveFn("vi");
       
-      await new Promise(resolve => setTimeout(resolve, 800)); // Longer pause at REL
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Hold at REL
       
-      // Go to HOME - triggers rotation back via existing system
+      // Rotate to HOME
       setRelMinorActive(false);
       setActiveFn("I");
       
-      await new Promise(resolve => setTimeout(resolve, 1800)); // Slower spin (was 1200ms)
+      await new Promise(resolve => setTimeout(resolve, 1800)); // Rotation time
       
-      // Single fade cycle with longer hold and release
+      // Single fade cycle for bonus wedges
       if (skillLevel === "ADVANCED" || skillLevel === "EXPERT") {
         setShowBonusWedges(true);
-        await new Promise(resolve => setTimeout(resolve, 1200)); // Longer hold at full opacity
+        await new Promise(resolve => setTimeout(resolve, 1200)); // Hold
         
         setShowBonusWedges(false);
-        await new Promise(resolve => setTimeout(resolve, 1200)); // Longer fade out
+        await new Promise(resolve => setTimeout(resolve, 1200)); // Fade out
       }
       
       setShowIntroAnimation(false);
     };
     
-    setTimeout(animate, 200); // Start sooner (was 800ms)
+    setTimeout(animate, 100); // Start almost immediately
   }, []);
 
   useEffect(() => {
@@ -8561,15 +8590,24 @@ useEffect(() => {
                               }
                               // Flash this key
                               setPerformanceFlashKey(key);
-                              performanceFlashTimeoutRef.current = setTimeout(() => {
-                                setPerformanceFlashKey('');
-                              }, 500);
-                              // Play the chord
+                              
+                              // Play the chord and start rhythm if enabled
                               previewFn(fn as Fn, with7th);
-                              // Clear piano highlights after 500ms
-                              setTimeout(() => {
-                                setLatchedAbsNotes([]);
-                              }, 500);
+                              
+                              // Don't auto-clear - let pointer up handle it
+                            }}
+                            onPointerUp={(e) => {
+                              e.stopPropagation();
+                              e.preventDefault();
+                              // Stop flashing
+                              setPerformanceFlashKey('');
+                              // Clear piano highlights
+                              setLatchedAbsNotes([]);
+                            }}
+                            onPointerLeave={(e) => {
+                              // Also clear if pointer leaves button while held
+                              setPerformanceFlashKey('');
+                              setLatchedAbsNotes([]);
                             }}
                             style={{
                               display: 'flex',
@@ -8982,6 +9020,6 @@ useEffect(() => {
   );
 }
 
-// HarmonyWheel v3.18.52 - Rhythm patterns finally work! @directives parsed before bar notation
+// HarmonyWheel v3.18.53 - Rhythm patterns finally work! @directives parsed before bar notation
 
-// EOF - HarmonyWheel.tsx v3.18.52
+// EOF - HarmonyWheel.tsx v3.18.53
