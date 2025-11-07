@@ -1,5 +1,11 @@
 /*
- * HarmonyWheel.tsx — v3.18.51 📱 iOS Touch Fix
+ * HarmonyWheel.tsx — v3.18.52 🎹 Performance Pad iOS Fix
+ * 
+ * 🎹 v3.18.52 PERFORMANCE PAD TOUCH FIX:
+ * - **onPointerDown for pad buttons**: Prevents iOS touch release issues
+ * - **Added stopPropagation**: Stops bubbling to parent elements  
+ * - **Removed separate onMouseDown**: Combined into single pointer handler
+ * - Pad buttons should only trigger on direct press, not on release
  * 
  * 📱 v3.18.51 IOS PERFORMANCE MODE FIX:
  * - **Switched to onPointerDown**: Prevents double-fire on iOS Chrome
@@ -1582,7 +1588,7 @@ import {
   parseSongMetadata
 } from "./lib/songManager";
 
-const HW_VERSION = 'v3.18.51';
+const HW_VERSION = 'v3.18.52';
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -2378,7 +2384,7 @@ useEffect(() => {
   };
 
   const parseAndLoadSequence = ()=>{
-    const APP_VERSION = "v3.18.51-harmony-wheel";
+    const APP_VERSION = "v3.18.52-harmony-wheel";
     console.log('=== PARSE AND LOAD START ===');
     console.log('🏷️  APP VERSION:', APP_VERSION);
     console.log('Input text:', inputText);
@@ -8545,7 +8551,9 @@ useEffect(() => {
                         return (
                           <div 
                             key={key} 
-                            onClick={(e) => {
+                            onPointerDown={(e) => {
+                              e.stopPropagation();
+                              e.preventDefault();
                               const with7th = e.shiftKey;
                               // Clear any existing timeout
                               if (performanceFlashTimeoutRef.current) {
@@ -8563,7 +8571,6 @@ useEffect(() => {
                                 setLatchedAbsNotes([]);
                               }, 500);
                             }}
-                            onMouseDown={(e) => e.preventDefault()}
                             style={{
                               display: 'flex',
                               flexDirection: 'column',
@@ -8975,6 +8982,6 @@ useEffect(() => {
   );
 }
 
-// HarmonyWheel v3.18.51 - Rhythm patterns finally work! @directives parsed before bar notation
+// HarmonyWheel v3.18.52 - Rhythm patterns finally work! @directives parsed before bar notation
 
-// EOF - HarmonyWheel.tsx v3.18.51
+// EOF - HarmonyWheel.tsx v3.18.52
