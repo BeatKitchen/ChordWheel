@@ -1,5 +1,12 @@
 /*
- * HarmonyWheel.tsx — v3.18.60 🐛 PAR Space Fix + Glow Debug
+ * HarmonyWheel.tsx — v3.18.61 🐛 PAR Space Fixes (G triad + Ab chord)
+ * 
+ * 🐛 v3.18.61 PAR SPACE DETECTION FIXES (modes.ts change required):
+ * - **Ab/Bb/Cm/etc now work in PAR**: Fixed getDiatonicTablesFor() in modes.ts
+ * - Ab was showing in hub but not lighting wedge (fell through to centerOnly)
+ * - Root cause: getDiatonicTablesFor() ignored key parameter, always returned C patterns
+ * - Ab isn't diatonic to C, so it never matched! Should use EB_REQT when key="Eb"
+ * - **REQUIRES modes.ts v3.18.61** for full fix
  * 
  * 🐛 v3.18.60 PAR SPACE DETECTION FIX + GLOW DEBUG:
  * 
@@ -1665,7 +1672,7 @@ import {
   parseSongMetadata
 } from "./lib/songManager";
 
-const HW_VERSION = 'v3.18.60';
+const HW_VERSION = 'v3.18.61';
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -9151,6 +9158,6 @@ useEffect(() => {
   );
 }
 
-// HarmonyWheel v3.18.60 - Rhythm patterns finally work! @directives parsed before bar notation
+// HarmonyWheel v3.18.61 - PAR space fixes: G triad (V/vi) + Ab chord (IV wedge). Requires modes.ts v3.18.61
 
-// EOF - HarmonyWheel.tsx v3.18.60
+// EOF - HarmonyWheel.tsx v3.18.61
