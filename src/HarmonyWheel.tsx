@@ -1,5 +1,43 @@
 /*
- * HarmonyWheel.tsx — v3.18.54 🎵 Explicit Rhythm Start
+ * HarmonyWheel.tsx — v3.18.57 💫 Click Point Glow!
+ * 
+ * 💫 v3.18.57 CLICK POINT GLOW:
+ * - **Follows your click/tap**: Glow appears exactly where you touch
+ * - **Two-layer effect**: Bright center spot + blurred ring
+ * - **Color-coded**: Cyan (triad/outer) vs Magenta (7th/inner)
+ * - **On top of wedge**: Now renders AFTER wedges for visibility
+ * - **30px outer ring + 12px center spot**
+ * - Should be much more obvious now!
+ * 
+ * ✨ v3.18.56 TWO FIXES:
+ * 
+ * 1. **Glow Z-Order Fixed**: 
+ *    - Glow now renders in dedicated layer BEFORE wedges
+ *    - Cyan (triad) and Magenta (7th) now visible behind wedges
+ *    - No more covering by other elements
+ * 
+ * 2. **Faster Intro Animation**:
+ *    - Bonus wedges pulse in HALF the time (600ms vs 1200ms)
+ *    - Pulse starts DURING rotation (overlaps for speed)
+ *    - Total intro: ~2.5 seconds (was ~5 seconds)
+ *    - CSS transitions sped up to 0.6s
+ * 
+ * ✅ FIXED v3.18.60 (was KNOWN BUG):
+ * - PAR space chord detection: G now correctly fires V/vi wedge (not Bb)
+ * - Fix: Added meta-key V/V7 check before PAR diatonic matching
+ * - Both G and G7 now light V/vi wedge in PAR space
+ * - Pattern [7,11,2] checked before falling through to PAR diatonic tables
+ * 
+ * ✨ v3.18.55 TRIAD VS 7TH VISUAL FEEDBACK:
+ * - **Cyan glow**: Outer ring (triad) - #00CED1
+ * - **Magenta glow**: Inner ring (7th) - #FF1493  
+ * - **Behind wedge**: Glows from behind with blur effect
+ * - **300ms fade**: Appears on click, fades out smoothly
+ * - Now you can see exactly which zone you're hitting!
+ * 
+ * Color meanings:
+ * - Cool cyan = simple triad (3 notes)
+ * - Warm magenta = richer seventh (4 notes)
  * 
  * 🎵 v3.18.54 PERFORMANCE PAD RHYTHM FIX:
  * - **Explicit rhythm trigger**: Performance pad now calls startRhythmLoop() directly
@@ -1612,7 +1650,7 @@ import {
   parseSongMetadata
 } from "./lib/songManager";
 
-const HW_VERSION = 'v3.18.54';
+const HW_VERSION = 'v3.18.57';
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -1995,6 +2033,7 @@ useEffect(() => {
   // ✅ v3.17.24: Button pulse animation when key pressed
   const [pulsingButton, setPulsingButton] = useState<string | null>(null);
   const [pulsingWedge, setPulsingWedge] = useState<Fn | "">(""); // ✅ v3.17.85: Visual feedback on click
+  const [wedgeGlow, setWedgeGlow] = useState<{x: number, y: number, is7th: boolean} | null>(null); // ✅ v3.18.57: Click point glow
   const [showKeyDropdown, setShowKeyDropdown] = useState(false);
   const [showTransposeDropdown, setShowTransposeDropdown] = useState(false);
   const [showSongMenu, setShowSongMenu] = useState(false);
@@ -2420,7 +2459,7 @@ useEffect(() => {
   };
 
   const parseAndLoadSequence = ()=>{
-    const APP_VERSION = "v3.18.54-harmony-wheel";
+    const APP_VERSION = "v3.18.57-harmony-wheel";
     console.log('=== PARSE AND LOAD START ===');
     console.log('🏷️  APP VERSION:', APP_VERSION);
     console.log('Input text:', inputText);
@@ -3328,36 +3367,37 @@ useEffect(() => {
     }
   }, [performanceMode]);
 
-  // ✅ v3.18.53: Intro animation - start at REL, single rotation to HOME
+  // ✅ v3.18.56: Intro animation - faster bonus pulse, overlaps with rotation
   useEffect(() => {
     if (!showIntroAnimation) return;
     
     const animate = async () => {
-      // Open directly at REL - no delay
+      // Open directly at REL
       setRelMinorActive(true);
       setActiveFn("vi");
       
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Hold at REL
+      await new Promise(resolve => setTimeout(resolve, 600)); // Shorter hold at REL
       
-      // Rotate to HOME
+      // Start rotation to HOME
       setRelMinorActive(false);
       setActiveFn("I");
       
-      await new Promise(resolve => setTimeout(resolve, 1800)); // Rotation time
+      // Start bonus pulse DURING rotation (don't wait for it to finish)
+      await new Promise(resolve => setTimeout(resolve, 800)); // Overlap timing
       
-      // Single fade cycle for bonus wedges
+      // Faster bonus pulse cycle
       if (skillLevel === "ADVANCED" || skillLevel === "EXPERT") {
         setShowBonusWedges(true);
-        await new Promise(resolve => setTimeout(resolve, 1200)); // Hold
+        await new Promise(resolve => setTimeout(resolve, 600)); // Faster hold
         
         setShowBonusWedges(false);
-        await new Promise(resolve => setTimeout(resolve, 1200)); // Fade out
+        await new Promise(resolve => setTimeout(resolve, 600)); // Faster fade
       }
       
       setShowIntroAnimation(false);
     };
     
-    setTimeout(animate, 100); // Start almost immediately
+    setTimeout(animate, 100);
   }, []);
 
   useEffect(() => {
@@ -4910,7 +4950,21 @@ useEffect(() => {
         return;
       }
       
-      // Now check diatonic (after vii° check)
+      // v3.18.60 FIX: Check meta-key V and V7 BEFORE diatonic matching
+      // When in PAR (e.g., C→Eb/Cm), meta-key V (G in C) should light V/vi wedge
+      // This represents V of the parallel minor (V of Cm = G)
+      // Pattern [7,11,2] = V triad, [7,11,2,5] = V7 (relative to meta-key)
+      // MUST check BEFORE diatonic to prevent matching PAR space V (Bb in Eb)
+      // Works universally: pcsRel is relative to baseKey, so [7,11,2] = V in any key
+      const hasMetaV = isSubset([7,11,2]);
+      const hasMetaV7 = isSubset([7,11,2,5]);
+      if (hasMetaV || hasMetaV7) {
+        // Light V/vi wedge, display actual chord name (G or G7 in C, D or D7 in G, etc.)
+        setActiveWithTrail("V/vi", displayName);
+        return;
+      }
+      
+      // Now check diatonic (after vii° and meta-V checks)
       const m7 = firstMatch(parDiatonic.req7, pcsRel); 
       if(m7){ 
         // Prefer displayName for 7th chords (with corrected spelling)
@@ -5383,6 +5437,42 @@ useEffect(() => {
     fontFamily: CENTER_FONT_FAMILY, paintOrder: "stroke", stroke: "#000", strokeWidth: 1.2 as any
   };
 
+  /* ---------- glow layer (click point indicator) ---------- */
+  const glowLayer = useMemo(() => {
+    if (!wedgeGlow) return null;
+    
+    const color = wedgeGlow.is7th ? "#FF1493" : "#00CED1";
+    
+    return (
+      <g key="click-glow">
+        {/* Outer glow ring */}
+        <circle 
+          cx={wedgeGlow.x} 
+          cy={wedgeGlow.y} 
+          r={30}
+          fill="none"
+          stroke={color}
+          strokeWidth={8}
+          opacity={0.6}
+          style={{
+            filter: 'blur(8px)'
+          } as any}
+        />
+        {/* Inner bright spot */}
+        <circle 
+          cx={wedgeGlow.x} 
+          cy={wedgeGlow.y} 
+          r={12}
+          fill={color}
+          opacity={0.8}
+          style={{
+            filter: 'blur(4px)'
+          } as any}
+        />
+      </g>
+    );
+  }, [wedgeGlow]);
+
   /* ---------- wedges ---------- */
   const wedgeNodes = useMemo(()=>{
     // v3.5.0: Use effectiveBaseKey for transpose support
@@ -5537,6 +5627,10 @@ useEffect(() => {
                
                const playWith7th = normalizedRadius < SEVENTH_RADIUS_THRESHOLD;
                lastPlayedWith7thRef.current = playWith7th;
+               
+               // ✅ v3.18.57: Show glow at click point
+               setWedgeGlow({ x: svgP.x, y: svgP.y, is7th: playWith7th });
+               setTimeout(() => setWedgeGlow(null), 400); // Clear after glow
                
                console.log('🎵 Playing new chord:', fn, 'with7th:', playWith7th);
                // Play new chord
@@ -6939,6 +7033,8 @@ useEffect(() => {
   {/* Labels moved to status bar area */}
 
   {wedgeNodes}
+  {/* ✅ v3.18.57: Glow layer drawn last to appear on top */}
+  {glowLayer}
 
               {/* Hub */}
               <circle 
@@ -7010,7 +7106,7 @@ useEffect(() => {
       key="bonus-persistent"
       style={{
         opacity: showBonusWedges ? 0.5 : 0,
-        transition: 'opacity 1.2s ease-in-out'  // Match intro overlay timing
+        transition: 'opacity 0.6s ease-in-out'  // Faster (was 1.2s)
       } as any}
     >
       {wedges.map(w => {
@@ -7205,7 +7301,7 @@ useEffect(() => {
       key="intro-bonus-overlay"
       style={{
         opacity: showBonusWedges ? 0.5 : 0,
-        transition: 'opacity 1.2s ease-in-out',  // Slower transition for longer release
+        transition: 'opacity 0.6s ease-in-out',  // Faster
         pointerEvents: 'none'  // Don't interfere with clicks
       } as any}
     >
@@ -9034,6 +9130,6 @@ useEffect(() => {
   );
 }
 
-// HarmonyWheel v3.18.54 - Rhythm patterns finally work! @directives parsed before bar notation
+// HarmonyWheel v3.18.57 - Rhythm patterns finally work! @directives parsed before bar notation
 
-// EOF - HarmonyWheel.tsx v3.18.54
+// EOF - HarmonyWheel.tsx v3.18.57
