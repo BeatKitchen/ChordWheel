@@ -136,33 +136,38 @@ export function shouldStaySubdom(
 
 /**
  * Generate dynamic diatonic matching tables for any key
- * Returns { req7, reqt } - patterns are ALREADY relative, no transposition needed!
+ * Returns { req7, reqt } - patterns are relative to baseKey (C in this app)
  * 
- * v3.6.4 CRITICAL FIX: Patterns in C_REQ7/C_REQT are relative intervals (e.g., [5,9,0] = IV)
- * These patterns work in ANY key because they're relative to the tonic.
- * Previous bug: Was transposing patterns to absolute PCs, breaking matching.
- * Fix: Return patterns unchanged - they're universal relative intervals!
+ * v3.18.61 FIX: Function was ignoring the key parameter and always returning C patterns!
+ * - When key="C" (or any key except Eb): Use C_REQ7/C_REQT
+ * - When key="Eb" (PAR space): Use EB_REQ7/EB_REQT
+ * 
+ * All patterns in both tables are relative to the meta-key (C), NOT relative to Eb.
+ * This works because pcsRel is always calculated relative to baseKey (C).
+ * 
+ * Example: Ab in PAR
+ * - Ab absolute = [8,0,3]
+ * - pcsRel (relative to C) = [8,0,3]
+ * - EB_REQT has: { n:"Ab", s:T([8,0,3]), f:"IV" } ← matches!
  */
 export function getDiatonicTablesFor(key: string): {
   req7: Array<{n: string, s: Set<number>, f: string}>,
   reqt: Array<{n: string, s: Set<number>, f: string}>
 } {
-  // Patterns are ALREADY relative intervals that work in any key
-  // No transposition needed!
+  // v3.18.61: Actually USE the key parameter!
+  // When in Eb space (PAR), use Eb patterns which contain Eb-diatonic chords
+  // All patterns are still relative to baseKey (C), not relative to Eb
+  const useEbPatterns = key === "Eb";
   
-  const req7 = C_REQ7.map(item => ({
-    n: item.n,
-    s: item.s, // Use pattern as-is (it's a relative interval)
-    f: item.f
-  }));
+  const req7 = useEbPatterns 
+    ? EB_REQ7.map(item => ({ n: item.n, s: item.s, f: item.f }))
+    : C_REQ7.map(item => ({ n: item.n, s: item.s, f: item.f }));
   
-  const reqt = C_REQT.map(item => ({
-    n: item.n,
-    s: item.s, // Use pattern as-is (it's a relative interval)
-    f: item.f
-  }));
+  const reqt = useEbPatterns
+    ? EB_REQT.map(item => ({ n: item.n, s: item.s, f: item.f }))
+    : C_REQT.map(item => ({ n: item.n, s: item.s, f: item.f }));
   
   return { req7, reqt };
 }
 
-// EOF - modes.ts v3.6.4
+// EOF - modes.ts v3.18.61
