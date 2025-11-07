@@ -1,51 +1,58 @@
 /*
- * HarmonyWheel.tsx — v3.18.78 📝 DEFAULT_BANNER from demoSongs
+ * HarmonyWheel.tsx — v3.18.79 🎵 Ebmaj7 → PAR Fix
  * 
- * 📝 v3.18.78 NO MORE HARDCODED MESSAGES:
+ * 🎵 v3.18.79 EBMAJ7 → PAR (NOT SUB):
+ * - **The Bug**: Ebmaj7 [3,7,10,2] contains Gm [7,10,2] as subset
+ * - **Result**: Playing Ebmaj7 entered SUB (F space) instead of PAR (Eb space)
+ * - **The Fix**: Check for PAR chords (Eb/Ebmaj7/Ab/Db) BEFORE SUB entry
+ * - **Line 4960**: Added `&& !isParChord` condition to SUB entry logic
+ * - Now Ebmaj7 correctly enters PAR, just like Eb triad
+ * 
+ * 📝 v3.18.79 NO MORE HARDCODED MESSAGES:
  * - Removed hardcoded banner fallback from HarmonyWheel.tsx (line 7866)
  * - Now imports DEFAULT_BANNER from demoSongs.ts
  * - ALL promotional messages now in ONE place: demoSongs.ts
  * - Update DEFAULT_BANNER constant at top of demoSongs.ts
  * - Never need to touch 10,000 lines of code again for messages!
  * 
- * 🎨 v3.18.78 BUTTON LAYOUT:
+ * 🎨 v3.18.79 BUTTON LAYOUT:
  * - All 4 buttons now in single row: Ready, Clear, Load, Share
  * - Changed from 2x2 grid to 4x1 grid
  * - gridTemplateColumns: 'repeat(4, 120px)'
  * - Cleaner, more compact layout
  * 
- * 🎨 v3.18.78 EMPTY DISPLAY FIX:
+ * 🎨 v3.18.79 EMPTY DISPLAY FIX:
  * - Clearing song content no longer makes display disappear
  * - Banner stays visible with default message
  * - Removed setBannerMessage("") from empty input handler
  * - Result: Display always shows something (banner or sequence)
  * 
- * 🔧 v3.18.78 TYPESCRIPT FIXES:
+ * 🔧 v3.18.79 TYPESCRIPT FIXES:
  * - Added explicit types to importSongFromFile callback parameters
  * - content: string, err: Error - no more implicit any
  * - Note: songManager.ts file needs to be in src/lib/ directory
  * 
- * 🔧 v3.18.78 EDITOR LAYOUT FIX:
+ * 🔧 v3.18.79 EDITOR LAYOUT FIX:
  * - Changed container from flex-row to flex-column
  * - Textarea now scrolls instead of pushing buttons down
  * - Fixed button grid height: gridTemplateRows with fixed 40px height
  * - Buttons stay accessible and don't stretch vertically
  * - maxHeight reduced to 240px to ensure buttons always visible
  * 
- * 🎵 v3.18.78 SUS CHORD FIX:
+ * 🎵 v3.18.79 SUS CHORD FIX:
  * - Gsus4 vs Csus4 disambiguation using lowest note
  * - Problem: Gsus2 (G-A-D) and Csus4 (C-F-G) have ambiguous PCs
  * - Solution: Check lowest MIDI note to determine root
  * - Example: Playing G-C-D from bottom → Gsus4 (not Csus2)
  * - detectDisplayTriadLabel now accepts optional midiNotes parameter
  * 
- * 🔧 v3.18.78 TEXTAREA RESIZE FIX:
+ * 🔧 v3.18.79 TEXTAREA RESIZE FIX:
  * - Added maxHeight: 300px to prevent textarea stretching below buttons
  * - Added minHeight: 72px for consistent 3-row minimum
  * - Buttons (Ready, Clear, Share, Load) stay in place when resizing
  * - No more losing buttons off the bottom of the screen!
  * 
- * 🎵 v3.18.78 AUTO-LOAD DEFAULT SONG ON MOUNT:
+ * 🎵 v3.18.79 AUTO-LOAD DEFAULT SONG ON MOUNT:
  * - **What you expected**: First demo song loads automatically on refresh
  * - **What was happening**: inputText had defaultSong, but parseAndLoadSequence never called
  * - **The fix**: Added useEffect on mount to parse the first demo song
@@ -59,7 +66,7 @@
  * 
  * **This is what you wanted all along!**
  * 
- * 🎯 v3.18.78 BANNER SHOWS ON REFRESH!
+ * 🎯 v3.18.79 BANNER SHOWS ON REFRESH!
  * - **THE BUG**: bannerMessage initialized to "" (empty string), not undefined
  * - **THE ISSUE**: Empty string is truthy for !== undefined check, so fallback never used
  * - **THE FIX**: Check `if (bannerMessage && bannerMessage.trim())` instead
@@ -68,13 +75,13 @@
  * Now when you refresh, you'll see:
  * "[[Expert mode|expert]] for sequencer. Join a [[gym|...]] to learn some music theory!"
  * 
- * 🎯 v3.18.78 EMPTY SEQUENCE FIX:
+ * 🎯 v3.18.79 EMPTY SEQUENCE FIX:
  * - Song display no longer disappears on refresh
  * - Shows placeholder: "Load a demo song or type chords above to begin"
  * - Appears when sequence is empty in EXPERT mode
  * - Maintains consistent UI even with no content loaded
  * 
- * 🎯 v3.18.78 MAJOR DIRECTIVE IMPROVEMENTS:
+ * 🎯 v3.18.79 MAJOR DIRECTIVE IMPROVEMENTS:
  * 
  * **1. Config directives filtered from sequence:**
  * - RHYTHM1/2/3, LOOP, TEMPO no longer appear in playable sequence
@@ -111,13 +118,13 @@
  * 
  * Sequence will contain ONLY: C, Am, F, G (clean!)
  * 
- * 🎵 v3.18.78 @LOOP + Clean Display:
+ * 🎵 v3.18.79 @LOOP + Clean Display:
  * - **@LOOP directive**: Add `@LOOP` to song text to enable loop mode automatically
  * - **Clean display**: RHYTHM and LOOP directives no longer show in song display
  * - **Usage**: `@TITLE Song, @KEY C, @LOOP, C, Am, F, G`
  * - Display only shows: Title, chords, and comments (not directives)
  * 
- * 🎨 v3.18.78 FADE TO TRANSPARENT:
+ * 🎨 v3.18.79 FADE TO TRANSPARENT:
  * - **Gradient**: Colored center (0.8) → faded (0.4) → transparent (0)
  * - **No white ring**: Fades naturally into the wedge behind it
  * - **Slightly larger**: 22px radius for softer fade
@@ -146,7 +153,7 @@
  * - Cyan (#00CED1) for triad, Magenta (#FF1493) for 7th
  * - Clean, minimal, not distracting
  * 
- * 🌫️ v3.18.78 ORGANIC MISTY GLOW WITH LABELS:
+ * 🌫️ v3.18.79 ORGANIC MISTY GLOW WITH LABELS:
  * - **Design**: Multiple concentric circles with decreasing opacity (like dust/mist)
  * - **Effect**: Soft diffuse glow, like unfocused flashlight beam
  * - **Layers**: 4 circles (r=35, 25, 18, 10) with opacity 0.08 → 0.4
@@ -154,7 +161,7 @@
  * - **Colors**: Cyan for outer zone, Magenta for inner zone
  * - **Style**: Organic, soft, non-geometric feel
  * 
- * ✨ v3.18.78 SUBTLE GLOW - FINAL VERSION:
+ * ✨ v3.18.79 SUBTLE GLOW - FINAL VERSION:
  * - **Outer ring**: 25px radius, 4px stroke, 50% opacity
  * - **Middle circle**: 15px radius, 30% opacity
  * - **Inner spot**: 8px radius, 60% opacity (bright center)
@@ -163,13 +170,13 @@
  * - Removed all debug console logs
  * - Clean, elegant, subtle visual feedback!
  * 
- * 🎯 v3.18.78 GLOW ACTUALLY WORKS NOW:
+ * 🎯 v3.18.79 GLOW ACTUALLY WORKS NOW:
  * - **THE BUG**: Glow code was in onPointerEnter (only fires when dragging between wedges)
  * - **THE FIX**: Moved setWedgeGlow to onPointerDown (fires on every click)
  * - **THE RESULT**: You should now see GIANT circles on every wedge click
  * - If this doesn't work, the problem is elsewhere (rendering, z-order, coordinates)
  * 
- * 💡 v3.18.78 GLOW DEBUG - SUPER OBVIOUS VERSION:
+ * 💡 v3.18.79 GLOW DEBUG - SUPER OBVIOUS VERSION:
  * - Removed blur filters (CSS filter might not work in React SVG)
  * - Made circles HUGE: outer r=50, inner r=20, white dot r=3
  * - Full opacity, solid colors, no transparency
@@ -178,12 +185,12 @@
  *   2. Coordinates (should be ~100-400 range)
  *   3. If glowLayer is actually in DOM (inspect element)
  * 
- * 🐛 v3.18.78 PAR SPACE DETECTION FIXES (modes.ts change required):
+ * 🐛 v3.18.79 PAR SPACE DETECTION FIXES (modes.ts change required):
  * - **Ab/Bb/Cm/etc now work in PAR**: Fixed getDiatonicTablesFor() in modes.ts
  * - Ab was showing in hub but not lighting wedge (fell through to centerOnly)
  * - Root cause: getDiatonicTablesFor() ignored key parameter, always returned C patterns
  * - Ab isn't diatonic to C, so it never matched! Should use EB_REQT when key="Eb"
- * - **REQUIRES modes.ts v3.18.78** for full fix
+ * - **REQUIRES modes.ts v3.18.79** for full fix
  * 
  * 🐛 v3.18.60 PAR SPACE DETECTION FIX + GLOW DEBUG:
  * 
@@ -1849,7 +1856,7 @@ import {
   parseSongMetadata
 } from "./lib/songManager";
 
-const HW_VERSION = 'v3.18.78';
+const HW_VERSION = 'v3.18.79';
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -2670,7 +2677,7 @@ useEffect(() => {
       setSeqIndex(-1);
       setDisplayIndex(-1);
       setSongTitle("");
-      // ✅ v3.18.78: Keep banner showing when cleared (for non-EXPERT users)
+      // ✅ v3.18.79: Keep banner showing when cleared (for non-EXPERT users)
       // Don't clear banner - let it fall back to default message
       // setBannerMessage("") was making display disappear
       // ✅ v3.6.0 FIX: Only reset key for truly empty input
@@ -2789,7 +2796,7 @@ useEffect(() => {
         
         const upper = (cmd||"").toUpperCase().trim();
         
-        // ✅ v3.18.78: @TEMPO directive - Set BPM
+        // ✅ v3.18.79: @TEMPO directive - Set BPM
         if (upper === "TEMPO" || upper === "BPM" || upper === "T") {
           const bpm = parseInt(arg);
           if (!isNaN(bpm) && bpm > 0 && bpm <= 300) {
@@ -2822,7 +2829,7 @@ useEffect(() => {
           return { kind:"modifier", raw:tok, chord: `RHYTHM3:${arg}` };
         }
         
-        // ✅ v3.18.78: @LOOP directive - Enable loop mode
+        // ✅ v3.18.79: @LOOP directive - Enable loop mode
         if (upper === "LOOP" || upper === "LP") {
           console.log('🔁 LOOP detected - enabling loop mode');
           setLoopEnabled(true);
@@ -2969,7 +2976,7 @@ useEffect(() => {
       return { kind:"chord", raw:tok, chord: tok, duration: dur };
     });
     
-    // ✅ v3.18.78: Filter out RHYTHM, LOOP, and TEMPO directives from playable sequence
+    // ✅ v3.18.79: Filter out RHYTHM, LOOP, and TEMPO directives from playable sequence
     // These are configuration, not part of the musical progression
     const playableItems = items.filter(item => {
       if (item.kind === "modifier" && item.chord) {
@@ -3030,7 +3037,7 @@ useEffect(() => {
     }
   };
 
-  // ✅ v3.18.78: Auto-load default song on mount with its banner message
+  // ✅ v3.18.79: Auto-load default song on mount with its banner message
   useEffect(() => {
     console.log('🎵 Auto-loading default song on mount');
     const firstSong = demoSongs[0];
@@ -4601,7 +4608,7 @@ useEffect(() => {
     const names = ["C","C#","D","Eb","E","F","F#","G","Ab","A","Bb","B"];
     const norm = (x:number)=>((x%12)+12)%12;
     
-    // ✅ v3.18.78: For sus chords, use lowest MIDI note to disambiguate
+    // ✅ v3.18.79: For sus chords, use lowest MIDI note to disambiguate
     // Example: Gsus2 (G-A-D) vs Csus4 (C-F-G) - same PCs [0,2,7] or [0,5,7]
     // Check if we have a sus chord pattern
     let susCandidates: Array<{root: number, type: 'sus2'|'sus4'}> = [];
@@ -4954,10 +4961,19 @@ useEffect(() => {
 
     /* ---------- SUBDOM (F) ---------- */
     {
+      // ✅ v3.18.79: Check for PAR (Eb-space) chords BEFORE SUB entry
+      // Problem: Ebmaj7 [3,7,10,2] contains Gm [7,10,2] as subset
+      // Solution: Exclude Eb/Ebmaj7/Ab/Db from SUB entry
+      const isEbChord = isSubset([3,7,10]) || isSubset([3,7,10,2]);
+      const isAbChord = isSubset([8,0,3]) || isSubset([8,0,3,7]);
+      const isDbChord = isSubset([1,5,8]) || isSubset([1,5,8,0]);
+      const isParChord = isEbChord || isAbChord || isDbChord;
+      
       const enterByGm = isSubset([7,10,2]) || isSubset([7,10,2,5]);
       const enterByC7 = isSubset([0,4,7,10]);
 
-      if (!subdomActiveRef.current && isNoteOn && (enterByGm || enterByC7)) {
+      // ✅ v3.18.79: Don't enter SUB if it's actually a PAR chord
+      if (!subdomActiveRef.current && isNoteOn && (enterByGm || enterByC7) && !isParChord) {
 
         if (relMinorActiveRef.current) setRelMinorActive(false);
         setVisitorActive(false);
@@ -5867,7 +5883,7 @@ useEffect(() => {
                playWith7th
              });
              
-             // ✅ v3.18.78: Show subtle glow at click point
+             // ✅ v3.18.79: Show subtle glow at click point
              setWedgeGlow({ x: svgP.x, y: svgP.y, is7th: playWith7th });
              setTimeout(() => {
                setWedgeGlow(null);
@@ -5925,7 +5941,7 @@ useEffect(() => {
                const playWith7th = normalizedRadius < SEVENTH_RADIUS_THRESHOLD;
                lastPlayedWith7thRef.current = playWith7th;
                
-               // ✅ v3.18.78: Show glow when dragging between wedges too
+               // ✅ v3.18.79: Show glow when dragging between wedges too
                setWedgeGlow({ x: svgP.x, y: svgP.y, is7th: playWith7th });
                setTimeout(() => {
                  setWedgeGlow(null);
@@ -7805,7 +7821,7 @@ useEffect(() => {
                               const isCurrent = globalIdx === displayIndex;
                               const isComment = item.kind === "comment";
                               const isTitle = item.kind === "title";
-                              // ✅ v3.18.78: Hide RHYTHM, LOOP, and TEMPO directives from display
+                              // ✅ v3.18.79: Hide RHYTHM, LOOP, and TEMPO directives from display
                               const isConfig = item.kind === "modifier" && item.chord && 
                                 (item.chord.startsWith("RHYTHM") || 
                                  item.chord === "LOOP" || 
@@ -7834,7 +7850,7 @@ useEffect(() => {
                     </div>
                   </div>
                 ) : (
-                  // ✅ v3.18.78: Placeholder when no sequence loaded in EXPERT mode
+                  // ✅ v3.18.79: Placeholder when no sequence loaded in EXPERT mode
                   <div style={{
                     border:'1px solid #374151',
                     borderRadius:8,
@@ -7867,7 +7883,7 @@ useEffect(() => {
                 }}>
                   {/* ✅ v3.18.46: Dynamic banner message with link parsing */}
                   {(() => {
-                    // ✅ v3.18.78: Use DEFAULT_BANNER from demoSongs.ts - no more hardcoded messages!
+                    // ✅ v3.18.79: Use DEFAULT_BANNER from demoSongs.ts - no more hardcoded messages!
                     const message = (bannerMessage && bannerMessage.trim())
                       ? bannerMessage 
                       : DEFAULT_BANNER;
@@ -8706,16 +8722,16 @@ useEffect(() => {
                       borderRadius:8,
                       fontFamily:'ui-sans-serif, system-ui',
                       resize:'vertical',
-                      minHeight: 72, // ✅ v3.18.78: Minimum 3 rows
-                      maxHeight: 240, // ✅ v3.18.78: Reduced max to keep buttons visible
+                      minHeight: 72, // ✅ v3.18.79: Minimum 3 rows
+                      maxHeight: 240, // ✅ v3.18.79: Reduced max to keep buttons visible
                       fontSize: isDesktop ? 12 : 16,
                       lineHeight: '1.5',
                       userSelect: 'text',
-                      overflow: 'auto' // ✅ v3.18.78: Scroll if content exceeds maxHeight
+                      overflow: 'auto' // ✅ v3.18.79: Scroll if content exceeds maxHeight
                     }}
                   />
                   
-                  {/* ✅ v3.18.78: Single row button layout - Ready, Clear, Load, Share */}
+                  {/* ✅ v3.18.79: Single row button layout - Ready, Clear, Load, Share */}
                   <div style={{
                     display: 'grid',
                     gridTemplateColumns: 'repeat(4, 120px)',
@@ -9463,6 +9479,6 @@ useEffect(() => {
   );
 }
 
-// HarmonyWheel v3.18.78 - PAR space fixes: G triad (V/vi) + Ab chord (IV wedge). Requires modes.ts v3.18.78
+// HarmonyWheel v3.18.79 - PAR space fixes: G triad (V/vi) + Ab chord (IV wedge). Requires modes.ts v3.18.79
 
-// EOF - HarmonyWheel.tsx v3.18.78
+// EOF - HarmonyWheel.tsx v3.18.79
