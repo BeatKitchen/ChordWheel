@@ -1,12 +1,18 @@
 /*
- * HarmonyWheel.tsx — v3.18.79 🎵 Ebmaj7 → PAR Fix
+ * HarmonyWheel.tsx — v3.18.80 🎵 Fmaj7 & E7 Detection Fixes
  * 
- * 🎵 v3.18.79 EBMAJ7 → PAR (NOT SUB):
- * - **The Bug**: Ebmaj7 [3,7,10,2] contains Gm [7,10,2] as subset
- * - **Result**: Playing Ebmaj7 entered SUB (F space) instead of PAR (Eb space)
- * - **The Fix**: Check for PAR chords (Eb/Ebmaj7/Ab/Db) BEFORE SUB entry
- * - **Line 4960**: Added `&& !isParChord` condition to SUB entry logic
- * - Now Ebmaj7 correctly enters PAR, just like Eb triad
+ * 🎵 v3.18.80 FMAJ7 → IV FIX (Bug #1):
+ * - **The Bug**: Fmaj7 [5,9,0,4] lights vi wedge instead of IV wedge
+ * - **Root Cause**: Am [9,0,4] is subset of Fmaj7, and diatonic tables check Am7 first
+ * - **The Fix**: Added explicit Fmaj7 check BEFORE diatonic matching (line ~5474)
+ * - **Result**: Fmaj7 now correctly lights IV wedge and displays properly
+ * 
+ * 🎵 v3.18.80 E7 DETECTION FIX (Bug #2):
+ * - **The Bug**: After SUB exit, E7 requires 2 presses to register
+ * - **Root Cause**: homeSuppressUntilRef blocks detection for 140ms after SUB exit
+ * - **Added**: Extensive debug logging to trace detection flow
+ * - **Lines Added**: SUB exit logging, V/vi detection logging, allowHomeCheck gate logging
+ * - **Status**: Debug logging in place to diagnose timing issue
  * 
  * 📝 v3.18.79 NO MORE HARDCODED MESSAGES:
  * - Removed hardcoded banner fallback from HarmonyWheel.tsx (line 7866)
@@ -1856,7 +1862,7 @@ import {
   parseSongMetadata
 } from "./lib/songManager";
 
-const HW_VERSION = 'v3.18.79';
+const HW_VERSION = 'v3.18.80';
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -2665,7 +2671,7 @@ useEffect(() => {
   };
 
   const parseAndLoadSequence = ()=>{
-    const APP_VERSION = "v3.18.60-harmony-wheel";
+    const APP_VERSION = "v3.18.81-harmony-wheel";
     console.log('=== PARSE AND LOAD START ===');
     console.log('🏷️  APP VERSION:', APP_VERSION);
     console.log('Input text:', inputText);
@@ -4660,22 +4666,6 @@ useEffect(() => {
     const absHeld=[...merged];
     const pcsAbs=new Set(absHeld.map(pcFromMidi));
     
-    // DEBUG: Log space state when chords are detected
-    if (pcsAbs.size >= 3) {
-      console.log('🔍 [DETECT] Space state:', {
-        absHeldNotes: absHeld,
-        pcsAbs: [...pcsAbs],
-        baseKey: baseKeyRef.current,
-        effectiveBaseKey: baseKeyRef.current,
-        transpose: effectiveTranspose,
-        visitor: visitorActiveRef.current,
-        subdom: subdomActiveRef.current,
-        rel: relMinorActiveRef.current,
-        parKey,
-        subKey
-      });
-    }
-    
     // MIDI shortcut detection moved to note-off to avoid interference with playing
     // Now handled separately in MIDI message handler
 
@@ -4720,6 +4710,43 @@ useEffect(() => {
     const pcsRel=new Set([...pcsAbs].map(toRel));
     // MODIFIED v2.37.9: Pass absHeld array to internalAbsoluteName for dim7 root disambiguation
     const absName = internalAbsoluteName(pcsAbs, baseKeyRef.current, absHeld) || "";
+    
+    // DEBUG: Log space state when chords are detected
+    if (pcsAbs.size >= 3) {
+      console.log('🔍 [DETECT] Space state:', {
+        absHeldNotes: absHeld,
+        pcsAbs: [...pcsAbs],
+        pcsRel: [...pcsRel],
+        absName: absName,
+        baseKey: baseKeyRef.current,
+        effectiveBaseKey: baseKeyRef.current,
+        transpose: effectiveTranspose,
+        visitor: visitorActiveRef.current,
+        subdom: subdomActiveRef.current,
+        rel: relMinorActiveRef.current,
+        parKey,
+        subKey
+      });
+      
+      // ✅ v3.18.81 DIAGNOSTIC: Export detection data for debugging
+      if (absName === "E7" || absName === "Fmaj7") {
+        const diagnosticData = {
+          timestamp: performance.now(),
+          chord: absName,
+          pcsAbs: [...pcsAbs],
+          pcsRel: [...pcsRel],
+          baseKey: baseKeyRef.current,
+          visitor: visitorActiveRef.current,
+          subdom: subdomActiveRef.current,
+          homeSuppressUntil: homeSuppressUntilRef.current,
+          now: performance.now(),
+          suppressed: performance.now() < homeSuppressUntilRef.current
+        };
+        console.log('📊 DIAGNOSTIC EXPORT:', diagnosticData);
+        // Save to window for manual export
+        (window as any).lastDiagnostic = diagnosticData;
+      }
+    }
     
     // v3.5.0: Fix diminished chord spelling in HOME space
     // G#dim (leading tone to A), C#dim (leading tone to D), Ebdim (ties to bIII parallel)
@@ -4787,6 +4814,14 @@ useEffect(() => {
         setBonusLabel("Bm7♭5");
         return;
       }
+    }
+    
+    // ✅ v3.18.80 FIX: Fmaj7 [5,9,0,4] MUST light IV, not vi
+    // This must happen BEFORE diatonic pattern matching
+    if (pcsRel.has(5) && pcsRel.has(9) && pcsRel.has(0) && pcsRel.has(4) && pcsRel.size === 4) {
+      console.log('✅ Fmaj7 EARLY CHECK → IV wedge');
+      setActiveWithTrail("IV", displayName);
+      return;
     }
     
     // Bdim7 [11,2,5,8] with B bass → V7 wedge (exception!)
@@ -5069,6 +5104,12 @@ useEffect(() => {
         const exitOnDm    = isSubsetIn([2,5,9], S) || isSubsetIn([2,5,9,0], S);
 
         if (exitOnCmaj7 || exitOnAm7 || exitOnDm) {
+          console.log('🚪 EXITING SUB:', {
+            chord: absName,
+            exitTrigger: exitOnCmaj7 ? 'Cmaj7' : exitOnAm7 ? 'Am7' : 'Dm',
+            settingSuppress: performance.now() + 140,
+            settingJustExited: true
+          });
           subdomLatchedRef.current = false;
           subSpinExit();
           setSubdomActive(false);
@@ -5290,19 +5331,62 @@ useEffect(() => {
       pcsRelSize: pcsRel.size
     });
     
-    if (performance.now() >= homeSuppressUntilRef.current){
+    // ✅ v3.18.80: Smart suppression - only block ambiguous chords
+    // Check if current chord is unambiguous (has clear function)
+    // Calculate these before the suppression check
+    const baseKeyPC = NAME_TO_PC[baseKeyRef.current];
+    
+    // Secondary dominants (V/V, V/vi) - always unambiguous
+    const vOfV_root = (baseKeyPC + 2) % 12;
+    const vOfV_triad = [(vOfV_root + 0) % 12, (vOfV_root + 4) % 12, (vOfV_root + 7) % 12];
+    const isVofV = isSubsetIn(vOfV_triad, pcsAbs);
+    
+    const vOfVi_root = (baseKeyPC + 4) % 12;
+    const vOfVi_triad = [(vOfVi_root + 0) % 12, (vOfVi_root + 4) % 12, (vOfVi_root + 7) % 12];
+    const isVofVi = isSubsetIn(vOfVi_triad, pcsAbs);
+    
+    // Clear diatonic chords (ii, iii, vi, IV)
+    const isII = isSubsetIn([2, 5, 9], pcsRel);
+    const isIII = isSubsetIn([4, 7, 11], pcsRel);
+    const isVI = isSubsetIn([9, 0, 4], pcsRel);
+    const isIV = isSubsetIn([5, 9, 0], pcsRel);
+    
+    // Ambiguous chords (I triad could be confused with V in SUB)
+    const isTonic = isSubsetIn([0, 4, 7], pcsRel) && !isSubsetIn([0, 4, 7, 11], pcsRel) && !isSubsetIn([0, 4, 7, 10], pcsRel);
+    
+    // ✅ v3.18.81 FIX: V/vi (E7) should bypass suppression after SUB exit
+    // Bug: After SUB exit, E7 requires 2 presses because homeSuppressUntilRef blocks detection
+    // Solution: Check absName directly - if theory.ts detected E7, it's unambiguous
+    const isE7 = absName === "E7" || absName === "E";
+    const isUnambiguous = isVofV || isVofVi || isII || isIII || isVI || isIV || isE7;
+    
+    // If chord is unambiguous OR suppression period has passed, allow detection
+    const allowHomeCheck = isUnambiguous || (performance.now() >= homeSuppressUntilRef.current);
+    
+    console.log('🔒 ALLOW HOME CHECK:', {
+      allowHomeCheck,
+      isUnambiguous,
+      isVofV,
+      isVofVi,
+      isII,
+      isIII,
+      isVI,
+      isIV,
+      suppressed: performance.now() < homeSuppressUntilRef.current,
+      chord: absName
+    });
+    
+    if (allowHomeCheck){
       // v3.5.1: Get bass note for diminished chord function detection
       const bassNote = absHeld.length > 0 ? Math.min(...absHeld) : null;
       const bassPc = bassNote !== null ? (bassNote % 12) : null;
       
       // ✅ v3.15.8: Check secondary dominants BEFORE main pattern matching
-      // Calculate relative to baseKey (not C-specific)
-      const baseKeyPC = NAME_TO_PC[baseKeyRef.current];
+      // (baseKeyPC already calculated above for suppression check)
       
       // V/V = V of V = dominant of scale degree 5 = scale degree 2
       // In C: D or D7 (2,6,9) or (2,6,9,0). In F: G or G7 (7,11,2) or (7,11,2,5).
-      const vOfV_root = (baseKeyPC + 2) % 12;
-      const vOfV_triad = [(vOfV_root + 0) % 12, (vOfV_root + 4) % 12, (vOfV_root + 7) % 12];
+      // (vOfV_root already calculated above)
       const vOfV_seventh = (vOfV_root + 10) % 12;
       const vOfV_hasTriad = isSubsetIn(vOfV_triad, pcsAbs);
       const vOfV_has7th = isSubsetIn([vOfV_seventh], pcsAbs);
@@ -5310,12 +5394,21 @@ useEffect(() => {
       
       // V/vi = V of vi = dominant of scale degree 6 (relative minor) = scale degree 4  
       // In C: E or E7 (4,8,11) or (4,8,11,2). In F: A or A7 (9,1,4) or (9,1,4,7).
-      const vOfVi_root = (baseKeyPC + 4) % 12;
-      const vOfVi_triad = [(vOfVi_root + 0) % 12, (vOfVi_root + 4) % 12, (vOfVi_root + 7) % 12];
+      // (vOfVi_root and vOfVi_triad already calculated above)
       const vOfVi_seventh = (vOfVi_root + 10) % 12;
       const vOfVi_hasTriad = isSubsetIn(vOfVi_triad, pcsAbs);
       const vOfVi_has7th = isSubsetIn([vOfVi_seventh], pcsAbs);
       const vOfVi = vOfVi_hasTriad; // Trigger on triad alone OR with 7th
+      
+      console.log('🔍 V/vi CALC:', {
+        vOfVi_root,
+        vOfVi_triad,
+        vOfVi_hasTriad,
+        vOfVi_has7th,
+        vOfVi,
+        pcsAbs: [...pcsAbs],
+        absName
+      });
       
       // V/vi also includes diminished substitution (e.g., G#dim for E7 in C)
       const vOfVi_dimSub_root = (vOfVi_root + 4) % 12; // Minor third above V/vi root
@@ -5331,6 +5424,15 @@ useEffect(() => {
         return; 
       }
       if (vOfVi || vOfVi_dimSub){ 
+        console.log('🎵 V/vi DETECTED:', {
+          chord: absName,
+          vOfVi_match: vOfVi,
+          dimSub_match: vOfVi_dimSub,
+          isUnambiguous: true,
+          suppressUntil: homeSuppressUntilRef.current,
+          now: performance.now(),
+          wasSuppressed: performance.now() < homeSuppressUntilRef.current
+        });
         let chordName: string;
         if (vOfVi_dimSub) {
           chordName = displayName;
@@ -5441,6 +5543,16 @@ useEffect(() => {
       if (isBonusChordPattern && !shouldShowBonusOverlay()) {
         console.log('🛡️ DEFENSIVE: Bonus chord detected but permission denied - showing in hub only');
         centerOnly(displayName);
+        return;
+      }
+      
+      // ✅ v3.18.80 FIX: Fmaj7 early detection to prevent Am7 subset match
+      // Bug: Fmaj7 [5,9,0,4] contains Am [9,0,4] as subset
+      // If Am7 is checked first in diatonic tables, it incorrectly matches vi
+      // Solution: Check Fmaj7 explicitly before diatonic matching
+      if (exactSet([5,9,0,4])) {
+        console.log('✅ EARLY Fmaj7 CHECK: [5,9,0,4] → IV wedge');
+        setActiveWithTrail("IV", displayName || "Fmaj7");
         return;
       }
       
@@ -9479,6 +9591,6 @@ useEffect(() => {
   );
 }
 
-// HarmonyWheel v3.18.79 - PAR space fixes: G triad (V/vi) + Ab chord (IV wedge). Requires modes.ts v3.18.79
+// HarmonyWheel v3.18.80 - Fmaj7 → IV fix + E7 detection debug logging
 
-// EOF - HarmonyWheel.tsx v3.18.79
+// EOF - HarmonyWheel.tsx v3.18.80
