@@ -100,12 +100,12 @@ export function internalAbsoluteName(pcsAbs:Set<number>, baseKey:KeyName, midiNo
   let best:AbsMatch|null=null;
   
   // DEBUG: Log what we received
-  console.log('[THEORY DEBUG] INPUT', {
-    pcsAbs: [...pcsAbs],
-    baseKey: baseKey,
-    midiNotes: midiNotes,
-    midiNotesLength: midiNotes?.length
-  });
+  // console.log('[THEORY DEBUG] INPUT', {
+  //   pcsAbs: [...pcsAbs],
+  //   baseKey: baseKey,
+  //   midiNotes: midiNotes,
+  //   midiNotesLength: midiNotes?.length
+  // });
   
   // ========== MODIFIED v2.37.10: Check for dim7 FIRST using lowest note ==========
   // For fully diminished 7th chords, determine root from lowest note BEFORE rotation
@@ -183,12 +183,12 @@ export function internalAbsoluteName(pcsAbs:Set<number>, baseKey:KeyName, midiNo
   if(!best) return "";
   
   // ========== DEBUG v2.39.6 ==========
-  console.log('[THEORY DEBUG] BEST MATCH', {
-    bestRoot: best.root,
-    bestQual: best.qual,
-    list: list,
-    baseKey: baseKey
-  });
+  // console.log('[THEORY DEBUG] BEST MATCH', {
+  //   bestRoot: best.root,
+  //   bestQual: best.qual,
+  //   list: list,
+  //   baseKey: baseKey
+  // });
   // ========== END DEBUG ==========
   
   // ========== FIX v2.39.5: best.root IS the actual root PC ==========
@@ -198,10 +198,10 @@ export function internalAbsoluteName(pcsAbs:Set<number>, baseKey:KeyName, midiNo
   // Example: F-A-C = [5,9,0], rotated by 5 → [0,4,7], so root = 5 (F) ✓
   const actualRootPc = best.root;
   
-  console.log('[THEORY DEBUG] FINAL', {
-    actualRootPc: actualRootPc,
-    rootName: (best.qual==="dim"||best.qual==="dim7"||best.qual==="m7b5") ? `dimRootName(${actualRootPc})` : `pcNameForKey(${actualRootPc}, ${baseKey})`
-  });
+  // console.log('[THEORY DEBUG] FINAL', {
+  //   actualRootPc: actualRootPc,
+  //   rootName: (best.qual==="dim"||best.qual==="dim7"||best.qual==="m7b5") ? `dimRootName(${actualRootPc})` : `pcNameForKey(${actualRootPc}, ${baseKey})`
+  // });
   // ========== END FIX ==========
   
   // ========== REMOVED v2.37.10: Old fallback dim7 logic (now handled above) ==========
@@ -240,6 +240,7 @@ export function realizeFunction(fn:Fn, key: KeyName): string {
     case "V/V": return name(add12(DEG[5],7))+"7";
     case "V/ii": return name(add12(DEG[2],7))+"7";  // ← ADDED v3.10.2! A7 in key of C
     case "♭VII": return pcNameForKey(add12(t,10), key);
+    default: return "";  // ✅ v3.18.86: Handle unknown functions
   }
 }
 

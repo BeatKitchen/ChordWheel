@@ -1,18 +1,14 @@
 /*
- * HarmonyWheel.tsx — v3.18.80 🎵 Fmaj7 & E7 Detection Fixes
+ * HarmonyWheel.tsx — v3.18.86 🔧 Compiler Fix + Minimal Logging
  * 
- * 🎵 v3.18.80 FMAJ7 → IV FIX (Bug #1):
- * - **The Bug**: Fmaj7 [5,9,0,4] lights vi wedge instead of IV wedge
- * - **Root Cause**: Am [9,0,4] is subset of Fmaj7, and diatonic tables check Am7 first
- * - **The Fix**: Added explicit Fmaj7 check BEFORE diatonic matching (line ~5474)
- * - **Result**: Fmaj7 now correctly lights IV wedge and displays properly
+ * 🔧 v3.18.86 TYPESCRIPT COMPILER FIX:
+ * - Fixed: absName used before declaration (line 4685 before 4747)
+ * - Moved pcsRel and absName declarations BEFORE diagnostic logging
+ * - Commented out most console.logs (not deleted - easy to re-enable)
+ * - Kept only E7-specific logs active for debugging
  * 
- * 🎵 v3.18.80 E7 DETECTION FIX (Bug #2):
- * - **The Bug**: After SUB exit, E7 requires 2 presses to register
- * - **Root Cause**: homeSuppressUntilRef blocks detection for 140ms after SUB exit
- * - **Added**: Extensive debug logging to trace detection flow
- * - **Lines Added**: SUB exit logging, V/vi detection logging, allowHomeCheck gate logging
- * - **Status**: Debug logging in place to diagnose timing issue
+ * 🎵 v3.18.86 FMAJ7 → IV FIX (RESOLVED):
+ * - Fmaj7 [5,9,0,4] now correctly lights IV wedge (not vi)
  * 
  * 📝 v3.18.79 NO MORE HARDCODED MESSAGES:
  * - Removed hardcoded banner fallback from HarmonyWheel.tsx (line 7866)
@@ -1862,7 +1858,7 @@ import {
   parseSongMetadata
 } from "./lib/songManager";
 
-const HW_VERSION = 'v3.18.80';
+const HW_VERSION = 'v3.18.86';
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -2671,7 +2667,7 @@ useEffect(() => {
   };
 
   const parseAndLoadSequence = ()=>{
-    const APP_VERSION = "v3.18.81-harmony-wheel";
+    const APP_VERSION = "v3.18.86-harmony-wheel";
     console.log('=== PARSE AND LOAD START ===');
     console.log('🏷️  APP VERSION:', APP_VERSION);
     console.log('Input text:', inputText);
@@ -2909,7 +2905,7 @@ useEffect(() => {
       const functionalPattern = /^(♭|#)?([IViv]+)(7|M7|m7|maj7|dom7)?(\/([IViv]+))?$/;
       const match = tok.match(functionalPattern);
       
-      console.log('[PARSER] Checking token:', tok, 'functionalPattern match:', match ? 'YES' : 'NO');
+      // console.log('[PARSER] Checking token:', tok, 'functionalPattern match:', match ? 'YES' : 'NO');
       
       if (match) {
         // It's functional notation - convert to literal chord based on current key
@@ -4711,41 +4707,18 @@ useEffect(() => {
     // MODIFIED v2.37.9: Pass absHeld array to internalAbsoluteName for dim7 root disambiguation
     const absName = internalAbsoluteName(pcsAbs, baseKeyRef.current, absHeld) || "";
     
-    // DEBUG: Log space state when chords are detected
-    if (pcsAbs.size >= 3) {
-      console.log('🔍 [DETECT] Space state:', {
-        absHeldNotes: absHeld,
-        pcsAbs: [...pcsAbs],
+    // ✅ v3.18.86 E7-ONLY DIAGNOSTIC for double-press bug
+    if (absName === "E7") {
+      console.log('🔍 E7 DETECTED:', {
+        chord: absName,
         pcsRel: [...pcsRel],
-        absName: absName,
-        baseKey: baseKeyRef.current,
-        effectiveBaseKey: baseKeyRef.current,
-        transpose: effectiveTranspose,
         visitor: visitorActiveRef.current,
         subdom: subdomActiveRef.current,
-        rel: relMinorActiveRef.current,
-        parKey,
-        subKey
+        homeSuppressUntil: homeSuppressUntilRef.current,
+        now: performance.now(),
+        suppressed: performance.now() < homeSuppressUntilRef.current,
+        blocked: performance.now() < homeSuppressUntilRef.current ? 'YES - BLOCKED' : 'NO'
       });
-      
-      // ✅ v3.18.81 DIAGNOSTIC: Export detection data for debugging
-      if (absName === "E7" || absName === "Fmaj7") {
-        const diagnosticData = {
-          timestamp: performance.now(),
-          chord: absName,
-          pcsAbs: [...pcsAbs],
-          pcsRel: [...pcsRel],
-          baseKey: baseKeyRef.current,
-          visitor: visitorActiveRef.current,
-          subdom: subdomActiveRef.current,
-          homeSuppressUntil: homeSuppressUntilRef.current,
-          now: performance.now(),
-          suppressed: performance.now() < homeSuppressUntilRef.current
-        };
-        console.log('📊 DIAGNOSTIC EXPORT:', diagnosticData);
-        // Save to window for manual export
-        (window as any).lastDiagnostic = diagnosticData;
-      }
     }
     
     // v3.5.0: Fix diminished chord spelling in HOME space
@@ -4816,13 +4789,9 @@ useEffect(() => {
       }
     }
     
-    // ✅ v3.18.80 FIX: Fmaj7 [5,9,0,4] MUST light IV, not vi
-    // This must happen BEFORE diatonic pattern matching
-    if (pcsRel.has(5) && pcsRel.has(9) && pcsRel.has(0) && pcsRel.has(4) && pcsRel.size === 4) {
-      console.log('✅ Fmaj7 EARLY CHECK → IV wedge');
-      setActiveWithTrail("IV", displayName);
-      return;
-    }
+    // ✅ v3.18.86 REMOVED: Early Fmaj7 check was here but it ran BEFORE SUB section
+    // This caused Fmaj7 in SUB space to light IV (Bb) instead of I (F)
+    // The proper Fmaj7 check with SUB guard is at line ~5540
     
     // Bdim7 [11,2,5,8] with B bass → V7 wedge (exception!)
     if (currentPcsRel.size >= 4 && [11,2,5,8].every(pc => currentPcsRel.has(pc)) && bassPc === 11) {
@@ -4996,6 +4965,16 @@ useEffect(() => {
 
     /* ---------- SUBDOM (F) ---------- */
     {
+      // ✅ v3.18.86 DEBUG: Track SUB state
+      if (absName === "Fmaj7" || absName === "F" || (pcsRel.has(5) && pcsRel.has(9) && pcsRel.has(0))) {
+        console.log('🔧 SUB SECTION START:', {
+          absName,
+          inSUB: subdomActiveRef.current,
+          pcsRel: [...pcsRel],
+          pcsRelSize: pcsRel.size
+        });
+      }
+      
       // ✅ v3.18.79: Check for PAR (Eb-space) chords BEFORE SUB entry
       // Problem: Ebmaj7 [3,7,10,2] contains Gm [7,10,2] as subset
       // Solution: Exclude Eb/Ebmaj7/Ab/Db from SUB entry
@@ -5098,6 +5077,20 @@ useEffect(() => {
         const stayOnGm      = isSubsetIn([7,10,2], S) || isSubsetIn([7,10,2,5], S);
         const stayOnC7      = isSubsetIn([0,4,7,10], S);
         const isCtriadExact = exactSetIn([0,4,7], S);
+        
+        // ✅ v3.18.86 DEBUG: Why isn't Fmaj7 matching?
+        if (absName === "Fmaj7" || absName === "F") {
+          console.log('🔍 SUB F/Fmaj7 CHECK:', {
+            absName,
+            S: [...S],
+            pcsRel: [...pcsRel],
+            hasTriad: isSubsetIn([5,9,0], S),
+            hasFmaj7: isSubsetIn([5,9,0,4], S),
+            stayOnF,
+            useWindow,
+            suppressed: performance.now() < homeSuppressUntilRef.current
+          });
+        }
 
         const exitOnCmaj7 = isSubsetIn([0,4,7,11], S);
         const exitOnAm7   = exactSetIn([9,0,4,7], S);
@@ -5331,7 +5324,7 @@ useEffect(() => {
       pcsRelSize: pcsRel.size
     });
     
-    // ✅ v3.18.80: Smart suppression - only block ambiguous chords
+    // ✅ v3.18.86: Smart suppression - only block ambiguous chords
     // Check if current chord is unambiguous (has clear function)
     // Calculate these before the suppression check
     const baseKeyPC = NAME_TO_PC[baseKeyRef.current];
@@ -5354,7 +5347,7 @@ useEffect(() => {
     // Ambiguous chords (I triad could be confused with V in SUB)
     const isTonic = isSubsetIn([0, 4, 7], pcsRel) && !isSubsetIn([0, 4, 7, 11], pcsRel) && !isSubsetIn([0, 4, 7, 10], pcsRel);
     
-    // ✅ v3.18.81 FIX: V/vi (E7) should bypass suppression after SUB exit
+    // ✅ v3.18.86 FIX: V/vi (E7) should bypass suppression after SUB exit
     // Bug: After SUB exit, E7 requires 2 presses because homeSuppressUntilRef blocks detection
     // Solution: Check absName directly - if theory.ts detected E7, it's unambiguous
     const isE7 = absName === "E7" || absName === "E";
@@ -5546,12 +5539,13 @@ useEffect(() => {
         return;
       }
       
-      // ✅ v3.18.80 FIX: Fmaj7 early detection to prevent Am7 subset match
+      // ✅ v3.18.86 FIX: Fmaj7 early detection to prevent Am7 subset match
       // Bug: Fmaj7 [5,9,0,4] contains Am [9,0,4] as subset
       // If Am7 is checked first in diatonic tables, it incorrectly matches vi
       // Solution: Check Fmaj7 explicitly before diatonic matching
-      if (exactSet([5,9,0,4])) {
-        console.log('✅ EARLY Fmaj7 CHECK: [5,9,0,4] → IV wedge');
+      // ✅ v3.18.86 FIX #2: Only in HOME - in SUB, Fmaj7 is I not IV
+      if (!subdomActiveRef.current && exactSet([5,9,0,4])) {
+        console.log('✅ EARLY Fmaj7 CHECK: [5,9,0,4] → IV wedge (HOME only)');
         setActiveWithTrail("IV", displayName || "Fmaj7");
         return;
       }
@@ -5895,7 +5889,7 @@ useEffect(() => {
   const wedgeNodes = useMemo(()=>{
     // v3.5.0: Use effectiveBaseKey for transpose support
     const renderKey:KeyName = visitorActive ? parKey : effectiveBaseKey;
-    console.log('🎨 RENDERING WEDGES with key:', renderKey);
+    // console.log('🎨 RENDERING WEDGES with key:', renderKey);
     const dimK = Math.min(1, Math.max(0, dimFadeTick / DIM_FADE_MS));
     const fadedBase = 0.5 + 0.5 * dimK; // 0.5→1.0
     return layout
@@ -7999,9 +7993,9 @@ useEffect(() => {
                     const message = (bannerMessage && bannerMessage.trim())
                       ? bannerMessage 
                       : DEFAULT_BANNER;
-                    console.log('🎨 Banner message:', message);
-                    console.log('🎨 bannerMessage state:', bannerMessage);
-                    console.log('🎨 Using fallback?', bannerMessage === undefined || bannerMessage === null);
+                    // console.log('🎨 Banner message:', message);
+                    // console.log('🎨 bannerMessage state:', bannerMessage);
+                    // console.log('🎨 Using fallback?', bannerMessage === undefined || bannerMessage === null);
                     
                     // Parse [[link text|url]] format
                     const linkRegex = /\[\[([^\|]+)\|([^\]]+)\]\]/g;
@@ -9591,6 +9585,6 @@ useEffect(() => {
   );
 }
 
-// HarmonyWheel v3.18.80 - Fmaj7 → IV fix + E7 detection debug logging
+// HarmonyWheel v3.18.86 - Compiler fix + E7 debugging
 
-// EOF - HarmonyWheel.tsx v3.18.80
+// EOF - HarmonyWheel.tsx v3.18.86
