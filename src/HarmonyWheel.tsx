@@ -1,5 +1,5 @@
 /*
- * HarmonyWheel.tsx — v3.18.119 🔧 Compiler Fix + Minimal Logging
+ * HarmonyWheel.tsx — v3.18.127 🔧 Compiler Fix + Minimal Logging
  * 
  * 🔧 TYPESCRIPT COMPILER FIX:
  * - Fixed: absName used before declaration (line 4685 before 4747)
@@ -1858,7 +1858,7 @@ import {
   parseSongMetadata
 } from "./lib/songManager";
 
-const HW_VERSION = 'v3.18.119';
+const HW_VERSION = 'v3.18.127';
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -2677,7 +2677,7 @@ useEffect(() => {
   };
 
   const parseAndLoadSequence = ()=>{
-    const APP_VERSION = "v3.18.119-harmony-wheel";
+    const APP_VERSION = "v3.18.127-harmony-wheel";
     console.log('=== PARSE AND LOAD START ===');
     console.log('🏷️  APP VERSION:', APP_VERSION);
     console.log('Input text:', inputText);
@@ -2731,17 +2731,31 @@ useEffect(() => {
         // Parse bars: "|C Am F G|" or "|C Am|F G|" or "| C Am F G" (unclosed)
         const bars = segment.split('|').filter(s => s.trim());
         
+        // ✅ v3.18.127: Track last chord across bars for cross-bar ties
+        let lastChordOrRest: string | null = null;
+        
         for (const bar of bars) {
           // Normalize whitespace: multiple spaces → single space
           const normalized = bar.trim().replace(/\s+/g, ' ');
           if (!normalized) continue;
           
-          // ✅ v3.18.119: Parse # comments as single tokens
+          // ✅ v3.18.127: Parse # comments as single tokens
           const tokens: string[] = [];
           let i = 0;
           while (i < normalized.length) {
             if (normalized[i] === '#') {
-              tokens.push(normalized.substring(i).trim());
+              const commentPart = normalized.substring(i).trim();
+              // Check if comment has chord (colon syntax)
+              if (commentPart.includes(':')) {
+                const colonIdx = commentPart.indexOf(':');
+                const beforeColon = commentPart.substring(0, colonIdx + 1).trim(); // Keep the colon
+                const afterColon = commentPart.substring(colonIdx + 1).trim();
+                // Split into TWO tokens: comment + chord
+                tokens.push(beforeColon); // "#passing chord:"
+                if (afterColon) tokens.push(afterColon); // "Abm7"
+              } else {
+                tokens.push(commentPart);
+              }
               break;
             } else if (normalized[i] === ' ') {
               i++;
@@ -2755,19 +2769,24 @@ useEffect(() => {
             }
           }
           
-          // ✅ v3.18.119: Group ties with their preceding chord/rest
-          // "Fmaj7 * * *" = ONE item with duration 4, not 4 separate items
+          // ✅ v3.18.127: Group ties with their preceding chord/rest (including cross-bar)
           const groupedItems: Array<{text: string, count: number, isComment: boolean}> = [];
           
           for (let j = 0; j < tokens.length; j++) {
             const token = tokens[j];
             
             if (token.startsWith('#')) {
+              // Comments are always zero duration (even if they end with colon)
               groupedItems.push({text: token, count: 0, isComment: true});
             } else if (token === '*') {
-              // Tie extends previous item
+              // Tie extends previous item (within bar OR cross-bar)
               if (groupedItems.length > 0 && !groupedItems[groupedItems.length - 1].isComment) {
+                // Tie to previous item in same bar
                 groupedItems[groupedItems.length - 1].count++;
+              } else if (j === 0 && lastChordOrRest) {
+                // ✅ v3.18.127: Cross-bar tie! Just add a * with duration
+                // The * won't retrigger, it just holds the previous chord
+                groupedItems.push({text: '*', count: 1, isComment: false});
               }
             } else {
               // Chord or rest starts at count 1
@@ -2779,10 +2798,21 @@ useEffect(() => {
           const totalCount = groupedItems.filter(g => !g.isComment).reduce((sum, g) => sum + g.count, 0);
           const unitDuration = totalCount > 0 ? 1.0 / totalCount : 1.0;
           
-          // Add to rawTokens
+          console.log(`📊 Bar: "${normalized}" → ${groupedItems.length} items, totalCount: ${totalCount}, unitDuration: ${unitDuration}`);
+          groupedItems.forEach((item, idx) => {
+            const dur = item.isComment ? 0 : item.count * unitDuration;
+            console.log(`  ${idx}: "${item.text}" count:${item.count} isComment:${item.isComment} → duration:${dur}`);
+          });
+          
+          // Add to rawTokens and track last chord
           for (const item of groupedItems) {
             const duration = item.isComment ? 0 : item.count * unitDuration;
             rawTokens.push({text: item.text, duration});
+            
+            // Track last chord/rest for cross-bar ties
+            if (!item.isComment && item.text !== '*') {
+              lastChordOrRest = item.text;
+            }
           }
         }
       } else {
@@ -2812,17 +2842,22 @@ useEffect(() => {
       // Comments start with #
       if (tok.startsWith("#")) {
         const commentText = tok.slice(1).trim();
+        console.log('📝 Parsing comment:', tok, '→ commentText:', commentText);
         // NEW v3.2.5: Check if comment includes a chord after colon
         // Example: "# Verse: Am" or "# Bridge: F#m"
         if (commentText.includes(":")) {
           const colonIdx = commentText.indexOf(":");
           const beforeColon = commentText.substring(0, colonIdx).trim();
           const afterColon = commentText.substring(colonIdx + 1).trim();
+          console.log('  Found colon! before:', beforeColon, 'after:', afterColon);
           // If text after colon looks like a chord, it's a combined comment+chord
           // Updated v3.2.6: Better regex to handle m7b5, dim7, maj7, etc.
           const chordPattern = /^([A-G][#b]?)(m|maj|min|dim|aug|sus)?(7|9|11|13)?(b5|#5|♭5|#9|b9)?$/;
           if (afterColon && chordPattern.test(afterColon)) {
+            console.log('  ✅ Chord matched!', afterColon);
             return { kind:"comment", raw:tok, comment: beforeColon, chord: afterColon };
+          } else {
+            console.log('  ❌ Chord pattern did not match:', afterColon);
           }
         }
         return { kind:"comment", raw:tok, comment: commentText };
@@ -3999,7 +4034,7 @@ useEffect(() => {
         togglePlayPause();
       } else if (e.key === 'Escape') {
         e.preventDefault();
-        // ✅ v3.18.119: Escape closes everything
+        // ✅ v3.18.127: Escape closes everything
         stopPlayback();
         setShowKeyDropdown(false);
         setShowTransposeDropdown(false);
@@ -4179,7 +4214,13 @@ useEffect(() => {
     const currentItem = sequence[seqIndex];
     const isTie = currentItem?.kind === "comment" && currentItem.raw === '*';
     
-    if (currentItem?.kind === "chord" && currentItem.chord && latchedAbsNotes.length > 0) {
+    // ✅ v3.18.127: Comments with chords should also play audio
+    const isPlayableItem = (currentItem?.kind === "chord" || 
+                           (currentItem?.kind === "comment" && currentItem.chord)) && 
+                           currentItem.chord && 
+                           latchedAbsNotes.length > 0;
+    
+    if (isPlayableItem) {
       // ✅ Use duration from item (in bars)
       // Assuming 4/4 time: 1 bar = 4 beats
       const itemDuration = currentItem.duration || 1.0; // Default to 1 bar
@@ -4193,9 +4234,11 @@ useEffect(() => {
     // Duration is in bars (1=whole, 0.5=half, 0.25=quarter)
     const itemDuration = currentItem?.duration || 1.0; // Default to 1 bar if not specified
     
-    // ✅ v3.18.119: Only # comments have zero duration - rests and ties have real duration
-    const isAnnotation = currentItem?.kind === "comment" && currentItem.raw?.startsWith('#');
-    const isZeroDuration = itemDuration === 0 || isAnnotation;
+    // ✅ v3.18.127: Only # comments WITHOUT chords have zero duration
+    const isAnnotationOnly = currentItem?.kind === "comment" && 
+                            currentItem.raw?.startsWith('#') && 
+                            !currentItem.chord;
+    const isZeroDuration = itemDuration === 0 || isAnnotationOnly;
     const beatsPerBar = 4; // 4/4 time signature
     const interval = isZeroDuration ? 0 : (60 / tempo) * beatsPerBar * itemDuration * 1000; // milliseconds
     
@@ -4204,7 +4247,7 @@ useEffect(() => {
       // Advance to next item
       let nextIndex = seqIndex + 1;
       
-      // ✅ v3.18.119: Don't skip comments - they have duration:0 and advance instantly
+      // ✅ v3.18.127: Don't skip comments - they have duration:0 and advance instantly
       // Only skip titles and @modifiers
       while (nextIndex < sequence.length) {
         const nextItem = sequence[nextIndex];
@@ -4220,7 +4263,17 @@ useEffect(() => {
       
       if (nextIndex < sequence.length) {
         setSeqIndex(nextIndex);
-        setDisplayIndex(nextIndex); // ✅ v3.18.119: Highlight current chord in display
+        
+        // ✅ v3.18.127: For display, show the chord being held, not the tie/annotation
+        const nextItem = sequence[nextIndex];
+        const isTie = nextItem?.kind === "comment" && nextItem.raw === '*';
+        const isAnnotation = nextItem?.kind === "comment" && nextItem.raw?.startsWith('#') && !nextItem.chord;
+        
+        if (!isTie && !isAnnotation) {
+          setDisplayIndex(nextIndex); // Only update display for actual chords/rests
+        }
+        // If tie or annotation, displayIndex stays on previous chord
+        
         applySeqItem(sequence[nextIndex]);
         setTimeout(() => selectCurrentItem(), 0);
       } else {
@@ -4234,7 +4287,7 @@ useEffect(() => {
             startIdx++;
           }
           setSeqIndex(startIdx);
-          setDisplayIndex(startIdx); // ✅ v3.18.119: Highlight on loop
+          setDisplayIndex(startIdx); // ✅ v3.18.127: Highlight on loop
           applySeqItem(sequence[startIdx]);
           setTimeout(() => selectCurrentItem(), 0);
         } else {
@@ -8338,6 +8391,36 @@ useEffect(() => {
                               const isCurrent = globalIdx === displayIndex;
                               const isComment = item.kind === "comment";
                               const isTitle = item.kind === "title";
+                              
+                              // ✅ v3.18.127: Highlight related items together
+                              // 1. Comment before current chord: #label: Chord
+                              const isCommentForNextChord = isComment && 
+                                                           item.raw?.startsWith('#') && 
+                                                           item.raw?.includes(':') &&
+                                                           globalIdx + 1 === displayIndex;
+                              
+                              // 2. Tie after current chord: Chord * * *
+                              const isTieAfterCurrent = item.raw === '*' && 
+                                                       globalIdx > 0 &&
+                                                       sequence[displayIndex]?.kind === "chord" &&
+                                                       globalIdx > displayIndex;
+                              
+                              // 3. Check if we're part of a tied group with current displayIndex
+                              const isPartOfTiedGroup = (() => {
+                                if (item.raw !== '*') return false;
+                                // Walk backwards from this tie to find the chord it belongs to
+                                for (let k = globalIdx - 1; k >= 0; k--) {
+                                  if (sequence[k]?.raw === '*') continue; // Skip other ties
+                                  if (sequence[k]?.kind === "chord") {
+                                    return k === displayIndex; // This tie belongs to current chord
+                                  }
+                                  break; // Hit something else, not a tie group
+                                }
+                                return false;
+                              })();
+                              
+                              const shouldHighlight = isCurrent || isCommentForNextChord || isPartOfTiedGroup;
+                              
                               // ✅ Hide RHYTHM, LOOP, and TEMPO directives from display
                               const isConfig = item.kind === "modifier" && item.chord && 
                                 (item.chord.startsWith("RHYTHM") || 
@@ -8351,12 +8434,18 @@ useEffect(() => {
                                   marginRight: 8,
                                   padding: '2px 6px',
                                   borderRadius: 4,
-                                  background: isCurrent ? '#374151' : 'transparent',
-                                  fontWeight: isCurrent ? 600 : 400,
+                                  background: shouldHighlight ? '#374151' : 'transparent',
+                                  fontWeight: shouldHighlight ? 600 : 400,
                                   fontStyle: isComment ? 'italic' : 'normal',
-                                  color: isCurrent ? '#39FF14' : (isComment ? '#6b7280' : '#9CA3AF')
+                                  color: shouldHighlight ? '#39FF14' : (isComment ? '#6b7280' : '#9CA3AF')
                                 }}>
-                                  {isComment ? item.raw.replace(/^#\s*/, '') : item.raw}
+                                  {isComment ? (
+                                    item.chord ? 
+                                      // Comment with chord: show both (e.g., "passing: Abm7")
+                                      `${item.comment}: ${item.chord}` : 
+                                      // Regular comment: strip # and show text
+                                      item.raw.replace(/^#\s*/, '')
+                                  ) : item.raw}
                                 </span>
                               );
                             })}
@@ -8722,7 +8811,7 @@ useEffect(() => {
                       const m=+mStr;
                       const held=disp.has(m);
                       const highlighted = keyboardHighlightNotes.has(m);
-                      const latched = latchedAbsNotes.includes(m); // ✅ v3.18.119: Show during sequence playback
+                      const latched = latchedAbsNotes.includes(m); // ✅ v3.18.127: Show during sequence playback
                       if (!held && !highlighted && !latched) return null;
                       
                       // ✅ Chord-aware spelling - use chord root for context
@@ -8802,7 +8891,7 @@ useEffect(() => {
                       const m=+mStr;
                       const held=disp.has(m);
                       const highlighted = keyboardHighlightNotes.has(m);
-                      const latched = latchedAbsNotes.includes(m); // ✅ v3.18.119: Show during sequence playback
+                      const latched = latchedAbsNotes.includes(m); // ✅ v3.18.127: Show during sequence playback
                       if (!held && !highlighted && !latched) return null;
                       
                       // ✅ Chord-aware spelling - use chord root for context
@@ -10053,6 +10142,6 @@ useEffect(() => {
   );
 }
 
-// HarmonyWheel v3.18.119 - Compiler fix + E7 debugging
+// HarmonyWheel v3.18.127 - Compiler fix + E7 debugging
 
-// EOF - HarmonyWheel.tsx v3.18.119
+// EOF - HarmonyWheel.tsx v3.18.127

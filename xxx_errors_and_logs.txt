@@ -1,763 +1,804 @@
-chunk-NGODP64W.js?v=7b8148d9:21551 Download the React DevTools for a better development experience: https://reactjs.org/link/react-devtools
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:1952 🔑 [v3.6.0] baseKey synced to ref: C
-HarmonyWheel.tsx:2321 🍎 Safari detection: false
-HarmonyWheel.tsx:2527 🎹 TRANSPOSE STATE: {transpose: 0, transposeBypass: false, effectiveTranspose: 0, baseKey: 'C', willBecomeKey: 'C'}
-HarmonyWheel.tsx:2538 🎯 EFFECTIVE BASE KEY: C (original: C )
-HarmonyWheel.tsx:2671 === PARSE AND LOAD START ===
-HarmonyWheel.tsx:2672 🏷️  APP VERSION: v3.18.86-harmony-wheel
-HarmonyWheel.tsx:2673 Input text: @TITLE Demo Song, @KEY C, @TEMPO 120, @LOOP, #hello darkness my old friend, |E7 / E7 / E7 E7 E7 /|E7 / E7 / E7 E7 E7 /|Am / Am / Am Am Am /||Am / Am / Am Am Am /|
+ Download the React DevTools for a better development experience: https://reactjs.org/link/react-devtools
+ 🔑 [v3.6.0] baseKey synced to ref: C
+ 🍎 Safari detection: false
+ 🎹 TRANSPOSE STATE: Object
+ 🎯 EFFECTIVE BASE KEY: C (original: C )
+ === PARSE AND LOAD START ===
+ 🏷️  APP VERSION: v3.18.122-harmony-wheel
+ Input text: @TITLE WELCOME TO BEAT KITCHEN
+@KEY C
+@TEMPO 160
+@LOOP
+
+|Fmaj7 * * * / / / E7 |* / E7 * * * * *|
+|Am7 #passing chord: Abm7 | Gm7 C7 |
+|Fmaj7 * * * / / / E7 |* / E7 * * * * *|
+|Am|Am7
 
 @RHYTHM1 |x x x x|
 @RHYTHM2 |x / x /|
 @RHYTHM3 |x x / x x x / x|
-HarmonyWheel.tsx:2741 Parsed tokens with rhythm: (40) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
-HarmonyWheel.tsx:2805 🎵 TEMPO detected: 120 BPM
-HarmonyWheel.tsx:2836 🔁 LOOP detected - enabling loop mode
-HarmonyWheel.tsx:2813 🎵 RHYTHM1 detected. cmd: RHYTHM1 arg: |x x x x| length: 9
-HarmonyWheel.tsx:2816 🎵 Rhythm Pattern 1: |x x x x| → (4) [{…}, {…}, {…}, {…}]
-HarmonyWheel.tsx:2820 🎵 RHYTHM2 detected. cmd: RHYTHM2 arg: |x / x /| length: 9
-HarmonyWheel.tsx:2823 🎵 Rhythm Pattern 2: |x / x /| → (4) [{…}, {…}, {…}, {…}]
-HarmonyWheel.tsx:2827 🎵 RHYTHM3 detected. cmd: RHYTHM3 arg: |x x / x x x / x| length: 17
-HarmonyWheel.tsx:2830 🎵 Rhythm Pattern 3: |x x / x x x / x| → (8) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
-HarmonyWheel.tsx:2994 📋 Filtered sequence - removed 5 config directives
-HarmonyWheel.tsx:3019 🔑 [v3.6.0] No @KEY directive, preserving baseKey: C
-HarmonyWheel.tsx:3025 Setting initial index to: 2 chord = #hello darkness my old friend
-HarmonyWheel.tsx:3031 === PARSE AND LOAD END ===
+ Parsed tokens with rhythm: Array(26)
+ 🎵 TEMPO detected: 160 BPM
+ 🔁 LOOP detected - enabling loop mode
+ 📝 Parsing comment: #passing chord: Abm7 → commentText: passing chord: Abm7
+   Found colon! before: passing chord after: Abm7
+   ✅ Chord matched! Abm7
+ 📋 Filtered sequence - removed 2 config directives
+ 🔑 [v3.6.0] No @KEY directive, preserving baseKey: C
+ Setting initial index to: 2 chord = Fmaj7
+ === PARSE AND LOAD END ===
 
-HarmonyWheel.tsx:3044 🎵 Auto-loading default song on mount
-HarmonyWheel.tsx:5816 🏷️ WEDGE LABEL KEY: {labelKey: 'C', effectiveBaseKey: 'C', baseKey: 'C', visitor: false, subdom: false}
-favicon.ico:1  GET http://localhost:5173/favicon.ico 404 (Not Found)
-HarmonyWheel.tsx:2196 📨 Received song param: RyUyQyUyRiUyQ0clMkMlMkYlN0NEJTJDJTJGJTJDRCUyQyUyRi...
-HarmonyWheel.tsx:6826 🔍 Decoded JSON: G%2C%2F%2CG%2C%2F%7CD%2C%2F%2CD%2C%2F%2CD%2C%2F%2CD%2F%7C
-HarmonyWheel.tsx:6839 Failed to decode song: SyntaxError: Unexpected token 'G', "G%2C%2F%2C"... is not valid JSON
-    at JSON.parse (<anonymous>)
-    at decodeSongFromURL (HarmonyWheel.tsx:6828:29)
-    at HarmonyWheel.tsx:2198:22
-    at commitHookEffectListMount (chunk-NGODP64W.js?v=7b8148d9:16915:34)
-    at commitPassiveMountOnFiber (chunk-NGODP64W.js?v=7b8148d9:18156:19)
-    at commitPassiveMountEffects_complete (chunk-NGODP64W.js?v=7b8148d9:18129:17)
-    at commitPassiveMountEffects_begin (chunk-NGODP64W.js?v=7b8148d9:18119:15)
-    at commitPassiveMountEffects (chunk-NGODP64W.js?v=7b8148d9:18109:11)
-    at flushPassiveEffectsImpl (chunk-NGODP64W.js?v=7b8148d9:19490:11)
-    at flushPassiveEffects (chunk-NGODP64W.js?v=7b8148d9:19447:22)
-decodeSongFromURL @ HarmonyWheel.tsx:6839
-(anonymous) @ HarmonyWheel.tsx:2198
-commitHookEffectListMount @ chunk-NGODP64W.js?v=7b8148d9:16915
-commitPassiveMountOnFiber @ chunk-NGODP64W.js?v=7b8148d9:18156
-commitPassiveMountEffects_complete @ chunk-NGODP64W.js?v=7b8148d9:18129
-commitPassiveMountEffects_begin @ chunk-NGODP64W.js?v=7b8148d9:18119
-commitPassiveMountEffects @ chunk-NGODP64W.js?v=7b8148d9:18109
-flushPassiveEffectsImpl @ chunk-NGODP64W.js?v=7b8148d9:19490
-flushPassiveEffects @ chunk-NGODP64W.js?v=7b8148d9:19447
-(anonymous) @ chunk-NGODP64W.js?v=7b8148d9:19328
-workLoop @ chunk-NGODP64W.js?v=7b8148d9:197
-flushWork @ chunk-NGODP64W.js?v=7b8148d9:176
-performWorkUntilDeadline @ chunk-NGODP64W.js?v=7b8148d9:384
-HarmonyWheel.tsx:2237 Invalid song data: null
-(anonymous) @ HarmonyWheel.tsx:2237
-commitHookEffectListMount @ chunk-NGODP64W.js?v=7b8148d9:16915
-commitPassiveMountOnFiber @ chunk-NGODP64W.js?v=7b8148d9:18156
-commitPassiveMountEffects_complete @ chunk-NGODP64W.js?v=7b8148d9:18129
-commitPassiveMountEffects_begin @ chunk-NGODP64W.js?v=7b8148d9:18119
-commitPassiveMountEffects @ chunk-NGODP64W.js?v=7b8148d9:18109
-flushPassiveEffectsImpl @ chunk-NGODP64W.js?v=7b8148d9:19490
-flushPassiveEffects @ chunk-NGODP64W.js?v=7b8148d9:19447
-(anonymous) @ chunk-NGODP64W.js?v=7b8148d9:19328
-workLoop @ chunk-NGODP64W.js?v=7b8148d9:197
-flushWork @ chunk-NGODP64W.js?v=7b8148d9:176
-performWorkUntilDeadline @ chunk-NGODP64W.js?v=7b8148d9:384
-HarmonyWheel.tsx:2671 === PARSE AND LOAD START ===
-HarmonyWheel.tsx:2672 🏷️  APP VERSION: v3.18.86-harmony-wheel
-HarmonyWheel.tsx:2673 Input text: @TITLE Demo Song, @KEY C, @TEMPO 120, @LOOP, #hello darkness my old friend, |E7 / E7 / E7 E7 E7 /|E7 / E7 / E7 E7 E7 /|Am / Am / Am Am Am /||Am / Am / Am Am Am /|
+ 🎵 Auto-loading default song on mount
+ 🏷️ WEDGE LABEL KEY: Object
+:5173/favicon.ico:1  Failed to load resource: the server responded with a status of 404 (Not Found)
+ === PARSE AND LOAD START ===
+ 🏷️  APP VERSION: v3.18.122-harmony-wheel
+ Input text: @TITLE WELCOME TO BEAT KITCHEN
+@KEY C
+@TEMPO 160
+@LOOP
+
+|Fmaj7 * * * / / / E7 |* / E7 * * * * *|
+|Am7 #passing chord: Abm7 | Gm7 C7 |
+|Fmaj7 * * * / / / E7 |* / E7 * * * * *|
+|Am|Am7
 
 @RHYTHM1 |x x x x|
 @RHYTHM2 |x / x /|
 @RHYTHM3 |x x / x x x / x|
-HarmonyWheel.tsx:2741 Parsed tokens with rhythm: (40) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
-HarmonyWheel.tsx:2805 🎵 TEMPO detected: 120 BPM
-HarmonyWheel.tsx:2836 🔁 LOOP detected - enabling loop mode
-HarmonyWheel.tsx:2813 🎵 RHYTHM1 detected. cmd: RHYTHM1 arg: |x x x x| length: 9
-HarmonyWheel.tsx:2816 🎵 Rhythm Pattern 1: |x x x x| → (4) [{…}, {…}, {…}, {…}]
-HarmonyWheel.tsx:2820 🎵 RHYTHM2 detected. cmd: RHYTHM2 arg: |x / x /| length: 9
-HarmonyWheel.tsx:2823 🎵 Rhythm Pattern 2: |x / x /| → (4) [{…}, {…}, {…}, {…}]
-HarmonyWheel.tsx:2827 🎵 RHYTHM3 detected. cmd: RHYTHM3 arg: |x x / x x x / x| length: 17
-HarmonyWheel.tsx:2830 🎵 Rhythm Pattern 3: |x x / x x x / x| → (8) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
-HarmonyWheel.tsx:2994 📋 Filtered sequence - removed 5 config directives
-HarmonyWheel.tsx:3019 🔑 [v3.6.0] No @KEY directive, preserving baseKey: C
-HarmonyWheel.tsx:3025 Setting initial index to: 2 chord = #hello darkness my old friend
-HarmonyWheel.tsx:3031 === PARSE AND LOAD END ===
+ Parsed tokens with rhythm: Array(26)
+ 🎵 TEMPO detected: 160 BPM
+ 🔁 LOOP detected - enabling loop mode
+ 📝 Parsing comment: #passing chord: Abm7 → commentText: passing chord: Abm7
+   Found colon! before: passing chord after: Abm7
+   ✅ Chord matched! Abm7
+ 📋 Filtered sequence - removed 2 config directives
+ 🔑 [v3.6.0] No @KEY directive, preserving baseKey: C
+ Setting initial index to: 2 chord = Fmaj7
+ === PARSE AND LOAD END ===
 
-HarmonyWheel.tsx:2671 === PARSE AND LOAD START ===
-HarmonyWheel.tsx:2672 🏷️  APP VERSION: v3.18.86-harmony-wheel
-HarmonyWheel.tsx:2673 Input text: @TITLE Demo Song, @KEY C, @TEMPO 120, @LOOP, #hello darkness my old friend, |E7 / E7 / E7 E7 E7 /|E7 / E7 / E7 E7 E7 /|Am / Am / Am Am Am /||Am / Am / Am Am Am /|
-
-@RHYTHM1 |x x x x|
-@RHYTHM2 |x / x /|
-@RHYTHM3 |x x / x x x / x|
-HarmonyWheel.tsx:2741 Parsed tokens with rhythm: (40) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
-HarmonyWheel.tsx:2805 🎵 TEMPO detected: 120 BPM
-HarmonyWheel.tsx:2836 🔁 LOOP detected - enabling loop mode
-HarmonyWheel.tsx:2813 🎵 RHYTHM1 detected. cmd: RHYTHM1 arg: |x x x x| length: 9
-HarmonyWheel.tsx:2816 🎵 Rhythm Pattern 1: |x x x x| → (4) [{…}, {…}, {…}, {…}]
-HarmonyWheel.tsx:2820 🎵 RHYTHM2 detected. cmd: RHYTHM2 arg: |x / x /| length: 9
-HarmonyWheel.tsx:2823 🎵 Rhythm Pattern 2: |x / x /| → (4) [{…}, {…}, {…}, {…}]
-HarmonyWheel.tsx:2827 🎵 RHYTHM3 detected. cmd: RHYTHM3 arg: |x x / x x x / x| length: 17
-HarmonyWheel.tsx:2830 🎵 Rhythm Pattern 3: |x x / x x x / x| → (8) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
-HarmonyWheel.tsx:2994 📋 Filtered sequence - removed 5 config directives
-HarmonyWheel.tsx:3019 🔑 [v3.6.0] No @KEY directive, preserving baseKey: C
-HarmonyWheel.tsx:3025 Setting initial index to: 2 chord = #hello darkness my old friend
-HarmonyWheel.tsx:3031 === PARSE AND LOAD END ===
-
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:2366 🎹 MIDI INPUT: {originalNote: 72, transpose: 0, transposedNote: 72, noteName: 'C → C'}
-HarmonyWheel.tsx:6490 🎵 playNote START: {midiNote: 72, velocity: 0.5433070866141733, isChordNote: false, audioEnabledState: true, audioEnabledRef: true}
-HarmonyWheel.tsx:6497 🔊 Initializing audio context...
-HarmonyWheel.tsx:6499 🔊 Context state: running Sample rate: 44100
-HarmonyWheel.tsx:6508 🆔 Generated note ID: 72-1762569516457-0.3664829981888107
-HarmonyWheel.tsx:6512 📊 Frequency: 523.25 Hz, Time: 6.020
-HarmonyWheel.tsx:6515 🎹 Creating oscillators...
-HarmonyWheel.tsx:6543 🔗 Connecting audio graph...
-HarmonyWheel.tsx:6551 ▶️ Starting oscillators...
-HarmonyWheel.tsx:6555 ✅ Oscillators started successfully!
-HarmonyWheel.tsx:6562 💾 Stored note. Active count: 1
-HarmonyWheel.tsx:6582 🎹 MIDI note - sustaining until note-off
-HarmonyWheel.tsx:6585 ✅ playNote COMPLETE, returning ID: 72-1762569516457-0.3664829981888107
-HarmonyWheel.tsx:4760 🔍 [DIM7 ALWAYS-CHECK] {currentPcsRel: Array(1), absHeld: Array(1), bassNote: 72, bassPc: 0, absName: '', …}
-HarmonyWheel.tsx:5314 🏠 HOME CHECK: {now: 6487.899999976158, suppressUntil: 0, willRun: true, pcsRelSize: 1}
-HarmonyWheel.tsx:5353 🔒 ALLOW HOME CHECK: {allowHomeCheck: true, isUnambiguous: false, isVofV: false, isVofVi: false, isII: false, …}
-HarmonyWheel.tsx:5390 🔍 V/vi CALC: {vOfVi_root: 4, vOfVi_triad: Array(3), vOfVi_hasTriad: false, vOfVi_has7th: false, vOfVi: false, …}
-HarmonyWheel.tsx:4308 🎭 shouldShowBonusOverlay: {skillLevel: 'ADVANCED', showBonusWedges: false, result: false}
-HarmonyWheel.tsx:5475 🔍 Bm7♭5 bonus check: {hasBdimTriad: false, hasBm7b5: false, pcsRel: Array(1), visitorActive: false, shouldShow: false, …}
-HarmonyWheel.tsx:4308 🎭 shouldShowBonusOverlay: {skillLevel: 'ADVANCED', showBonusWedges: false, result: false}
-HarmonyWheel.tsx:5500 🔍 A7 bonus check: {hasA: false, hasA7: false, hasCSharpDimTriad: false, hasCSharpHalfDim: false, pcsRel: Array(1), …}
-HarmonyWheel.tsx:5611 ❌ NO TRI MATCH FOUND: {pcsRel: Array(1), absName: '', baseKey: 'C', availablePatterns: Array(8)}
-HarmonyWheel.tsx:5644 [DETECT] Fallback: {triDisp: null, absName: '', displayName: '', result: ''}
-HarmonyWheel.tsx:4318 🎯 centerOnly called: {t: '', stepRecord: false}
-HarmonyWheel.tsx:4333 📝 lastPlayedChordRef set to: 
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-favicon.ico:1  GET http://localhost:5173/favicon.ico 404 (Not Found)
-HarmonyWheel.tsx:2366 🎹 MIDI INPUT: {originalNote: 69, transpose: 0, transposedNote: 69, noteName: 'A → A'}
-HarmonyWheel.tsx:6490 🎵 playNote START: {midiNote: 69, velocity: 0.4881889763779528, isChordNote: false, audioEnabledState: true, audioEnabledRef: true}
-HarmonyWheel.tsx:6497 🔊 Initializing audio context...
-HarmonyWheel.tsx:6499 🔊 Context state: running Sample rate: 44100
-HarmonyWheel.tsx:6508 🆔 Generated note ID: 69-1762569516471-0.5284743651515265
-HarmonyWheel.tsx:6512 📊 Frequency: 440.00 Hz, Time: 6.031
-HarmonyWheel.tsx:6515 🎹 Creating oscillators...
-HarmonyWheel.tsx:6543 🔗 Connecting audio graph...
-HarmonyWheel.tsx:6551 ▶️ Starting oscillators...
-HarmonyWheel.tsx:6555 ✅ Oscillators started successfully!
-HarmonyWheel.tsx:6562 💾 Stored note. Active count: 2
-HarmonyWheel.tsx:6582 🎹 MIDI note - sustaining until note-off
-HarmonyWheel.tsx:6585 ✅ playNote COMPLETE, returning ID: 69-1762569516471-0.5284743651515265
-HarmonyWheel.tsx:4760 🔍 [DIM7 ALWAYS-CHECK] {currentPcsRel: Array(2), absHeld: Array(2), bassNote: 69, bassPc: 9, absName: '', …}
-HarmonyWheel.tsx:5314 🏠 HOME CHECK: {now: 6499.700000047684, suppressUntil: 0, willRun: true, pcsRelSize: 2}
-HarmonyWheel.tsx:5353 🔒 ALLOW HOME CHECK: {allowHomeCheck: true, isUnambiguous: false, isVofV: false, isVofVi: false, isII: false, …}
-HarmonyWheel.tsx:5390 🔍 V/vi CALC: {vOfVi_root: 4, vOfVi_triad: Array(3), vOfVi_hasTriad: false, vOfVi_has7th: false, vOfVi: false, …}
-HarmonyWheel.tsx:4308 🎭 shouldShowBonusOverlay: {skillLevel: 'ADVANCED', showBonusWedges: false, result: false}
-HarmonyWheel.tsx:5475 🔍 Bm7♭5 bonus check: {hasBdimTriad: false, hasBm7b5: false, pcsRel: Array(2), visitorActive: false, shouldShow: false, …}
-HarmonyWheel.tsx:4308 🎭 shouldShowBonusOverlay: {skillLevel: 'ADVANCED', showBonusWedges: false, result: false}
-HarmonyWheel.tsx:5500 🔍 A7 bonus check: {hasA: false, hasA7: false, hasCSharpDimTriad: false, hasCSharpHalfDim: false, pcsRel: Array(2), …}
-HarmonyWheel.tsx:5611 ❌ NO TRI MATCH FOUND: {pcsRel: Array(2), absName: '', baseKey: 'C', availablePatterns: Array(8)}
-HarmonyWheel.tsx:5644 [DETECT] Fallback: {triDisp: null, absName: '', displayName: '', result: ''}
-HarmonyWheel.tsx:4318 🎯 centerOnly called: {t: '', stepRecord: false}
-HarmonyWheel.tsx:4333 📝 lastPlayedChordRef set to: 
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:2366 🎹 MIDI INPUT: {originalNote: 76, transpose: 0, transposedNote: 76, noteName: 'E → E'}
-HarmonyWheel.tsx:6490 🎵 playNote START: {midiNote: 76, velocity: 0.4881889763779528, isChordNote: false, audioEnabledState: true, audioEnabledRef: true}
-HarmonyWheel.tsx:6497 🔊 Initializing audio context...
-HarmonyWheel.tsx:6499 🔊 Context state: running Sample rate: 44100
-HarmonyWheel.tsx:6508 🆔 Generated note ID: 76-1762569516476-0.5736953356646596
-HarmonyWheel.tsx:6512 📊 Frequency: 659.26 Hz, Time: 6.037
-HarmonyWheel.tsx:6515 🎹 Creating oscillators...
-HarmonyWheel.tsx:6543 🔗 Connecting audio graph...
-HarmonyWheel.tsx:6551 ▶️ Starting oscillators...
-HarmonyWheel.tsx:6555 ✅ Oscillators started successfully!
-HarmonyWheel.tsx:6562 💾 Stored note. Active count: 3
-HarmonyWheel.tsx:6582 🎹 MIDI note - sustaining until note-off
-HarmonyWheel.tsx:6585 ✅ playNote COMPLETE, returning ID: 76-1762569516476-0.5736953356646596
-HarmonyWheel.tsx:4743 💎 lastDetectedChordRef set to: Am (from theory.ts)
-HarmonyWheel.tsx:4760 🔍 [DIM7 ALWAYS-CHECK] {currentPcsRel: Array(3), absHeld: Array(3), bassNote: 69, bassPc: 9, absName: 'Am', …}
-HarmonyWheel.tsx:5314 🏠 HOME CHECK: {now: 6504.399999976158, suppressUntil: 0, willRun: true, pcsRelSize: 3}
-HarmonyWheel.tsx:5353 🔒 ALLOW HOME CHECK: {allowHomeCheck: true, isUnambiguous: true, isVofV: false, isVofVi: false, isII: false, …}
-HarmonyWheel.tsx:5390 🔍 V/vi CALC: {vOfVi_root: 4, vOfVi_triad: Array(3), vOfVi_hasTriad: false, vOfVi_has7th: false, vOfVi: false, …}
-HarmonyWheel.tsx:4252 🎯 setActiveWithTrail called: {fn: 'vi', label: 'Am', stepRecord: false}
-HarmonyWheel.tsx:4253 📍 Stack trace:     at setActiveWithTrail (http://localhost:5173/src/HarmonyWheel.tsx?t=1762569500306:1940:23)
-    at detect (http://localhost:5173/src/HarmonyWheel.tsx?t=1762569500306:2902:9)
-    at dev.onmidimessage (http://localhost:5173/src/HarmonyWheel.tsx?t=1762569500306:509:9)
-HarmonyWheel.tsx:4257 💾 Saved latched chord: {fn: 'vi', label: 'Am'}
-HarmonyWheel.tsx:4268 📝 lastPlayedChordRef set to: Am
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:2366 🎹 MIDI INPUT: {originalNote: 65, transpose: 0, transposedNote: 65, noteName: 'F → F'}
-HarmonyWheel.tsx:6490 🎵 playNote START: {midiNote: 65, velocity: 0.4330708661417323, isChordNote: false, audioEnabledState: true, audioEnabledRef: true}
-HarmonyWheel.tsx:6497 🔊 Initializing audio context...
-HarmonyWheel.tsx:6499 🔊 Context state: running Sample rate: 44100
-HarmonyWheel.tsx:6508 🆔 Generated note ID: 65-1762569516489-0.4935787226068855
-HarmonyWheel.tsx:6512 📊 Frequency: 349.23 Hz, Time: 6.049
-HarmonyWheel.tsx:6515 🎹 Creating oscillators...
-HarmonyWheel.tsx:6543 🔗 Connecting audio graph...
-HarmonyWheel.tsx:6551 ▶️ Starting oscillators...
-HarmonyWheel.tsx:6555 ✅ Oscillators started successfully!
-HarmonyWheel.tsx:6562 💾 Stored note. Active count: 4
-HarmonyWheel.tsx:6582 🎹 MIDI note - sustaining until note-off
-HarmonyWheel.tsx:6585 ✅ playNote COMPLETE, returning ID: 65-1762569516489-0.4935787226068855
-HarmonyWheel.tsx:4743 💎 lastDetectedChordRef set to: Fmaj7 (from theory.ts)
-HarmonyWheel.tsx:4760 🔍 [DIM7 ALWAYS-CHECK] {currentPcsRel: Array(4), absHeld: Array(4), bassNote: 65, bassPc: 5, absName: 'Fmaj7', …}
-HarmonyWheel.tsx:4795 ✅ Fmaj7 EARLY CHECK → IV wedge
-HarmonyWheel.tsx:4252 🎯 setActiveWithTrail called: {fn: 'IV', label: 'Fmaj7', stepRecord: false}
-HarmonyWheel.tsx:4253 📍 Stack trace:     at setActiveWithTrail (http://localhost:5173/src/HarmonyWheel.tsx?t=1762569500306:1940:23)
-    at detect (http://localhost:5173/src/HarmonyWheel.tsx?t=1762569500306:2374:7)
-    at dev.onmidimessage (http://localhost:5173/src/HarmonyWheel.tsx?t=1762569500306:509:9)
-HarmonyWheel.tsx:4257 💾 Saved latched chord: {fn: 'IV', label: 'Fmaj7'}
-HarmonyWheel.tsx:4268 📝 lastPlayedChordRef set to: Fmaj7
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:4669 🔍 No notes held - checking latch state: {latchedChord: {…}, hasLatchedChord: true, subdomActive: false, subdomLatched: false}
-HarmonyWheel.tsx:4681 🔒 MIDI latch active - keeping display: {fn: 'IV', label: 'Fmaj7'}
-HarmonyWheel.tsx:2419 ⏱️ MIDI latch timer started - 10s until clear, timerId: 20
-HarmonyWheel.tsx:4669 🔍 No notes held - checking latch state: {latchedChord: {…}, hasLatchedChord: true, subdomActive: false, subdomLatched: false}
-HarmonyWheel.tsx:4681 🔒 MIDI latch active - keeping display: {fn: 'IV', label: 'Fmaj7'}
-HarmonyWheel.tsx:4669 🔍 No notes held - checking latch state: {latchedChord: {…}, hasLatchedChord: true, subdomActive: false, subdomLatched: false}
-HarmonyWheel.tsx:4681 🔒 MIDI latch active - keeping display: {fn: 'IV', label: 'Fmaj7'}
-HarmonyWheel.tsx:4669 🔍 No notes held - checking latch state: {latchedChord: {…}, hasLatchedChord: true, subdomActive: false, subdomLatched: false}
-HarmonyWheel.tsx:4681 🔒 MIDI latch active - keeping display: {fn: 'IV', label: 'Fmaj7'}
-HarmonyWheel.tsx:2366 🎹 MIDI INPUT: {originalNote: 70, transpose: 0, transposedNote: 70, noteName: 'Bb → Bb'}
-HarmonyWheel.tsx:6490 🎵 playNote START: {midiNote: 70, velocity: 0.7637795275590551, isChordNote: false, audioEnabledState: true, audioEnabledRef: true}
-HarmonyWheel.tsx:6497 🔊 Initializing audio context...
-HarmonyWheel.tsx:6499 🔊 Context state: running Sample rate: 44100
-HarmonyWheel.tsx:6508 🆔 Generated note ID: 70-1762569525281-0.8023197808692852
-HarmonyWheel.tsx:6512 📊 Frequency: 466.16 Hz, Time: 14.843
-HarmonyWheel.tsx:6515 🎹 Creating oscillators...
-HarmonyWheel.tsx:6543 🔗 Connecting audio graph...
-HarmonyWheel.tsx:6551 ▶️ Starting oscillators...
-HarmonyWheel.tsx:6555 ✅ Oscillators started successfully!
-HarmonyWheel.tsx:6562 💾 Stored note. Active count: 1
-HarmonyWheel.tsx:6582 🎹 MIDI note - sustaining until note-off
-HarmonyWheel.tsx:6585 ✅ playNote COMPLETE, returning ID: 70-1762569525281-0.8023197808692852
-HarmonyWheel.tsx:4760 🔍 [DIM7 ALWAYS-CHECK] {currentPcsRel: Array(1), absHeld: Array(1), bassNote: 70, bassPc: 10, absName: '', …}
-HarmonyWheel.tsx:5314 🏠 HOME CHECK: {now: 15309.100000023842, suppressUntil: 0, willRun: true, pcsRelSize: 1}
-HarmonyWheel.tsx:5353 🔒 ALLOW HOME CHECK: {allowHomeCheck: true, isUnambiguous: false, isVofV: false, isVofVi: false, isII: false, …}
-HarmonyWheel.tsx:5390 🔍 V/vi CALC: {vOfVi_root: 4, vOfVi_triad: Array(3), vOfVi_hasTriad: false, vOfVi_has7th: false, vOfVi: false, …}
-HarmonyWheel.tsx:4308 🎭 shouldShowBonusOverlay: {skillLevel: 'ADVANCED', showBonusWedges: false, result: false}
-HarmonyWheel.tsx:5475 🔍 Bm7♭5 bonus check: {hasBdimTriad: false, hasBm7b5: false, pcsRel: Array(1), visitorActive: false, shouldShow: false, …}
-HarmonyWheel.tsx:4308 🎭 shouldShowBonusOverlay: {skillLevel: 'ADVANCED', showBonusWedges: false, result: false}
-HarmonyWheel.tsx:5500 🔍 A7 bonus check: {hasA: false, hasA7: false, hasCSharpDimTriad: false, hasCSharpHalfDim: false, pcsRel: Array(1), …}
-HarmonyWheel.tsx:5611 ❌ NO TRI MATCH FOUND: {pcsRel: Array(1), absName: '', baseKey: 'C', availablePatterns: Array(8)}
-HarmonyWheel.tsx:5644 [DETECT] Fallback: {triDisp: null, absName: '', displayName: '', result: ''}
-HarmonyWheel.tsx:4318 🎯 centerOnly called: {t: '', stepRecord: false}
-HarmonyWheel.tsx:4324 🚫 Cancelling existing timeout (centerOnly called): 20
-HarmonyWheel.tsx:4333 📝 lastPlayedChordRef set to: 
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:2366 🎹 MIDI INPUT: {originalNote: 67, transpose: 0, transposedNote: 67, noteName: 'G → G'}
-HarmonyWheel.tsx:6490 🎵 playNote START: {midiNote: 67, velocity: 0.6850393700787402, isChordNote: false, audioEnabledState: true, audioEnabledRef: true}
-HarmonyWheel.tsx:6497 🔊 Initializing audio context...
-HarmonyWheel.tsx:6499 🔊 Context state: running Sample rate: 44100
-HarmonyWheel.tsx:6508 🆔 Generated note ID: 67-1762569525286-0.251411789742895
-HarmonyWheel.tsx:6512 📊 Frequency: 392.00 Hz, Time: 14.843
-HarmonyWheel.tsx:6515 🎹 Creating oscillators...
-HarmonyWheel.tsx:6543 🔗 Connecting audio graph...
-HarmonyWheel.tsx:6551 ▶️ Starting oscillators...
-HarmonyWheel.tsx:6555 ✅ Oscillators started successfully!
-HarmonyWheel.tsx:6562 💾 Stored note. Active count: 2
-HarmonyWheel.tsx:6582 🎹 MIDI note - sustaining until note-off
-HarmonyWheel.tsx:6585 ✅ playNote COMPLETE, returning ID: 67-1762569525286-0.251411789742895
-HarmonyWheel.tsx:4760 🔍 [DIM7 ALWAYS-CHECK] {currentPcsRel: Array(2), absHeld: Array(2), bassNote: 67, bassPc: 7, absName: '', …}
-HarmonyWheel.tsx:5314 🏠 HOME CHECK: {now: 15313.899999976158, suppressUntil: 0, willRun: true, pcsRelSize: 2}
-HarmonyWheel.tsx:5353 🔒 ALLOW HOME CHECK: {allowHomeCheck: true, isUnambiguous: false, isVofV: false, isVofVi: false, isII: false, …}
-HarmonyWheel.tsx:5390 🔍 V/vi CALC: {vOfVi_root: 4, vOfVi_triad: Array(3), vOfVi_hasTriad: false, vOfVi_has7th: false, vOfVi: false, …}
-HarmonyWheel.tsx:4308 🎭 shouldShowBonusOverlay: {skillLevel: 'ADVANCED', showBonusWedges: false, result: false}
-HarmonyWheel.tsx:5475 🔍 Bm7♭5 bonus check: {hasBdimTriad: false, hasBm7b5: false, pcsRel: Array(2), visitorActive: false, shouldShow: false, …}
-HarmonyWheel.tsx:4308 🎭 shouldShowBonusOverlay: {skillLevel: 'ADVANCED', showBonusWedges: false, result: false}
-HarmonyWheel.tsx:5500 🔍 A7 bonus check: {hasA: false, hasA7: false, hasCSharpDimTriad: false, hasCSharpHalfDim: false, pcsRel: Array(2), …}
-HarmonyWheel.tsx:5611 ❌ NO TRI MATCH FOUND: {pcsRel: Array(2), absName: '', baseKey: 'C', availablePatterns: Array(8)}
-HarmonyWheel.tsx:5644 [DETECT] Fallback: {triDisp: null, absName: '', displayName: '', result: ''}
-HarmonyWheel.tsx:4318 🎯 centerOnly called: {t: '', stepRecord: false}
-HarmonyWheel.tsx:4333 📝 lastPlayedChordRef set to: 
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:2366 🎹 MIDI INPUT: {originalNote: 64, transpose: 0, transposedNote: 64, noteName: 'E → E'}
-HarmonyWheel.tsx:6490 🎵 playNote START: {midiNote: 64, velocity: 0.2125984251968504, isChordNote: false, audioEnabledState: true, audioEnabledRef: true}
-HarmonyWheel.tsx:6497 🔊 Initializing audio context...
-HarmonyWheel.tsx:6499 🔊 Context state: running Sample rate: 44100
-HarmonyWheel.tsx:6508 🆔 Generated note ID: 64-1762569525289-0.15275700862368413
-HarmonyWheel.tsx:6512 📊 Frequency: 329.63 Hz, Time: 14.849
-HarmonyWheel.tsx:6515 🎹 Creating oscillators...
-HarmonyWheel.tsx:6543 🔗 Connecting audio graph...
-HarmonyWheel.tsx:6551 ▶️ Starting oscillators...
-HarmonyWheel.tsx:6555 ✅ Oscillators started successfully!
-HarmonyWheel.tsx:6562 💾 Stored note. Active count: 3
-HarmonyWheel.tsx:6582 🎹 MIDI note - sustaining until note-off
-HarmonyWheel.tsx:6585 ✅ playNote COMPLETE, returning ID: 64-1762569525289-0.15275700862368413
-HarmonyWheel.tsx:4743 💎 lastDetectedChordRef set to: Edim (from theory.ts)
-HarmonyWheel.tsx:4760 🔍 [DIM7 ALWAYS-CHECK] {currentPcsRel: Array(3), absHeld: Array(3), bassNote: 64, bassPc: 4, absName: 'Edim', …}
-HarmonyWheel.tsx:5314 🏠 HOME CHECK: {now: 15317.899999976158, suppressUntil: 0, willRun: true, pcsRelSize: 3}
-HarmonyWheel.tsx:5353 🔒 ALLOW HOME CHECK: {allowHomeCheck: true, isUnambiguous: false, isVofV: false, isVofVi: false, isII: false, …}
-HarmonyWheel.tsx:5390 🔍 V/vi CALC: {vOfVi_root: 4, vOfVi_triad: Array(3), vOfVi_hasTriad: false, vOfVi_has7th: false, vOfVi: false, …}
-HarmonyWheel.tsx:4308 🎭 shouldShowBonusOverlay: {skillLevel: 'ADVANCED', showBonusWedges: false, result: false}
-HarmonyWheel.tsx:5475 🔍 Bm7♭5 bonus check: {hasBdimTriad: false, hasBm7b5: false, pcsRel: Array(3), visitorActive: false, shouldShow: false, …}
-HarmonyWheel.tsx:4308 🎭 shouldShowBonusOverlay: {skillLevel: 'ADVANCED', showBonusWedges: false, result: false}
-HarmonyWheel.tsx:5500 🔍 A7 bonus check: {hasA: false, hasA7: false, hasCSharpDimTriad: false, hasCSharpHalfDim: false, pcsRel: Array(3), …}
-HarmonyWheel.tsx:5611 ❌ NO TRI MATCH FOUND: {pcsRel: Array(3), absName: 'Edim', baseKey: 'C', availablePatterns: Array(8)}
-HarmonyWheel.tsx:4318 🎯 centerOnly called: {t: 'Edim', stepRecord: false}
-HarmonyWheel.tsx:4333 📝 lastPlayedChordRef set to: Edim
-HarmonyWheel.tsx:2366 🎹 MIDI INPUT: {originalNote: 72, transpose: 0, transposedNote: 72, noteName: 'C → C'}
-HarmonyWheel.tsx:6490 🎵 playNote START: {midiNote: 72, velocity: 0.6535433070866141, isChordNote: false, audioEnabledState: true, audioEnabledRef: true}
-HarmonyWheel.tsx:6497 🔊 Initializing audio context...
-HarmonyWheel.tsx:6499 🔊 Context state: running Sample rate: 44100
-HarmonyWheel.tsx:6508 🆔 Generated note ID: 72-1762569525293-0.9884930375451558
-HarmonyWheel.tsx:6512 📊 Frequency: 523.25 Hz, Time: 14.855
-HarmonyWheel.tsx:6515 🎹 Creating oscillators...
-HarmonyWheel.tsx:6543 🔗 Connecting audio graph...
-HarmonyWheel.tsx:6551 ▶️ Starting oscillators...
-HarmonyWheel.tsx:6555 ✅ Oscillators started successfully!
-HarmonyWheel.tsx:6562 💾 Stored note. Active count: 4
-HarmonyWheel.tsx:6582 🎹 MIDI note - sustaining until note-off
-HarmonyWheel.tsx:6585 ✅ playNote COMPLETE, returning ID: 72-1762569525293-0.9884930375451558
-HarmonyWheel.tsx:4743 💎 lastDetectedChordRef set to: C7 (from theory.ts)
-HarmonyWheel.tsx:4760 🔍 [DIM7 ALWAYS-CHECK] {currentPcsRel: Array(4), absHeld: Array(4), bassNote: 64, bassPc: 4, absName: 'C7', …}
-HarmonyWheel.tsx:4252 🎯 setActiveWithTrail called: {fn: 'V7', label: 'C7', stepRecord: false}
-HarmonyWheel.tsx:4253 📍 Stack trace:     at setActiveWithTrail (http://localhost:5173/src/HarmonyWheel.tsx?t=1762569500306:1940:23)
-    at detect (http://localhost:5173/src/HarmonyWheel.tsx?t=1762569500306:2504:11)
-    at dev.onmidimessage (http://localhost:5173/src/HarmonyWheel.tsx?t=1762569500306:509:9)
-HarmonyWheel.tsx:4257 💾 Saved latched chord: {fn: 'V7', label: 'C7'}
-HarmonyWheel.tsx:4268 📝 lastPlayedChordRef set to: C7
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5816 🏷️ WEDGE LABEL KEY: {labelKey: 'F', effectiveBaseKey: 'C', baseKey: 'C', visitor: false, subdom: true}
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:4669 🔍 No notes held - checking latch state: {latchedChord: {…}, hasLatchedChord: true, subdomActive: true, subdomLatched: true}
-HarmonyWheel.tsx:4681 🔒 MIDI latch active - keeping display: {fn: 'V7', label: 'C7'}
-HarmonyWheel.tsx:2419 ⏱️ MIDI latch timer started - 10s until clear, timerId: 30
-HarmonyWheel.tsx:4669 🔍 No notes held - checking latch state: {latchedChord: {…}, hasLatchedChord: true, subdomActive: true, subdomLatched: true}
-HarmonyWheel.tsx:4681 🔒 MIDI latch active - keeping display: {fn: 'V7', label: 'C7'}
-HarmonyWheel.tsx:4669 🔍 No notes held - checking latch state: {latchedChord: {…}, hasLatchedChord: true, subdomActive: true, subdomLatched: true}
-HarmonyWheel.tsx:4681 🔒 MIDI latch active - keeping display: {fn: 'V7', label: 'C7'}
-HarmonyWheel.tsx:4669 🔍 No notes held - checking latch state: {latchedChord: {…}, hasLatchedChord: true, subdomActive: true, subdomLatched: true}
-HarmonyWheel.tsx:4681 🔒 MIDI latch active - keeping display: {fn: 'V7', label: 'C7'}
-HarmonyWheel.tsx:2366 🎹 MIDI INPUT: {originalNote: 72, transpose: 0, transposedNote: 72, noteName: 'C → C'}
-HarmonyWheel.tsx:6490 🎵 playNote START: {midiNote: 72, velocity: 0.7086614173228346, isChordNote: false, audioEnabledState: true, audioEnabledRef: true}
-HarmonyWheel.tsx:6497 🔊 Initializing audio context...
-HarmonyWheel.tsx:6499 🔊 Context state: running Sample rate: 44100
-HarmonyWheel.tsx:6508 🆔 Generated note ID: 72-1762569531331-0.8133344697419691
-HarmonyWheel.tsx:6512 📊 Frequency: 523.25 Hz, Time: 20.892
-HarmonyWheel.tsx:6515 🎹 Creating oscillators...
-HarmonyWheel.tsx:6543 🔗 Connecting audio graph...
-HarmonyWheel.tsx:6551 ▶️ Starting oscillators...
-HarmonyWheel.tsx:6555 ✅ Oscillators started successfully!
-HarmonyWheel.tsx:6562 💾 Stored note. Active count: 1
-HarmonyWheel.tsx:6582 🎹 MIDI note - sustaining until note-off
-HarmonyWheel.tsx:6585 ✅ playNote COMPLETE, returning ID: 72-1762569531331-0.8133344697419691
-HarmonyWheel.tsx:4760 🔍 [DIM7 ALWAYS-CHECK] {currentPcsRel: Array(1), absHeld: Array(1), bassNote: 72, bassPc: 0, absName: '', …}
-HarmonyWheel.tsx:2366 🎹 MIDI INPUT: {originalNote: 69, transpose: 0, transposedNote: 69, noteName: 'A → A'}
-HarmonyWheel.tsx:6490 🎵 playNote START: {midiNote: 69, velocity: 0.6535433070866141, isChordNote: false, audioEnabledState: true, audioEnabledRef: true}
-HarmonyWheel.tsx:6497 🔊 Initializing audio context...
-HarmonyWheel.tsx:6499 🔊 Context state: running Sample rate: 44100
-HarmonyWheel.tsx:6508 🆔 Generated note ID: 69-1762569531337-0.44474176917332775
-HarmonyWheel.tsx:6512 📊 Frequency: 440.00 Hz, Time: 20.898
-HarmonyWheel.tsx:6515 🎹 Creating oscillators...
-HarmonyWheel.tsx:6543 🔗 Connecting audio graph...
-HarmonyWheel.tsx:6551 ▶️ Starting oscillators...
-HarmonyWheel.tsx:6555 ✅ Oscillators started successfully!
-HarmonyWheel.tsx:6562 💾 Stored note. Active count: 2
-HarmonyWheel.tsx:6582 🎹 MIDI note - sustaining until note-off
-HarmonyWheel.tsx:6585 ✅ playNote COMPLETE, returning ID: 69-1762569531337-0.44474176917332775
-HarmonyWheel.tsx:4760 🔍 [DIM7 ALWAYS-CHECK] {currentPcsRel: Array(2), absHeld: Array(2), bassNote: 69, bassPc: 9, absName: '', …}
-HarmonyWheel.tsx:2366 🎹 MIDI INPUT: {originalNote: 76, transpose: 0, transposedNote: 76, noteName: 'E → E'}
-HarmonyWheel.tsx:6490 🎵 playNote START: {midiNote: 76, velocity: 0.6929133858267716, isChordNote: false, audioEnabledState: true, audioEnabledRef: true}
-HarmonyWheel.tsx:6497 🔊 Initializing audio context...
-HarmonyWheel.tsx:6499 🔊 Context state: running Sample rate: 44100
-HarmonyWheel.tsx:6508 🆔 Generated note ID: 76-1762569531343-0.7838714613020882
-HarmonyWheel.tsx:6512 📊 Frequency: 659.26 Hz, Time: 20.904
-HarmonyWheel.tsx:6515 🎹 Creating oscillators...
-HarmonyWheel.tsx:6543 🔗 Connecting audio graph...
-HarmonyWheel.tsx:6551 ▶️ Starting oscillators...
-HarmonyWheel.tsx:6555 ✅ Oscillators started successfully!
-HarmonyWheel.tsx:6562 💾 Stored note. Active count: 3
-HarmonyWheel.tsx:6582 🎹 MIDI note - sustaining until note-off
-HarmonyWheel.tsx:6585 ✅ playNote COMPLETE, returning ID: 76-1762569531343-0.7838714613020882
-HarmonyWheel.tsx:4743 💎 lastDetectedChordRef set to: Am (from theory.ts)
-HarmonyWheel.tsx:4760 🔍 [DIM7 ALWAYS-CHECK] {currentPcsRel: Array(3), absHeld: Array(3), bassNote: 69, bassPc: 9, absName: 'Am', …}
-HarmonyWheel.tsx:2366 🎹 MIDI INPUT: {originalNote: 65, transpose: 0, transposedNote: 65, noteName: 'F → F'}
-HarmonyWheel.tsx:6490 🎵 playNote START: {midiNote: 65, velocity: 0.5748031496062992, isChordNote: false, audioEnabledState: true, audioEnabledRef: true}
-HarmonyWheel.tsx:6497 🔊 Initializing audio context...
-HarmonyWheel.tsx:6499 🔊 Context state: running Sample rate: 44100
-HarmonyWheel.tsx:6508 🆔 Generated note ID: 65-1762569531358-0.914518514380534
-HarmonyWheel.tsx:6512 📊 Frequency: 349.23 Hz, Time: 20.921
-HarmonyWheel.tsx:6515 🎹 Creating oscillators...
-HarmonyWheel.tsx:6543 🔗 Connecting audio graph...
-HarmonyWheel.tsx:6551 ▶️ Starting oscillators...
-HarmonyWheel.tsx:6555 ✅ Oscillators started successfully!
-HarmonyWheel.tsx:6562 💾 Stored note. Active count: 4
-HarmonyWheel.tsx:6582 🎹 MIDI note - sustaining until note-off
-HarmonyWheel.tsx:6585 ✅ playNote COMPLETE, returning ID: 65-1762569531358-0.914518514380534
-HarmonyWheel.tsx:4743 💎 lastDetectedChordRef set to: Fmaj7 (from theory.ts)
-HarmonyWheel.tsx:4760 🔍 [DIM7 ALWAYS-CHECK] {currentPcsRel: Array(4), absHeld: Array(4), bassNote: 65, bassPc: 5, absName: 'Fmaj7', …}
-HarmonyWheel.tsx:4795 ✅ Fmaj7 EARLY CHECK → IV wedge
-HarmonyWheel.tsx:4252 🎯 setActiveWithTrail called: {fn: 'IV', label: 'Fmaj7', stepRecord: false}
-HarmonyWheel.tsx:4253 📍 Stack trace:     at setActiveWithTrail (http://localhost:5173/src/HarmonyWheel.tsx?t=1762569500306:1940:23)
-    at detect (http://localhost:5173/src/HarmonyWheel.tsx?t=1762569500306:2374:7)
-    at dev.onmidimessage (http://localhost:5173/src/HarmonyWheel.tsx?t=1762569500306:509:9)
-HarmonyWheel.tsx:4257 💾 Saved latched chord: {fn: 'IV', label: 'Fmaj7'}
-HarmonyWheel.tsx:4259 🚫 Cancelling existing timeout (new chord detected): 30
-HarmonyWheel.tsx:4268 📝 lastPlayedChordRef set to: Fmaj7
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:4669 🔍 No notes held - checking latch state: {latchedChord: {…}, hasLatchedChord: true, subdomActive: true, subdomLatched: true}
-HarmonyWheel.tsx:4681 🔒 MIDI latch active - keeping display: {fn: 'IV', label: 'Fmaj7'}
-HarmonyWheel.tsx:2419 ⏱️ MIDI latch timer started - 10s until clear, timerId: 39
-HarmonyWheel.tsx:4669 🔍 No notes held - checking latch state: {latchedChord: {…}, hasLatchedChord: true, subdomActive: true, subdomLatched: true}
-HarmonyWheel.tsx:4681 🔒 MIDI latch active - keeping display: {fn: 'IV', label: 'Fmaj7'}
-HarmonyWheel.tsx:4669 🔍 No notes held - checking latch state: {latchedChord: {…}, hasLatchedChord: true, subdomActive: true, subdomLatched: true}
-HarmonyWheel.tsx:4681 🔒 MIDI latch active - keeping display: {fn: 'IV', label: 'Fmaj7'}
-HarmonyWheel.tsx:4669 🔍 No notes held - checking latch state: {latchedChord: {…}, hasLatchedChord: true, subdomActive: true, subdomLatched: true}
-HarmonyWheel.tsx:4681 🔒 MIDI latch active - keeping display: {fn: 'IV', label: 'Fmaj7'}
-HarmonyWheel.tsx:2366 🎹 MIDI INPUT: {originalNote: 65, transpose: 0, transposedNote: 65, noteName: 'F → F'}
-HarmonyWheel.tsx:6490 🎵 playNote START: {midiNote: 65, velocity: 0.41732283464566927, isChordNote: false, audioEnabledState: true, audioEnabledRef: true}
-HarmonyWheel.tsx:6497 🔊 Initializing audio context...
-HarmonyWheel.tsx:6499 🔊 Context state: running Sample rate: 44100
-HarmonyWheel.tsx:6508 🆔 Generated note ID: 65-1762569539106-0.3234191464683246
-HarmonyWheel.tsx:6512 📊 Frequency: 349.23 Hz, Time: 28.665
-HarmonyWheel.tsx:6515 🎹 Creating oscillators...
-HarmonyWheel.tsx:6543 🔗 Connecting audio graph...
-HarmonyWheel.tsx:6551 ▶️ Starting oscillators...
-HarmonyWheel.tsx:6555 ✅ Oscillators started successfully!
-HarmonyWheel.tsx:6562 💾 Stored note. Active count: 1
-HarmonyWheel.tsx:6582 🎹 MIDI note - sustaining until note-off
-HarmonyWheel.tsx:6585 ✅ playNote COMPLETE, returning ID: 65-1762569539106-0.3234191464683246
-HarmonyWheel.tsx:4760 🔍 [DIM7 ALWAYS-CHECK] {currentPcsRel: Array(1), absHeld: Array(1), bassNote: 65, bassPc: 5, absName: '', …}
-HarmonyWheel.tsx:2366 🎹 MIDI INPUT: {originalNote: 69, transpose: 0, transposedNote: 69, noteName: 'A → A'}
-HarmonyWheel.tsx:6490 🎵 playNote START: {midiNote: 69, velocity: 0.5748031496062992, isChordNote: false, audioEnabledState: true, audioEnabledRef: true}
-HarmonyWheel.tsx:6497 🔊 Initializing audio context...
-HarmonyWheel.tsx:6499 🔊 Context state: running Sample rate: 44100
-HarmonyWheel.tsx:6508 🆔 Generated note ID: 69-1762569540255-0.7634786943189112
-HarmonyWheel.tsx:6512 📊 Frequency: 440.00 Hz, Time: 29.814
-HarmonyWheel.tsx:6515 🎹 Creating oscillators...
-HarmonyWheel.tsx:6543 🔗 Connecting audio graph...
-HarmonyWheel.tsx:6551 ▶️ Starting oscillators...
-HarmonyWheel.tsx:6555 ✅ Oscillators started successfully!
-HarmonyWheel.tsx:6562 💾 Stored note. Active count: 2
-HarmonyWheel.tsx:6582 🎹 MIDI note - sustaining until note-off
-HarmonyWheel.tsx:6585 ✅ playNote COMPLETE, returning ID: 69-1762569540255-0.7634786943189112
-HarmonyWheel.tsx:4760 🔍 [DIM7 ALWAYS-CHECK] {currentPcsRel: Array(2), absHeld: Array(2), bassNote: 65, bassPc: 5, absName: '', …}
-HarmonyWheel.tsx:2366 🎹 MIDI INPUT: {originalNote: 72, transpose: 0, transposedNote: 72, noteName: 'C → C'}
-HarmonyWheel.tsx:6490 🎵 playNote START: {midiNote: 72, velocity: 0.5118110236220472, isChordNote: false, audioEnabledState: true, audioEnabledRef: true}
-HarmonyWheel.tsx:6497 🔊 Initializing audio context...
-HarmonyWheel.tsx:6499 🔊 Context state: running Sample rate: 44100
-HarmonyWheel.tsx:6508 🆔 Generated note ID: 72-1762569541575-0.4820178648751833
-HarmonyWheel.tsx:6512 📊 Frequency: 523.25 Hz, Time: 31.138
-HarmonyWheel.tsx:6515 🎹 Creating oscillators...
-HarmonyWheel.tsx:6543 🔗 Connecting audio graph...
-HarmonyWheel.tsx:6551 ▶️ Starting oscillators...
-HarmonyWheel.tsx:6555 ✅ Oscillators started successfully!
-HarmonyWheel.tsx:6562 💾 Stored note. Active count: 3
-HarmonyWheel.tsx:6582 🎹 MIDI note - sustaining until note-off
-HarmonyWheel.tsx:6585 ✅ playNote COMPLETE, returning ID: 72-1762569541575-0.4820178648751833
-HarmonyWheel.tsx:4743 💎 lastDetectedChordRef set to: F (from theory.ts)
-HarmonyWheel.tsx:4760 🔍 [DIM7 ALWAYS-CHECK] {currentPcsRel: Array(3), absHeld: Array(3), bassNote: 65, bassPc: 5, absName: 'F', …}
-HarmonyWheel.tsx:5077 🔍 SUB F/Fmaj7 CHECK: {absName: 'F', S: Array(3), pcsRel: Array(3), hasTriad: true, hasFmaj7: false, …}
-HarmonyWheel.tsx:4252 🎯 setActiveWithTrail called: {fn: 'I', label: 'F', stepRecord: false}
-HarmonyWheel.tsx:4253 📍 Stack trace:     at setActiveWithTrail (http://localhost:5173/src/HarmonyWheel.tsx?t=1762569500306:1940:23)
-    at detect (http://localhost:5173/src/HarmonyWheel.tsx?t=1762569500306:2614:13)
-    at dev.onmidimessage (http://localhost:5173/src/HarmonyWheel.tsx?t=1762569500306:509:9)
-HarmonyWheel.tsx:4257 💾 Saved latched chord: {fn: 'I', label: 'F'}
-HarmonyWheel.tsx:4259 🚫 Cancelling existing timeout (new chord detected): 39
-HarmonyWheel.tsx:4268 📝 lastPlayedChordRef set to: F
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:2366 🎹 MIDI INPUT: {originalNote: 76, transpose: 0, transposedNote: 76, noteName: 'E → E'}
-HarmonyWheel.tsx:6490 🎵 playNote START: {midiNote: 76, velocity: 0.6535433070866141, isChordNote: false, audioEnabledState: true, audioEnabledRef: true}
-HarmonyWheel.tsx:6497 🔊 Initializing audio context...
-HarmonyWheel.tsx:6499 🔊 Context state: running Sample rate: 44100
-HarmonyWheel.tsx:6508 🆔 Generated note ID: 76-1762569543323-0.3870736188288113
-HarmonyWheel.tsx:6512 📊 Frequency: 659.26 Hz, Time: 32.885
-HarmonyWheel.tsx:6515 🎹 Creating oscillators...
-HarmonyWheel.tsx:6543 🔗 Connecting audio graph...
-HarmonyWheel.tsx:6551 ▶️ Starting oscillators...
-HarmonyWheel.tsx:6555 ✅ Oscillators started successfully!
-HarmonyWheel.tsx:6562 💾 Stored note. Active count: 4
-HarmonyWheel.tsx:6582 🎹 MIDI note - sustaining until note-off
-HarmonyWheel.tsx:6585 ✅ playNote COMPLETE, returning ID: 76-1762569543323-0.3870736188288113
-HarmonyWheel.tsx:4743 💎 lastDetectedChordRef set to: Fmaj7 (from theory.ts)
-HarmonyWheel.tsx:4760 🔍 [DIM7 ALWAYS-CHECK] {currentPcsRel: Array(4), absHeld: Array(4), bassNote: 65, bassPc: 5, absName: 'Fmaj7', …}
-HarmonyWheel.tsx:4795 ✅ Fmaj7 EARLY CHECK → IV wedge
-HarmonyWheel.tsx:4252 🎯 setActiveWithTrail called: {fn: 'IV', label: 'Fmaj7', stepRecord: false}
-HarmonyWheel.tsx:4253 📍 Stack trace:     at setActiveWithTrail (http://localhost:5173/src/HarmonyWheel.tsx?t=1762569500306:1940:23)
-    at detect (http://localhost:5173/src/HarmonyWheel.tsx?t=1762569500306:2374:7)
-    at dev.onmidimessage (http://localhost:5173/src/HarmonyWheel.tsx?t=1762569500306:509:9)
-HarmonyWheel.tsx:4257 💾 Saved latched chord: {fn: 'IV', label: 'Fmaj7'}
-HarmonyWheel.tsx:4268 📝 lastPlayedChordRef set to: Fmaj7
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
-HarmonyWheel.tsx:4669 🔍 No notes held - checking latch state: {latchedChord: {…}, hasLatchedChord: true, subdomActive: true, subdomLatched: true}
-HarmonyWheel.tsx:4681 🔒 MIDI latch active - keeping display: {fn: 'IV', label: 'Fmaj7'}
-HarmonyWheel.tsx:2419 ⏱️ MIDI latch timer started - 10s until clear, timerId: 48
-HarmonyWheel.tsx:4669 🔍 No notes held - checking latch state: {latchedChord: {…}, hasLatchedChord: true, subdomActive: true, subdomLatched: true}
-HarmonyWheel.tsx:4681 🔒 MIDI latch active - keeping display: {fn: 'IV', label: 'Fmaj7'}
-HarmonyWheel.tsx:4669 🔍 No notes held - checking latch state: {latchedChord: {…}, hasLatchedChord: true, subdomActive: true, subdomLatched: true}
-HarmonyWheel.tsx:4681 🔒 MIDI latch active - keeping display: {fn: 'IV', label: 'Fmaj7'}
-HarmonyWheel.tsx:4669 🔍 No notes held - checking latch state: {latchedChord: {…}, hasLatchedChord: true, subdomActive: true, subdomLatched: true}
-HarmonyWheel.tsx:4681 🔒 MIDI latch active - keeping display: {fn: 'IV', label: 'Fmaj7'}
-HarmonyWheel.tsx:2407 ⏰ TIMEOUT FIRING - clearing everything
-HarmonyWheel.tsx:2415 ⏱️ MIDI latch timeout - cleared display and keyboard highlights
-HarmonyWheel.tsx:5886 🎨 RENDERING WEDGES with key: C
+ 🎹 Simulating MIDI for sequencer: Fmaj7
+ 🔍 Parsed: Object
+ ✅ Root PC: 5
+ 🎹 Simulated MIDI notes: Array(4) for chord: Fmaj7 transpose: 0
+ 🔑 [SEQ-FIX v3.8.0] baseKeyRef synced to: C (original baseKey: C )
+ 💎 lastDetectedChordRef set to: Fmaj7 (from theory.ts)
+ 🔍 [DIM7 ALWAYS-CHECK] Object
+ 🔧 SUB SECTION START: Object
+ 🏠 HOME CHECK: Object
+ 🔒 ALLOW HOME CHECK: Object
+ 🔍 V/vi CALC: Object
+ ✅ EARLY Fmaj7 CHECK: [5,9,0,4] → IV wedge
+ 🎯 setActiveWithTrail called: Object
+ 📍 Stack trace:     at setActiveWithTrail (http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:1999:23)
+    at detect (http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:3215:9)
+    at applySeqItem (http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:1357:7)
+    at togglePlayPause (http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:1119:7)
+    at HTMLUnknownElement.callCallback2 (http://localhost:5173/node_modules/.vite/deps/chunk-NGODP64W.js?v=7b8148d9:3674:22)
+    at Object.invokeGuardedCallbackDev (http://localhost:5173/node_modules/.vite/deps/chunk-NGODP64W.js?v=7b8148d9:3699:24)
+    at invokeGuardedCallback (http://localhost:5173/node_modules/.vite/deps/chunk-NGODP64W.js?v=7b8148d9:3733:39)
+ 💾 Saved latched chord: Object
+ 📝 lastPlayedChordRef set to: Fmaj7
+ ✅ Sequencer detection complete
+ 🎵 playNote START: Object
+ 🔊 Initializing audio context...
+ 🔊 Context state: running Sample rate: 44100
+ 🆔 Generated note ID: 53-1762641479359-0.7272315843023781
+ 📊 Frequency: 174.61 Hz, Time: 9.584
+ 🎹 Creating oscillators...
+ 🔗 Connecting audio graph...
+ ▶️ Starting oscillators...
+ ✅ Oscillators started successfully!
+ 💾 Stored note. Active count: 1
+ ✅ playNote COMPLETE, returning ID: 53-1762641479359-0.7272315843023781
+ 🎵 playNote START: Object
+ 🔊 Initializing audio context...
+ 🔊 Context state: running Sample rate: 44100
+ 🆔 Generated note ID: 57-1762641479360-0.5241803434288832
+ 📊 Frequency: 220.00 Hz, Time: 9.584
+ 🎹 Creating oscillators...
+ 🔗 Connecting audio graph...
+ ▶️ Starting oscillators...
+ ✅ Oscillators started successfully!
+ 💾 Stored note. Active count: 2
+ ✅ playNote COMPLETE, returning ID: 57-1762641479360-0.5241803434288832
+ 🎵 playNote START: Object
+ 🔊 Initializing audio context...
+ 🔊 Context state: running Sample rate: 44100
+ 🆔 Generated note ID: 60-1762641479360-0.06795825692620339
+ 📊 Frequency: 261.63 Hz, Time: 9.584
+ 🎹 Creating oscillators...
+ 🔗 Connecting audio graph...
+ ▶️ Starting oscillators...
+ ✅ Oscillators started successfully!
+ 💾 Stored note. Active count: 3
+ ✅ playNote COMPLETE, returning ID: 60-1762641479360-0.06795825692620339
+ 🎵 playNote START: Object
+ 🔊 Initializing audio context...
+ 🔊 Context state: running Sample rate: 44100
+ 🆔 Generated note ID: 64-1762641479361-0.24878545519678485
+ 📊 Frequency: 329.63 Hz, Time: 9.584
+ 🎹 Creating oscillators...
+ 🔗 Connecting audio graph...
+ ▶️ Starting oscillators...
+ ✅ Oscillators started successfully!
+ 💾 Stored note. Active count: 4
+ ✅ playNote COMPLETE, returning ID: 64-1762641479361-0.24878545519678485
+:5173/favicon.ico:1  Failed to load resource: the server responded with a status of 404 (Not Found)
+ 🎹 Simulating MIDI for sequencer: E7
+ 🔍 Parsed: Object
+ ✅ Root PC: 4
+ 🎹 Simulated MIDI notes: Array(4) for chord: E7 transpose: 0
+ 🔑 [SEQ-FIX v3.8.0] baseKeyRef synced to: C (original baseKey: C )
+ 🔍 E7 DETECTED: Object
+ 💎 lastDetectedChordRef set to: E7 (from theory.ts)
+ 🔍 [DIM7 ALWAYS-CHECK] Object
+ 🎯 setActiveWithTrail called: Object
+ 📍 Stack trace:     at setActiveWithTrail (http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:1999:23)
+    at detect (http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:2634:9)
+    at applySeqItem (http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:1357:7)
+    at http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:1878:9
+ 💾 Saved latched chord: Object
+ 📝 lastPlayedChordRef set to: E7
+ ✅ Sequencer detection complete
+ 🎵 playNote START: Object
+ 🔊 Initializing audio context...
+ 🔊 Context state: running Sample rate: 44100
+ 🆔 Generated note ID: 64-1762641480684-0.42898908398635816
+ 📊 Frequency: 329.63 Hz, Time: 10.908
+ 🎹 Creating oscillators...
+ 🔗 Connecting audio graph...
+ ▶️ Starting oscillators...
+ ✅ Oscillators started successfully!
+ 💾 Stored note. Active count: 1
+ ✅ playNote COMPLETE, returning ID: 64-1762641480684-0.42898908398635816
+ 🎵 playNote START: Object
+ 🔊 Initializing audio context...
+ 🔊 Context state: running Sample rate: 44100
+ 🆔 Generated note ID: 68-1762641480684-0.49729563909329955
+ 📊 Frequency: 415.30 Hz, Time: 10.908
+ 🎹 Creating oscillators...
+ 🔗 Connecting audio graph...
+ ▶️ Starting oscillators...
+ ✅ Oscillators started successfully!
+ 💾 Stored note. Active count: 2
+ ✅ playNote COMPLETE, returning ID: 68-1762641480684-0.49729563909329955
+ 🎵 playNote START: Object
+ 🔊 Initializing audio context...
+ 🔊 Context state: running Sample rate: 44100
+ 🆔 Generated note ID: 71-1762641480685-0.03871537533581004
+ 📊 Frequency: 493.88 Hz, Time: 10.908
+ 🎹 Creating oscillators...
+ 🔗 Connecting audio graph...
+ ▶️ Starting oscillators...
+ ✅ Oscillators started successfully!
+ 💾 Stored note. Active count: 3
+ ✅ playNote COMPLETE, returning ID: 71-1762641480685-0.03871537533581004
+ 🎵 playNote START: Object
+ 🔊 Initializing audio context...
+ 🔊 Context state: running Sample rate: 44100
+ 🆔 Generated note ID: 74-1762641480685-0.7806567780182857
+ 📊 Frequency: 587.33 Hz, Time: 10.908
+ 🎹 Creating oscillators...
+ 🔗 Connecting audio graph...
+ ▶️ Starting oscillators...
+ ✅ Oscillators started successfully!
+ 💾 Stored note. Active count: 4
+ ✅ playNote COMPLETE, returning ID: 74-1762641480685-0.7806567780182857
+ 🎹 Simulating MIDI for sequencer: E7
+ 🔍 Parsed: Object
+ ✅ Root PC: 4
+ 🎹 Simulated MIDI notes: Array(4) for chord: E7 transpose: 0
+ 🔑 [SEQ-FIX v3.8.0] baseKeyRef synced to: C (original baseKey: C )
+ 🔍 E7 DETECTED: Object
+ 💎 lastDetectedChordRef set to: E7 (from theory.ts)
+ 🔍 [DIM7 ALWAYS-CHECK] Object
+ 🎯 setActiveWithTrail called: Object
+ 📍 Stack trace:     at setActiveWithTrail (http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:1999:23)
+    at detect (http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:2634:9)
+    at applySeqItem (http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:1357:7)
+    at http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:1878:9
+ 💾 Saved latched chord: Object
+ 📝 lastPlayedChordRef set to: E7
+ ✅ Sequencer detection complete
+ 🎵 playNote START: Object
+ 🔊 Initializing audio context...
+ 🔊 Context state: running Sample rate: 44100
+ 🆔 Generated note ID: 64-1762641481256-0.2932826900590403
+ 📊 Frequency: 329.63 Hz, Time: 11.482
+ 🎹 Creating oscillators...
+ 🔗 Connecting audio graph...
+ ▶️ Starting oscillators...
+ ✅ Oscillators started successfully!
+ 💾 Stored note. Active count: 5
+ ✅ playNote COMPLETE, returning ID: 64-1762641481256-0.2932826900590403
+ 🎵 playNote START: Object
+ 🔊 Initializing audio context...
+ 🔊 Context state: running Sample rate: 44100
+ 🆔 Generated note ID: 68-1762641481256-0.7052471899785248
+ 📊 Frequency: 415.30 Hz, Time: 11.482
+ 🎹 Creating oscillators...
+ 🔗 Connecting audio graph...
+ ▶️ Starting oscillators...
+ ✅ Oscillators started successfully!
+ 💾 Stored note. Active count: 6
+ ✅ playNote COMPLETE, returning ID: 68-1762641481256-0.7052471899785248
+ 🎵 playNote START: Object
+ 🔊 Initializing audio context...
+ 🔊 Context state: running Sample rate: 44100
+ 🆔 Generated note ID: 71-1762641481257-0.47656303906104514
+ 📊 Frequency: 493.88 Hz, Time: 11.482
+ 🎹 Creating oscillators...
+ 🔗 Connecting audio graph...
+ ▶️ Starting oscillators...
+ ✅ Oscillators started successfully!
+ 💾 Stored note. Active count: 7
+ ✅ playNote COMPLETE, returning ID: 71-1762641481257-0.47656303906104514
+ 🎵 playNote START: Object
+ 🔊 Initializing audio context...
+ 🔊 Context state: running Sample rate: 44100
+ 🆔 Generated note ID: 74-1762641481257-0.6251314200997554
+ 📊 Frequency: 587.33 Hz, Time: 11.482
+ 🎹 Creating oscillators...
+ 🔗 Connecting audio graph...
+ ▶️ Starting oscillators...
+ ✅ Oscillators started successfully!
+ 💾 Stored note. Active count: 8
+ ✅ playNote COMPLETE, returning ID: 74-1762641481257-0.6251314200997554
+ 🎹 Simulating MIDI for sequencer: Am7
+ 🔍 Parsed: Object
+ ✅ Root PC: 9
+ 🎹 Simulated MIDI notes: Array(4) for chord: Am7 transpose: 0
+ 🔑 [SEQ-FIX v3.8.0] baseKeyRef synced to: C (original baseKey: C )
+ 💎 lastDetectedChordRef set to: Am7 (from theory.ts)
+ 🔍 [DIM7 ALWAYS-CHECK] Object
+ 🏠 HOME CHECK: Object
+ 🔒 ALLOW HOME CHECK: Object
+ 🔍 V/vi CALC: Object
+ 🎯 setActiveWithTrail called: Object
+ 📍 Stack trace:     at setActiveWithTrail (http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:1999:23)
+    at detect (http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:3221:9)
+    at applySeqItem (http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:1357:7)
+    at http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:1878:9
+ 💾 Saved latched chord: Object
+ 📝 lastPlayedChordRef set to: Am7
+ ✅ Sequencer detection complete
+ 🎵 playNote START: Object
+ 🔊 Initializing audio context...
+ 🔊 Context state: running Sample rate: 44100
+ 🆔 Generated note ID: 57-1762641482386-0.5835496557037515
+ 📊 Frequency: 220.00 Hz, Time: 12.608
+ 🎹 Creating oscillators...
+ 🔗 Connecting audio graph...
+ ▶️ Starting oscillators...
+ ✅ Oscillators started successfully!
+ 💾 Stored note. Active count: 5
+ ✅ playNote COMPLETE, returning ID: 57-1762641482386-0.5835496557037515
+ 🎵 playNote START: Object
+ 🔊 Initializing audio context...
+ 🔊 Context state: running Sample rate: 44100
+ 🆔 Generated note ID: 60-1762641482386-0.3475587878248805
+ 📊 Frequency: 261.63 Hz, Time: 12.608
+ 🎹 Creating oscillators...
+ 🔗 Connecting audio graph...
+ ▶️ Starting oscillators...
+ ✅ Oscillators started successfully!
+ 💾 Stored note. Active count: 6
+ ✅ playNote COMPLETE, returning ID: 60-1762641482386-0.3475587878248805
+ 🎵 playNote START: Object
+ 🔊 Initializing audio context...
+ 🔊 Context state: running Sample rate: 44100
+ 🆔 Generated note ID: 64-1762641482386-0.6531113882814898
+ 📊 Frequency: 329.63 Hz, Time: 12.608
+ 🎹 Creating oscillators...
+ 🔗 Connecting audio graph...
+ ▶️ Starting oscillators...
+ ✅ Oscillators started successfully!
+ 💾 Stored note. Active count: 7
+ ✅ playNote COMPLETE, returning ID: 64-1762641482386-0.6531113882814898
+ 🎵 playNote START: Object
+ 🔊 Initializing audio context...
+ 🔊 Context state: running Sample rate: 44100
+ 🆔 Generated note ID: 67-1762641482387-0.6232220382677767
+ 📊 Frequency: 392.00 Hz, Time: 12.608
+ 🎹 Creating oscillators...
+ 🔗 Connecting audio graph...
+ ▶️ Starting oscillators...
+ ✅ Oscillators started successfully!
+ 💾 Stored note. Active count: 8
+ ✅ playNote COMPLETE, returning ID: 67-1762641482387-0.6232220382677767
+ 🔄 Combined comment: passing chord + chord: Abm7
+ 🎹 Simulating MIDI for sequencer: Abm7
+ 🔍 Parsed: Object
+ ✅ Root PC: 8
+ 🎹 Simulated MIDI notes: Array(4) for chord: Abm7 transpose: 0
+ 🔑 [SEQ-FIX v3.8.0] baseKeyRef synced to: C (original baseKey: C )
+ 💎 lastDetectedChordRef set to: Abm7 (from theory.ts)
+ 🔍 [DIM7 ALWAYS-CHECK] Object
+ 🏠 HOME CHECK: Object
+ 🔒 ALLOW HOME CHECK: Object
+ 🔍 V/vi CALC: Object
+ 🎭 shouldShowBonusOverlay: Object
+ 🔍 Bm7♭5 bonus check: Object
+ 🎯 centerOnly called: Object
+ 📝 lastPlayedChordRef set to: Abm7
+ ✅ Sequencer detection complete
+ 🎹 Simulating MIDI for sequencer: Gm7
+ 🔍 Parsed: Object
+ ✅ Root PC: 7
+ 🎹 Simulated MIDI notes: Array(4) for chord: Gm7 transpose: 0
+ 🔑 [SEQ-FIX v3.8.0] baseKeyRef synced to: C (original baseKey: C )
+ 💎 lastDetectedChordRef set to: Gm7 (from theory.ts)
+ 🔍 [DIM7 ALWAYS-CHECK] Object
+ 🎯 setActiveWithTrail called: Object
+ 📍 Stack trace:     at setActiveWithTrail (http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:1999:23)
+    at detect (http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:2718:11)
+    at applySeqItem (http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:1357:7)
+    at http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:1878:9
+ 💾 Saved latched chord: Object
+ 📝 lastPlayedChordRef set to: Gm7
+ ✅ Sequencer detection complete
+ 🎵 playNote START: Object
+ 🔊 Initializing audio context...
+ 🔊 Context state: running Sample rate: 44100
+ 🆔 Generated note ID: 55-1762641483900-0.8266676567024385
+ 📊 Frequency: 196.00 Hz, Time: 14.124
+ 🎹 Creating oscillators...
+ 🔗 Connecting audio graph...
+ ▶️ Starting oscillators...
+ ✅ Oscillators started successfully!
+ 💾 Stored note. Active count: 5
+ ✅ playNote COMPLETE, returning ID: 55-1762641483900-0.8266676567024385
+ 🎵 playNote START: Object
+ 🔊 Initializing audio context...
+ 🔊 Context state: running Sample rate: 44100
+ 🆔 Generated note ID: 58-1762641483900-0.6831112964050656
+ 📊 Frequency: 233.08 Hz, Time: 14.124
+ 🎹 Creating oscillators...
+ 🔗 Connecting audio graph...
+ ▶️ Starting oscillators...
+ ✅ Oscillators started successfully!
+ 💾 Stored note. Active count: 6
+ ✅ playNote COMPLETE, returning ID: 58-1762641483900-0.6831112964050656
+ 🎵 playNote START: Object
+ 🔊 Initializing audio context...
+ 🔊 Context state: running Sample rate: 44100
+ 🆔 Generated note ID: 62-1762641483901-0.5383967108000394
+ 📊 Frequency: 293.66 Hz, Time: 14.124
+ 🎹 Creating oscillators...
+ 🔗 Connecting audio graph...
+ ▶️ Starting oscillators...
+ ✅ Oscillators started successfully!
+ 💾 Stored note. Active count: 7
+ ✅ playNote COMPLETE, returning ID: 62-1762641483901-0.5383967108000394
+ 🎵 playNote START: Object
+ 🔊 Initializing audio context...
+ 🔊 Context state: running Sample rate: 44100
+ 🆔 Generated note ID: 65-1762641483901-0.41358939503846437
+ 📊 Frequency: 349.23 Hz, Time: 14.124
+ 🎹 Creating oscillators...
+ 🔗 Connecting audio graph...
+ ▶️ Starting oscillators...
+ ✅ Oscillators started successfully!
+ 💾 Stored note. Active count: 8
+ ✅ playNote COMPLETE, returning ID: 65-1762641483901-0.41358939503846437
+ 🏷️ WEDGE LABEL KEY: Object
+ 🎹 Simulating MIDI for sequencer: C7
+ 🔍 Parsed: Object
+ ✅ Root PC: 0
+ 🎹 Simulated MIDI notes: Array(4) for chord: C7 transpose: 0
+ 🔑 [SEQ-FIX v3.8.0] baseKeyRef synced to: C (original baseKey: C )
+ 💎 lastDetectedChordRef set to: C7 (from theory.ts)
+ 🔍 [DIM7 ALWAYS-CHECK] Object
+ 🎯 setActiveWithTrail called: Object
+ 📍 Stack trace:     at setActiveWithTrail (http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:1999:23)
+    at detect (http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:2837:13)
+    at applySeqItem (http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:1357:7)
+    at http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:1878:9
+ 💾 Saved latched chord: Object
+ 📝 lastPlayedChordRef set to: C7
+ ✅ Sequencer detection complete
+ 🎵 playNote START: Object
+ 🔊 Initializing audio context...
+ 🔊 Context state: running Sample rate: 44100
+ 🆔 Generated note ID: 60-1762641484655-0.1155624378619432
+ 📊 Frequency: 261.63 Hz, Time: 14.878
+ 🎹 Creating oscillators...
+ 🔗 Connecting audio graph...
+ ▶️ Starting oscillators...
+ ✅ Oscillators started successfully!
+ 💾 Stored note. Active count: 5
+ ✅ playNote COMPLETE, returning ID: 60-1762641484655-0.1155624378619432
+ 🎵 playNote START: Object
+ 🔊 Initializing audio context...
+ 🔊 Context state: running Sample rate: 44100
+ 🆔 Generated note ID: 64-1762641484656-0.5604705787541538
+ 📊 Frequency: 329.63 Hz, Time: 14.878
+ 🎹 Creating oscillators...
+ 🔗 Connecting audio graph...
+ ▶️ Starting oscillators...
+ ✅ Oscillators started successfully!
+ 💾 Stored note. Active count: 6
+ ✅ playNote COMPLETE, returning ID: 64-1762641484656-0.5604705787541538
+ 🎵 playNote START: Object
+ 🔊 Initializing audio context...
+ 🔊 Context state: running Sample rate: 44100
+ 🆔 Generated note ID: 67-1762641484656-0.9864831484844779
+ 📊 Frequency: 392.00 Hz, Time: 14.878
+ 🎹 Creating oscillators...
+ 🔗 Connecting audio graph...
+ ▶️ Starting oscillators...
+ ✅ Oscillators started successfully!
+ 💾 Stored note. Active count: 7
+ ✅ playNote COMPLETE, returning ID: 67-1762641484656-0.9864831484844779
+ 🎵 playNote START: Object
+ 🔊 Initializing audio context...
+ 🔊 Context state: running Sample rate: 44100
+ 🆔 Generated note ID: 70-1762641484656-0.6742356863876133
+ 📊 Frequency: 466.16 Hz, Time: 14.878
+ 🎹 Creating oscillators...
+ 🔗 Connecting audio graph...
+ ▶️ Starting oscillators...
+ ✅ Oscillators started successfully!
+ 💾 Stored note. Active count: 8
+ ✅ playNote COMPLETE, returning ID: 70-1762641484656-0.6742356863876133
+ 🎹 Simulating MIDI for sequencer: Fmaj7
+ 🔍 Parsed: Object
+ ✅ Root PC: 5
+ 🎹 Simulated MIDI notes: Array(4) for chord: Fmaj7 transpose: 0
+ 🔑 [SEQ-FIX v3.8.0] baseKeyRef synced to: C (original baseKey: C )
+ 💎 lastDetectedChordRef set to: Fmaj7 (from theory.ts)
+ 🔍 [DIM7 ALWAYS-CHECK] Object
+ 🔧 SUB SECTION START: Object
+ 🔍 SUB F/Fmaj7 CHECK: Object
+ 🎯 setActiveWithTrail called: Object
+ 📍 Stack trace:     at setActiveWithTrail (http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:1999:23)
+    at detect (http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:2831:13)
+    at applySeqItem (http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:1357:7)
+    at http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:1878:9
+ 💾 Saved latched chord: Object
+ 📝 lastPlayedChordRef set to: Fmaj7
+ ✅ Sequencer detection complete
+ 🎵 playNote START: Object
+ 🔊 Initializing audio context...
+ 🔊 Context state: running Sample rate: 44100
+ 🆔 Generated note ID: 53-1762641485410-0.9233289641851756
+ 📊 Frequency: 174.61 Hz, Time: 15.633
+ 🎹 Creating oscillators...
+ 🔗 Connecting audio graph...
+ ▶️ Starting oscillators...
+ ✅ Oscillators started successfully!
+ 💾 Stored note. Active count: 5
+ ✅ playNote COMPLETE, returning ID: 53-1762641485410-0.9233289641851756
+ 🎵 playNote START: Object
+ 🔊 Initializing audio context...
+ 🔊 Context state: running Sample rate: 44100
+ 🆔 Generated note ID: 57-1762641485410-0.8578408487931715
+ 📊 Frequency: 220.00 Hz, Time: 15.633
+ 🎹 Creating oscillators...
+ 🔗 Connecting audio graph...
+ ▶️ Starting oscillators...
+ ✅ Oscillators started successfully!
+ 💾 Stored note. Active count: 6
+ ✅ playNote COMPLETE, returning ID: 57-1762641485410-0.8578408487931715
+ 🎵 playNote START: Object
+ 🔊 Initializing audio context...
+ 🔊 Context state: running Sample rate: 44100
+ 🆔 Generated note ID: 60-1762641485410-0.23161280739962464
+ 📊 Frequency: 261.63 Hz, Time: 15.633
+ 🎹 Creating oscillators...
+ 🔗 Connecting audio graph...
+ ▶️ Starting oscillators...
+ ✅ Oscillators started successfully!
+ 💾 Stored note. Active count: 7
+ ✅ playNote COMPLETE, returning ID: 60-1762641485410-0.23161280739962464
+ 🎵 playNote START: Object
+ 🔊 Initializing audio context...
+ 🔊 Context state: running Sample rate: 44100
+ 🆔 Generated note ID: 64-1762641485411-0.755283728961736
+ 📊 Frequency: 329.63 Hz, Time: 15.633
+ 🎹 Creating oscillators...
+ 🔗 Connecting audio graph...
+ ▶️ Starting oscillators...
+ ✅ Oscillators started successfully!
+ 💾 Stored note. Active count: 8
+ ✅ playNote COMPLETE, returning ID: 64-1762641485411-0.755283728961736
+ 🎹 Simulating MIDI for sequencer: E7
+ 🔍 Parsed: Object
+ ✅ Root PC: 4
+ 🎹 Simulated MIDI notes: Array(4) for chord: E7 transpose: 0
+ 🔑 [SEQ-FIX v3.8.0] baseKeyRef synced to: C (original baseKey: C )
+ 🔍 E7 DETECTED: Object
+ 💎 lastDetectedChordRef set to: E7 (from theory.ts)
+ 🔍 [DIM7 ALWAYS-CHECK] Object
+ 🎯 setActiveWithTrail called: Object
+ 📍 Stack trace:     at setActiveWithTrail (http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:1999:23)
+    at detect (http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:2634:9)
+    at applySeqItem (http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:1357:7)
+    at http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:1878:9
+ 💾 Saved latched chord: Object
+ 📝 lastPlayedChordRef set to: E7
+ ✅ Sequencer detection complete
+ 🎵 playNote START: Object
+ 🔊 Initializing audio context...
+ 🔊 Context state: running Sample rate: 44100
+ 🆔 Generated note ID: 64-1762641486739-0.17203841642632367
+ 📊 Frequency: 329.63 Hz, Time: 16.962
+ 🎹 Creating oscillators...
+ 🔗 Connecting audio graph...
+ ▶️ Starting oscillators...
+ ✅ Oscillators started successfully!
+ 💾 Stored note. Active count: 1
+ ✅ playNote COMPLETE, returning ID: 64-1762641486739-0.17203841642632367
+ 🎵 playNote START: Object
+ 🔊 Initializing audio context...
+ 🔊 Context state: running Sample rate: 44100
+ 🆔 Generated note ID: 68-1762641486739-0.4984329430331542
+ 📊 Frequency: 415.30 Hz, Time: 16.962
+ 🎹 Creating oscillators...
+ 🔗 Connecting audio graph...
+ ▶️ Starting oscillators...
+ ✅ Oscillators started successfully!
+ 💾 Stored note. Active count: 2
+ ✅ playNote COMPLETE, returning ID: 68-1762641486739-0.4984329430331542
+ 🎵 playNote START: Object
+ 🔊 Initializing audio context...
+ 🔊 Context state: running Sample rate: 44100
+ 🆔 Generated note ID: 71-1762641486739-0.5344631500797938
+ 📊 Frequency: 493.88 Hz, Time: 16.962
+ 🎹 Creating oscillators...
+ 🔗 Connecting audio graph...
+ ▶️ Starting oscillators...
+ ✅ Oscillators started successfully!
+ 💾 Stored note. Active count: 3
+ ✅ playNote COMPLETE, returning ID: 71-1762641486739-0.5344631500797938
+ 🎵 playNote START: Object
+ 🔊 Initializing audio context...
+ 🔊 Context state: running Sample rate: 44100
+ 🆔 Generated note ID: 74-1762641486739-0.5969691796224039
+ 📊 Frequency: 587.33 Hz, Time: 16.962
+ 🎹 Creating oscillators...
+ 🔗 Connecting audio graph...
+ ▶️ Starting oscillators...
+ ✅ Oscillators started successfully!
+ 💾 Stored note. Active count: 4
+ ✅ playNote COMPLETE, returning ID: 74-1762641486739-0.5969691796224039
+ 🏷️ WEDGE LABEL KEY: Object
+ 🎹 Simulating MIDI for sequencer: E7
+ 🔍 Parsed: Object
+ ✅ Root PC: 4
+ 🎹 Simulated MIDI notes: Array(4) for chord: E7 transpose: 0
+ 🔑 [SEQ-FIX v3.8.0] baseKeyRef synced to: C (original baseKey: C )
+ 🔍 E7 DETECTED: Object
+ 💎 lastDetectedChordRef set to: E7 (from theory.ts)
+ 🔍 [DIM7 ALWAYS-CHECK] Object
+ 🎯 setActiveWithTrail called: Object
+ 📍 Stack trace:     at setActiveWithTrail (http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:1999:23)
+    at detect (http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:2634:9)
+    at applySeqItem (http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:1357:7)
+    at http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:1878:9
+ 💾 Saved latched chord: Object
+ 📝 lastPlayedChordRef set to: E7
+ ✅ Sequencer detection complete
+ 🎵 playNote START: Object
+ 🔊 Initializing audio context...
+ 🔊 Context state: running Sample rate: 44100
+ 🆔 Generated note ID: 64-1762641487310-0.3671026592966472
+ 📊 Frequency: 329.63 Hz, Time: 17.531
+ 🎹 Creating oscillators...
+ 🔗 Connecting audio graph...
+ ▶️ Starting oscillators...
+ ✅ Oscillators started successfully!
+ 💾 Stored note. Active count: 5
+ ✅ playNote COMPLETE, returning ID: 64-1762641487310-0.3671026592966472
+ 🎵 playNote START: Object
+ 🔊 Initializing audio context...
+ 🔊 Context state: running Sample rate: 44100
+ 🆔 Generated note ID: 68-1762641487310-0.3481308949266263
+ 📊 Frequency: 415.30 Hz, Time: 17.531
+ 🎹 Creating oscillators...
+ 🔗 Connecting audio graph...
+ ▶️ Starting oscillators...
+ ✅ Oscillators started successfully!
+ 💾 Stored note. Active count: 6
+ ✅ playNote COMPLETE, returning ID: 68-1762641487310-0.3481308949266263
+ 🎵 playNote START: Object
+ 🔊 Initializing audio context...
+ 🔊 Context state: running Sample rate: 44100
+ 🆔 Generated note ID: 71-1762641487310-0.6727615189146304
+ 📊 Frequency: 493.88 Hz, Time: 17.537
+ 🎹 Creating oscillators...
+ 🔗 Connecting audio graph...
+ ▶️ Starting oscillators...
+ ✅ Oscillators started successfully!
+ 💾 Stored note. Active count: 7
+ ✅ playNote COMPLETE, returning ID: 71-1762641487310-0.6727615189146304
+ 🎵 playNote START: Object
+ 🔊 Initializing audio context...
+ 🔊 Context state: running Sample rate: 44100
+ 🆔 Generated note ID: 74-1762641487311-0.6905602542355378
+ 📊 Frequency: 587.33 Hz, Time: 17.537
+ 🎹 Creating oscillators...
+ 🔗 Connecting audio graph...
+ ▶️ Starting oscillators...
+ ✅ Oscillators started successfully!
+ 💾 Stored note. Active count: 8
+ ✅ playNote COMPLETE, returning ID: 74-1762641487311-0.6905602542355378
+ 🎹 Simulating MIDI for sequencer: Am
+ 🔍 Parsed: Object
+ ✅ Root PC: 9
+ 🎹 Simulated MIDI notes: Array(3) for chord: Am transpose: 0
+ 🔑 [SEQ-FIX v3.8.0] baseKeyRef synced to: C (original baseKey: C )
+ 💎 lastDetectedChordRef set to: Am (from theory.ts)
+ 🔍 [DIM7 ALWAYS-CHECK] Object
+ 🏠 HOME CHECK: Object
+ 🔒 ALLOW HOME CHECK: Object
+ 🔍 V/vi CALC: Object
+ 🎯 setActiveWithTrail called: Object
+ 📍 Stack trace:     at setActiveWithTrail (http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:1999:23)
+    at detect (http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:3221:9)
+    at applySeqItem (http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:1357:7)
+    at http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:1878:9
+ 💾 Saved latched chord: Object
+ 📝 lastPlayedChordRef set to: Am
+ ✅ Sequencer detection complete
+ 🎵 playNote START: Object
+ 🔊 Initializing audio context...
+ 🔊 Context state: running Sample rate: 44100
+ 🆔 Generated note ID: 57-1762641488440-0.7110737166266634
+ 📊 Frequency: 220.00 Hz, Time: 18.663
+ 🎹 Creating oscillators...
+ 🔗 Connecting audio graph...
+ ▶️ Starting oscillators...
+ ✅ Oscillators started successfully!
+ 💾 Stored note. Active count: 5
+ ✅ playNote COMPLETE, returning ID: 57-1762641488440-0.7110737166266634
+ 🎵 playNote START: Object
+ 🔊 Initializing audio context...
+ 🔊 Context state: running Sample rate: 44100
+ 🆔 Generated note ID: 60-1762641488441-0.6614510638550811
+ 📊 Frequency: 261.63 Hz, Time: 18.663
+ 🎹 Creating oscillators...
+ 🔗 Connecting audio graph...
+ ▶️ Starting oscillators...
+ ✅ Oscillators started successfully!
+ 💾 Stored note. Active count: 6
+ ✅ playNote COMPLETE, returning ID: 60-1762641488441-0.6614510638550811
+ 🎵 playNote START: Object
+ 🔊 Initializing audio context...
+ 🔊 Context state: running Sample rate: 44100
+ 🆔 Generated note ID: 64-1762641488441-0.20417489628192587
+ 📊 Frequency: 329.63 Hz, Time: 18.663
+ 🎹 Creating oscillators...
+ 🔗 Connecting audio graph...
+ ▶️ Starting oscillators...
+ ✅ Oscillators started successfully!
+ 💾 Stored note. Active count: 7
+ ✅ playNote COMPLETE, returning ID: 64-1762641488441-0.20417489628192587
+ 🎹 Simulating MIDI for sequencer: Am7
+ 🔍 Parsed: Object
+ ✅ Root PC: 9
+ 🎹 Simulated MIDI notes: Array(4) for chord: Am7 transpose: 0
+ 🔑 [SEQ-FIX v3.8.0] baseKeyRef synced to: C (original baseKey: C )
+ 💎 lastDetectedChordRef set to: Am7 (from theory.ts)
+ 🔍 [DIM7 ALWAYS-CHECK] Object
+ 🏠 HOME CHECK: Object
+ 🔒 ALLOW HOME CHECK: Object
+ 🔍 V/vi CALC: Object
+ 🎯 setActiveWithTrail called: Object
+ 📍 Stack trace:     at setActiveWithTrail (http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:1999:23)
+    at detect (http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:3221:9)
+    at applySeqItem (http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:1357:7)
+    at http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:1878:9
+ 💾 Saved latched chord: Object
+HarmonyWheel.tsx:4352 📝 lastPlayedChordRef set to: Am7
+HarmonyWheel.tsx:3594 ✅ Sequencer detection complete
+HarmonyWheel.tsx:6921 🎵 playNote START: Object
+HarmonyWheel.tsx:6928 🔊 Initializing audio context...
+HarmonyWheel.tsx:6930 🔊 Context state: running Sample rate: 44100
+HarmonyWheel.tsx:6939 🆔 Generated note ID: 57-1762641489946-0.19098170751470056
+HarmonyWheel.tsx:6943 📊 Frequency: 220.00 Hz, Time: 20.172
+HarmonyWheel.tsx:6946 🎹 Creating oscillators...
+HarmonyWheel.tsx:6974 🔗 Connecting audio graph...
+HarmonyWheel.tsx:6982 ▶️ Starting oscillators...
+HarmonyWheel.tsx:6986 ✅ Oscillators started successfully!
+HarmonyWheel.tsx:6993 💾 Stored note. Active count: 4
+HarmonyWheel.tsx:7016 ✅ playNote COMPLETE, returning ID: 57-1762641489946-0.19098170751470056
+HarmonyWheel.tsx:6921 🎵 playNote START: Object
+HarmonyWheel.tsx:6928 🔊 Initializing audio context...
+HarmonyWheel.tsx:6930 🔊 Context state: running Sample rate: 44100
+HarmonyWheel.tsx:6939 🆔 Generated note ID: 60-1762641489946-0.7986861210489504
+HarmonyWheel.tsx:6943 📊 Frequency: 261.63 Hz, Time: 20.172
+HarmonyWheel.tsx:6946 🎹 Creating oscillators...
+HarmonyWheel.tsx:6974 🔗 Connecting audio graph...
+HarmonyWheel.tsx:6982 ▶️ Starting oscillators...
+HarmonyWheel.tsx:6986 ✅ Oscillators started successfully!
+HarmonyWheel.tsx:6993 💾 Stored note. Active count: 5
+HarmonyWheel.tsx:7016 ✅ playNote COMPLETE, returning ID: 60-1762641489946-0.7986861210489504
+HarmonyWheel.tsx:6921 🎵 playNote START: Object
+HarmonyWheel.tsx:6928 🔊 Initializing audio context...
+HarmonyWheel.tsx:6930 🔊 Context state: running Sample rate: 44100
+HarmonyWheel.tsx:6939 🆔 Generated note ID: 64-1762641489946-0.7009772434282423
+HarmonyWheel.tsx:6943 📊 Frequency: 329.63 Hz, Time: 20.172
+HarmonyWheel.tsx:6946 🎹 Creating oscillators...
+HarmonyWheel.tsx:6974 🔗 Connecting audio graph...
+HarmonyWheel.tsx:6982 ▶️ Starting oscillators...
+HarmonyWheel.tsx:6986 ✅ Oscillators started successfully!
+HarmonyWheel.tsx:6993 💾 Stored note. Active count: 6
+HarmonyWheel.tsx:7016 ✅ playNote COMPLETE, returning ID: 64-1762641489946-0.7009772434282423
+HarmonyWheel.tsx:6921 🎵 playNote START: Object
+HarmonyWheel.tsx:6928 🔊 Initializing audio context...
+HarmonyWheel.tsx:6930 🔊 Context state: running Sample rate: 44100
+HarmonyWheel.tsx:6939 🆔 Generated note ID: 67-1762641489946-0.7357055858347162
+HarmonyWheel.tsx:6943 📊 Frequency: 392.00 Hz, Time: 20.172
+HarmonyWheel.tsx:6946 🎹 Creating oscillators...
+HarmonyWheel.tsx:6974 🔗 Connecting audio graph...
+HarmonyWheel.tsx:6982 ▶️ Starting oscillators...
+HarmonyWheel.tsx:6986 ✅ Oscillators started successfully!
+HarmonyWheel.tsx:6993 💾 Stored note. Active count: 7
+HarmonyWheel.tsx:7016 ✅ playNote COMPLETE, returning ID: 67-1762641489946-0.7357055858347162
+HarmonyWheel.tsx:3499 🎹 Simulating MIDI for sequencer: Fmaj7
+HarmonyWheel.tsx:3524 🔍 Parsed: Object
+HarmonyWheel.tsx:3533 ✅ Root PC: 5
+HarmonyWheel.tsx:3569 🎹 Simulated MIDI notes: Array(4) for chord: Fmaj7 transpose: 0
+HarmonyWheel.tsx:3581 🔑 [SEQ-FIX v3.8.0] baseKeyRef synced to: C (original baseKey: C )
+HarmonyWheel.tsx:4857 💎 lastDetectedChordRef set to: Fmaj7 (from theory.ts)
+HarmonyWheel.tsx:4874 🔍 [DIM7 ALWAYS-CHECK] Object
+HarmonyWheel.tsx:5241 🔧 SUB SECTION START: Object
+HarmonyWheel.tsx:5643 🏠 HOME CHECK: Object
+HarmonyWheel.tsx:5682 🔒 ALLOW HOME CHECK: Object
+HarmonyWheel.tsx:5719 🔍 V/vi CALC: Object
+HarmonyWheel.tsx:5859 ✅ EARLY Fmaj7 CHECK: [5,9,0,4] → IV wedge
+HarmonyWheel.tsx:4336 🎯 setActiveWithTrail called: Object
+HarmonyWheel.tsx:4337 📍 Stack trace:     at setActiveWithTrail (http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:1999:23)
+    at detect (http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:3215:9)
+    at applySeqItem (http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:1357:7)
+    at http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:1888:11
+HarmonyWheel.tsx:4341 💾 Saved latched chord: Object
+HarmonyWheel.tsx:4352 📝 lastPlayedChordRef set to: Fmaj7
+HarmonyWheel.tsx:3594 ✅ Sequencer detection complete
+HarmonyWheel.tsx:6921 🎵 playNote START: Object
+HarmonyWheel.tsx:6928 🔊 Initializing audio context...
+HarmonyWheel.tsx:6930 🔊 Context state: running Sample rate: 44100
+HarmonyWheel.tsx:6939 🆔 Generated note ID: 53-1762641491451-0.4341370314497254
+HarmonyWheel.tsx:6943 📊 Frequency: 174.61 Hz, Time: 21.676
+HarmonyWheel.tsx:6946 🎹 Creating oscillators...
+HarmonyWheel.tsx:6974 🔗 Connecting audio graph...
+HarmonyWheel.tsx:6982 ▶️ Starting oscillators...
+HarmonyWheel.tsx:6986 ✅ Oscillators started successfully!
+HarmonyWheel.tsx:6993 💾 Stored note. Active count: 5
+HarmonyWheel.tsx:7016 ✅ playNote COMPLETE, returning ID: 53-1762641491451-0.4341370314497254
+HarmonyWheel.tsx:6921 🎵 playNote START: Object
+HarmonyWheel.tsx:6928 🔊 Initializing audio context...
+HarmonyWheel.tsx:6930 🔊 Context state: running Sample rate: 44100
+HarmonyWheel.tsx:6939 🆔 Generated note ID: 57-1762641491452-0.304578378120097
+HarmonyWheel.tsx:6943 📊 Frequency: 220.00 Hz, Time: 21.676
+HarmonyWheel.tsx:6946 🎹 Creating oscillators...
+HarmonyWheel.tsx:6974 🔗 Connecting audio graph...
+HarmonyWheel.tsx:6982 ▶️ Starting oscillators...
+HarmonyWheel.tsx:6986 ✅ Oscillators started successfully!
+HarmonyWheel.tsx:6993 💾 Stored note. Active count: 6
+HarmonyWheel.tsx:7016 ✅ playNote COMPLETE, returning ID: 57-1762641491452-0.304578378120097
+HarmonyWheel.tsx:6921 🎵 playNote START: Object
+HarmonyWheel.tsx:6928 🔊 Initializing audio context...
+HarmonyWheel.tsx:6930 🔊 Context state: running Sample rate: 44100
+HarmonyWheel.tsx:6939 🆔 Generated note ID: 60-1762641491452-0.34313398089752245
+HarmonyWheel.tsx:6943 📊 Frequency: 261.63 Hz, Time: 21.676
+HarmonyWheel.tsx:6946 🎹 Creating oscillators...
+HarmonyWheel.tsx:6974 🔗 Connecting audio graph...
+HarmonyWheel.tsx:6982 ▶️ Starting oscillators...
+HarmonyWheel.tsx:6986 ✅ Oscillators started successfully!
+HarmonyWheel.tsx:6993 💾 Stored note. Active count: 7
+HarmonyWheel.tsx:7016 ✅ playNote COMPLETE, returning ID: 60-1762641491452-0.34313398089752245
+HarmonyWheel.tsx:6921 🎵 playNote START: Object
+HarmonyWheel.tsx:6928 🔊 Initializing audio context...
+HarmonyWheel.tsx:6930 🔊 Context state: running Sample rate: 44100
+HarmonyWheel.tsx:6939 🆔 Generated note ID: 64-1762641491452-0.05473125920556032
+HarmonyWheel.tsx:6943 📊 Frequency: 329.63 Hz, Time: 21.676
+HarmonyWheel.tsx:6946 🎹 Creating oscillators...
+HarmonyWheel.tsx:6974 🔗 Connecting audio graph...
+HarmonyWheel.tsx:6982 ▶️ Starting oscillators...
+HarmonyWheel.tsx:6986 ✅ Oscillators started successfully!
+HarmonyWheel.tsx:6993 💾 Stored note. Active count: 8
+HarmonyWheel.tsx:7016 ✅ playNote COMPLETE, returning ID: 64-1762641491452-0.05473125920556032
