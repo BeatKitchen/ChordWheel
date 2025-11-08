@@ -1,5 +1,5 @@
 /*
- * HarmonyWheel.tsx — v3.18.114 🔧 Compiler Fix + Minimal Logging
+ * HarmonyWheel.tsx — v3.18.119 🔧 Compiler Fix + Minimal Logging
  * 
  * 🔧 TYPESCRIPT COMPILER FIX:
  * - Fixed: absName used before declaration (line 4685 before 4747)
@@ -1858,7 +1858,7 @@ import {
   parseSongMetadata
 } from "./lib/songManager";
 
-const HW_VERSION = 'v3.18.114';
+const HW_VERSION = 'v3.18.119';
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -2677,7 +2677,7 @@ useEffect(() => {
   };
 
   const parseAndLoadSequence = ()=>{
-    const APP_VERSION = "v3.18.114-harmony-wheel";
+    const APP_VERSION = "v3.18.119-harmony-wheel";
     console.log('=== PARSE AND LOAD START ===');
     console.log('🏷️  APP VERSION:', APP_VERSION);
     console.log('Input text:', inputText);
@@ -2736,14 +2736,53 @@ useEffect(() => {
           const normalized = bar.trim().replace(/\s+/g, ' ');
           if (!normalized) continue;
           
-          // Split by space to get chords in this bar
-          const chords = normalized.split(' ').filter(Boolean);
+          // ✅ v3.18.119: Parse # comments as single tokens
+          const tokens: string[] = [];
+          let i = 0;
+          while (i < normalized.length) {
+            if (normalized[i] === '#') {
+              tokens.push(normalized.substring(i).trim());
+              break;
+            } else if (normalized[i] === ' ') {
+              i++;
+            } else {
+              let token = '';
+              while (i < normalized.length && normalized[i] !== ' ' && normalized[i] !== '#') {
+                token += normalized[i];
+                i++;
+              }
+              if (token) tokens.push(token);
+            }
+          }
           
-          // Duration per chord = 1 bar / number of chords
-          const durationEach = 1.0 / chords.length;
+          // ✅ v3.18.119: Group ties with their preceding chord/rest
+          // "Fmaj7 * * *" = ONE item with duration 4, not 4 separate items
+          const groupedItems: Array<{text: string, count: number, isComment: boolean}> = [];
           
-          for (const chord of chords) {
-            rawTokens.push({text: chord, duration: durationEach});
+          for (let j = 0; j < tokens.length; j++) {
+            const token = tokens[j];
+            
+            if (token.startsWith('#')) {
+              groupedItems.push({text: token, count: 0, isComment: true});
+            } else if (token === '*') {
+              // Tie extends previous item
+              if (groupedItems.length > 0 && !groupedItems[groupedItems.length - 1].isComment) {
+                groupedItems[groupedItems.length - 1].count++;
+              }
+            } else {
+              // Chord or rest starts at count 1
+              groupedItems.push({text: token, count: 1, isComment: false});
+            }
+          }
+          
+          // Calculate duration
+          const totalCount = groupedItems.filter(g => !g.isComment).reduce((sum, g) => sum + g.count, 0);
+          const unitDuration = totalCount > 0 ? 1.0 / totalCount : 1.0;
+          
+          // Add to rawTokens
+          for (const item of groupedItems) {
+            const duration = item.isComment ? 0 : item.count * unitDuration;
+            rawTokens.push({text: item.text, duration});
           }
         }
       } else {
@@ -3960,7 +3999,7 @@ useEffect(() => {
         togglePlayPause();
       } else if (e.key === 'Escape') {
         e.preventDefault();
-        // ✅ v3.18.114: Escape closes everything
+        // ✅ v3.18.119: Escape closes everything
         stopPlayback();
         setShowKeyDropdown(false);
         setShowTransposeDropdown(false);
@@ -4153,31 +4192,35 @@ useEffect(() => {
     // ✅ Calculate interval using duration from current item
     // Duration is in bars (1=whole, 0.5=half, 0.25=quarter)
     const itemDuration = currentItem?.duration || 1.0; // Default to 1 bar if not specified
+    
+    // ✅ v3.18.119: Only # comments have zero duration - rests and ties have real duration
+    const isAnnotation = currentItem?.kind === "comment" && currentItem.raw?.startsWith('#');
+    const isZeroDuration = itemDuration === 0 || isAnnotation;
     const beatsPerBar = 4; // 4/4 time signature
-    const interval = (60 / tempo) * beatsPerBar * itemDuration * 1000; // milliseconds
+    const interval = isZeroDuration ? 0 : (60 / tempo) * beatsPerBar * itemDuration * 1000; // milliseconds
     
     // Wait, then advance to next
     playbackTimerRef.current = window.setTimeout(() => {
       // Advance to next item
       let nextIndex = seqIndex + 1;
       
-      // ✅ Skip comments/titles EXCEPT rests (/) and ties (*) which have duration
+      // ✅ v3.18.119: Don't skip comments - they have duration:0 and advance instantly
+      // Only skip titles and @modifiers
       while (nextIndex < sequence.length) {
         const nextItem = sequence[nextIndex];
-        const isRest = nextItem?.kind === "comment" && nextItem.raw === '/';
-        const isTie = nextItem?.kind === "comment" && nextItem.raw === '*';
-        const shouldSkip = !isRest && !isTie && (nextItem?.kind === "comment" || nextItem?.kind === "title");
+        const shouldSkip = nextItem?.kind === "title" || 
+                          (nextItem?.kind === "modifier" && !nextItem.chord?.startsWith("RHYTHM"));
         
         if (shouldSkip) {
           nextIndex++;
         } else {
-          break; // Found a chord, rest, or tie - stop skipping
+          break; // Found a chord, comment, rest, or tie - stop skipping
         }
       }
       
       if (nextIndex < sequence.length) {
         setSeqIndex(nextIndex);
-        setDisplayIndex(nextIndex); // ✅ v3.18.114: Highlight current chord in display
+        setDisplayIndex(nextIndex); // ✅ v3.18.119: Highlight current chord in display
         applySeqItem(sequence[nextIndex]);
         setTimeout(() => selectCurrentItem(), 0);
       } else {
@@ -4191,7 +4234,7 @@ useEffect(() => {
             startIdx++;
           }
           setSeqIndex(startIdx);
-          setDisplayIndex(startIdx); // ✅ v3.18.114: Highlight on loop
+          setDisplayIndex(startIdx); // ✅ v3.18.119: Highlight on loop
           applySeqItem(sequence[startIdx]);
           setTimeout(() => selectCurrentItem(), 0);
         } else {
@@ -8679,7 +8722,8 @@ useEffect(() => {
                       const m=+mStr;
                       const held=disp.has(m);
                       const highlighted = keyboardHighlightNotes.has(m);
-                      if (!held && !highlighted) return null;
+                      const latched = latchedAbsNotes.includes(m); // ✅ v3.18.119: Show during sequence playback
+                      if (!held && !highlighted && !latched) return null;
                       
                       // ✅ Chord-aware spelling - use chord root for context
                       let noteName: string;
@@ -8758,7 +8802,8 @@ useEffect(() => {
                       const m=+mStr;
                       const held=disp.has(m);
                       const highlighted = keyboardHighlightNotes.has(m);
-                      if (!held && !highlighted) return null;
+                      const latched = latchedAbsNotes.includes(m); // ✅ v3.18.119: Show during sequence playback
+                      if (!held && !highlighted && !latched) return null;
                       
                       // ✅ Chord-aware spelling - use chord root for context
                       let noteName: string;
@@ -10008,6 +10053,6 @@ useEffect(() => {
   );
 }
 
-// HarmonyWheel - Compiler fix + E7 debugging
+// HarmonyWheel v3.18.119 - Compiler fix + E7 debugging
 
-// EOF - HarmonyWheel.tsx
+// EOF - HarmonyWheel.tsx v3.18.119
