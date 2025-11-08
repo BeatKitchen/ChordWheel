@@ -1,13 +1,13 @@
 /*
- * HarmonyWheel.tsx — v3.18.105 🔧 Compiler Fix + Minimal Logging
+ * HarmonyWheel.tsx — v3.18.106 🔧 Compiler Fix + Minimal Logging
  * 
- * 🔧 v3.18.105 TYPESCRIPT COMPILER FIX:
+ * 🔧 v3.18.106 TYPESCRIPT COMPILER FIX:
  * - Fixed: absName used before declaration (line 4685 before 4747)
  * - Moved pcsRel and absName declarations BEFORE diagnostic logging
  * - Commented out most console.logs (not deleted - easy to re-enable)
  * - Kept only E7-specific logs active for debugging
  * 
- * 🎵 v3.18.105 FMAJ7 → IV FIX (RESOLVED):
+ * 🎵 v3.18.106 FMAJ7 → IV FIX (RESOLVED):
  * - Fmaj7 [5,9,0,4] now correctly lights IV wedge (not vi)
  * 
  * 📝 v3.18.79 NO MORE HARDCODED MESSAGES:
@@ -1858,7 +1858,7 @@ import {
   parseSongMetadata
 } from "./lib/songManager";
 
-const HW_VERSION = 'v3.18.105';
+const HW_VERSION = 'v3.18.106';
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -2040,7 +2040,7 @@ useEffect(() => {
     showBonusWedgesRef.current = showBonusWedges; 
   }, [showBonusWedges]);
   
-  // ✅ v3.18.105: Sync skillLevel to ref for use in detect()
+  // ✅ v3.18.106: Sync skillLevel to ref for use in detect()
   useEffect(() => {
     skillLevelRef.current = skillLevel;
   }, [skillLevel]);
@@ -2049,7 +2049,7 @@ useEffect(() => {
   const midiLatchTimeoutRef = useRef<number | null>(null);
   const latchedChordRef = useRef<{fn: Fn | "", label: string} | null>(null);
   
-  // ✅ v3.18.105: Bonus chord recording debounce - wait for final chord before recording
+  // ✅ v3.18.106: Bonus chord recording debounce - wait for final chord before recording
   const bonusRecordDebounceRef = useRef<number | null>(null);
   const latestBonusChordNameRef = useRef<string>(""); // Track latest chord name for debounced recording
   
@@ -2677,7 +2677,7 @@ useEffect(() => {
   };
 
   const parseAndLoadSequence = ()=>{
-    const APP_VERSION = "v3.18.105-harmony-wheel";
+    const APP_VERSION = "v3.18.106-harmony-wheel";
     console.log('=== PARSE AND LOAD START ===');
     console.log('🏷️  APP VERSION:', APP_VERSION);
     console.log('Input text:', inputText);
@@ -4277,7 +4277,7 @@ useEffect(() => {
     lastPlayedChordRef.current = label; // Save for Make My Key
     console.log('📝 lastPlayedChordRef set to:', label);
     
-    // ✅ v3.18.105: Step record - insert BEFORE @RHYTHM directives, not at end
+    // ✅ v3.18.106: Step record - insert BEFORE @RHYTHM directives, not at end
     if (stepRecordRef.current && label) {
       setInputText(prev => {
         // Find @RHYTHM position (the "line in the sand")
@@ -4306,7 +4306,7 @@ useEffect(() => {
     const isBonusFunction = fn === "V/V" || fn === "V/vi" || fn === "V/ii";
     if (!isBonusFunction) return true; // Not a bonus chord, always allow
     
-    // ✅ v3.18.105: Use ref instead of state to avoid stale closure
+    // ✅ v3.18.106: Use ref instead of state to avoid stale closure
     // In EXPERT: always allow (they can trigger dynamically)
     if (skillLevelRef.current === "EXPERT") return true;
     
@@ -4320,7 +4320,7 @@ useEffect(() => {
   // v3.10.1: Helper for bonus overlays (A7, Bm7♭5, etc.) that don't use wedges
   const shouldShowBonusOverlay = (): boolean => {
     const result = (() => {
-      // ✅ v3.18.105: Use ref instead of state to avoid stale closure
+      // ✅ v3.18.106: Use ref instead of state to avoid stale closure
       // In EXPERT: always allow
       if (skillLevelRef.current === "EXPERT") return true;
       
@@ -4358,7 +4358,7 @@ useEffect(() => {
     lastPlayedChordRef.current = cleaned; // Save for Make My Key
     console.log('📝 lastPlayedChordRef set to:', cleaned);
     
-    // ✅ v3.18.105: Step record - insert BEFORE @RHYTHM directives, not at end
+    // ✅ v3.18.106: Step record - insert BEFORE @RHYTHM directives, not at end
     if (stepRecordRef.current && cleaned && !cleaned.startsWith('#') && !cleaned.startsWith('@')) {
       setInputText(prev => {
         // Find @RHYTHM position (the "line in the sand")
@@ -4747,7 +4747,7 @@ useEffect(() => {
     // MODIFIED v2.37.9: Pass absHeld array to internalAbsoluteName for dim7 root disambiguation
     const absName = internalAbsoluteName(pcsAbs, baseKeyRef.current, absHeld) || "";
     
-    // ✅ v3.18.105 E7-ONLY DIAGNOSTIC for double-press bug
+    // ✅ v3.18.106 E7-ONLY DIAGNOSTIC for double-press bug
     if (absName === "E7") {
       console.log('🔍 E7 DETECTED:', {
         chord: absName,
@@ -4826,7 +4826,7 @@ useEffect(() => {
         setBonusActive(true);
         setBonusLabel("Bm7♭5");
         
-        // ✅ v3.18.105: Debounced recording for early check
+        // ✅ v3.18.106: Debounced recording for early check
         if (stepRecordRef.current && absName) {
           latestBonusChordNameRef.current = absName;
           if (bonusRecordDebounceRef.current !== null) {
@@ -4855,7 +4855,7 @@ useEffect(() => {
       }
     }
     
-    // ✅ v3.18.105 FIX: Bdim triad EARLY CHECK - must check before diatonic
+    // ✅ v3.18.106 FIX: Bdim triad EARLY CHECK - must check before diatonic
     // Bdim [11,2,5] can match as subset of Dm [2,5,9] - catch it early!
     if (pcsRel.has(11) && pcsRel.has(2) && pcsRel.has(5) && pcsRel.size === 3) {
       if (shouldShowBonusOverlay()) {
@@ -4865,7 +4865,7 @@ useEffect(() => {
         setBonusActive(true);
         setBonusLabel("Bm7♭5"); // Use functional label
         
-        // ✅ v3.18.105: Debounced recording for early check
+        // ✅ v3.18.106: Debounced recording for early check
         if (stepRecordRef.current && absName) {
           latestBonusChordNameRef.current = absName;
           if (bonusRecordDebounceRef.current !== null) {
@@ -4890,13 +4890,13 @@ useEffect(() => {
           }, 50);
         }
         
-        // ✅ v3.18.105: Bonus wedge will light automatically via bonusActive + bonusLabel
+        // ✅ v3.18.106: Bonus wedge will light automatically via bonusActive + bonusLabel
         // No need to call setActiveWithTrail - bonus overlay handles highlighting
         return;
       }
     }
     
-    // ✅ v3.18.105 REMOVED: Early Fmaj7 check was here but it ran BEFORE SUB section
+    // ✅ v3.18.106 REMOVED: Early Fmaj7 check was here but it ran BEFORE SUB section
     // This caused Fmaj7 in SUB space to light IV (Bb) instead of I (F)
     // The proper Fmaj7 check with SUB guard is at line ~5540
     
@@ -4916,7 +4916,7 @@ useEffect(() => {
         setBonusActive(true);
         setBonusLabel("A7"); // Functional label
         
-        // ✅ v3.18.105: Debounced recording for early check
+        // ✅ v3.18.106: Debounced recording for early check
         if (stepRecordRef.current && absName) {
           latestBonusChordNameRef.current = absName;
           if (bonusRecordDebounceRef.current !== null) {
@@ -4954,7 +4954,7 @@ useEffect(() => {
         setBonusActive(true);
         setBonusLabel("A7"); // Functional label
         
-        // ✅ v3.18.105: Debounced recording for early check
+        // ✅ v3.18.106: Debounced recording for early check
         if (stepRecordRef.current && absName) {
           latestBonusChordNameRef.current = absName;
           if (bonusRecordDebounceRef.current !== null) {
@@ -5098,7 +5098,7 @@ useEffect(() => {
         setBonusActive(true); 
         setBonusLabel("A7");  // Wedge label stays "A7" (functional label)
         
-        // ✅ v3.18.105: Add debounced recording
+        // ✅ v3.18.106: Add debounced recording
         if (stepRecordRef.current && absName) {
           latestBonusChordNameRef.current = absName;
           if (bonusRecordDebounceRef.current !== null) {
@@ -5144,7 +5144,7 @@ useEffect(() => {
       }
       */
 
-      // ✅ v3.18.105: REMOVED unconditional bonus clearing
+      // ✅ v3.18.106: REMOVED unconditional bonus clearing
       // Old: setBonusActive(false); setBonusLabel("");
       // This was clearing bonus set by earlier checks, breaking EXPERT mode display
       // Bonus state should persist unless explicitly cleared by another detection
@@ -5152,7 +5152,7 @@ useEffect(() => {
 
     /* ---------- SUBDOM (F) ---------- */
     {
-      // ✅ v3.18.105 DEBUG: Track SUB state
+      // ✅ v3.18.106 DEBUG: Track SUB state
       if (absName === "Fmaj7" || absName === "F" || (pcsRel.has(5) && pcsRel.has(9) && pcsRel.has(0))) {
         console.log('🔧 SUB SECTION START:', {
           absName,
@@ -5265,7 +5265,7 @@ useEffect(() => {
         const stayOnC7      = isSubsetIn([0,4,7,10], S);
         const isCtriadExact = exactSetIn([0,4,7], S);
         
-        // ✅ v3.18.105 DEBUG: Why isn't Fmaj7 matching?
+        // ✅ v3.18.106 DEBUG: Why isn't Fmaj7 matching?
         if (absName === "Fmaj7" || absName === "F") {
           console.log('🔍 SUB F/Fmaj7 CHECK:', {
             absName,
@@ -5427,7 +5427,7 @@ useEffect(() => {
         setCenterLabel(displayName);
         setActiveFn("");
         
-        // ✅ v3.18.105: Add debounced recording
+        // ✅ v3.18.106: Add debounced recording
         if (stepRecordRef.current && absName) {
           latestBonusChordNameRef.current = absName;
           if (bonusRecordDebounceRef.current !== null) {
@@ -5464,7 +5464,7 @@ useEffect(() => {
         setCenterLabel(displayName); // Actual chord name
         setActiveFn("");
         
-        // ✅ v3.18.105: Add debounced recording
+        // ✅ v3.18.106: Add debounced recording
         if (stepRecordRef.current && absName) {
           latestBonusChordNameRef.current = absName;
           if (bonusRecordDebounceRef.current !== null) {
@@ -5563,7 +5563,7 @@ useEffect(() => {
       pcsRelSize: pcsRel.size
     });
     
-    // ✅ v3.18.105: Smart suppression - only block ambiguous chords
+    // ✅ v3.18.106: Smart suppression - only block ambiguous chords
     // Check if current chord is unambiguous (has clear function)
     // Calculate these before the suppression check
     const baseKeyPC = NAME_TO_PC[baseKeyRef.current];
@@ -5586,7 +5586,7 @@ useEffect(() => {
     // Ambiguous chords (I triad could be confused with V in SUB)
     const isTonic = isSubsetIn([0, 4, 7], pcsRel) && !isSubsetIn([0, 4, 7, 11], pcsRel) && !isSubsetIn([0, 4, 7, 10], pcsRel);
     
-    // ✅ v3.18.105 FIX: V/vi (E7) should bypass suppression after SUB exit
+    // ✅ v3.18.106 FIX: V/vi (E7) should bypass suppression after SUB exit
     // Bug: After SUB exit, E7 requires 2 presses because homeSuppressUntilRef blocks detection
     // Solution: Check absName directly - if theory.ts detected E7, it's unambiguous
     const isE7 = absName === "E7" || absName === "E";
@@ -5679,7 +5679,7 @@ useEffect(() => {
       // ✅ v3.15.9: Check common diatonic triads (ii, iii, vi) - pattern matcher may not have them
       // These are RELATIVE to baseKey (scale degrees), not absolute pitch classes
       
-      // ✅ v3.18.105 FIX: Check Cmaj7 BEFORE iii triad
+      // ✅ v3.18.106 FIX: Check Cmaj7 BEFORE iii triad
       // Bug: Cmaj7 [0,4,7,11] contains iii triad [4,7,11] as subset
       // Must check exact Cmaj7 first to prevent false iii match
       if (exactSetIn([0, 4, 7, 11], pcsRel)) {
@@ -5695,7 +5695,7 @@ useEffect(() => {
       const vi_triad = isSubsetIn([9, 0, 4], pcsRel);
       const vi_7th = isSubsetIn([9, 0, 4, 7], pcsRel);
       
-      // ✅ v3.18.105 FIX: Exclude Bm7b5 from ii when bonus disabled
+      // ✅ v3.18.106 FIX: Exclude Bm7b5 from ii when bonus disabled
       // Bm7b5 [11,2,5,9] contains ii notes [2,5,9] as subset
       // If bonus disabled, Bm7b5 early check returns false and falls through to here
       // Solution: Check for B (11) - if present with exact size 4, it's Bm7b5, not Dm
@@ -5716,7 +5716,7 @@ useEffect(() => {
         return;
       }
       
-      // ✅ v3.18.105 FIX: Check A7 bonus BEFORE vi check
+      // ✅ v3.18.106 FIX: Check A7 bonus BEFORE vi check
       // Bug: A7 [9,1,4,7] matches vi_triad check [9,0,4] via isSubsetIn (9 and 4 present)
       // This causes vi to return before A7 bonus check can run
       // Solution: Check A7 bonus family first (must be EXACT size match)
@@ -5741,7 +5741,7 @@ useEffect(() => {
         setBonusActive(true); 
         setBonusLabel("A7"); // Use functional label for wedge
         
-        // ✅ v3.18.105: Debounced recording
+        // ✅ v3.18.106: Debounced recording
         if (stepRecordRef.current && absName) {
           latestBonusChordNameRef.current = absName;
           if (bonusRecordDebounceRef.current !== null) {
@@ -5805,7 +5805,7 @@ useEffect(() => {
         setCenterLabel(displayName);
         setBonusActive(true); 
         setBonusLabel("Bm7♭5"); // ✅ v3.13.6: Use functional label for wedge
-        // ✅ v3.18.105: Debounced recording using ref
+        // ✅ v3.18.106: Debounced recording using ref
         if (stepRecordRef.current && absName) {
           latestBonusChordNameRef.current = absName;
           console.log('🕐 Setting Bdim/Bm7b5 debounce timer for:', absName);
@@ -5836,7 +5836,7 @@ useEffect(() => {
         return;
       }
       
-      // ✅ v3.18.105: A7 bonus check MOVED to before vi check (line ~5620)
+      // ✅ v3.18.106: A7 bonus check MOVED to before vi check (line ~5620)
       // Was here but vi check was matching A7 [9,1,4,7] as vi [9,0,4] subset
       
       if (exactSet([6,9,0,4]) && shouldTriggerBonus("V/V")){ setActiveWithTrail("V/V","F#m7♭5"); return; }
@@ -5854,11 +5854,11 @@ useEffect(() => {
         return;
       }
       
-      // ✅ v3.18.105 FIX: Fmaj7 early detection to prevent Am7 subset match
+      // ✅ v3.18.106 FIX: Fmaj7 early detection to prevent Am7 subset match
       // Bug: Fmaj7 [5,9,0,4] contains Am [9,0,4] as subset
       // If Am7 is checked first in diatonic tables, it incorrectly matches vi
       // Solution: Check Fmaj7 explicitly before diatonic matching
-      // ✅ v3.18.105 FIX #2: Only in HOME - in SUB, Fmaj7 is I not IV
+      // ✅ v3.18.106 FIX #2: Only in HOME - in SUB, Fmaj7 is I not IV
       if (!subdomActiveRef.current && exactSet([5,9,0,4])) {
         console.log('✅ EARLY Fmaj7 CHECK: [5,9,0,4] → IV wedge (HOME only)');
         setActiveWithTrail("IV", displayName || "Fmaj7");
@@ -5867,7 +5867,7 @@ useEffect(() => {
       
       const m7 = firstMatch(homeDiatonic.req7, pcsRel); 
       if(m7){ 
-        // ✅ v3.18.105 DEBUG: Why is Cmaj7 matching iii?
+        // ✅ v3.18.106 DEBUG: Why is Cmaj7 matching iii?
         if (absName === "Cmaj7") {
           console.log('🔍 Cmaj7 DEBUG:', {
             absName,
@@ -7937,7 +7937,7 @@ useEffect(() => {
             setLatchedAbsNotes(playWith7th ? chordNotes[chordName].seventh : chordNotes[chordName].triad);
           }
           
-          // ✅ v3.18.105: Update display and trigger step record
+          // ✅ v3.18.106: Update display and trigger step record
           const displayChordName = playWith7th ? chordName : chordName.replace(/7|♭5/, '').trim();
           centerOnly(displayChordName);
         };
@@ -8531,7 +8531,8 @@ useEffect(() => {
                       const m=+mStr; 
                       const held=disp.has(m);
                       const highlighted = keyboardHighlightNotes.has(m);
-                      const fillColor = held ? "#AEC9FF" : (highlighted ? "#FFE999" : "#f9fafb");
+                      // ✅ v3.18.106: Eraser branding - no color change, just dots
+                      const fillColor = "#f9fafb"; // Always white
                       
                       // Get note name - use flats for black keys
                       const noteNames = ['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
@@ -8585,8 +8586,9 @@ useEffect(() => {
                       const m=+mStr; 
                       const held=disp.has(m);
                       const highlighted = keyboardHighlightNotes.has(m);
-                      const fillColor = held ? "#6B93D6" : (highlighted ? "#D4B560" : "#1f2937");
-                      const strokeColor = held ? "#4A7BC0" : (highlighted ? "#B8972D" : "#0a0a0a");
+                      // ✅ v3.18.106: Eraser branding - no color change on black keys
+                      const fillColor = "#1f2937"; // Always dark
+                      const strokeColor = "#0a0a0a";
                       
                       // Get note name - use flats
                       const noteNames = ['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
@@ -8646,12 +8648,16 @@ useEffect(() => {
                       
                       // ✅ v3.12.4: Chord-aware spelling - use chord root for context
                       let noteName: string;
+                      let isRoot = false;
                       if (centerLabel) {
                         // Extract root from chord label (e.g. "Gmaj7" → "G", "C#m" → "C#")
                         const rootMatch = centerLabel.match(/^([A-G][b#]?)/);
                         if (rootMatch) {
                           const chordRoot = rootMatch[1] as KeyName;
                           noteName = pcNameForKey(m % 12, chordRoot);
+                          // Check if this note is the root
+                          const rootPc = NAME_TO_PC[chordRoot];
+                          isRoot = (m % 12) === rootPc;
                         } else {
                           // Fallback to key center
                           const currentKey = visitorActiveRef.current ? parKey 
@@ -8667,8 +8673,13 @@ useEffect(() => {
                         noteName = pcNameForKey(m % 12, currentKey);
                       }
                       
+                      // ✅ v3.18.106: Eraser branding - root is blue, others are red
+                      const eraserColor = isRoot ? '#5DADE2' : '#E74C3C';
+                      const randomRotation = (m * 7) % 11 - 5; // Pseudo-random -5 to +5 degrees
+                      
                       return (
                         <g key={`wl-${m}`}>
+                          {/* Top circle with note name label (unchanged) */}
                           <circle
                             cx={x + WW/2}
                             cy={20}
@@ -8688,6 +8699,19 @@ useEffect(() => {
                           >
                             {noteName}
                           </text>
+                          
+                          {/* ✅ v3.18.106: Eraser branding - rounded rectangle at finger position */}
+                          <rect
+                            x={x + WW * 0.31}
+                            y={HW * 0.62}
+                            width={WW * 0.38}
+                            height={WW * 0.5}
+                            rx={WW * 0.08}
+                            ry={WW * 0.08}
+                            fill={eraserColor}
+                            opacity={0.95}
+                            transform={`rotate(${randomRotation}, ${x + WW/2}, ${HW * 0.75})`}
+                          />
                         </g>
                       );
                     })}
@@ -8699,12 +8723,16 @@ useEffect(() => {
                       
                       // ✅ v3.12.4: Chord-aware spelling - use chord root for context
                       let noteName: string;
+                      let isRoot = false;
                       if (centerLabel) {
                         // Extract root from chord label (e.g. "Gmaj7" → "G", "C#m" → "C#")
                         const rootMatch = centerLabel.match(/^([A-G][b#]?)/);
                         if (rootMatch) {
                           const chordRoot = rootMatch[1] as KeyName;
                           noteName = pcNameForKey(m % 12, chordRoot);
+                          // Check if this note is the root
+                          const rootPc = NAME_TO_PC[chordRoot];
+                          isRoot = (m % 12) === rootPc;
                         } else {
                           // Fallback to key center
                           const currentKey = visitorActiveRef.current ? parKey 
@@ -8720,9 +8748,13 @@ useEffect(() => {
                         noteName = pcNameForKey(m % 12, currentKey);
                       }
                       
+                      // ✅ v3.18.106: Eraser branding - root is blue, others are red
+                      const eraserColor = isRoot ? '#5DADE2' : '#E74C3C';
+                      const randomRotation = (m * 7) % 11 - 5; // Pseudo-random -5 to +5 degrees
+                      
                       return (
                         <g key={`bl-${m}`}>
-                          {/* Same styling as white keys - use WW for sizing */}
+                          {/* Top circle with note name label (unchanged) */}
                           <circle
                             cx={x + WB/2}
                             cy={20}
@@ -8742,6 +8774,19 @@ useEffect(() => {
                           >
                             {noteName}
                           </text>
+                          
+                          {/* ✅ v3.18.106: Eraser branding - rounded rectangle at finger position */}
+                          <rect
+                            x={x + WB * 0.29}
+                            y={HB * 0.55}
+                            width={WB * 0.42}
+                            height={WB * 0.64}
+                            rx={WB * 0.1}
+                            ry={WB * 0.1}
+                            fill={eraserColor}
+                            opacity={0.95}
+                            transform={`rotate(${randomRotation}, ${x + WB/2}, ${HB * 0.7})`}
+                          />
                         </g>
                       );
                     })}
@@ -9115,7 +9160,7 @@ useEffect(() => {
                       const newState = !stepRecord;
                       setStepRecord(newState);
                       stepRecordRef.current = newState;
-                      // ✅ v3.18.105: Toggle bonus wedges with step record
+                      // ✅ v3.18.106: Toggle bonus wedges with step record
                       setShowBonusWedges(newState);
                     }}
                     style={{
@@ -9920,6 +9965,6 @@ useEffect(() => {
   );
 }
 
-// HarmonyWheel v3.18.105 - Compiler fix + E7 debugging
+// HarmonyWheel v3.18.106 - Compiler fix + E7 debugging
 
-// EOF - HarmonyWheel.tsx v3.18.105
+// EOF - HarmonyWheel.tsx v3.18.106
