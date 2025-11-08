@@ -1,13 +1,13 @@
 /*
- * HarmonyWheel.tsx — v3.18.93 🔧 Compiler Fix + Minimal Logging
+ * HarmonyWheel.tsx — v3.18.105 🔧 Compiler Fix + Minimal Logging
  * 
- * 🔧 v3.18.93 TYPESCRIPT COMPILER FIX:
+ * 🔧 v3.18.105 TYPESCRIPT COMPILER FIX:
  * - Fixed: absName used before declaration (line 4685 before 4747)
  * - Moved pcsRel and absName declarations BEFORE diagnostic logging
  * - Commented out most console.logs (not deleted - easy to re-enable)
  * - Kept only E7-specific logs active for debugging
  * 
- * 🎵 v3.18.93 FMAJ7 → IV FIX (RESOLVED):
+ * 🎵 v3.18.105 FMAJ7 → IV FIX (RESOLVED):
  * - Fmaj7 [5,9,0,4] now correctly lights IV wedge (not vi)
  * 
  * 📝 v3.18.79 NO MORE HARDCODED MESSAGES:
@@ -1858,7 +1858,7 @@ import {
   parseSongMetadata
 } from "./lib/songManager";
 
-const HW_VERSION = 'v3.18.93';
+const HW_VERSION = 'v3.18.105';
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -1883,6 +1883,7 @@ export default function HarmonyWheel(){
   // Skill level system
   type SkillLevel = "ROOKIE" | "NOVICE" | "SOPHOMORE" | "INTERMEDIATE" | "ADVANCED" | "EXPERT";
   const [skillLevel, setSkillLevel] = useState<SkillLevel>("ADVANCED");
+  const skillLevelRef = useRef<SkillLevel>("ADVANCED");
   
   // Define which functions are visible at each level (cumulative)
   const SKILL_LEVEL_FUNCTIONS: Record<SkillLevel, Fn[]> = {
@@ -2039,9 +2040,18 @@ useEffect(() => {
     showBonusWedgesRef.current = showBonusWedges; 
   }, [showBonusWedges]);
   
+  // ✅ v3.18.105: Sync skillLevel to ref for use in detect()
+  useEffect(() => {
+    skillLevelRef.current = skillLevel;
+  }, [skillLevel]);
+  
   // ✅ v3.15.0: MIDI latch - keep last detected chord visible for 10s after note-off
   const midiLatchTimeoutRef = useRef<number | null>(null);
   const latchedChordRef = useRef<{fn: Fn | "", label: string} | null>(null);
+  
+  // ✅ v3.18.105: Bonus chord recording debounce - wait for final chord before recording
+  const bonusRecordDebounceRef = useRef<number | null>(null);
+  const latestBonusChordNameRef = useRef<string>(""); // Track latest chord name for debounced recording
   
   /* ---------- Space Lock (v3.11.0) ---------- */
   const [spaceLocked, setSpaceLocked] = useState(false);
@@ -2667,7 +2677,7 @@ useEffect(() => {
   };
 
   const parseAndLoadSequence = ()=>{
-    const APP_VERSION = "v3.18.93-harmony-wheel";
+    const APP_VERSION = "v3.18.105-harmony-wheel";
     console.log('=== PARSE AND LOAD START ===');
     console.log('🏷️  APP VERSION:', APP_VERSION);
     console.log('Input text:', inputText);
@@ -4267,7 +4277,7 @@ useEffect(() => {
     lastPlayedChordRef.current = label; // Save for Make My Key
     console.log('📝 lastPlayedChordRef set to:', label);
     
-    // ✅ v3.18.93: Step record - insert BEFORE @RHYTHM directives, not at end
+    // ✅ v3.18.105: Step record - insert BEFORE @RHYTHM directives, not at end
     if (stepRecordRef.current && label) {
       setInputText(prev => {
         // Find @RHYTHM position (the "line in the sand")
@@ -4296,11 +4306,12 @@ useEffect(() => {
     const isBonusFunction = fn === "V/V" || fn === "V/vi" || fn === "V/ii";
     if (!isBonusFunction) return true; // Not a bonus chord, always allow
     
+    // ✅ v3.18.105: Use ref instead of state to avoid stale closure
     // In EXPERT: always allow (they can trigger dynamically)
-    if (skillLevel === "EXPERT") return true;
+    if (skillLevelRef.current === "EXPERT") return true;
     
     // In ADVANCED: only if showBonusWedges is ON
-    if (skillLevel === "ADVANCED") return showBonusWedgesRef.current;
+    if (skillLevelRef.current === "ADVANCED") return showBonusWedgesRef.current;
     
     // Below ADVANCED: never allow bonus chords
     return false;
@@ -4309,18 +4320,19 @@ useEffect(() => {
   // v3.10.1: Helper for bonus overlays (A7, Bm7♭5, etc.) that don't use wedges
   const shouldShowBonusOverlay = (): boolean => {
     const result = (() => {
+      // ✅ v3.18.105: Use ref instead of state to avoid stale closure
       // In EXPERT: always allow
-      if (skillLevel === "EXPERT") return true;
+      if (skillLevelRef.current === "EXPERT") return true;
       
       // In ADVANCED: only if showBonusWedges is ON
-      if (skillLevel === "ADVANCED") return showBonusWedgesRef.current;
+      if (skillLevelRef.current === "ADVANCED") return showBonusWedgesRef.current;
       
       // Below ADVANCED: never show
       return false;
     })();
     
     console.log('🎭 shouldShowBonusOverlay:', {
-      skillLevel,
+      skillLevel: skillLevelRef.current,
       showBonusWedges: showBonusWedgesRef.current,
       result
     });
@@ -4346,7 +4358,7 @@ useEffect(() => {
     lastPlayedChordRef.current = cleaned; // Save for Make My Key
     console.log('📝 lastPlayedChordRef set to:', cleaned);
     
-    // ✅ v3.18.93: Step record - insert BEFORE @RHYTHM directives, not at end
+    // ✅ v3.18.105: Step record - insert BEFORE @RHYTHM directives, not at end
     if (stepRecordRef.current && cleaned && !cleaned.startsWith('#') && !cleaned.startsWith('@')) {
       setInputText(prev => {
         // Find @RHYTHM position (the "line in the sand")
@@ -4735,7 +4747,7 @@ useEffect(() => {
     // MODIFIED v2.37.9: Pass absHeld array to internalAbsoluteName for dim7 root disambiguation
     const absName = internalAbsoluteName(pcsAbs, baseKeyRef.current, absHeld) || "";
     
-    // ✅ v3.18.93 E7-ONLY DIAGNOSTIC for double-press bug
+    // ✅ v3.18.105 E7-ONLY DIAGNOSTIC for double-press bug
     if (absName === "E7") {
       console.log('🔍 E7 DETECTED:', {
         chord: absName,
@@ -4813,11 +4825,78 @@ useEffect(() => {
         setCenterLabel(displayName);
         setBonusActive(true);
         setBonusLabel("Bm7♭5");
+        
+        // ✅ v3.18.105: Debounced recording for early check
+        if (stepRecordRef.current && absName) {
+          latestBonusChordNameRef.current = absName;
+          if (bonusRecordDebounceRef.current !== null) {
+            clearTimeout(bonusRecordDebounceRef.current);
+          }
+          bonusRecordDebounceRef.current = window.setTimeout(() => {
+            const chordToRecord = latestBonusChordNameRef.current;
+            console.log('📝 Recording Bm7b5 (early check, after debounce):', chordToRecord);
+            setInputText(prev => {
+              const rhythmIndex = prev.indexOf('@RHYTHM');
+              if (rhythmIndex !== -1) {
+                const beforeRhythm = prev.substring(0, rhythmIndex).trimEnd();
+                const rhythmSection = prev.substring(rhythmIndex);
+                const needsComma = beforeRhythm.length > 0 && !beforeRhythm.endsWith(',');
+                return beforeRhythm + (needsComma ? ', ' : '') + chordToRecord + '\n\n' + rhythmSection;
+              } else {
+                return prev ? `${prev}, ${chordToRecord}` : chordToRecord;
+              }
+            });
+            bonusRecordDebounceRef.current = null;
+            latestBonusChordNameRef.current = "";
+          }, 50);
+        }
+        
         return;
       }
     }
     
-    // ✅ v3.18.93 REMOVED: Early Fmaj7 check was here but it ran BEFORE SUB section
+    // ✅ v3.18.105 FIX: Bdim triad EARLY CHECK - must check before diatonic
+    // Bdim [11,2,5] can match as subset of Dm [2,5,9] - catch it early!
+    if (pcsRel.has(11) && pcsRel.has(2) && pcsRel.has(5) && pcsRel.size === 3) {
+      if (shouldShowBonusOverlay()) {
+        console.log('✅ Bdim TRIAD EARLY CHECK → ii/vi bonus');
+        setActiveFn("");
+        setCenterLabel(displayName);
+        setBonusActive(true);
+        setBonusLabel("Bm7♭5"); // Use functional label
+        
+        // ✅ v3.18.105: Debounced recording for early check
+        if (stepRecordRef.current && absName) {
+          latestBonusChordNameRef.current = absName;
+          if (bonusRecordDebounceRef.current !== null) {
+            clearTimeout(bonusRecordDebounceRef.current);
+          }
+          bonusRecordDebounceRef.current = window.setTimeout(() => {
+            const chordToRecord = latestBonusChordNameRef.current;
+            console.log('📝 Recording Bdim (early check, after debounce):', chordToRecord);
+            setInputText(prev => {
+              const rhythmIndex = prev.indexOf('@RHYTHM');
+              if (rhythmIndex !== -1) {
+                const beforeRhythm = prev.substring(0, rhythmIndex).trimEnd();
+                const rhythmSection = prev.substring(rhythmIndex);
+                const needsComma = beforeRhythm.length > 0 && !beforeRhythm.endsWith(',');
+                return beforeRhythm + (needsComma ? ', ' : '') + chordToRecord + '\n\n' + rhythmSection;
+              } else {
+                return prev ? `${prev}, ${chordToRecord}` : chordToRecord;
+              }
+            });
+            bonusRecordDebounceRef.current = null;
+            latestBonusChordNameRef.current = "";
+          }, 50);
+        }
+        
+        // ✅ v3.18.105: Bonus wedge will light automatically via bonusActive + bonusLabel
+        // No need to call setActiveWithTrail - bonus overlay handles highlighting
+        return;
+      }
+    }
+    
+    // ✅ v3.18.105 REMOVED: Early Fmaj7 check was here but it ran BEFORE SUB section
     // This caused Fmaj7 in SUB space to light IV (Bb) instead of I (F)
     // The proper Fmaj7 check with SUB guard is at line ~5540
     
@@ -4836,6 +4915,32 @@ useEffect(() => {
         setCenterLabel(displayName);
         setBonusActive(true);
         setBonusLabel("A7"); // Functional label
+        
+        // ✅ v3.18.105: Debounced recording for early check
+        if (stepRecordRef.current && absName) {
+          latestBonusChordNameRef.current = absName;
+          if (bonusRecordDebounceRef.current !== null) {
+            clearTimeout(bonusRecordDebounceRef.current);
+          }
+          bonusRecordDebounceRef.current = window.setTimeout(() => {
+            const chordToRecord = latestBonusChordNameRef.current;
+            console.log('📝 Recording C#dim (early check, after debounce):', chordToRecord);
+            setInputText(prev => {
+              const rhythmIndex = prev.indexOf('@RHYTHM');
+              if (rhythmIndex !== -1) {
+                const beforeRhythm = prev.substring(0, rhythmIndex).trimEnd();
+                const rhythmSection = prev.substring(rhythmIndex);
+                const needsComma = beforeRhythm.length > 0 && !beforeRhythm.endsWith(',');
+                return beforeRhythm + (needsComma ? ', ' : '') + chordToRecord + '\n\n' + rhythmSection;
+              } else {
+                return prev ? `${prev}, ${chordToRecord}` : chordToRecord;
+              }
+            });
+            bonusRecordDebounceRef.current = null;
+            latestBonusChordNameRef.current = "";
+          }, 50);
+        }
+        
         return;
       }
     }
@@ -4848,6 +4953,31 @@ useEffect(() => {
         setCenterLabel(displayName);
         setBonusActive(true);
         setBonusLabel("A7"); // Functional label
+        
+        // ✅ v3.18.105: Debounced recording for early check
+        if (stepRecordRef.current && absName) {
+          latestBonusChordNameRef.current = absName;
+          if (bonusRecordDebounceRef.current !== null) {
+            clearTimeout(bonusRecordDebounceRef.current);
+          }
+          bonusRecordDebounceRef.current = window.setTimeout(() => {
+            const chordToRecord = latestBonusChordNameRef.current;
+            console.log('📝 Recording C#dim7 (early check, after debounce):', chordToRecord);
+            setInputText(prev => {
+              const rhythmIndex = prev.indexOf('@RHYTHM');
+              if (rhythmIndex !== -1) {
+                const beforeRhythm = prev.substring(0, rhythmIndex).trimEnd();
+                const rhythmSection = prev.substring(rhythmIndex);
+                const needsComma = beforeRhythm.length > 0 && !beforeRhythm.endsWith(',');
+                return beforeRhythm + (needsComma ? ', ' : '') + chordToRecord + '\n\n' + rhythmSection;
+              } else {
+                return prev ? `${prev}, ${chordToRecord}` : chordToRecord;
+              }
+            });
+            bonusRecordDebounceRef.current = null;
+            latestBonusChordNameRef.current = "";
+          }, 50);
+        }
 
         return;
       }
@@ -4967,6 +5097,32 @@ useEffect(() => {
         setCenterLabel(absName || "A7");  // Use absName, fallback to A7 if needed
         setBonusActive(true); 
         setBonusLabel("A7");  // Wedge label stays "A7" (functional label)
+        
+        // ✅ v3.18.105: Add debounced recording
+        if (stepRecordRef.current && absName) {
+          latestBonusChordNameRef.current = absName;
+          if (bonusRecordDebounceRef.current !== null) {
+            clearTimeout(bonusRecordDebounceRef.current);
+          }
+          bonusRecordDebounceRef.current = window.setTimeout(() => {
+            const chordToRecord = latestBonusChordNameRef.current;
+            console.log('📝 Recording C#dim family (parallel space, after debounce):', chordToRecord);
+            setInputText(prev => {
+              const rhythmIndex = prev.indexOf('@RHYTHM');
+              if (rhythmIndex !== -1) {
+                const beforeRhythm = prev.substring(0, rhythmIndex).trimEnd();
+                const rhythmSection = prev.substring(rhythmIndex);
+                const needsComma = beforeRhythm.length > 0 && !beforeRhythm.endsWith(',');
+                return beforeRhythm + (needsComma ? ', ' : '') + chordToRecord + '\n\n' + rhythmSection;
+              } else {
+                return prev ? `${prev}, ${chordToRecord}` : chordToRecord;
+              }
+            });
+            bonusRecordDebounceRef.current = null;
+            latestBonusChordNameRef.current = "";
+          }, 50);
+        }
+        
         return;
       }
 
@@ -4988,12 +5144,15 @@ useEffect(() => {
       }
       */
 
-      setBonusActive(false); setBonusLabel("");
+      // ✅ v3.18.105: REMOVED unconditional bonus clearing
+      // Old: setBonusActive(false); setBonusLabel("");
+      // This was clearing bonus set by earlier checks, breaking EXPERT mode display
+      // Bonus state should persist unless explicitly cleared by another detection
     }
 
     /* ---------- SUBDOM (F) ---------- */
     {
-      // ✅ v3.18.93 DEBUG: Track SUB state
+      // ✅ v3.18.105 DEBUG: Track SUB state
       if (absName === "Fmaj7" || absName === "F" || (pcsRel.has(5) && pcsRel.has(9) && pcsRel.has(0))) {
         console.log('🔧 SUB SECTION START:', {
           absName,
@@ -5106,7 +5265,7 @@ useEffect(() => {
         const stayOnC7      = isSubsetIn([0,4,7,10], S);
         const isCtriadExact = exactSetIn([0,4,7], S);
         
-        // ✅ v3.18.93 DEBUG: Why isn't Fmaj7 matching?
+        // ✅ v3.18.105 DEBUG: Why isn't Fmaj7 matching?
         if (absName === "Fmaj7" || absName === "F") {
           console.log('🔍 SUB F/Fmaj7 CHECK:', {
             absName,
@@ -5267,6 +5426,32 @@ useEffect(() => {
         setBonusLabel("A7");
         setCenterLabel(displayName);
         setActiveFn("");
+        
+        // ✅ v3.18.105: Add debounced recording
+        if (stepRecordRef.current && absName) {
+          latestBonusChordNameRef.current = absName;
+          if (bonusRecordDebounceRef.current !== null) {
+            clearTimeout(bonusRecordDebounceRef.current);
+          }
+          bonusRecordDebounceRef.current = window.setTimeout(() => {
+            const chordToRecord = latestBonusChordNameRef.current;
+            console.log('📝 Recording A/A7 (PAR exit, after debounce):', chordToRecord);
+            setInputText(prev => {
+              const rhythmIndex = prev.indexOf('@RHYTHM');
+              if (rhythmIndex !== -1) {
+                const beforeRhythm = prev.substring(0, rhythmIndex).trimEnd();
+                const rhythmSection = prev.substring(rhythmIndex);
+                const needsComma = beforeRhythm.length > 0 && !beforeRhythm.endsWith(',');
+                return beforeRhythm + (needsComma ? ', ' : '') + chordToRecord + '\n\n' + rhythmSection;
+              } else {
+                return prev ? `${prev}, ${chordToRecord}` : chordToRecord;
+              }
+            });
+            bonusRecordDebounceRef.current = null;
+            latestBonusChordNameRef.current = "";
+          }, 50);
+        }
+        
         return;
       }
       
@@ -5278,6 +5463,32 @@ useEffect(() => {
         setBonusLabel("A7"); // Functional label
         setCenterLabel(displayName); // Actual chord name
         setActiveFn("");
+        
+        // ✅ v3.18.105: Add debounced recording
+        if (stepRecordRef.current && absName) {
+          latestBonusChordNameRef.current = absName;
+          if (bonusRecordDebounceRef.current !== null) {
+            clearTimeout(bonusRecordDebounceRef.current);
+          }
+          bonusRecordDebounceRef.current = window.setTimeout(() => {
+            const chordToRecord = latestBonusChordNameRef.current;
+            console.log('📝 Recording C#dim7 (PAR exit, after debounce):', chordToRecord);
+            setInputText(prev => {
+              const rhythmIndex = prev.indexOf('@RHYTHM');
+              if (rhythmIndex !== -1) {
+                const beforeRhythm = prev.substring(0, rhythmIndex).trimEnd();
+                const rhythmSection = prev.substring(rhythmIndex);
+                const needsComma = beforeRhythm.length > 0 && !beforeRhythm.endsWith(',');
+                return beforeRhythm + (needsComma ? ', ' : '') + chordToRecord + '\n\n' + rhythmSection;
+              } else {
+                return prev ? `${prev}, ${chordToRecord}` : chordToRecord;
+              }
+            });
+            bonusRecordDebounceRef.current = null;
+            latestBonusChordNameRef.current = "";
+          }, 50);
+        }
+        
         return;
       }
     }
@@ -5352,7 +5563,7 @@ useEffect(() => {
       pcsRelSize: pcsRel.size
     });
     
-    // ✅ v3.18.93: Smart suppression - only block ambiguous chords
+    // ✅ v3.18.105: Smart suppression - only block ambiguous chords
     // Check if current chord is unambiguous (has clear function)
     // Calculate these before the suppression check
     const baseKeyPC = NAME_TO_PC[baseKeyRef.current];
@@ -5375,7 +5586,7 @@ useEffect(() => {
     // Ambiguous chords (I triad could be confused with V in SUB)
     const isTonic = isSubsetIn([0, 4, 7], pcsRel) && !isSubsetIn([0, 4, 7, 11], pcsRel) && !isSubsetIn([0, 4, 7, 10], pcsRel);
     
-    // ✅ v3.18.93 FIX: V/vi (E7) should bypass suppression after SUB exit
+    // ✅ v3.18.105 FIX: V/vi (E7) should bypass suppression after SUB exit
     // Bug: After SUB exit, E7 requires 2 presses because homeSuppressUntilRef blocks detection
     // Solution: Check absName directly - if theory.ts detected E7, it's unambiguous
     const isE7 = absName === "E7" || absName === "E";
@@ -5468,7 +5679,7 @@ useEffect(() => {
       // ✅ v3.15.9: Check common diatonic triads (ii, iii, vi) - pattern matcher may not have them
       // These are RELATIVE to baseKey (scale degrees), not absolute pitch classes
       
-      // ✅ v3.18.93 FIX: Check Cmaj7 BEFORE iii triad
+      // ✅ v3.18.105 FIX: Check Cmaj7 BEFORE iii triad
       // Bug: Cmaj7 [0,4,7,11] contains iii triad [4,7,11] as subset
       // Must check exact Cmaj7 first to prevent false iii match
       if (exactSetIn([0, 4, 7, 11], pcsRel)) {
@@ -5484,7 +5695,14 @@ useEffect(() => {
       const vi_triad = isSubsetIn([9, 0, 4], pcsRel);
       const vi_7th = isSubsetIn([9, 0, 4, 7], pcsRel);
       
-      if (ii_triad || ii_7th) {
+      // ✅ v3.18.105 FIX: Exclude Bm7b5 from ii when bonus disabled
+      // Bm7b5 [11,2,5,9] contains ii notes [2,5,9] as subset
+      // If bonus disabled, Bm7b5 early check returns false and falls through to here
+      // Solution: Check for B (11) - if present with exact size 4, it's Bm7b5, not Dm
+      const isBm7b5Pattern = pcsRel.has(11) && pcsRel.has(2) && pcsRel.has(5) && pcsRel.has(9) && pcsRel.size === 4;
+      const shouldExcludeFromIi = isBm7b5Pattern && !shouldShowBonusOverlay();
+      
+      if ((ii_triad || ii_7th) && !shouldExcludeFromIi) {
         const chordName = absName || realizeFunction("ii" as Fn, baseKeyRef.current);
         // ✅ v3.17.85: Don't append 7 if already present (Fm7 → Fm77 bug)
         const label = ii_7th && !chordName.match(/7|9|11|13/) ? `${chordName}7` : chordName;
@@ -5497,6 +5715,60 @@ useEffect(() => {
         setActiveWithTrail("iii", label);
         return;
       }
+      
+      // ✅ v3.18.105 FIX: Check A7 bonus BEFORE vi check
+      // Bug: A7 [9,1,4,7] matches vi_triad check [9,0,4] via isSubsetIn (9 and 4 present)
+      // This causes vi to return before A7 bonus check can run
+      // Solution: Check A7 bonus family first (must be EXACT size match)
+      const hasA = isSubset([9,1,4]) && pcsRel.size === 3; // A triad, any inversion
+      const hasA7 = isSubset([9,1,4,7]) && pcsRel.size === 4; // A7, any inversion
+      const hasCSharpDimTriad = isSubset([1,4,7]) && pcsRel.size === 3; // C#dim triad [C#,E,G], any inversion
+      const hasCSharpHalfDim = isSubset([1,4,7,11]) && pcsRel.size === 4; // C#m7♭5, any inversion
+      
+      if (!visitorActiveRef.current && (hasA || hasA7 || hasCSharpDimTriad || hasCSharpHalfDim) && shouldShowBonusOverlay()) {
+        const recordName = absName || displayName;
+        console.log('✅ A7 BONUS TRIGGERED (before vi check)!', {
+          hasA,
+          hasA7,
+          displayName,
+          absName,
+          recordName,
+          pcsRel: Array.from(pcsRel),
+          stepRecord: stepRecordRef.current
+        });
+        setActiveFn(""); 
+        setCenterLabel(displayName); // Show actual chord name
+        setBonusActive(true); 
+        setBonusLabel("A7"); // Use functional label for wedge
+        
+        // ✅ v3.18.105: Debounced recording
+        if (stepRecordRef.current && absName) {
+          latestBonusChordNameRef.current = absName;
+          if (bonusRecordDebounceRef.current !== null) {
+            clearTimeout(bonusRecordDebounceRef.current);
+          }
+          bonusRecordDebounceRef.current = window.setTimeout(() => {
+            const chordToRecord = latestBonusChordNameRef.current;
+            console.log('📝 Recording A/A7 bonus chord (after debounce):', chordToRecord);
+            setInputText(prev => {
+              const rhythmIndex = prev.indexOf('@RHYTHM');
+              if (rhythmIndex !== -1) {
+                const beforeRhythm = prev.substring(0, rhythmIndex).trimEnd();
+                const rhythmSection = prev.substring(rhythmIndex);
+                const needsComma = beforeRhythm.length > 0 && !beforeRhythm.endsWith(',');
+                return beforeRhythm + (needsComma ? ', ' : '') + chordToRecord + '\n\n' + rhythmSection;
+              } else {
+                return prev ? `${prev}, ${chordToRecord}` : chordToRecord;
+              }
+            });
+            bonusRecordDebounceRef.current = null;
+            latestBonusChordNameRef.current = "";
+          }, 50);
+        }
+        return;
+      }
+      
+      // NOW check vi (after A7 bonus ruled out)
       if (vi_triad || vi_7th) {
         const chordName = absName || realizeFunction("vi" as Fn, baseKeyRef.current);
         const label = vi_7th && !chordName.match(/7|9|11|13/) ? `${chordName}7` : chordName;
@@ -5527,81 +5799,45 @@ useEffect(() => {
       
       // ✅ v3.14.0: Re-add shouldShowBonusOverlay check (was removed in v3.13.9 by mistake)
       if (!visitorActiveRef.current && (hasBdimTriad || hasBm7b5) && shouldShowBonusOverlay()) {
-        // ✅ v3.18.93: Use absName for recording (displayName might be stale)
         const recordName = absName || displayName;
         console.log('✅ Bm7♭5 BONUS TRIGGERED!');
         setActiveFn(""); 
         setCenterLabel(displayName);
         setBonusActive(true); 
         setBonusLabel("Bm7♭5"); // ✅ v3.13.6: Use functional label for wedge
-        // ✅ v3.18.93: Trigger step record for bonus chord - use recordName (absName)
-        if (stepRecordRef.current && recordName) {
-          setInputText(prev => {
-            const rhythmIndex = prev.indexOf('@RHYTHM');
-            if (rhythmIndex !== -1) {
-              const beforeRhythm = prev.substring(0, rhythmIndex).trimEnd();
-              const rhythmSection = prev.substring(rhythmIndex);
-              const needsComma = beforeRhythm.length > 0 && !beforeRhythm.endsWith(',');
-              return beforeRhythm + (needsComma ? ', ' : '') + recordName + '\n\n' + rhythmSection;
-            } else {
-              return prev ? `${prev}, ${recordName}` : recordName;
-            }
-          });
+        // ✅ v3.18.105: Debounced recording using ref
+        if (stepRecordRef.current && absName) {
+          latestBonusChordNameRef.current = absName;
+          console.log('🕐 Setting Bdim/Bm7b5 debounce timer for:', absName);
+          
+          if (bonusRecordDebounceRef.current !== null) {
+            console.log('🚫 Clearing old Bdim timer');
+            clearTimeout(bonusRecordDebounceRef.current);
+          }
+          
+          bonusRecordDebounceRef.current = window.setTimeout(() => {
+            const chordToRecord = latestBonusChordNameRef.current;
+            console.log('📝 Recording Bdim/Bm7b5 bonus chord (after debounce):', chordToRecord);
+            setInputText(prev => {
+              const rhythmIndex = prev.indexOf('@RHYTHM');
+              if (rhythmIndex !== -1) {
+                const beforeRhythm = prev.substring(0, rhythmIndex).trimEnd();
+                const rhythmSection = prev.substring(rhythmIndex);
+                const needsComma = beforeRhythm.length > 0 && !beforeRhythm.endsWith(',');
+                return beforeRhythm + (needsComma ? ', ' : '') + chordToRecord + '\n\n' + rhythmSection;
+              } else {
+                return prev ? `${prev}, ${chordToRecord}` : chordToRecord;
+              }
+            });
+            bonusRecordDebounceRef.current = null;
+            latestBonusChordNameRef.current = "";
+          }, 50);
         }
         return;
       }
       
-      // V/ii bonus (A7 family): A, A7, C#dim triad, C#m7♭5 (C#dim7 checked above)
-      const hasA = isSubset([9,1,4]) && pcsRel.size === 3; // A triad, any inversion
-      const hasA7 = isSubset([9,1,4,7]) && pcsRel.size === 4; // A7, any inversion
-      const hasCSharpDimTriad = isSubset([1,4,7]) && pcsRel.size === 3; // C#dim triad [C#,E,G], any inversion
-      const hasCSharpHalfDim = isSubset([1,4,7,11]) && pcsRel.size === 4; // C#m7♭5, any inversion
-      
-      console.log('🔍 A7 bonus check:', {
-        hasA,
-        hasA7,
-        hasCSharpDimTriad,
-        hasCSharpHalfDim,
-        pcsRel: Array.from(pcsRel),
-        visitorActive: visitorActiveRef.current,
-        shouldShow: shouldShowBonusOverlay(),
-        skillLevel
-      });
-      
-      // ✅ v3.14.0: Re-add shouldShowBonusOverlay check (was removed in v3.13.9 by mistake)
-      if (!visitorActiveRef.current && (hasA || hasA7 || hasCSharpDimTriad || hasCSharpHalfDim) && shouldShowBonusOverlay()) {
-        // ✅ v3.18.93: Use absName for recording (displayName might be stale from 3-note detection)
-        const recordName = absName || displayName;
-        console.log('✅ A7 BONUS TRIGGERED!', {
-          hasA,
-          hasA7,
-          displayName,
-          absName,
-          recordName,
-          pcsRel: Array.from(pcsRel),
-          stepRecord: stepRecordRef.current
-        });
-        setActiveFn(""); 
-        setCenterLabel(displayName); // Show actual chord name
-        setBonusActive(true); 
-        setBonusLabel("A7"); // ✅ v3.13.6: Use functional label for wedge
-        // ✅ v3.18.93: Trigger step record for bonus chord - use recordName (absName)
-        if (stepRecordRef.current && recordName) {
-          console.log('📝 Recording A7 bonus chord:', recordName);
-          setInputText(prev => {
-            const rhythmIndex = prev.indexOf('@RHYTHM');
-            if (rhythmIndex !== -1) {
-              const beforeRhythm = prev.substring(0, rhythmIndex).trimEnd();
-              const rhythmSection = prev.substring(rhythmIndex);
-              const needsComma = beforeRhythm.length > 0 && !beforeRhythm.endsWith(',');
-              return beforeRhythm + (needsComma ? ', ' : '') + recordName + '\n\n' + rhythmSection;
-            } else {
-              return prev ? `${prev}, ${recordName}` : recordName;
-            }
-          });
-        }
-        return;
-      }
+      // ✅ v3.18.105: A7 bonus check MOVED to before vi check (line ~5620)
+      // Was here but vi check was matching A7 [9,1,4,7] as vi [9,0,4] subset
       
       if (exactSet([6,9,0,4]) && shouldTriggerBonus("V/V")){ setActiveWithTrail("V/V","F#m7♭5"); return; }
       
@@ -5618,11 +5854,11 @@ useEffect(() => {
         return;
       }
       
-      // ✅ v3.18.93 FIX: Fmaj7 early detection to prevent Am7 subset match
+      // ✅ v3.18.105 FIX: Fmaj7 early detection to prevent Am7 subset match
       // Bug: Fmaj7 [5,9,0,4] contains Am [9,0,4] as subset
       // If Am7 is checked first in diatonic tables, it incorrectly matches vi
       // Solution: Check Fmaj7 explicitly before diatonic matching
-      // ✅ v3.18.93 FIX #2: Only in HOME - in SUB, Fmaj7 is I not IV
+      // ✅ v3.18.105 FIX #2: Only in HOME - in SUB, Fmaj7 is I not IV
       if (!subdomActiveRef.current && exactSet([5,9,0,4])) {
         console.log('✅ EARLY Fmaj7 CHECK: [5,9,0,4] → IV wedge (HOME only)');
         setActiveWithTrail("IV", displayName || "Fmaj7");
@@ -5631,7 +5867,7 @@ useEffect(() => {
       
       const m7 = firstMatch(homeDiatonic.req7, pcsRel); 
       if(m7){ 
-        // ✅ v3.18.93 DEBUG: Why is Cmaj7 matching iii?
+        // ✅ v3.18.105 DEBUG: Why is Cmaj7 matching iii?
         if (absName === "Cmaj7") {
           console.log('🔍 Cmaj7 DEBUG:', {
             absName,
@@ -7701,7 +7937,7 @@ useEffect(() => {
             setLatchedAbsNotes(playWith7th ? chordNotes[chordName].seventh : chordNotes[chordName].triad);
           }
           
-          // ✅ v3.18.93: Update display and trigger step record
+          // ✅ v3.18.105: Update display and trigger step record
           const displayChordName = playWith7th ? chordName : chordName.replace(/7|♭5/, '').trim();
           centerOnly(displayChordName);
         };
@@ -8879,7 +9115,7 @@ useEffect(() => {
                       const newState = !stepRecord;
                       setStepRecord(newState);
                       stepRecordRef.current = newState;
-                      // ✅ v3.18.93: Toggle bonus wedges with step record
+                      // ✅ v3.18.105: Toggle bonus wedges with step record
                       setShowBonusWedges(newState);
                     }}
                     style={{
@@ -9684,6 +9920,6 @@ useEffect(() => {
   );
 }
 
-// HarmonyWheel v3.18.93 - Compiler fix + E7 debugging
+// HarmonyWheel v3.18.105 - Compiler fix + E7 debugging
 
-// EOF - HarmonyWheel.tsx v3.18.93
+// EOF - HarmonyWheel.tsx v3.18.105
