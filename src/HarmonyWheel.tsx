@@ -1,13 +1,13 @@
 /*
- * HarmonyWheel.tsx — v3.18.111 🔧 Compiler Fix + Minimal Logging
+ * HarmonyWheel.tsx — v3.18.114 🔧 Compiler Fix + Minimal Logging
  * 
- * 🔧 v3.18.111 TYPESCRIPT COMPILER FIX:
+ * 🔧 TYPESCRIPT COMPILER FIX:
  * - Fixed: absName used before declaration (line 4685 before 4747)
  * - Moved pcsRel and absName declarations BEFORE diagnostic logging
  * - Commented out most console.logs (not deleted - easy to re-enable)
  * - Kept only E7-specific logs active for debugging
  * 
- * 🎵 v3.18.111 FMAJ7 → IV FIX (RESOLVED):
+ * 🎵 FMAJ7 → IV FIX (RESOLVED):
  * - Fmaj7 [5,9,0,4] now correctly lights IV wedge (not vi)
  * 
  * 📝 v3.18.79 NO MORE HARDCODED MESSAGES:
@@ -29,32 +29,32 @@
  * - Removed setBannerMessage("") from empty input handler
  * - Result: Display always shows something (banner or sequence)
  * 
- * 🔧 v3.18.79 TYPESCRIPT FIXES:
+ * 🔧 TYPESCRIPT FIXES:
  * - Added explicit types to importSongFromFile callback parameters
  * - content: string, err: Error - no more implicit any
  * - Note: songManager.ts file needs to be in src/lib/ directory
  * 
- * 🔧 v3.18.79 EDITOR LAYOUT FIX:
+ * 🔧 EDITOR LAYOUT FIX:
  * - Changed container from flex-row to flex-column
  * - Textarea now scrolls instead of pushing buttons down
  * - Fixed button grid height: gridTemplateRows with fixed 40px height
  * - Buttons stay accessible and don't stretch vertically
  * - maxHeight reduced to 240px to ensure buttons always visible
  * 
- * 🎵 v3.18.79 SUS CHORD FIX:
+ * 🎵 SUS CHORD FIX:
  * - Gsus4 vs Csus4 disambiguation using lowest note
  * - Problem: Gsus2 (G-A-D) and Csus4 (C-F-G) have ambiguous PCs
  * - Solution: Check lowest MIDI note to determine root
  * - Example: Playing G-C-D from bottom → Gsus4 (not Csus2)
  * - detectDisplayTriadLabel now accepts optional midiNotes parameter
  * 
- * 🔧 v3.18.79 TEXTAREA RESIZE FIX:
+ * 🔧 TEXTAREA RESIZE FIX:
  * - Added maxHeight: 300px to prevent textarea stretching below buttons
  * - Added minHeight: 72px for consistent 3-row minimum
  * - Buttons (Ready, Clear, Share, Load) stay in place when resizing
  * - No more losing buttons off the bottom of the screen!
  * 
- * 🎵 v3.18.79 AUTO-LOAD DEFAULT SONG ON MOUNT:
+ * 🎵 AUTO-LOAD DEFAULT SONG ON MOUNT:
  * - **What you expected**: First demo song loads automatically on refresh
  * - **What was happening**: inputText had defaultSong, but parseAndLoadSequence never called
  * - **The fix**: Added useEffect on mount to parse the first demo song
@@ -120,7 +120,7 @@
  * 
  * Sequence will contain ONLY: C, Am, F, G (clean!)
  * 
- * 🎵 v3.18.79 @LOOP + Clean Display:
+ * 🎵 @LOOP + Clean Display:
  * - **@LOOP directive**: Add `@LOOP` to song text to enable loop mode automatically
  * - **Clean display**: RHYTHM and LOOP directives no longer show in song display
  * - **Usage**: `@TITLE Song, @KEY C, @LOOP, C, Am, F, G`
@@ -247,14 +247,14 @@
  * - Cool cyan = simple triad (3 notes)
  * - Warm magenta = richer seventh (4 notes)
  * 
- * 🎵 v3.18.54 PERFORMANCE PAD RHYTHM FIX:
+ * 🎵 PERFORMANCE PAD RHYTHM FIX:
  * - **Explicit rhythm trigger**: Performance pad now calls startRhythmLoop() directly
  * - **50ms delay**: Waits for latchedAbsNotes to update after previewFn()
  * - **Checks rhythm enabled**: Only starts if rhythmEnabledRef.current === true
  * - Should fix iOS/mobile rhythm playback when holding pads
  * - If this still doesn't work, the issue may be iOS audio context restrictions
  * 
- * 🔧 v3.18.53 THREE MAJOR FIXES:
+ * 🔧 THREE MAJOR FIXES:
  * 
  * 1. **Intro Animation**: Starts sooner (100ms), opens at REL, single rotation
  *    - Immediate start, hold at REL for 1s, rotate to HOME
@@ -283,7 +283,7 @@
  * - **preventDefault on onClick**: Prevents duplicate triggers
  * - Performance mode button should no longer trigger on random touches
  * 
- * 🎵 v3.18.50 INTRO TIMING ADJUSTMENTS:
+ * 🎵 INTRO TIMING ADJUSTMENTS:
  * - **Starts sooner**: 200ms delay (was 800ms)
  * - **Slower spin**: 1800ms rotation (was 1200ms)
  * - **Longer pause at REL**: 800ms (was 600ms)
@@ -378,7 +378,7 @@
  * - **Safari overflow**: 'visible' to allow full content access
  * - Keep the Expert mode line break - it's intentional design!
  * 
- * 🔧 v3.18.38 EXPERT MODE FIXES:
+ * 🔧 EXPERT MODE FIXES:
  * - **Safari scrolling**: Added minHeight:100vh for Safari to allow full content expansion
  * - **Skill button reflow**: Fixed height:52px wrapper prevents layout shift
  * - **No more jumping**: Expert mode toggle no longer causes content to shift
@@ -502,7 +502,7 @@
  * - **Shift+number works**: Holding 1, press Shift → switches to 7th chord!
  * - **Normalized keys**: Treats '1' and '!' as same key for stack tracking
  * 
- * 🎵 v3.18.19 CRITICAL FIXES:
+ * 🎵 CRITICAL FIXES:
  * - **Immediate takeover**: New pad takes over instantly (stops old rhythm first)
  * - **Rhythm starts first time**: Uses notes from previewFn return, no state delay
  * - **Pattern switching**: Press [ ] \ while holding → pattern changes seamlessly!
@@ -515,7 +515,7 @@
  * - **Seamless**: Rhythm continues from same position when reverting
  * - **Console logging**: Shows key stack for debugging
  * 
- * 🎵 v3.18.17 RHYTHM FIXES:
+ * 🎵 RHYTHM FIXES:
  * - **Track active key**: Only stops rhythm when releasing the CURRENT key
  * - **O key**: Toggle rhythm on/off (works anywhere)
  * - **Hold + switch**: Hold 1, press 3, release 1 → 3 keeps playing! ✅
@@ -529,7 +529,7 @@
  * - **Works as expected**: Release 4, press 6 → instant trigger!
  * - Hold 1, press 3 while holding → seamless chord change!
  * 
- * 🎵 v3.18.15 SEAMLESS CHORD CHANGES:
+ * 🎵 SEAMLESS CHORD CHANGES:
  * - **Rhythm position tracking**: Knows where in the pattern you are
  * - **Seamless handoff**: Switch chords, rhythm continues from same beat!
  * - Hold `1` (C) → press `3` (D7) → rhythm doesn't restart, picks up where it was
@@ -547,12 +547,12 @@
  * - **Rhythm protection**: Can't insert chords after @RHYTHM directives ("line in the sand")
  * - Cursor stays in chord area, never types after rhythms
  * 
- * 🎵 v3.18.12 RHYTHM PARSER FIX (For Real):
+ * 🎵 RHYTHM PARSER FIX (For Real):
  * - **Parse @directives BEFORE bar notation**: Prevents "@RHYTHM1 |x x x x|" from being split
  * - Now @RHYTHM directives are treated as single tokens
  * - Patterns will actually load!
  * 
- * 🎵 v3.18.11 RHYTHM PARSER FIX:
+ * 🎵 RHYTHM PARSER FIX:
  * - **Newlines → commas**: Each line becomes a token (fixes @RHYTHM parsing!)
  * - Patterns now load correctly from separate lines
  * - Hold number key → rhythm loops!
@@ -562,7 +562,7 @@
  * - Added debug logging to verify rhythm loop starts
  * - Should finally work as intended!
  * 
- * 🎵 v3.18.9 RHYTHM LOOPS (Finally!):
+ * 🎵 RHYTHM LOOPS (Finally!):
  * - **Hold number key** → Plays rhythm pattern continuously (not OS repeat!)
  * - **Press [ ] \** while holding → Switches pattern mid-hold
  * - **Release key** → Stops rhythm
@@ -579,7 +579,7 @@
  * - **Editor focus guard**: Won't steal focus in performance mode (triple-tap bug fixed!)
  * - **B key**: Toggle performance mode (b or B)
  * 
- * 🔧 v3.18.7 Z-INDEX FIXES:
+ * 🔧 Z-INDEX FIXES:
  * - Key dropdown: z-index 100001 (above button grid)
  * - Transpose dropdown: z-index 100001 (above button grid)
  * - Buttons now clickable again!
@@ -632,7 +632,7 @@
  * - Now: duh-duh-duh-duh (silence) (silence) duh-duh-duh-duh
  * - Pattern | A A A A / / A A A A / / A A A A | finally works!
  * 
- * 🎵 v3.18.2 RHYTHM NOTATION:
+ * 🎵 RHYTHM NOTATION:
  * - **Bar delimiters**: |C Am F G| = quarter notes (4 chords in 1 bar)
  * - **Multiple bars**: |C Am|F G| = 2 bars of half notes
  * - **Rests**: / inside bars creates silent beats
@@ -711,14 +711,14 @@
  * - Fix: Use spread operator to get ALL parts: `const [m, ...rest] = split; const arg = rest.join(":")`
  * - Now "KEY:Eb:Ebmaj7" → m="KEY", arg="Eb:Ebmaj7" ✅
  * 
- * 🔧 v3.17.87 CRITICAL FIX:
+ * 🔧 CRITICAL FIX:
  * - **Fixed stepNext audio capture timing issue**
  * - Bug: `latchedAbsNotesRef` captured before async detect() completed
  * - Result: Always got Array(0) notes for combined modifiers
  * - Fix: Return notes directly from applySeqItem(), play them in stepNext/goToStart
  * - Now @KEY Eb: Ebmaj7 plays correctly!
  * 
- * 🔧 v3.17.86 CRITICAL FIX:
+ * 🔧 CRITICAL FIX:
  * - **Removed 50ms setTimeout in KEY+chord handling**
  * - Bug: "@KEY Eb: Ebmaj7" wasn't playing Ebmaj7 on first step
  * - Cause: setTimeout delayed chord playback, but stepNext() captured notes immediately
@@ -1113,33 +1113,33 @@
  * - Fixed diminished substitution (e.g., G#dim for E7) in all keys
  * - This was a pre-existing architectural bug, NOT introduced by our changes
  * 
- * 🔧 v3.15.6 FIXES:
+ * 🔧 FIXES:
  * - Enter key exits BPM input field
  * - Enter key closes transpose/key selector dropdowns
  * - Click outside closes transpose/key selector dropdowns
  * - Better UX for input field and dropdown interactions
  * 
- * 🔧 v3.15.5 FIXES:
+ * 🔧 FIXES:
  * - Keyboard shortcuts (skill levels 1-5, etc.) now ignore input fields
  * - Can type tempo without skill level changing
  * - All number/letter shortcuts disabled when focused on tempo or text input
  * 
- * 🔧 v3.15.4 FIXES:
+ * 🔧 FIXES:
  * - Dragging between inner/outer zones now updates keyboard display
  * - Yellow keys now correctly show/hide 7th note during drag
  * - Hub label updates consistently during drag
  * - lastPlayedChordRef updated for MMK consistency
  * 
- * 🔧 v3.15.3 FIXES:
+ * 🔧 FIXES:
  * - Hub now shows "Fmaj7", "Dm7", etc. when clicking inner zone (with 7th)
  * - Center label properly reflects the 7th chord being played
  * 
- * 🔧 v3.15.2 FIXES:
+ * 🔧 FIXES:
  * - Yellow canonical voicing only shows for wedge clicks, not MIDI input
  * - MIDI latched chords no longer show confusing yellow keys in different octave
  * - Blue notes disappear on release, no yellow replacement
  * 
- * 🔧 v3.15.1 FIXES:
+ * 🔧 FIXES:
  * - Fixed multiple timers being created (only create if none exists)
  * - Clear activeFnRef directly in timeout (fixes yellow key persistence)
  * - Yellow keys now properly disappear after 10 seconds
@@ -1190,7 +1190,7 @@
  *   • Colors work (blue for Bdim/Bm7b5, red for A/A7) ✅
  *   • Toggle doesn't turn itself off ✅
  * 
- * 🔧 v3.14.0 CRITICAL FIXES:
+ * 🔧 CRITICAL FIXES:
  * 
  * 1. TOGGLE AUTO-DISABLE BUG FIXED:
  * - Removed lines 945-947 that turned OFF showBonusWedges on MIDI input
@@ -1467,7 +1467,7 @@
  * - Click INSIDE (toward hub) → with 7th (A-C#-E-G or B-D-F-A)
  * - Now matches main wedge behavior perfectly!
  * 
- * 🎵 v3.10.3 FIX:
+ * 🎵 FIX:
  * - Bonus chord overlays (A7, Bm7♭5) now play 4-note versions with 7th
  * - Before: Only played triads (3 notes)
  * - Now: Includes 7th note, matching main wedge behavior
@@ -1540,21 +1540,21 @@
  * - Displays available patterns vs. chord being matched
  * - Helps diagnose "sometimes works, sometimes doesn't" issue
  * 
- * 🔧 v3.6.2 CRITICAL FIX - Secondary dominant filtering:
+ * 🔧 CRITICAL FIX - Secondary dominant filtering:
  * - Fixed: Ab in Eb now activates IV wedge (not V/V)
  * - Fixed: Bb in Eb now activates V7 wedge (not V/vi)
  * - Bug: homeDiatonic patterns included V/V and V/vi that overlapped with diatonic chords
  * - Solution: Filter out false secondary dominant matches, use actual diatonic functions
  * - Hub labels were already correct in v3.6.1, now wedges match!
  * 
- * 🔧 v3.6.1 CRITICAL FIX - Hardcoded C patterns removed:
+ * 🔧 CRITICAL FIX - Hardcoded C patterns removed:
  * - Fixed: Removed hardcoded G/G7 and E/E7 pattern checks
  * - Bug was: Bb in Eb showed as "G" because pattern [7,11,2] was hardcoded for C
  * - Root cause: HOME space had C-specific patterns instead of key-aware detection
  * - Solution: Let homeDiatonic handle ALL diatonic chords in ANY key
  * - Now works correctly in ALL keys (C, Eb, F#, etc.)
  * 
- * 🔧 v3.6.0 PARTIAL FIXES (baseKey sync - necessary but insufficient):
+ * 🔧 PARTIAL FIXES (baseKey sync - necessary but insufficient):
  * - Fixed: baseKeyRef syncs with baseKey state
  * - Fixed: Key selector setting preserved when loading sequences
  * - These fixes were correct but didn't solve the display bug
@@ -1642,12 +1642,12 @@
  * - Added flexWrap to transport row
  *
  * 
- * 🔧 v3.4.3 FIXES:
+ * 🔧 FIXES:
  * - Transpose/Reset only visible in EXPERT mode (or if transpose non-zero)
  * - Fixed double-reset issue: now fully resets spaces in one click
  * - Added subHasSpunRef, recentRelMapRef clearing to resetAll
  * 
- * 🔧 v3.4.3 FIXES:
+ * 🔧 FIXES:
  * - Transpose always visible if non-zero, turns yellow when active
  * - Transpose dropdown now horizontal (13 columns instead of 5 rows)
  * - Reset button doesn't trigger HOME wedge anymore
@@ -1709,7 +1709,7 @@
  * - "# B Section" will pause, then next > plays the chord
  * - Combined still works: "# Section: Chord" plays immediately
  * 
- * 🔧 v3.2.6 PARSER FIX:
+ * 🔧 PARSER FIX:
  * - Improved comment+chord regex to handle m7b5, b5, #5, etc.
  * - Reminder: Use colon not comma: "# B Section: Bm7b5" ✅
  * - Not comma: "# B Section, Bm7b5" ❌ (splits into separate tokens)
@@ -1751,7 +1751,7 @@
  * - C7 activates SUB space in sequencer ✅
  * - All MIDI rules (SUB/PAR/REL activation, bonus chords) now work in sequencer!
  * 
- * 🔧 v3.1.4 CRASH FIX:
+ * 🔧 CRASH FIX:
  * - FIXED: Crash when playing plain V chord (preview module doesn't know about V yet)
  * - Added fallback to CHORD_DEFINITIONS when preview.chordPcsForFn returns undefined
  * - G chord now plays AND lights V wedge without crashing!
@@ -1766,7 +1766,7 @@
  * - Added latchedAbsNotesRef to bypass React state timing issue
  * - stepNext now uses ref for synchronous note access
  * 
- * 🔧 v3.1.1 DEBUG/FIX:
+ * 🔧 DEBUG/FIX:
  * - Added comprehensive console logging for stepNext flow
  * - Added displayIndex separate from seqIndex for proper sync
  * - Fixed G chord fallback parser (added logging)
@@ -1858,7 +1858,7 @@ import {
   parseSongMetadata
 } from "./lib/songManager";
 
-const HW_VERSION = 'v3.18.111';
+const HW_VERSION = 'v3.18.114';
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -1887,12 +1887,12 @@ export default function HarmonyWheel(){
   
   // Define which functions are visible at each level (cumulative)
   const SKILL_LEVEL_FUNCTIONS: Record<SkillLevel, Fn[]> = {
-    "ROOKIE": ["I", "IV", "V", "V7"],  // ✅ v3.17.13: Added V (plain triad)
+    "ROOKIE": ["I", "IV", "V", "V7"],  // ✅ Added V (plain triad)
     "NOVICE": ["I", "IV", "V", "V7", "vi"],  
     "SOPHOMORE": ["I", "IV", "V", "V7", "vi", "V/V", "V/vi"],  
     "INTERMEDIATE": ["I", "IV", "V", "V7", "vi", "V/V", "V/vi", "ii", "iii", "♭VII", "iv"],  
-    "ADVANCED": ["I", "IV", "V", "V7", "vi", "V/V", "V/vi", "V/ii", "ii", "iii", "♭VII", "iv", "Bm7♭5"],  // ✅ v3.17.13: Added V/ii and Bm7♭5
-    "EXPERT": ["I", "IV", "V", "V7", "vi", "V/V", "V/vi", "V/ii", "ii", "iii", "♭VII", "iv", "Bm7♭5"]  // ✅ v3.17.13: Added V/ii and Bm7♭5
+    "ADVANCED": ["I", "IV", "V", "V7", "vi", "V/V", "V/vi", "V/ii", "ii", "iii", "♭VII", "iv", "Bm7♭5"],  // ✅ Added V/ii and Bm7♭5
+    "EXPERT": ["I", "IV", "V", "V7", "vi", "V/V", "V/vi", "V/ii", "ii", "iii", "♭VII", "iv", "Bm7♭5"]  // ✅ Added V/ii and Bm7♭5
   };
   
   // Check if a function is visible at current skill level
@@ -1958,7 +1958,7 @@ useEffect(() => {
   const [activeFn,setActiveFn]=useState<Fn|"">("I");
   const activeFnRef=useRef<Fn|"">("I"); useEffect(()=>{activeFnRef.current=activeFn;},[activeFn]);
 
-  // ✅ v3.18.47: Intro animation state
+  // ✅ Intro animation state
   const [showIntroAnimation, setShowIntroAnimation] = useState(true);
   const [introStep, setIntroStep] = useState(0);
 
@@ -1969,7 +1969,7 @@ useEffect(() => {
   const [visitorActive,_setVisitorActive]=useState(false);
   const visitorActiveRef=useRef(false);
   const setVisitorActive=(v:boolean)=>{ 
-    // ✅ v3.18.53: Space lock protection at setter level
+    // ✅ Space lock protection at setter level
     if (spaceLocked && v !== visitorActiveRef.current) return;
     visitorActiveRef.current=v; _setVisitorActive(v); 
   };
@@ -1977,7 +1977,7 @@ useEffect(() => {
   const [relMinorActive,_setRelMinorActive]=useState(false);
   const relMinorActiveRef=useRef(false);
   const setRelMinorActive=(v:boolean)=>{ 
-    // ✅ v3.18.53: Space lock protection at setter level
+    // ✅ Space lock protection at setter level
     if (spaceLocked && v !== relMinorActiveRef.current) return;
     relMinorActiveRef.current=v; _setRelMinorActive(v); 
   };
@@ -1986,7 +1986,7 @@ useEffect(() => {
   const [subdomActive,_setSubdomActive]=useState(false);
   const subdomActiveRef=useRef(false);
   const setSubdomActive=(v:boolean)=>{ 
-    // ✅ v3.18.53: Space lock protection at setter level
+    // ✅ Space lock protection at setter level
     if (spaceLocked && v !== subdomActiveRef.current) return;
     subdomActiveRef.current=v; _setSubdomActive(v); 
   };
@@ -2040,16 +2040,16 @@ useEffect(() => {
     showBonusWedgesRef.current = showBonusWedges; 
   }, [showBonusWedges]);
   
-  // ✅ v3.18.111: Sync skillLevel to ref for use in detect()
+  // ✅ Sync skillLevel to ref for use in detect()
   useEffect(() => {
     skillLevelRef.current = skillLevel;
   }, [skillLevel]);
   
-  // ✅ v3.15.0: MIDI latch - keep last detected chord visible for 10s after note-off
+  // ✅ MIDI latch - keep last detected chord visible for 10s after note-off
   const midiLatchTimeoutRef = useRef<number | null>(null);
   const latchedChordRef = useRef<{fn: Fn | "", label: string} | null>(null);
   
-  // ✅ v3.18.111: Bonus chord recording debounce - wait for final chord before recording
+  // ✅ Bonus chord recording debounce - wait for final chord before recording
   const bonusRecordDebounceRef = useRef<number | null>(null);
   const latestBonusChordNameRef = useRef<string>(""); // Track latest chord name for debounced recording
   
@@ -2058,10 +2058,10 @@ useEffect(() => {
   
   // Audio playback
   const [audioEnabled, setAudioEnabled] = useState(true); // Start with audio enabled
-  const [audioInitialized, setAudioInitialized] = useState(false); // ✅ v3.17.85: Track if audio is ready
-  const [showAudioPrompt, setShowAudioPrompt] = useState(false); // ✅ v3.17.85: iOS audio prompt
+  const [audioInitialized, setAudioInitialized] = useState(false); // ✅ Track if audio is ready
+  const [showAudioPrompt, setShowAudioPrompt] = useState(false); // ✅ iOS audio prompt
   const audioEnabledRef = useRef(true); // Ref for MIDI callback closure
-  const [audioReady, setAudioReady] = useState(false); // ✅ v3.17.85: Start false, set true when initialized
+  const [audioReady, setAudioReady] = useState(false); // ✅ Start false, set true when initialized
   
   // Sync audioReady with audioInitialized
   useEffect(() => {
@@ -2122,19 +2122,19 @@ useEffect(() => {
   const previousVoicingRef = useRef<number[]>([60, 64, 67]); // Default C major [C4, E4, G4]
   const activeChordNoteIdsRef = useRef<Set<string>>(new Set()); // Track note IDs instead of MIDI numbers
   const wedgeHeldRef = useRef(false); // Track if wedge is being held down
-  const lastWedgeClickTimeRef = useRef<number>(0); // ✅ v3.17.85: Track click timing
-  const wedgeClickFnRef = useRef<Fn | "">(""); // ✅ v3.17.85: Track which wedge was clicked
+  const lastWedgeClickTimeRef = useRef<number>(0); // ✅ Track click timing
+  const wedgeClickFnRef = useRef<Fn | "">(""); // ✅ Track which wedge was clicked
   const keyboardHeldNotesRef = useRef<Set<number>>(new Set()); // Track which keyboard notes are held
   const lastPlayedWith7thRef = useRef<boolean | null>(null); // Track if last chord had 7th
   const currentHeldFnRef = useRef<Fn | null>(null); // Track which function is being held
   
-  // ✅ v3.17.10: Shift key state for visual indicator
+  // ✅ Shift key state for visual indicator
   const [shiftHeld, setShiftHeld] = useState(false);
   
   // Help overlay
   const [showHelp, setShowHelp] = useState(false);
   
-  // ✅ v3.17.85: Track window size - use 768px breakpoint (more standard)
+  // ✅ Track window size - use 768px breakpoint (more standard)
   const [isDesktop, setIsDesktop] = useState(true); // Default true to avoid flicker
   
   useEffect(() => {
@@ -2148,7 +2148,7 @@ useEffect(() => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
   
-  // ✅ v3.17.85: Initialize audio on first user interaction (mobile requirement)
+  // ✅ Initialize audio on first user interaction (mobile requirement)
   useEffect(() => {
     const initAudio = () => {
       const ctx = initAudioContext();
@@ -2181,7 +2181,7 @@ useEffect(() => {
     };
   }, [audioInitialized, isDesktop]);
   
-  // ✅ v3.17.85: Load song from URL - optimized to prevent spam
+  // ✅ Load song from URL - optimized to prevent spam
   const [hasLoadedFromURL, setHasLoadedFromURL] = useState(false);
   const [urlSearchParam, setUrlSearchParam] = useState('');
   
@@ -2231,7 +2231,7 @@ useEffect(() => {
       
       // Set states - text will appear in editor
       setBaseKey(songData.key || 'C');
-      // ✅ v3.18.8: Don't override skill level - keep user's current setting
+      // ✅ Don't override skill level - keep user's current setting
       setInputText(cleanText);
       setLoadedSongText(cleanText); // Mark as loaded (no red border)
       setHasLoadedFromURL(true);
@@ -2248,32 +2248,32 @@ useEffect(() => {
     }
   }, [urlSearchParam, hasLoadedFromURL]);
   
-  // ✅ v3.17.24: Button pulse animation when key pressed
+  // ✅ Button pulse animation when key pressed
   const [pulsingButton, setPulsingButton] = useState<string | null>(null);
-  const [pulsingWedge, setPulsingWedge] = useState<Fn | "">(""); // ✅ v3.17.85: Visual feedback on click
-  const [wedgeGlow, setWedgeGlow] = useState<{x: number, y: number, is7th: boolean} | null>(null); // ✅ v3.18.57: Click point glow
+  const [pulsingWedge, setPulsingWedge] = useState<Fn | "">(""); // ✅ Visual feedback on click
+  const [wedgeGlow, setWedgeGlow] = useState<{x: number, y: number, is7th: boolean} | null>(null); // ✅ Click point glow
   const [showKeyDropdown, setShowKeyDropdown] = useState(false);
   const [showTransposeDropdown, setShowTransposeDropdown] = useState(false);
   const [showSongMenu, setShowSongMenu] = useState(false);
   const [shareURL, setShareURL] = useState<string>('');
-  const [showShareCopied, setShowShareCopied] = useState(false); // ✅ v3.17.85: Share feedback
-  const [showShareModal, setShowShareModal] = useState(false); // ✅ v3.17.85: Share options modal
+  const [showShareCopied, setShowShareCopied] = useState(false); // ✅ Share feedback
+  const [showShareModal, setShowShareModal] = useState(false); // ✅ Share options modal
   const [keyChangeFlash, setKeyChangeFlash] = useState(false);
   const [stepRecord, setStepRecord] = useState(false); // v3.3.1: Renamed from autoRecord
   const stepRecordRef = useRef(false); // v3.3.1: Renamed from stepRecordRef
   
-  // ✅ v3.16.0: Performance Mode - keyboard pad controller
+  // ✅ Performance Mode - keyboard pad controller
   const [performanceMode, setPerformanceMode] = useState(false);
   const performanceModeRef = useRef(false);
   
-  // ✅ v3.18.17: Track which key is currently playing (for proper keyup handling)
+  // ✅ Track which key is currently playing (for proper keyup handling)
   const activePerformanceKeyRef = useRef<string | null>(null);
   
-  // ✅ v3.18.18: Stack of held keys for proper multi-key handling
+  // ✅ Stack of held keys for proper multi-key handling
   // Last key in array is the active one
   const heldKeysStackRef = useRef<string[]>([]);
   
-  // ✅ v3.18.17: Rhythm on/off toggle
+  // ✅ Rhythm on/off toggle
   const [rhythmEnabled, setRhythmEnabled] = useState(true);
   const rhythmEnabledRef = useRef(true);
   
@@ -2281,11 +2281,11 @@ useEffect(() => {
     rhythmEnabledRef.current = rhythmEnabled;
   }, [rhythmEnabled]);
   
-  // ✅ v3.17.6: Momentary flash for performance keys (500ms, independent of wedge trail)
+  // ✅ Momentary flash for performance keys (500ms, independent of wedge trail)
   const [performanceFlashKey, setPerformanceFlashKey] = useState<string>('');
   const performanceFlashTimeoutRef = useRef<number | null>(null); // Browser timeout returns number
   
-  // ✅ v3.15.5: Refs for click-outside detection
+  // ✅ Refs for click-outside detection
   const transposeDropdownRef = useRef<HTMLDivElement>(null);
   const keyDropdownRef = useRef<HTMLDivElement>(null);
   
@@ -2311,17 +2311,17 @@ useEffect(() => {
   const [inputs, setInputs] = useState<any[]>([]);
   const [selectedId, setSelectedId] = useState<string>("");
   
-  // ✅ v3.17.0: MIDI Output support
+  // ✅ MIDI Output support
   const [outputs, setOutputs] = useState<any[]>([]);
   const [selectedOutputId, setSelectedOutputId] = useState<string>("");
   const [midiOutputEnabled, setMidiOutputEnabled] = useState(false);
   const midiOutputRef = useRef<any>(null);
   
-  // ✅ v3.18.33: Safari detection with state to ensure re-render
+  // ✅ Safari detection with state to ensure re-render
   const [isSafariBrowser, setIsSafariBrowser] = useState(false);
   const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
   
-  // ✅ v3.18.25: MIDI warning state
+  // ✅ MIDI warning state
   const [showMidiWarning, setShowMidiWarning] = useState(false);
   
   useEffect(() => {
@@ -2360,7 +2360,7 @@ useEffect(() => {
       if (type===0x90 && d2>0) {
         lastMidiEventRef.current = "on";
         
-        // ✅ v3.14.0: Removed auto-disable of showBonusWedges toggle
+        // ✅ Removed auto-disable of showBonusWedges toggle
         // The persistent wedges already hide when bonusActive becomes true
         // No need to touch the user's toggle setting
         
@@ -2409,7 +2409,7 @@ useEffect(() => {
         setTimeout(() => {
           detect();
           
-          // ✅ v3.15.0: Start 10-second latch timer if all notes released
+          // ✅ Start 10-second latch timer if all notes released
           const allNotesReleased = rightHeld.current.size === 0 && rightSus.current.size === 0;
           if (allNotesReleased && midiLatchTimeoutRef.current === null) {
             // Only start timer if one isn't already running
@@ -2457,7 +2457,7 @@ useEffect(() => {
         setInputs(list as any[]);
         if(list.length>0){ bindToInput((list[0] as any).id, acc); } else { setMidiConnected(false); setMidiName(""); }
         
-        // ✅ v3.17.0: Setup outputs
+        // ✅ Setup outputs
         const outputList=Array.from(acc.outputs.values());
         setOutputs(outputList as any[]);
         if(outputList.length>0){ 
@@ -2500,7 +2500,7 @@ useEffect(() => {
     chord?: string; 
     comment?: string; 
     title?: string;
-    duration?: number; // ✅ v3.18.2: Duration in bars (1=whole, 0.5=half, 0.25=quarter, etc)
+    duration?: number; // ✅ Duration in bars (1=whole, 0.5=half, 0.25=quarter, etc)
   };
   const [sequence, setSequence] = useState<SeqItem[]>([]);
   const [seqIndex, setSeqIndex] = useState(-1); // What's loaded in hub (ready to play next)
@@ -2510,21 +2510,21 @@ useEffect(() => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [tempo, setTempo] = useState(120); // BPM (beats per minute) - ✅ v3.18.4: Changed default from 60 to 120
   
-  // ✅ v3.18.4: Rhythm patterns for performance mode
+  // ✅ Rhythm patterns for performance mode
   type RhythmAction = { action: 'play' | 'hold' | 'rest'; duration: number };
   const [rhythmPattern1, setRhythmPattern1] = useState<RhythmAction[]>([]);
   const [rhythmPattern2, setRhythmPattern2] = useState<RhythmAction[]>([]);
   const [rhythmPattern3, setRhythmPattern3] = useState<RhythmAction[]>([]);
   
-  // ✅ v3.18.9: Active rhythm pattern selection (1, 2, or 3)
+  // ✅ Active rhythm pattern selection (1, 2, or 3)
   const [activeRhythmPattern, setActiveRhythmPattern] = useState<1 | 2 | 3>(1);
   const activeRhythmPatternRef = useRef<1 | 2 | 3>(1);
   
-  // ✅ v3.18.9: Rhythm loop control
+  // ✅ Rhythm loop control
   const rhythmLoopIntervalRef = useRef<number | null>(null);
   const rhythmLoopTimeoutsRef = useRef<number[]>([]);
   
-  // ✅ v3.18.15: Rhythm position tracking for seamless chord changes
+  // ✅ Rhythm position tracking for seamless chord changes
   const rhythmStartTimeRef = useRef<number | null>(null); // When current rhythm loop started
   const rhythmPatternDurationRef = useRef<number>(0); // Total pattern duration in ms
   
@@ -2555,7 +2555,7 @@ useEffect(() => {
   const [loopEnabled, setLoopEnabled] = useState(false);
   const playbackTimerRef = useRef<number | null>(null);
   const [songTitle, setSongTitle] = useState(""); // Static song title from @TITLE
-  const [bannerMessage, setBannerMessage] = useState(""); // ✅ v3.18.42: Configurable banner message from @BANNER
+  const [bannerMessage, setBannerMessage] = useState(""); // ✅ Configurable banner message from @BANNER
   
   // Autoload preloaded playlist on mount
   useEffect(() => {
@@ -2623,7 +2623,7 @@ useEffect(() => {
     let start = textareaRef.current.selectionStart;
     let end = textareaRef.current.selectionEnd;
     
-    // ✅ v3.18.13: Find "line in the sand" - don't insert after @RHYTHM directives
+    // ✅ Find "line in the sand" - don't insert after @RHYTHM directives
     const rhythmIndex = inputText.indexOf('@RHYTHM');
     if (rhythmIndex !== -1 && start >= rhythmIndex) {
       // Cursor is in the rhythm section - move it before rhythms
@@ -2655,7 +2655,7 @@ useEffect(() => {
     }, 0);
   };
 
-  // ✅ v3.18.4: Parse rhythm pattern syntax
+  // ✅ Parse rhythm pattern syntax
   // Syntax: |x x / x * * x /|
   // x = play, * = hold/tie, / = rest
   const parseRhythmPattern = (patternText: string): RhythmAction[] => {
@@ -2677,7 +2677,7 @@ useEffect(() => {
   };
 
   const parseAndLoadSequence = ()=>{
-    const APP_VERSION = "v3.18.111-harmony-wheel";
+    const APP_VERSION = "v3.18.114-harmony-wheel";
     console.log('=== PARSE AND LOAD START ===');
     console.log('🏷️  APP VERSION:', APP_VERSION);
     console.log('Input text:', inputText);
@@ -2689,7 +2689,7 @@ useEffect(() => {
       setSeqIndex(-1);
       setDisplayIndex(-1);
       setSongTitle("");
-      // ✅ v3.18.79: Keep banner showing when cleared (for non-EXPERT users)
+      // ✅ Keep banner showing when cleared (for non-EXPERT users)
       // Don't clear banner - let it fall back to default message
       // setBannerMessage("") was making display disappear
       // ✅ v3.6.0 FIX: Only reset key for truly empty input
@@ -2699,11 +2699,15 @@ useEffect(() => {
       return;
     }
     
-    // ✅ v3.18.11: Replace newlines with commas (each line = token)
-    // This allows @RHYTHM directives on separate lines without manual commas
-    const cleanedInput = inputText.replace(/\n/g, ',').trim();
+    // ✅ STOP at @RHYTHM marker - don't parse rhythm patterns as chords
+    const rhythmIndex = inputText.indexOf('@RHYTHM');
+    const chordSection = rhythmIndex !== -1 ? inputText.substring(0, rhythmIndex) : inputText;
     
-    // ✅ v3.18.2: RHYTHM NOTATION - Backward compatible
+    // ✅ Replace newlines with commas (each line = token)
+    // This allows @RHYTHM directives on separate lines without manual commas
+    const cleanedInput = chordSection.replace(/\n/g, ',').trim();
+    
+    // ✅ RHYTHM NOTATION - Backward compatible
     // Old style: C, Am, F, G  (comma-separated, 1 bar each)
     // New style: |C Am F G|  (bar-delimited, space-separated)
     // Mixed: C, Am, |F G|, D  (both work together!)
@@ -2714,7 +2718,7 @@ useEffect(() => {
     const segments = cleanedInput.split(',').map(s => s.trim()).filter(Boolean);
     
     for (const segment of segments) {
-      // ✅ v3.18.12: Check for @directives FIRST (before bar notation)
+      // ✅ Check for @directives FIRST (before bar notation)
       // This prevents "@RHYTHM1 |x x x x|" from being split by bar notation parser
       if (segment.trim().startsWith('@')) {
         // This is a directive - treat as single token (don't split by bars)
@@ -2758,9 +2762,12 @@ useEffect(() => {
       const tok = tokenObj.text;
       const dur = tokenObj.duration;
       
-      // Handle rest character (only standalone, not in slash chords)
+      // ✅ Handle rest (/) and tie (*) characters
       if (tok === '/') {
         return { kind:"comment", raw:tok, comment: "(rest)", duration: dur };
+      }
+      if (tok === '*') {
+        return { kind:"comment", raw:tok, comment: "(tie)", duration: dur };
       }
       
       // Comments start with #
@@ -2808,7 +2815,7 @@ useEffect(() => {
         
         const upper = (cmd||"").toUpperCase().trim();
         
-        // ✅ v3.18.79: @TEMPO directive - Set BPM
+        // ✅ @TEMPO directive - Set BPM
         if (upper === "TEMPO" || upper === "BPM" || upper === "T") {
           const bpm = parseInt(arg);
           if (!isNaN(bpm) && bpm > 0 && bpm <= 300) {
@@ -2818,7 +2825,7 @@ useEffect(() => {
           }
         }
         
-        // ✅ v3.18.4: Check for RHYTHM patterns (now case-insensitive)
+        // ✅ Check for RHYTHM patterns (now case-insensitive)
         if (upper === "RHYTHM1" || upper === "R1") {
           console.log('🎵 RHYTHM1 detected. cmd:', cmd, 'arg:', arg, 'length:', arg.length);
           const pattern = parseRhythmPattern(arg);
@@ -2841,7 +2848,7 @@ useEffect(() => {
           return { kind:"modifier", raw:tok, chord: `RHYTHM3:${arg}` };
         }
         
-        // ✅ v3.18.79: @LOOP directive - Enable loop mode
+        // ✅ @LOOP directive - Enable loop mode
         if (upper === "LOOP" || upper === "LP") {
           console.log('🔁 LOOP detected - enabling loop mode');
           setLoopEnabled(true);
@@ -2988,7 +2995,7 @@ useEffect(() => {
       return { kind:"chord", raw:tok, chord: tok, duration: dur };
     });
     
-    // ✅ v3.18.79: Filter out RHYTHM, LOOP, and TEMPO directives from playable sequence
+    // ✅ Filter out RHYTHM, LOOP, and TEMPO directives from playable sequence
     // These are configuration, not part of the musical progression
     const playableItems = items.filter(item => {
       if (item.kind === "modifier" && item.chord) {
@@ -3049,7 +3056,7 @@ useEffect(() => {
     }
   };
 
-  // ✅ v3.18.79: Auto-load default song on mount with its banner message
+  // ✅ Auto-load default song on mount with its banner message
   useEffect(() => {
     console.log('🎵 Auto-loading default song on mount');
     const firstSong = demoSongs[0];
@@ -3120,7 +3127,7 @@ useEffect(() => {
     let i = currentIdx + 1;
     if (i >= sequence.length) {
       console.log('At end of sequence');
-      // ✅ v3.9.0: If loop enabled, go back to start
+      // ✅ If loop enabled, go back to start
       if (loopEnabled) {
         console.log('🔁 Loop enabled - going back to start');
         i = 0;
@@ -3235,7 +3242,7 @@ useEffect(() => {
           continue;
         }
         
-        // ✅ v3.17.85: Skip KEY-only, but NOT combined KEY:X:Chord
+        // ✅ Skip KEY-only, but NOT combined KEY:X:Chord
         if (item.kind === "modifier" && item.chord?.startsWith("KEY:")) {
           const parts = item.chord.split(":");
           // If only 2 parts (KEY:X), skip. If 3+ parts (KEY:X:Chord), play it!
@@ -3253,7 +3260,7 @@ useEffect(() => {
         setSeqIndex(startIdx);
         setDisplayIndex(startIdx);
         
-        // ✅ v3.17.88: Apply item for detection/wedge lighting, but DON'T play audio
+        // ✅ Apply item for detection/wedge lighting, but DON'T play audio
         // User can press > to play the first chord
         const notesToPlay = applySeqItem(sequence[startIdx]);
         
@@ -3324,7 +3331,7 @@ useEffect(() => {
     // Only handle Return/Enter and Ctrl+I in textarea
     // Arrow keys work normally for cursor movement
     
-    // ✅ v3.18.14: Shift+Enter creates newline, plain Enter loads sequence
+    // ✅ Shift+Enter creates newline, plain Enter loads sequence
     if (e.key==="Enter"){ 
       if (e.shiftKey) {
         // Shift+Enter: Allow newline (don't prevent default)
@@ -3366,7 +3373,7 @@ useEffect(() => {
     
     if (it.kind==="title") return []; // Skip titles
     if (it.kind==="modifier" && it.chord){
-      // ✅ v3.17.88: Split modifier properly - get ALL parts after first colon
+      // ✅ Split modifier properly - get ALL parts after first colon
       // "KEY:Eb:Ebmaj7" → m="KEY", arg="Eb:Ebmaj7"
       const [m, ...restParts] = it.chord.split(":");
       const arg = restParts.join(":");
@@ -3422,7 +3429,7 @@ useEffect(() => {
         
         if (chordAfterKey) {
           console.log('🔄 Combined KEY change:', newKey, '+ chord:', chordAfterKey);
-          // ✅ v3.17.87: Return notes to be played by caller
+          // ✅ Return notes to be played by caller
           return applySeqItem({ kind: "chord", raw: chordAfterKey, chord: chordAfterKey });
         }
       }
@@ -3530,7 +3537,7 @@ useEffect(() => {
       
       console.log('✅ Sequencer detection complete');
       
-      // ✅ v3.17.87: Return notes instead of playing here
+      // ✅ Return notes instead of playing here
       // Caller (stepNext/goToStart) will play them
       return midiNotes;
     }
@@ -3563,7 +3570,7 @@ useEffect(() => {
         
         const tokenLength = tokens[i].length;
         textareaRef.current.setSelectionRange(charPos, charPos + tokenLength);
-        // ✅ v3.18.8: Don't focus editor if in performance mode
+        // ✅ Don't focus editor if in performance mode
         if (!performanceModeRef.current) {
           textareaRef.current.focus();
         }
@@ -3613,24 +3620,24 @@ useEffect(() => {
   const handleLoadDemoSong = (songContent: string, bannerMsg?: string) => {
     console.log('🎵 Loading demo song with banner:', bannerMsg);
     setInputText(songContent);
-    setBannerMessage(bannerMsg || ""); // ✅ v3.18.43: Set banner from demoSongs
+    setBannerMessage(bannerMsg || ""); // ✅ Set banner from demoSongs
     setShowSongMenu(false);
     setTimeout(() => parseAndLoadSequence(), 100);
   };
 
-  // ✅ v3.15.5: Click-outside detection for dropdowns
+  // ✅ Click-outside detection for dropdowns
   useEffect(() => {
     performanceModeRef.current = performanceMode;
   }, [performanceMode]);
 
-  // ✅ v3.17.5: Auto-enable bonus wedges when performance mode turns on
+  // ✅ Auto-enable bonus wedges when performance mode turns on
   useEffect(() => {
     if (performanceMode && !showBonusWedges) {
       setShowBonusWedges(true);
     }
   }, [performanceMode]);
 
-  // ✅ v3.18.56: Intro animation - faster bonus pulse, overlaps with rotation
+  // ✅ Intro animation - faster bonus pulse, overlaps with rotation
   useEffect(() => {
     if (!showIntroAnimation) return;
     
@@ -3684,7 +3691,7 @@ useEffect(() => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showTransposeDropdown, showKeyDropdown]);
 
-  // ✅ v3.15.5: Enter key to close dropdowns
+  // ✅ Enter key to close dropdowns
   useEffect(() => {
     const handleEnterKey = (e: KeyboardEvent) => {
       if (e.key === 'Enter') {
@@ -3704,13 +3711,17 @@ useEffect(() => {
   // Global keyboard handler for arrow keys and Enter (when not in textarea)
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
-      // ✅ v3.17.10: Track shift key for visual indicator
+      // ✅ Check if typing in editor FIRST - bypass ALL hotkeys
+      const activeTag = document.activeElement?.tagName;
+      if (activeTag === 'TEXTAREA' || activeTag === 'INPUT') return;
+      
+      // ✅ Track shift key for visual indicator
       if (e.key === 'Shift') {
         setShiftHeld(true);
       }
       
-      // ✅ v3.17.23: Handle . and , for sequencer BEFORE checking if in textarea
-      // ✅ v3.17.85: Changed to Shift+comma/period (< >) to avoid editor conflict
+      // ✅ Handle . and , for sequencer BEFORE checking if in textarea
+      // ✅ Changed to Shift+comma/period (< >) to avoid editor conflict
       if (e.shiftKey && (e.key === '<' || e.key === '>')) {
         e.preventDefault();
         if (e.key === '<') { // Shift+,
@@ -3725,15 +3736,15 @@ useEffect(() => {
         return;
       }
       
-      // ✅ v3.18.8: B key toggles performance mode (works everywhere, even in editor)
+      // ✅ B key toggles performance mode
       if (e.key === 'b' || e.key === 'B') {
         e.preventDefault();
         setPerformanceMode(!performanceModeRef.current);
         return;
       }
       
-      // ✅ v3.18.111: O key toggles rhythm on/off (but not when typing in editor)
-      if ((e.key === 'o' || e.key === 'O') && document.activeElement?.tagName !== 'TEXTAREA' && document.activeElement?.tagName !== 'INPUT') {
+      // ✅ O key toggles rhythm on/off
+      if (e.key === 'o' || e.key === 'O') {
         e.preventDefault();
         const newState = !rhythmEnabledRef.current;
         setRhythmEnabled(newState);
@@ -3745,16 +3756,12 @@ useEffect(() => {
         return;
       }
       
-      // Only handle if NOT in textarea or input field
-      const activeTag = document.activeElement?.tagName;
-      if (activeTag === 'TEXTAREA' || activeTag === 'INPUT') return;
-      
-      // ✅ v3.18.13: In performance mode, prevent default on ALL keys to stop address bar focus
+      // ✅ In performance mode, prevent default on ALL keys to stop address bar focus
       if (performanceModeRef.current) {
         e.preventDefault(); // Block browser shortcuts like Ctrl+L
       }
       
-      // ✅ v3.17.8: Performance Mode - Clockwise from I (matches wheel)
+      // ✅ Performance Mode - Clockwise from I (matches wheel)
       if (performanceModeRef.current) {
         // Map both normal and shifted keys
         const keyMap: Record<string, Fn> = {
@@ -3778,13 +3785,13 @@ useEffect(() => {
           const shiftedKeys = ['!', '@', '#', '$', '%', '^', '&', '*', '(', ')', '_', '+'];
           const with7th = shiftedKeys.includes(e.key);
           
-          // ✅ v3.18.20: Normalize key to base (unshifted) version for stack tracking
+          // ✅ Normalize key to base (unshifted) version for stack tracking
           const baseKey = with7th ? 
             {'!': '1', '@': '2', '#': '3', '$': '4', '%': '5', '^': '6', 
              '&': '7', '*': '8', '(': '9', ')': '0', '_': '-', '+': '='}[e.key] || e.key
             : e.key;
           
-          // ✅ v3.18.20: Block OS key repeat UNLESS shift state changed (7th toggle)
+          // ✅ Block OS key repeat UNLESS shift state changed (7th toggle)
           if (e.repeat && !with7th) {
             // Regular repeat - ignore
             e.preventDefault();
@@ -3819,7 +3826,7 @@ useEffect(() => {
           
           const chordNotes = previewFn(fn, with7th);
           
-          // ✅ v3.18.20: ALWAYS stop old rhythm before starting new one
+          // ✅ ALWAYS stop old rhythm before starting new one
           // This prevents stuck notes and extra rhythmic notes when switching
           const isNewKey = !heldKeysStackRef.current.includes(baseKey);
           if (!isNewKey || rhythmLoopIntervalRef.current !== null) {
@@ -3827,19 +3834,19 @@ useEffect(() => {
             stopRhythmLoop();
           }
           
-          // ✅ v3.18.18: Push to key stack (last key takes priority)
+          // ✅ Push to key stack (last key takes priority)
           if (isNewKey) {
             heldKeysStackRef.current.push(baseKey);
           }
           activePerformanceKeyRef.current = baseKey;
           console.log('🎹 Key stack:', heldKeysStackRef.current);
           
-          // ✅ v3.18.13: Step record - insert function name when pad pressed
+          // ✅ Step record - insert function name when pad pressed
           if (stepRecordRef.current && currentGuitarLabel) {
             insertCurrentChord();
           }
           
-          // ✅ v3.18.19: Start rhythm immediately with notes from previewFn
+          // ✅ Start rhythm immediately with notes from previewFn
           if (rhythmEnabledRef.current && chordNotes && chordNotes.length > 0) {
             // Calculate current position in rhythm for seamless chord change
             let offsetMs = 0;
@@ -3864,7 +3871,7 @@ useEffect(() => {
           return; // Stop processing - don't run other shortcuts
         }
         
-        // ✅ v3.18.19: Rhythm pattern switchers - change pattern and restart rhythm
+        // ✅ Rhythm pattern switchers - change pattern and restart rhythm
         if (e.key === '[') {
           e.preventDefault();
           setActiveRhythmPattern(1);
@@ -3937,7 +3944,7 @@ useEffect(() => {
       }
       
       // Navigation shortcuts
-      // ✅ v3.17.85: Cmd+Shift+< for goToStart (Shift+< is used for stepPrev)
+      // ✅ Cmd+Shift+< for goToStart (Shift+< is used for stepPrev)
       if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === '<') {
         e.preventDefault();
         goToStart();
@@ -3945,7 +3952,7 @@ useEffect(() => {
       }
       
       // Playback controls
-      // ✅ v3.18.4: Guard spacebar - don't trigger play/pause if typing in editor
+      // ✅ Guard spacebar - don't trigger play/pause if typing in editor
       if (e.key === ' ') {
         const activeTag = document.activeElement?.tagName;
         if (activeTag === 'TEXTAREA' || activeTag === 'INPUT') return; // Don't hijack spacebar in editor
@@ -3953,13 +3960,15 @@ useEffect(() => {
         togglePlayPause();
       } else if (e.key === 'Escape') {
         e.preventDefault();
-        // ✅ v3.18.9: Escape closes everything
+        // ✅ v3.18.114: Escape closes everything
         stopPlayback();
         setShowKeyDropdown(false);
         setShowTransposeDropdown(false);
-        // Blur editor if focused
-        if (document.activeElement?.tagName === 'TEXTAREA' || document.activeElement?.tagName === 'INPUT') {
-          (document.activeElement as HTMLElement).blur();
+        setStepRecord(false);
+        stepRecordRef.current = false;
+        // Blur ALL inputs (BPM, textarea, etc.)
+        if (document.activeElement instanceof HTMLElement) {
+          document.activeElement.blur();
         }
       } else if ((e.ctrlKey || e.metaKey) && e.key === 'ArrowRight') {
         e.preventDefault();
@@ -3968,7 +3977,7 @@ useEffect(() => {
         e.preventDefault();
         skipToPrevComment();
       } else if (e.key === 'ArrowRight') {
-        // ✅ v3.17.85: Plain arrow for step (only when not in editor)
+        // ✅ Plain arrow for step (only when not in editor)
         e.preventDefault();
         stepNext();
       } else if (e.key === 'ArrowLeft') {
@@ -4006,7 +4015,7 @@ useEffect(() => {
         e.preventDefault();
         stepNext();
       } else if (e.key === 'Enter' && inputText.trim() && !performanceModeRef.current) {
-        // ✅ v3.18.8: Don't allow Enter to load in performance mode (too easy to accidentally trigger)
+        // ✅ Don't allow Enter to load in performance mode (too easy to accidentally trigger)
         e.preventDefault();
         parseAndLoadSequence();
       } else if ((e.ctrlKey || e.metaKey) && e.key === 'i') {
@@ -4023,7 +4032,7 @@ useEffect(() => {
         e.preventDefault();
         goHome(); // HOME space
       } else if (e.key === 'r' || e.key === 'R') {
-        if (e.ctrlKey || e.metaKey) return; // ✅ v3.13.7: Allow Cmd+R/Ctrl+R for browser refresh
+        if (e.ctrlKey || e.metaKey) return; // ✅ Allow Cmd+R/Ctrl+R for browser refresh
         e.preventDefault();
         toggleRelMinor(); // REL space
       } else if (e.key === 's' || e.key === 'S') {
@@ -4035,7 +4044,7 @@ useEffect(() => {
         e.preventDefault();
         toggleVisitor(); // PAR space
       } else if (e.key === 'x' || e.key === 'X') {
-        // ✅ v3.15.0: Clear MIDI latch
+        // ✅ Clear MIDI latch
         e.preventDefault();
         if (midiLatchTimeoutRef.current !== null) {
           clearTimeout(midiLatchTimeoutRef.current);
@@ -4056,7 +4065,7 @@ useEffect(() => {
         setShiftHeld(false);
       }
       
-      // ✅ v3.18.18: Stack-based key handling - revert to previous key on release
+      // ✅ Stack-based key handling - revert to previous key on release
       if (performanceModeRef.current) {
         const numberKeys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '='];
         if (numberKeys.includes(e.key)) {
@@ -4127,18 +4136,21 @@ useEffect(() => {
       return;
     }
     
-    // Play current chord immediately (if it's a chord)
+    // ✅ Play current chord (or handle tie)
     const currentItem = sequence[seqIndex];
+    const isTie = currentItem?.kind === "comment" && currentItem.raw === '*';
+    
     if (currentItem?.kind === "chord" && currentItem.chord && latchedAbsNotes.length > 0) {
-      // ✅ v3.18.2: Use duration from item (in bars)
+      // ✅ Use duration from item (in bars)
       // Assuming 4/4 time: 1 bar = 4 beats
       const itemDuration = currentItem.duration || 1.0; // Default to 1 bar
       const beatsPerBar = 4;
       const noteDuration = (60 / tempo) * beatsPerBar * itemDuration * 0.8; // 80% of duration
       playChord(latchedAbsNotes, noteDuration);
     }
+    // Note: Ties (*) don't retrigger - they just extend duration silently
     
-    // ✅ v3.18.2: Calculate interval using duration from current item
+    // ✅ Calculate interval using duration from current item
     // Duration is in bars (1=whole, 0.5=half, 0.25=quarter)
     const itemDuration = currentItem?.duration || 1.0; // Default to 1 bar if not specified
     const beatsPerBar = 4; // 4/4 time signature
@@ -4149,22 +4161,23 @@ useEffect(() => {
       // Advance to next item
       let nextIndex = seqIndex + 1;
       
-      // ✅ v3.18.3: Skip comments/titles EXCEPT rests (which have duration)
-      // Rests are comments with raw === '/' and should play their duration
+      // ✅ Skip comments/titles EXCEPT rests (/) and ties (*) which have duration
       while (nextIndex < sequence.length) {
         const nextItem = sequence[nextIndex];
         const isRest = nextItem?.kind === "comment" && nextItem.raw === '/';
-        const shouldSkip = !isRest && (nextItem?.kind === "comment" || nextItem?.kind === "title");
+        const isTie = nextItem?.kind === "comment" && nextItem.raw === '*';
+        const shouldSkip = !isRest && !isTie && (nextItem?.kind === "comment" || nextItem?.kind === "title");
         
         if (shouldSkip) {
           nextIndex++;
         } else {
-          break; // Found a chord or rest, stop skipping
+          break; // Found a chord, rest, or tie - stop skipping
         }
       }
       
       if (nextIndex < sequence.length) {
         setSeqIndex(nextIndex);
+        setDisplayIndex(nextIndex); // ✅ v3.18.114: Highlight current chord in display
         applySeqItem(sequence[nextIndex]);
         setTimeout(() => selectCurrentItem(), 0);
       } else {
@@ -4178,6 +4191,7 @@ useEffect(() => {
             startIdx++;
           }
           setSeqIndex(startIdx);
+          setDisplayIndex(startIdx); // ✅ v3.18.114: Highlight on loop
           applySeqItem(sequence[startIdx]);
           setTimeout(() => selectCurrentItem(), 0);
         } else {
@@ -4262,7 +4276,7 @@ useEffect(() => {
     console.log('🎯 setActiveWithTrail called:', { fn, label, stepRecord: stepRecordRef.current });
     console.log('📍 Stack trace:', fullStack);
     
-    // ✅ v3.15.0: Save for MIDI latch and cancel any pending clear timer
+    // ✅ Save for MIDI latch and cancel any pending clear timer
     latchedChordRef.current = { fn, label };
     console.log('💾 Saved latched chord:', { fn, label });
     if (midiLatchTimeoutRef.current !== null) {
@@ -4277,7 +4291,7 @@ useEffect(() => {
     lastPlayedChordRef.current = label; // Save for Make My Key
     console.log('📝 lastPlayedChordRef set to:', label);
     
-    // ✅ v3.18.111: Step record - insert BEFORE @RHYTHM directives, not at end
+    // ✅ Step record - insert BEFORE @RHYTHM directives, not at end
     if (stepRecordRef.current && label) {
       setInputText(prev => {
         // Find @RHYTHM position (the "line in the sand")
@@ -4300,13 +4314,13 @@ useEffect(() => {
     stopDimFade();
   };
   
-  // ✅ v3.10.0: Helper to check if bonus chord should trigger based on skill level
+  // ✅ Helper to check if bonus chord should trigger based on skill level
   const shouldTriggerBonus = (fn: Fn): boolean => {
     // Bonus functions: V/V, V/vi, V/ii (secondary dominants)
     const isBonusFunction = fn === "V/V" || fn === "V/vi" || fn === "V/ii";
     if (!isBonusFunction) return true; // Not a bonus chord, always allow
     
-    // ✅ v3.18.111: Use ref instead of state to avoid stale closure
+    // ✅ Use ref instead of state to avoid stale closure
     // In EXPERT: always allow (they can trigger dynamically)
     if (skillLevelRef.current === "EXPERT") return true;
     
@@ -4320,7 +4334,7 @@ useEffect(() => {
   // v3.10.1: Helper for bonus overlays (A7, Bm7♭5, etc.) that don't use wedges
   const shouldShowBonusOverlay = (): boolean => {
     const result = (() => {
-      // ✅ v3.18.111: Use ref instead of state to avoid stale closure
+      // ✅ Use ref instead of state to avoid stale closure
       // In EXPERT: always allow
       if (skillLevelRef.current === "EXPERT") return true;
       
@@ -4343,7 +4357,7 @@ useEffect(() => {
   const centerOnly=(t:string)=>{ 
     console.log('🎯 centerOnly called:', { t, stepRecord: stepRecordRef.current });
     
-    // ✅ v3.15.0: Save for MIDI latch and cancel any pending clear timer
+    // ✅ Save for MIDI latch and cancel any pending clear timer
     const cleaned = t.replace(/^[#@]\s*/, '').trim();
     latchedChordRef.current = { fn: "", label: cleaned };
     if (midiLatchTimeoutRef.current !== null) {
@@ -4358,7 +4372,7 @@ useEffect(() => {
     lastPlayedChordRef.current = cleaned; // Save for Make My Key
     console.log('📝 lastPlayedChordRef set to:', cleaned);
     
-    // ✅ v3.18.111: Step record - insert BEFORE @RHYTHM directives, not at end
+    // ✅ Step record - insert BEFORE @RHYTHM directives, not at end
     if (stepRecordRef.current && cleaned && !cleaned.startsWith('#') && !cleaned.startsWith('@')) {
       setInputText(prev => {
         // Find @RHYTHM position (the "line in the sand")
@@ -4567,7 +4581,7 @@ useEffect(() => {
   };
 
   const subSpinEnter = ()=>{
-    if (spaceLocked) return; // ✅ v3.11.0: Locked
+    if (spaceLocked) return; // ✅ Locked
     if (subHasSpunRef.current) return;
     clearSubSpinTimer();
     setTargetRotation(IV_ROTATE_DEG ?? -168);
@@ -4577,7 +4591,7 @@ useEffect(() => {
     }, ROTATION_ANIM_MS + 20) as unknown as number;
   };
   const subSpinExit = ()=>{
-    if (spaceLocked) return; // ✅ v3.11.0: Locked
+    if (spaceLocked) return; // ✅ Locked
     clearSubSpinTimer();
     setTargetRotation(SUB_SPIN_DEG);
     subSpinTimerRef.current = window.setTimeout(()=>{
@@ -4650,7 +4664,7 @@ useEffect(() => {
     const names = ["C","C#","D","Eb","E","F","F#","G","Ab","A","Bb","B"];
     const norm = (x:number)=>((x%12)+12)%12;
     
-    // ✅ v3.18.79: For sus chords, use lowest MIDI note to disambiguate
+    // ✅ For sus chords, use lowest MIDI note to disambiguate
     // Example: Gsus2 (G-A-D) vs Csus4 (C-F-G) - same PCs [0,2,7] or [0,5,7]
     // Check if we have a sus chord pattern
     let susCandidates: Array<{root: number, type: 'sus2'|'sus4'}> = [];
@@ -4716,7 +4730,7 @@ useEffect(() => {
       setTapEdge("REL_Am", false); setTapEdge("REL_C", false); setTapEdge("VIS_G", false);
       bonusDeb.reset();
 
-      // ✅ v3.15.0: Check for latched chord before clearing
+      // ✅ Check for latched chord before clearing
       if (latchedChordRef.current) {
         console.log('🔒 MIDI latch active - keeping display:', latchedChordRef.current);
         // Restore the latched chord display
@@ -4747,7 +4761,7 @@ useEffect(() => {
     // MODIFIED v2.37.9: Pass absHeld array to internalAbsoluteName for dim7 root disambiguation
     const absName = internalAbsoluteName(pcsAbs, baseKeyRef.current, absHeld) || "";
     
-    // ✅ v3.18.111 E7-ONLY DIAGNOSTIC for double-press bug
+  // ✅ E7-ONLY DIAGNOSTIC for double-press bug
     if (absName === "E7") {
       console.log('🔍 E7 DETECTED:', {
         chord: absName,
@@ -4826,7 +4840,7 @@ useEffect(() => {
         setBonusActive(true);
         setBonusLabel("Bm7♭5");
         
-        // ✅ v3.18.111: Debounced recording for early check
+        // ✅ Debounced recording for early check
         if (stepRecordRef.current && absName) {
           latestBonusChordNameRef.current = absName;
           if (bonusRecordDebounceRef.current !== null) {
@@ -4855,7 +4869,7 @@ useEffect(() => {
       }
     }
     
-    // ✅ v3.18.111 FIX: Bdim triad EARLY CHECK - must check before diatonic
+  // ✅ FIX: Bdim triad EARLY CHECK - must check before diatonic
     // Bdim [11,2,5] can match as subset of Dm [2,5,9] - catch it early!
     if (pcsRel.has(11) && pcsRel.has(2) && pcsRel.has(5) && pcsRel.size === 3) {
       if (shouldShowBonusOverlay()) {
@@ -4865,7 +4879,7 @@ useEffect(() => {
         setBonusActive(true);
         setBonusLabel("Bm7♭5"); // Use functional label
         
-        // ✅ v3.18.111: Debounced recording for early check
+        // ✅ Debounced recording for early check
         if (stepRecordRef.current && absName) {
           latestBonusChordNameRef.current = absName;
           if (bonusRecordDebounceRef.current !== null) {
@@ -4890,13 +4904,13 @@ useEffect(() => {
           }, 50);
         }
         
-        // ✅ v3.18.111: Bonus wedge will light automatically via bonusActive + bonusLabel
+        // ✅ Bonus wedge will light automatically via bonusActive + bonusLabel
         // No need to call setActiveWithTrail - bonus overlay handles highlighting
         return;
       }
     }
     
-    // ✅ v3.18.111 REMOVED: Early Fmaj7 check was here but it ran BEFORE SUB section
+  // ✅ REMOVED: Early Fmaj7 check was here but it ran BEFORE SUB section
     // This caused Fmaj7 in SUB space to light IV (Bb) instead of I (F)
     // The proper Fmaj7 check with SUB guard is at line ~5540
     
@@ -4916,7 +4930,7 @@ useEffect(() => {
         setBonusActive(true);
         setBonusLabel("A7"); // Functional label
         
-        // ✅ v3.18.111: Debounced recording for early check
+        // ✅ Debounced recording for early check
         if (stepRecordRef.current && absName) {
           latestBonusChordNameRef.current = absName;
           if (bonusRecordDebounceRef.current !== null) {
@@ -4954,7 +4968,7 @@ useEffect(() => {
         setBonusActive(true);
         setBonusLabel("A7"); // Functional label
         
-        // ✅ v3.18.111: Debounced recording for early check
+        // ✅ Debounced recording for early check
         if (stepRecordRef.current && absName) {
           latestBonusChordNameRef.current = absName;
           if (bonusRecordDebounceRef.current !== null) {
@@ -5011,7 +5025,7 @@ useEffect(() => {
       setActiveWithTrail("I", absName || "C"); setCenterLabel("C"); return;
     }
     const gPresentTap = visitorActiveRef.current && (isSubset([7,11,2]) || isSubset([7,11,2,5]));
-    // ✅ v3.18.111: Unconditional V7 detection - triad OR 7th exits SUB
+    // ✅ Unconditional V7 detection - triad OR 7th exits SUB
     if (!visitorActiveRef.current && (isSubset([7,11,2]) || isSubset([7,11,2,5]))) {
       if (subdomActiveRef.current) subSpinExit();
       setSubdomActive(false); subdomLatchedRef.current=false; subHasSpunRef.current=false;
@@ -5020,7 +5034,7 @@ useEffect(() => {
       setActiveWithTrail("V7", absName || "G7"); return;
     }
     
-    // ✅ v3.18.111: E7 (V/vi) also exits SUB - triad OR 7th
+    // ✅ E7 (V/vi) also exits SUB - triad OR 7th
     // E triad [4,8,11] or E7 [4,8,11,2]
     if (!visitorActiveRef.current && (isSubset([4,8,11]) || isSubset([4,8,11,2]))) {
       if (subdomActiveRef.current) subSpinExit();
@@ -5063,7 +5077,7 @@ useEffect(() => {
       }
       // ========== END NEW v2.45.0 ==========
 
-      // ✅ v3.14.0: OLD Bdim/Bm7b5 detection DISABLED
+      // ✅ OLD Bdim/Bm7b5 detection DISABLED
       // This old code is superseded by better detection at line ~3105 which:
       // - Checks shouldShowBonusOverlay() properly
       // - Uses functional label "Bm7♭5" for consistent colors
@@ -5108,7 +5122,7 @@ useEffect(() => {
         setBonusActive(true); 
         setBonusLabel("A7");  // Wedge label stays "A7" (functional label)
         
-        // ✅ v3.18.111: Add debounced recording
+        // ✅ Add debounced recording
         if (stepRecordRef.current && absName) {
           latestBonusChordNameRef.current = absName;
           if (bonusRecordDebounceRef.current !== null) {
@@ -5136,7 +5150,7 @@ useEffect(() => {
         return;
       }
 
-      // ✅ v3.14.0: OLD A/A7 detection DISABLED  
+      // ✅ OLD A/A7 detection DISABLED  
       // This old code is superseded by better detection at line ~3134 which:
       // - Checks shouldShowBonusOverlay() properly
       // - Uses functional label "A7" for consistent colors
@@ -5154,7 +5168,7 @@ useEffect(() => {
       }
       */
 
-      // ✅ v3.18.111: REMOVED unconditional bonus clearing
+      // ✅ REMOVED unconditional bonus clearing
       // Old: setBonusActive(false); setBonusLabel("");
       // This was clearing bonus set by earlier checks, breaking EXPERT mode display
       // Bonus state should persist unless explicitly cleared by another detection
@@ -5162,7 +5176,7 @@ useEffect(() => {
 
     /* ---------- SUBDOM (F) ---------- */
     {
-      // ✅ v3.18.111 DEBUG: Track SUB state
+   // ✅ DEBUG: Track SUB state
       if (absName === "Fmaj7" || absName === "F" || (pcsRel.has(5) && pcsRel.has(9) && pcsRel.has(0))) {
         console.log('🔧 SUB SECTION START:', {
           absName,
@@ -5172,7 +5186,7 @@ useEffect(() => {
         });
       }
       
-      // ✅ v3.18.79: Check for PAR (Eb-space) chords BEFORE SUB entry
+      // ✅ Check for PAR (Eb-space) chords BEFORE SUB entry
       // Problem: Ebmaj7 [3,7,10,2] contains Gm [7,10,2] as subset
       // Solution: Exclude Eb/Ebmaj7/Ab/Db from SUB entry
       const isEbChord = isSubset([3,7,10]) || isSubset([3,7,10,2]);
@@ -5183,7 +5197,7 @@ useEffect(() => {
       const enterByGm = isSubset([7,10,2]) || isSubset([7,10,2,5]);
       const enterByC7 = isSubset([0,4,7,10]);
 
-      // ✅ v3.18.79: Don't enter SUB if it's actually a PAR chord
+      // ✅ Don't enter SUB if it's actually a PAR chord
       if (!subdomActiveRef.current && isNoteOn && (enterByGm || enterByC7) && !isParChord) {
 
         if (relMinorActiveRef.current) setRelMinorActive(false);
@@ -5250,7 +5264,7 @@ useEffect(() => {
         const ab   = isSubsetIn([8,0,3], S) || isSubsetIn([8,0,3,6], S);
         const db   = isSubsetIn([1,5,8], S) || isSubsetIn([1,5,8,11], S);
         
-        // ✅ v3.17.11: Don't enter PAR if already in PAR (Eb/Ab/Db are diatonic in minor)
+        // ✅ Don't enter PAR if already in PAR (Eb/Ab/Db are diatonic in minor)
         if ((eb || ab || db) && !visitorActiveRef.current){
           subdomLatchedRef.current = false;
           subSpinExit();
@@ -5275,7 +5289,7 @@ useEffect(() => {
         const stayOnC7      = isSubsetIn([0,4,7,10], S);
         const isCtriadExact = exactSetIn([0,4,7], S);
         
-        // ✅ v3.18.111 DEBUG: Why isn't Fmaj7 matching?
+    // ✅ DEBUG: Why isn't Fmaj7 matching?
         if (absName === "Fmaj7" || absName === "F") {
           console.log('🔍 SUB F/Fmaj7 CHECK:', {
             absName,
@@ -5389,7 +5403,7 @@ useEffect(() => {
         
         // Special case: C#dim7 family uses A7 bonus overlay (not wedge)
         if (pcsRel.has(1) && pcsRel.has((1+3)%12) && pcsRel.has((1+6)%12) && pcsRel.has((1+9)%12)){
-          // ✅ v3.14.1: Add permission check
+          // ✅ Add permission check
           if (shouldShowBonusOverlay()) {
             setActiveFn(""); setCenterLabel(absName || "C#dim7"); // Use absName, not hardcoded "A7"
             setBonusActive(true); setBonusLabel("A7");
@@ -5437,7 +5451,7 @@ useEffect(() => {
         setCenterLabel(displayName);
         setActiveFn("");
         
-        // ✅ v3.18.111: Add debounced recording
+        // ✅ Add debounced recording
         if (stepRecordRef.current && absName) {
           latestBonusChordNameRef.current = absName;
           if (bonusRecordDebounceRef.current !== null) {
@@ -5474,7 +5488,7 @@ useEffect(() => {
         setCenterLabel(displayName); // Actual chord name
         setActiveFn("");
         
-        // ✅ v3.18.111: Add debounced recording
+        // ✅ Add debounced recording
         if (stepRecordRef.current && absName) {
           latestBonusChordNameRef.current = absName;
           if (bonusRecordDebounceRef.current !== null) {
@@ -5573,7 +5587,7 @@ useEffect(() => {
       pcsRelSize: pcsRel.size
     });
     
-    // ✅ v3.18.111: Smart suppression - only block ambiguous chords
+    // ✅ Smart suppression - only block ambiguous chords
     // Check if current chord is unambiguous (has clear function)
     // Calculate these before the suppression check
     const baseKeyPC = NAME_TO_PC[baseKeyRef.current];
@@ -5596,7 +5610,7 @@ useEffect(() => {
     // Ambiguous chords (I triad could be confused with V in SUB)
     const isTonic = isSubsetIn([0, 4, 7], pcsRel) && !isSubsetIn([0, 4, 7, 11], pcsRel) && !isSubsetIn([0, 4, 7, 10], pcsRel);
     
-    // ✅ v3.18.111 FIX: V/vi (E7) should bypass suppression after SUB exit
+  // ✅ FIX: V/vi (E7) should bypass suppression after SUB exit
     // Bug: After SUB exit, E7 requires 2 presses because homeSuppressUntilRef blocks detection
     // Solution: Check absName directly - if theory.ts detected E7, it's unambiguous
     const isE7 = absName === "E7" || absName === "E";
@@ -5623,7 +5637,7 @@ useEffect(() => {
       const bassNote = absHeld.length > 0 ? Math.min(...absHeld) : null;
       const bassPc = bassNote !== null ? (bassNote % 12) : null;
       
-      // ✅ v3.15.8: Check secondary dominants BEFORE main pattern matching
+      // ✅ Check secondary dominants BEFORE main pattern matching
       // (baseKeyPC already calculated above for suppression check)
       
       // V/V = V of V = dominant of scale degree 5 = scale degree 2
@@ -5657,7 +5671,7 @@ useEffect(() => {
       const vOfVi_dimTriad = [(vOfVi_dimSub_root + 0) % 12, (vOfVi_dimSub_root + 3) % 12, (vOfVi_dimSub_root + 6) % 12];
       const vOfVi_dimSub = isSubsetIn(vOfVi_dimTriad, pcsAbs) && (pcsAbs.size === 3 || (pcsAbs.size === 4 && bassPc === vOfVi_dimSub_root));
 
-      // ✅ v3.15.11: V/V and V/vi ALWAYS trigger (have dedicated wedges)
+      // ✅ V/V and V/vi ALWAYS trigger (have dedicated wedges)
       // shouldTriggerBonus only gates bonus overlays (ii/vi, V/ii) without wedges
       if (vOfV){ 
         const vOfV_rootName = pcNameForKey(vOfV_root, baseKeyRef.current);
@@ -5686,10 +5700,10 @@ useEffect(() => {
         return; 
       }
       
-      // ✅ v3.15.9: Check common diatonic triads (ii, iii, vi) - pattern matcher may not have them
+      // ✅ Check common diatonic triads (ii, iii, vi) - pattern matcher may not have them
       // These are RELATIVE to baseKey (scale degrees), not absolute pitch classes
       
-      // ✅ v3.18.111 FIX: Check Cmaj7 BEFORE iii triad
+   // ✅ FIX: Check Cmaj7 BEFORE iii triad
       // Bug: Cmaj7 [0,4,7,11] contains iii triad [4,7,11] as subset
       // Must check exact Cmaj7 first to prevent false iii match
       if (exactSetIn([0, 4, 7, 11], pcsRel)) {
@@ -5705,7 +5719,7 @@ useEffect(() => {
       const vi_triad = isSubsetIn([9, 0, 4], pcsRel);
       const vi_7th = isSubsetIn([9, 0, 4, 7], pcsRel);
       
-      // ✅ v3.18.111 FIX: Exclude Bm7b5 from ii when bonus disabled
+   // ✅ FIX: Exclude Bm7b5 from ii when bonus disabled
       // Bm7b5 [11,2,5,9] contains ii notes [2,5,9] as subset
       // If bonus disabled, Bm7b5 early check returns false and falls through to here
       // Solution: Check for B (11) - if present with exact size 4, it's Bm7b5, not Dm
@@ -5714,7 +5728,7 @@ useEffect(() => {
       
       if ((ii_triad || ii_7th) && !shouldExcludeFromIi) {
         const chordName = absName || realizeFunction("ii" as Fn, baseKeyRef.current);
-        // ✅ v3.17.85: Don't append 7 if already present (Fm7 → Fm77 bug)
+        // ✅ Don't append 7 if already present (Fm7 → Fm77 bug)
         const label = ii_7th && !chordName.match(/7|9|11|13/) ? `${chordName}7` : chordName;
         setActiveWithTrail("ii", label);
         return;
@@ -5726,7 +5740,7 @@ useEffect(() => {
         return;
       }
       
-      // ✅ v3.18.111 FIX: Check A7 bonus BEFORE vi check
+   // ✅ FIX: Check A7 bonus BEFORE vi check
       // Bug: A7 [9,1,4,7] matches vi_triad check [9,0,4] via isSubsetIn (9 and 4 present)
       // This causes vi to return before A7 bonus check can run
       // Solution: Check A7 bonus family first (must be EXACT size match)
@@ -5751,7 +5765,7 @@ useEffect(() => {
         setBonusActive(true); 
         setBonusLabel("A7"); // Use functional label for wedge
         
-        // ✅ v3.18.111: Debounced recording
+        // ✅ Debounced recording
         if (stepRecordRef.current && absName) {
           latestBonusChordNameRef.current = absName;
           if (bonusRecordDebounceRef.current !== null) {
@@ -5778,7 +5792,7 @@ useEffect(() => {
         return;
       }
       
-      // ✅ v3.18.111: EARLY Fmaj7 check BEFORE vi check
+      // ✅ EARLY Fmaj7 check BEFORE vi check
       // Fmaj7 [5,9,0,4] contains vi_triad [9,0,4] as subset
       // Must check exact match first to prevent misidentification as Am
       if (exactSetIn([5, 9, 0, 4], pcsRel)) {
@@ -5816,15 +5830,15 @@ useEffect(() => {
         skillLevel
       });
       
-      // ✅ v3.14.0: Re-add shouldShowBonusOverlay check (was removed in v3.13.9 by mistake)
+      // ✅ Re-add shouldShowBonusOverlay check (was removed in v3.13.9 by mistake)
       if (!visitorActiveRef.current && (hasBdimTriad || hasBm7b5) && shouldShowBonusOverlay()) {
         const recordName = absName || displayName;
         console.log('✅ Bm7♭5 BONUS TRIGGERED!');
         setActiveFn(""); 
         setCenterLabel(displayName);
         setBonusActive(true); 
-        setBonusLabel("Bm7♭5"); // ✅ v3.13.6: Use functional label for wedge
-        // ✅ v3.18.111: Debounced recording using ref
+        setBonusLabel("Bm7♭5"); // ✅ Use functional label for wedge
+        // ✅ Debounced recording using ref
         if (stepRecordRef.current && absName) {
           latestBonusChordNameRef.current = absName;
           console.log('🕐 Setting Bdim/Bm7b5 debounce timer for:', absName);
@@ -5855,7 +5869,7 @@ useEffect(() => {
         return;
       }
       
-      // ✅ v3.18.111: A7 bonus check MOVED to before vi check (line ~5620)
+      // ✅ A7 bonus check MOVED to before vi check (line ~5620)
       // Was here but vi check was matching A7 [9,1,4,7] as vi [9,0,4] subset
       
       if (exactSet([6,9,0,4]) && shouldTriggerBonus("V/V")){ setActiveWithTrail("V/V","F#m7♭5"); return; }
@@ -5873,11 +5887,11 @@ useEffect(() => {
         return;
       }
       
-      // ✅ v3.18.111 FIX: Fmaj7 early detection to prevent Am7 subset match
+   // ✅ FIX: Fmaj7 early detection to prevent Am7 subset match
       // Bug: Fmaj7 [5,9,0,4] contains Am [9,0,4] as subset
       // If Am7 is checked first in diatonic tables, it incorrectly matches vi
       // Solution: Check Fmaj7 explicitly before diatonic matching
-      // ✅ v3.18.111 FIX #2: Only in HOME - in SUB, Fmaj7 is I not IV
+      // ✅ FIX #2: Only in HOME - in SUB, Fmaj7 is I not IV
       if (!subdomActiveRef.current && exactSet([5,9,0,4])) {
         console.log('✅ EARLY Fmaj7 CHECK: [5,9,0,4] → IV wedge (HOME only)');
         setActiveWithTrail("IV", displayName || "Fmaj7");
@@ -5886,7 +5900,7 @@ useEffect(() => {
       
       const m7 = firstMatch(homeDiatonic.req7, pcsRel); 
       if(m7){ 
-        // ✅ v3.18.111 DEBUG: Why is Cmaj7 matching iii?
+    // ✅ DEBUG: Why is Cmaj7 matching iii?
         if (absName === "Cmaj7") {
           console.log('🔍 Cmaj7 DEBUG:', {
             absName,
@@ -5997,7 +6011,7 @@ useEffect(() => {
 
     const triDisp = detectDisplayTriadLabel(pcsRel, baseKeyRef.current, absHeld);
     console.log('[DETECT] Fallback:', { triDisp, absName, displayName, result: triDisp || displayName });
-    // ✅ v3.18.111: Clear wedge for unmapped chords
+    // ✅ Clear wedge for unmapped chords
     setActiveFn("");
     centerOnly(triDisp || displayName);
   }
@@ -6022,7 +6036,7 @@ useEffect(() => {
   };
   
   const makeThisMyKey = ()=>{
-    // ✅ v3.13.4: Single note shortcut - if only one note held, go to that major key
+    // ✅ Single note shortcut - if only one note held, go to that major key
     // This allows quick transposition without playing a full chord
     const heldNotes = Array.from(rightHeld.current);
     
@@ -6112,7 +6126,7 @@ useEffect(() => {
   };
   
   const toggleVisitor = ()=>{
-    if (spaceLocked) return; // ✅ v3.11.0: Locked
+    if (spaceLocked) return; // ✅ Locked
     const on = !visitorActiveRef.current;
     if(on && subdomActiveRef.current){ subSpinExit(); setSubdomActive(false); subdomLatchedRef.current=false; subHasSpunRef.current=false; }
     if(on && relMinorActiveRef.current) setRelMinorActive(false);
@@ -6120,7 +6134,7 @@ useEffect(() => {
     if(on){ setActiveFn("I"); setCenterLabel(parKey); stopDimFade(); }
   };
   const toggleRelMinor = ()=>{
-    if (spaceLocked) return; // ✅ v3.11.0: Locked
+    if (spaceLocked) return; // ✅ Locked
     const on = !relMinorActiveRef.current;
     if(on && subdomActiveRef.current){ subSpinExit(); setSubdomActive(false); subdomLatchedRef.current=false; subHasSpunRef.current=false; }
     if(on && visitorActiveRef.current) setVisitorActive(false);
@@ -6128,7 +6142,7 @@ useEffect(() => {
     if(on){ setActiveFn("vi"); setCenterLabel("Am"); stopDimFade(); }
   };
   const toggleSubdom = ()=>{
-    if (spaceLocked) return; // ✅ v3.11.0: Locked
+    if (spaceLocked) return; // ✅ Locked
     const on = !subdomActiveRef.current;
     if(on){
       setVisitorActive(false); setRelMinorActive(false);
@@ -6260,10 +6274,10 @@ useEffect(() => {
              pointerEvents: 'auto'  // ⚠️ CRITICAL: Must be 'auto' when parent SVG has pointerEvents:'none'
            }}
            onPointerDown={(e)=>{
-             // ✅ v3.17.85: Touch support - pointer events work for mouse + touch
+             // ✅ Touch support - pointer events work for mouse + touch
              e.preventDefault(); // Prevent default touch behaviors
              
-             // ✅ v3.17.85: Click-to-clear with timer - only clear if clicking same wedge after delay
+             // ✅ Click-to-clear with timer - only clear if clicking same wedge after delay
              const now = Date.now();
              const timeSinceLastClick = now - lastWedgeClickTimeRef.current;
              const sameWedge = wedgeClickFnRef.current === fn;
@@ -6284,7 +6298,7 @@ useEffect(() => {
              lastWedgeClickTimeRef.current = now;
              wedgeClickFnRef.current = fn;
              
-             // ✅ v3.17.85: Visual pulse feedback
+             // ✅ Visual pulse feedback
              setPulsingWedge(fn);
              setTimeout(() => setPulsingWedge(""), 300);
              
@@ -6340,7 +6354,7 @@ useEffect(() => {
                playWith7th
              });
              
-             // ✅ v3.18.79: Show subtle glow at click point
+             // ✅ Show subtle glow at click point
              setWedgeGlow({ x: svgP.x, y: svgP.y, is7th: playWith7th });
              setTimeout(() => {
                setWedgeGlow(null);
@@ -6349,7 +6363,7 @@ useEffect(() => {
              previewFn(fn, playWith7th);
            }}
            onPointerEnter={(e)=>{
-             // ✅ v3.17.85: Pointer events for touch + mouse
+             // ✅ Pointer events for touch + mouse
              // If dragging from another wedge, activate this wedge
              console.log('🔍 onPointerEnter:', fn, 'buttons:', e.buttons, 'wedgeHeld:', wedgeHeldRef.current, 'currentFn:', currentHeldFnRef.current);
              
@@ -6398,7 +6412,7 @@ useEffect(() => {
                const playWith7th = normalizedRadius < SEVENTH_RADIUS_THRESHOLD;
                lastPlayedWith7thRef.current = playWith7th;
                
-               // ✅ v3.18.79: Show glow when dragging between wedges too
+               // ✅ Show glow when dragging between wedges too
                setWedgeGlow({ x: svgP.x, y: svgP.y, is7th: playWith7th });
                setTimeout(() => {
                  setWedgeGlow(null);
@@ -6481,7 +6495,7 @@ useEffect(() => {
                // Update lastPlayedChordRef for MMK consistency
                lastPlayedChordRef.current = updatedLabel;
                
-               // ✅ v3.15.3: Update keyboard display to match triad/7th
+               // ✅ Update keyboard display to match triad/7th
                const chordDef = CHORD_DEFINITIONS[fn];
                if (chordDef) {
                  const keyPc = NAME_TO_PC[renderKey];
@@ -6547,7 +6561,7 @@ useEffect(() => {
              }
            }}
            onPointerUp={()=>{
-             // ✅ v3.17.85: Touch support
+             // ✅ Touch support
              console.log('🛑 Pointer up on wedge, releasing');
              wedgeHeldRef.current = false; // Release wedge
              currentHeldFnRef.current = null;
@@ -6569,7 +6583,7 @@ useEffect(() => {
              }
            }}
            onPointerLeave={(e)=>{
-             // ✅ v3.17.85: Touch support
+             // ✅ Touch support
              // If pointer button is still down, we're dragging - don't clear refs!
              if (e.buttons === 1) {
                console.log('🔄 Pointer button still down, keeping drag state');
@@ -6688,7 +6702,7 @@ useEffect(() => {
     const fitted = preview.fitNotesToWindowPreserveInversion(absRootPos, KBD_LOW, KBD_HIGH);
     setLatchedAbsNotes(fitted);
     
-    // ✅ v3.16.0: Update label based on ACTUAL notes played
+    // ✅ Update label based on ACTUAL notes played
     let chordLabel = realizeFunction(fn, renderKey);
     
     // Only add 7th suffix if we're actually playing with 7th
@@ -6800,14 +6814,14 @@ useEffect(() => {
         }
       }
       
-      // ✅ v3.17.22: Removed incorrect PAR exit logic
+      // ✅ Removed incorrect PAR exit logic
       // PAR space I wedge (Eb in C minor) should NOT exit to HOME
       // Users stay in PAR unless they play a diatonic HOME chord
       
       // Other space rotation logic can be added here
     }, 600); // 600ms delay so chord doesn't move under cursor
     
-    // ✅ v3.18.19: Return the notes so caller can start rhythm immediately
+    // ✅ Return the notes so caller can start rhythm immediately
     return fitted;
   };
 
@@ -6831,7 +6845,7 @@ useEffect(() => {
     if (!audioContextRef.current) {
       audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
     }
-    // ✅ v3.17.85: Resume audio context on mobile (required by iOS/Android)
+    // ✅ Resume audio context on mobile (required by iOS/Android)
     if (audioContextRef.current.state === 'suspended') {
       console.log('🔊 Audio context suspended, resuming...');
       audioContextRef.current.resume().then(() => {
@@ -6885,7 +6899,7 @@ useEffect(() => {
     
     const mainGain = ctx.createGain();
     mainGain.gain.value = 0;
-    // ✅ v3.17.85: Reduced to prevent clipping (chords = multiple notes adding up)
+    // ✅ Reduced to prevent clipping (chords = multiple notes adding up)
     const mobileBoost = !isDesktop ? 1.5 : 1.0;
     const chordSafety = 0.5; // Divide by 2 since chords can have 3-4 notes
     mainGain.gain.linearRampToValueAtTime(0.6 * velocity * mobileBoost * chordSafety, now + 0.015);
@@ -7000,7 +7014,7 @@ useEffect(() => {
     }, duration * 1000);
   };
 
-  // ✅ v3.17.0: MIDI Output - Send notes to external device
+  // ✅ MIDI Output - Send notes to external device
   const activeMidiNotesRef = useRef<Set<number>>(new Set());
   
   const sendMidiNoteOn = (note: number, velocity: number = 100) => {
@@ -7032,7 +7046,7 @@ useEffect(() => {
     activeMidiNotesRef.current.clear();
   };
 
-  // ✅ v3.18.15: Start rhythm loop - plays pattern continuously while held
+  // ✅ Start rhythm loop - plays pattern continuously while held
   // Supports starting from an offset for seamless chord changes
   const startRhythmLoop = (chordNotes: number[], startOffsetMs: number = 0) => {
     console.log('🔁 startRhythmLoop called with', chordNotes.length, 'notes, offset:', startOffsetMs, 'ms');
@@ -7122,14 +7136,14 @@ useEffect(() => {
     rhythmLoopTimeoutsRef.current.forEach(id => clearTimeout(id));
     rhythmLoopTimeoutsRef.current = [];
     
-    // ✅ v3.18.13: Stop all currently playing notes to prevent overlap
+    // ✅ Stop all currently playing notes to prevent overlap
     stopAllActiveNotes();
     
-    // ✅ v3.18.16: DON'T clear position tracking - keep it for seamless restart!
+    // ✅ DON'T clear position tracking - keep it for seamless restart!
     // rhythmStartTimeRef.current stays set so next press can calculate offset
   };
 
-  // ✅ v3.18.4: Play rhythm pattern with current latched chord (single shot)
+  // ✅ Play rhythm pattern with current latched chord (single shot)
   const playRhythmPattern = (pattern: RhythmAction[], chordNotes: number[]) => {
     if (pattern.length === 0 || chordNotes.length === 0) return;
     
@@ -7158,7 +7172,7 @@ useEffect(() => {
     });
   };
 
-  // ✅ v3.17.85: Song sharing via URL
+  // ✅ Song sharing via URL
   const encodeSongToURL = () => {
     const songData = {
       text: inputText,
@@ -7167,7 +7181,7 @@ useEffect(() => {
     };
     const json = JSON.stringify(songData);
     const base64 = btoa(unescape(encodeURIComponent(json)));
-    // ✅ v3.18.0: Use current domain so sharing works on Vercel AND beatkitchen
+    // ✅ Use current domain so sharing works on Vercel AND beatkitchen
     const currentOrigin = window.location.origin;
     const currentPath = window.location.pathname.replace(/\/$/, ''); // Remove trailing slash
     const url = `${currentOrigin}${currentPath}?song=${base64}`;
@@ -7280,7 +7294,7 @@ useEffect(() => {
     notesToPlay.sort((a, b) => a - b);
     console.log('🎵 MIDI notes to play:', notesToPlay);
     
-    // ✅ v3.17.0: Send to MIDI output if enabled
+    // ✅ Send to MIDI output if enabled
     if (midiOutputEnabled) {
       stopAllMidiNotes(); // Stop previous chord
       notesToPlay.forEach(note => sendMidiNoteOn(note, 100));
@@ -7328,14 +7342,14 @@ useEffect(() => {
       return new Set(latchedAbsNotes);
     }
     // Priority 2: If active function but no manual play, AND in preview mode, calculate root position
-    // ✅ v3.15.1: Only show canonical voicing for wedge clicks, not MIDI input
+    // ✅ Only show canonical voicing for wedge clicks, not MIDI input
     if (activeFnRef.current && rightHeld.current.size === 0 && lastInputWasPreviewRef.current) {
       const dispKey = (visitorActiveRef.current ? parKey : (subdomActiveRef.current ? subKey : baseKeyRef.current)) as KeyName;
       const fn = activeFnRef.current as Fn;
       const with7th = PREVIEW_USE_SEVENTHS || fn === "V7" || fn === "V/V" || fn === "V/vi";
       const pcs = preview.chordPcsForFn(fn, dispKey, with7th);
       
-      // ✅ v3.17.6: Safety check - if preview module doesn't know this chord, use CHORD_DEFINITIONS
+      // ✅ Safety check - if preview module doesn't know this chord, use CHORD_DEFINITIONS
       if (!pcs || pcs.length === 0) {
         const chordDef = CHORD_DEFINITIONS[fn];
         if (chordDef) {
@@ -7378,7 +7392,7 @@ useEffect(() => {
       msUserSelect:'none',
       touchAction: 'pan-y'
     }}>
-      {/* ✅ v3.17.98: TEMPORARILY COMMENTED OUT - Testing if modal blocks iOS shared URLs
+      {/* ✅ TEMPORARILY COMMENTED OUT - Testing if modal blocks iOS shared URLs
       {showAudioPrompt && (
         <div
           onClick={() => {
@@ -7421,7 +7435,7 @@ useEffect(() => {
       )}
       */}
       
-      {/* ✅ v3.17.85: Share Modal */}
+      {/* ✅ Share Modal */}
       {showShareModal && (
         <div
           style={{
@@ -7531,7 +7545,7 @@ useEffect(() => {
         WebkitTouchCallout:'none'
       }}>
 
-        {/* ✅ v3.18.39: Legend - Safari needs more top space */}
+        {/* ✅ Legend - Safari needs more top space */}
         {(isDesktop || window.innerWidth > 800) && (
           <div style={{
             position:'absolute',
@@ -7648,7 +7662,7 @@ useEffect(() => {
             );
           })()}
           
-          {/* ✅ v3.18.32: Version and copyright - left aligned */}
+          {/* ✅ Version and copyright - left aligned */}
           <div style={{
             marginTop: 10,
             paddingTop: 8,
@@ -7662,7 +7676,7 @@ useEffect(() => {
               Harmony Wheel
             </div>
             <div>{HW_VERSION}</div>
-            {/* ✅ v3.18.44: Neutral browser detection for debugging */}
+            {/* ✅ Neutral browser detection for debugging */}
             <div style={{ color: '#6b7280', fontSize: 7 }}>
               {isSafariBrowser ? 'Safari' : 'Chrome/Other'}
             </div>
@@ -7673,7 +7687,7 @@ useEffect(() => {
           </div>
         )}
 
-        {/* ✅ v3.18.23: TESTING - Logo temporarily hidden (may be on website header) */}
+        {/* ✅ TESTING - Logo temporarily hidden (may be on website header) */}
         {/* BKS Logo Header with Emblem + Help Button - v3.18.22: Centered layout */}
         {false && (
         <div style={{marginBottom:0, position:'relative', zIndex:10002, display:'flex', justifyContent:'space-between', alignItems:'flex-start'}}>
@@ -7751,7 +7765,7 @@ useEffect(() => {
         )}
         {/* END TESTING - Logo hidden */}
         
-        {/* ✅ v3.18.42: Skill button - mobile Safari adjustments */}
+        {/* ✅ Skill button - mobile Safari adjustments */}
         <div style={{
           display:'flex', 
           alignItems:'flex-start',
@@ -7799,13 +7813,13 @@ useEffect(() => {
               touchAction:'pan-y', 
               pointerEvents:'none'  // ⚠️ CRITICAL: Allows clicks to pass through to buttons underneath (wheel overlaps with marginTop:-30)
             }}>
-  {/* ✅ v3.17.85: Black backing circle - pointer-events none for scrolling */}
+  {/* ✅ Black backing circle - pointer-events none for scrolling */}
   <circle cx={260} cy={260} r={224} fill="#111" style={{pointerEvents: 'none'}} />
   
   {/* Labels moved to status bar area */}
 
   {wedgeNodes}
-  {/* ✅ v3.18.57: Glow layer drawn last to appear on top */}
+  {/* ✅ Glow layer drawn last to appear on top */}
   {glowLayer}
 
               {/* Hub */}
@@ -7895,7 +7909,7 @@ useEffect(() => {
           // Show chord in hub and trigger keyboard/tab display
           lastInputWasPreviewRef.current = true;
           
-          // ✅ v3.10.4: Add radius detection for inner/outer ring behavior
+          // ✅ Add radius detection for inner/outer ring behavior
           // Calculate click position relative to wheel center
           const svg = (e.currentTarget as SVGElement).ownerSVGElement;
           let playWith7th = true; // Default to 7th if we can't detect radius
@@ -7958,7 +7972,7 @@ useEffect(() => {
             setLatchedAbsNotes(playWith7th ? chordNotes[chordName].seventh : chordNotes[chordName].triad);
           }
           
-          // ✅ v3.18.111: Update display and trigger step record
+          // ✅ Update display and trigger step record
           const displayChordName = playWith7th ? chordName : chordName.replace(/7|♭5/, '').trim();
           centerOnly(displayChordName);
         };
@@ -8042,7 +8056,7 @@ useEffect(() => {
 })()}
 {/* -------- END BONUS BLOCK -------- */}
 
-{/* ✅ v3.18.49: Intro animation overlay - shows bonus wedges regardless of skill level */}
+{/* ✅ Intro animation overlay - shows bonus wedges regardless of skill level */}
 {showIntroAnimation && (() => {
   const toRad = (deg:number) => (deg - 90) * Math.PI/180;
   const arc = (cx:number, cy:number, r:number, a0:number, a1:number) => {
@@ -8112,7 +8126,7 @@ useEffect(() => {
 
             </svg>
             
-            {/* ✅ v3.11.0: Lock Button - positioned above sequencer display */}
+            {/* ✅ Lock Button - positioned above sequencer display */}
             <button
               onClick={() => setSpaceLocked(!spaceLocked)}
               style={{
@@ -8175,7 +8189,7 @@ useEffect(() => {
             }
             if(src.length===0) return new Set<number>();
             
-            // ✅ v3.12.4: Use full 2-octave range intelligently
+            // ✅ Use full 2-octave range intelligently
             if (lastInputWasPreviewRef.current) {
               // Wedge clicks - use smart voice leading
               const fitted = preview.fitNotesToWindowPreserveInversion(src, KBD_LOW, KBD_HIGH);
@@ -8235,7 +8249,7 @@ useEffect(() => {
                     borderRadius:8,
                     background:'#0f172a',
                     overflow:'hidden',
-                    marginBottom: 0  // ✅ v3.17.97: Remove margin to prevent scrollbar
+                    marginBottom: 0  // ✅ Remove margin to prevent scrollbar
                   }}>
                     {/* Song Title */}
                     {songTitle && (
@@ -8281,7 +8295,7 @@ useEffect(() => {
                               const isCurrent = globalIdx === displayIndex;
                               const isComment = item.kind === "comment";
                               const isTitle = item.kind === "title";
-                              // ✅ v3.18.79: Hide RHYTHM, LOOP, and TEMPO directives from display
+                              // ✅ Hide RHYTHM, LOOP, and TEMPO directives from display
                               const isConfig = item.kind === "modifier" && item.chord && 
                                 (item.chord.startsWith("RHYTHM") || 
                                  item.chord === "LOOP" || 
@@ -8310,7 +8324,7 @@ useEffect(() => {
                     </div>
                   </div>
                 ) : (
-                  // ✅ v3.18.79: Placeholder when no sequence loaded in EXPERT mode
+                  // ✅ Placeholder when no sequence loaded in EXPERT mode
                   <div style={{
                     border:'1px solid #374151',
                     borderRadius:8,
@@ -8341,9 +8355,9 @@ useEffect(() => {
                   overflow:'hidden',
                   textOverflow:'ellipsis'
                 }}>
-                  {/* ✅ v3.18.46: Dynamic banner message with link parsing */}
+                  {/* ✅ Dynamic banner message with link parsing */}
                   {(() => {
-                    // ✅ v3.18.79: Use DEFAULT_BANNER from demoSongs.ts - no more hardcoded messages!
+                    // ✅ Use DEFAULT_BANNER from demoSongs.ts - no more hardcoded messages!
                     const message = (bannerMessage && bannerMessage.trim())
                       ? bannerMessage 
                       : DEFAULT_BANNER;
@@ -8467,7 +8481,7 @@ useEffect(() => {
                 columnGap:12, 
                 marginBottom:0,
                 position: 'relative',
-                zIndex: 50,  // ✅ v3.18.7: Above wheel (10) but below button grid (100000)
+                zIndex: 50,  // ✅ Above wheel (10) but below button grid (100000)
                 pointerEvents: 'auto'  // ⚠️ CRITICAL: Force clickability even when wheel SVG overlaps (marginTop:-30)
               }}>
                 {/* Left: Key Button + Space Buttons + Keyboard */}
@@ -8502,7 +8516,7 @@ useEffect(() => {
                           border:'1px solid #39FF14',
                           borderRadius:6,
                           padding:4,
-                          zIndex:100001,  // ✅ v3.18.7: Above button grid (100000)
+                          zIndex:100001,  // ✅ Above button grid (100000)
                           display:'grid',
                           gridTemplateColumns:'repeat(4, 1fr)',
                           gap:4,
@@ -8552,7 +8566,7 @@ useEffect(() => {
                       const m=+mStr; 
                       const held=disp.has(m);
                       const highlighted = keyboardHighlightNotes.has(m);
-                      // ✅ v3.18.111: Eraser branding - no color change, just dots
+                      // ✅ Eraser branding - no color change, just dots
                       const fillColor = "#f9fafb"; // Always white
                       
                       // Get note name - use flats for black keys
@@ -8607,7 +8621,7 @@ useEffect(() => {
                       const m=+mStr; 
                       const held=disp.has(m);
                       const highlighted = keyboardHighlightNotes.has(m);
-                      // ✅ v3.18.111: Eraser branding - no color change on black keys
+                      // ✅ Eraser branding - no color change on black keys
                       const fillColor = "#1f2937"; // Always dark
                       const strokeColor = "#0a0a0a";
                       
@@ -8667,11 +8681,11 @@ useEffect(() => {
                       const highlighted = keyboardHighlightNotes.has(m);
                       if (!held && !highlighted) return null;
                       
-                      // ✅ v3.12.4: Chord-aware spelling - use chord root for context
+                      // ✅ Chord-aware spelling - use chord root for context
                       let noteName: string;
                       let isRoot = false;
                       
-                      // ✅ v3.18.111: Use lastDetectedChordRef (immediate) instead of centerLabel (state)
+                      // ✅ Use lastDetectedChordRef (immediate) instead of centerLabel (state)
                       const chordToUse = lastDetectedChordRef.current || centerLabel;
                       
                       if (chordToUse) {
@@ -8698,7 +8712,7 @@ useEffect(() => {
                         noteName = pcNameForKey(m % 12, currentKey);
                       }
                       
-                      // ✅ v3.18.111: Eraser branding - root is blue, others are red
+                      // ✅ Eraser branding - root is blue, others are red
                       const eraserColor = isRoot ? '#5DADE2' : '#E74C3C';
                       const randomRotation = (m * 7) % 11 - 5; // Pseudo-random -5 to +5 degrees
                       
@@ -8725,7 +8739,7 @@ useEffect(() => {
                             {noteName}
                           </text>
                           
-                          {/* ✅ v3.18.111: Eraser branding - rounded rectangle at finger position */}
+                          {/* ✅ Eraser branding - rounded rectangle at finger position */}
                           <rect
                             x={x + WW * 0.31}
                             y={HW * 0.62 + 30}
@@ -8746,11 +8760,11 @@ useEffect(() => {
                       const highlighted = keyboardHighlightNotes.has(m);
                       if (!held && !highlighted) return null;
                       
-                      // ✅ v3.12.4: Chord-aware spelling - use chord root for context
+                      // ✅ Chord-aware spelling - use chord root for context
                       let noteName: string;
                       let isRoot = false;
                       
-                      // ✅ v3.18.111: Use lastDetectedChordRef (immediate) instead of centerLabel (state)
+                      // ✅ Use lastDetectedChordRef (immediate) instead of centerLabel (state)
                       const chordToUse = lastDetectedChordRef.current || centerLabel;
                       
                       if (chordToUse) {
@@ -8777,7 +8791,7 @@ useEffect(() => {
                         noteName = pcNameForKey(m % 12, currentKey);
                       }
                       
-                      // ✅ v3.18.111: Eraser branding - root is blue, others are red
+                      // ✅ Eraser branding - root is blue, others are red
                       const eraserColor = isRoot ? '#5DADE2' : '#E74C3C';
                       const randomRotation = (m * 7) % 11 - 5; // Pseudo-random -5 to +5 degrees
                       
@@ -8804,7 +8818,7 @@ useEffect(() => {
                             {noteName}
                           </text>
                           
-                          {/* ✅ v3.18.111: Eraser branding - rounded rectangle at finger position */}
+                          {/* ✅ Eraser branding - rounded rectangle at finger position */}
                           <rect
                             x={x + WB * 0.29}
                             y={HB * 0.55 + 5}
@@ -8918,7 +8932,7 @@ useEffect(() => {
                         border: transpose !== 0 ? '1px solid #F2D74B' : '1px solid #60A5FA',
                         borderRadius:6,
                         padding:8,
-                        zIndex:100001,  // ✅ v3.18.7: Above button grid (100000)
+                        zIndex:100001,  // ✅ Above button grid (100000)
                         display:'grid',
                         gridTemplateColumns:'repeat(13, 1fr)', // 2 rows: positive top, negative bottom
                         gridTemplateRows:'repeat(2, 1fr)',
@@ -9027,7 +9041,7 @@ useEffect(() => {
               
               {/* Row: Transport Controls + Step Record - v3.4.3: Fixed missing buttons */}
               {skillLevel === "EXPERT" && sequence.length > 0 && (
-                <div style={{display:'flex', gap:8, alignItems:'center', marginTop:6, marginBottom:0, flexWrap:'wrap'  /* ✅ v3.17.96: marginBottom:0 to prevent scrollbar */}}>
+                <div style={{display:'flex', gap:8, alignItems:'center', marginTop:6, marginBottom:0, flexWrap:'wrap'  /* ✅ marginBottom:0 to prevent scrollbar */}}>
                   {/* 1. Go to start */}
                   <button 
                     onClick={goToStart} 
@@ -9189,7 +9203,7 @@ useEffect(() => {
                       const newState = !stepRecord;
                       setStepRecord(newState);
                       stepRecordRef.current = newState;
-                      // ✅ v3.18.111: Toggle bonus wedges with step record
+                      // ✅ Toggle bonus wedges with step record
                       setShowBonusWedges(newState);
                     }}
                     style={{
@@ -9237,16 +9251,16 @@ useEffect(() => {
                       borderRadius:8,
                       fontFamily:'ui-sans-serif, system-ui',
                       resize:'vertical',
-                      minHeight: 72, // ✅ v3.18.79: Minimum 3 rows
-                      maxHeight: 240, // ✅ v3.18.79: Reduced max to keep buttons visible
+                      minHeight: 72, // ✅ Minimum 3 rows
+                      maxHeight: 240, // ✅ Reduced max to keep buttons visible
                       fontSize: isDesktop ? 12 : 16,
                       lineHeight: '1.5',
                       userSelect: 'text',
-                      overflow: 'auto' // ✅ v3.18.79: Scroll if content exceeds maxHeight
+                      overflow: 'auto' // ✅ Scroll if content exceeds maxHeight
                     }}
                   />
                   
-                  {/* ✅ v3.18.79: Single row button layout - Ready, Clear, Load, Share */}
+                  {/* ✅ Single row button layout - Ready, Clear, Load, Share */}
                   <div style={{
                     display: 'grid',
                     gridTemplateColumns: 'repeat(4, 120px)',
@@ -9493,7 +9507,7 @@ useEffect(() => {
                 
                 {/* Row 1: Performance Mode */}
                 <div style={{display:'flex', gap:8, alignItems:'center', flexWrap:'wrap'}}>
-                  {/* ✅ v3.17.9: Clear open/closed states */}
+                  {/* ✅ Clear open/closed states */}
                   {performanceMode ? (
                     /* OPEN STATE - Yellow border, TWO ROWS: number pads + rhythm controls */
                     <div style={{ 
@@ -9561,7 +9575,7 @@ useEffect(() => {
                               // Play the chord
                               previewFn(fn as Fn, with7th);
                               
-                              // ✅ v3.18.54: Explicitly start rhythm for iOS/mobile
+                              // ✅ Explicitly start rhythm for iOS/mobile
                               if (rhythmEnabledRef.current && latchedAbsNotesRef.current.length > 0) {
                                 setTimeout(() => {
                                   if (latchedAbsNotesRef.current.length > 0) {
@@ -9619,7 +9633,7 @@ useEffect(() => {
                             }}>
                               {fn}
                             </div>
-                            {/* ✅ v3.17.12: Show 7th type below function when shift held */}
+                            {/* ✅ Show 7th type below function when shift held */}
                             {shiftHeld && (
                               <div style={{
                                 fontSize: 7,
@@ -9791,7 +9805,7 @@ useEffect(() => {
                         if (ctx.state === 'suspended') {
                           await ctx.resume();
                         }
-                        // ✅ v3.17.85: Play silent note to fully unlock iOS audio in iframe
+                        // ✅ Play silent note to fully unlock iOS audio in iframe
                         const osc = ctx.createOscillator();
                         const gain = ctx.createGain();
                         gain.gain.value = 0.001; // Nearly silent
@@ -9872,7 +9886,7 @@ useEffect(() => {
                     </>
                   )}
                   
-                  {/* ✅ v3.18.25: MIDI unsupported browser warning */}
+                  {/* ✅ MIDI unsupported browser warning */}
                   {showMidiWarning && !midiSupported && (
                     <div style={{
                       position: 'absolute',
@@ -9900,7 +9914,7 @@ useEffect(() => {
                   {/* Spacer */}
                   <div style={{flex:1}} />
                   
-                  {/* ✅ v3.17.6: Allow Bonus Chords - always visible, auto-lit in perf mode */}
+                  {/* ✅ Allow Bonus Chords - always visible, auto-lit in perf mode */}
                   {bonusWedgesAllowed && (
                     <button 
                       onClick={() => !performanceMode && setShowBonusWedges(!showBonusWedges)}
@@ -9994,6 +10008,6 @@ useEffect(() => {
   );
 }
 
-// HarmonyWheel v3.18.111 - Compiler fix + E7 debugging
+// HarmonyWheel - Compiler fix + E7 debugging
 
-// EOF - HarmonyWheel.tsx v3.18.111
+// EOF - HarmonyWheel.tsx

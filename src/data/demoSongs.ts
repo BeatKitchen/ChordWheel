@@ -60,11 +60,24 @@ export interface DemoSong {
 }
 
 export const demoSongs: DemoSong[] = [
-  {
-    title: "WELCOME TO BEAT KITCHEN",
-    content: "@TITLE Demo Song, @KEY C, @TEMPO 120, @LOOP, #hello darkness my old friend, |E7 / E7 / E7 E7 E7 /|E7 / E7 / E7 E7 E7 /|Am / Am / Am Am Am /||Am / Am / Am Am Am /|\n\n@RHYTHM1 |x x x x|\n@RHYTHM2 |x / x /|\n@RHYTHM3 |x x / x x x / x|",
-    bannerMessage: "Use [[EXPERT mode|expert]] for sequencer. Join a [[Music Theory Gym|https://beatkitchen.io/classroom]] and we'll use this together!"
-  },
+  
+{
+  title: "WELCOME TO BEAT KITCHEN",
+  content: `@TITLE WELCOME TO BEAT KITCHEN
+@KEY C
+@TEMPO 160
+@LOOP
+
+|Fmaj7 * * * / / / E7 |* / E7 * * * * *|
+|Am7 #passing chord: Abm7 | Gm7 C7 |
+|Fmaj7 * * * / / / E7 |* / E7 * * * * *|
+|Am|Am7
+
+@RHYTHM1 |x x x x|
+@RHYTHM2 |x / x /|
+@RHYTHM3 |x x / x x x / x|`,  // ← backtick HERE, before comma
+  bannerMessage: "Use [[EXPERT mode|expert]] for sequencer. Join a [[Music Theory Gym|https://beatkitchen.io/classroom]] and we'll use this together!"
+},
   {
     title: "Simple Progression",
     content: "@TITLE Simple Song, @KEY C, @TEMPO 100, @LOOP, # Verse, C, Am, F, G, C, Am, F, G, # Chorus, F, G, C, Am, F, G, C, C\n\n@RHYTHM1 |x x x x|\n@RHYTHM2 |x / x /|\n@RHYTHM3 |x x / x x x / x|",
