@@ -63,7 +63,7 @@ export const demoSongs: DemoSong[] = [
   
 {
   title: "WELCOME TO BEAT KITCHEN",
-  content: `@TITLE WELCOME TO BEAT KITCHEN
+  content: `@TITLE From today's Beat Kithen MUSIC THEORY GYM
 @KEY C
 @TEMPO 160
 @LOOP

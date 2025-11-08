@@ -1,5 +1,5 @@
 /*
- * HarmonyWheel.tsx — v3.18.127 🔧 Compiler Fix + Minimal Logging
+ * HarmonyWheel.tsx — v3.18.130 🔧 Compiler Fix + Minimal Logging
  * 
  * 🔧 TYPESCRIPT COMPILER FIX:
  * - Fixed: absName used before declaration (line 4685 before 4747)
@@ -1858,7 +1858,7 @@ import {
   parseSongMetadata
 } from "./lib/songManager";
 
-const HW_VERSION = 'v3.18.127';
+const HW_VERSION = 'v3.18.130';
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -2677,7 +2677,7 @@ useEffect(() => {
   };
 
   const parseAndLoadSequence = ()=>{
-    const APP_VERSION = "v3.18.127-harmony-wheel";
+    const APP_VERSION = "v3.18.130-harmony-wheel";
     console.log('=== PARSE AND LOAD START ===');
     console.log('🏷️  APP VERSION:', APP_VERSION);
     console.log('Input text:', inputText);
@@ -2731,7 +2731,7 @@ useEffect(() => {
         // Parse bars: "|C Am F G|" or "|C Am|F G|" or "| C Am F G" (unclosed)
         const bars = segment.split('|').filter(s => s.trim());
         
-        // ✅ v3.18.127: Track last chord across bars for cross-bar ties
+        // ✅ v3.18.130: Track last chord across bars for cross-bar ties
         let lastChordOrRest: string | null = null;
         
         for (const bar of bars) {
@@ -2739,7 +2739,7 @@ useEffect(() => {
           const normalized = bar.trim().replace(/\s+/g, ' ');
           if (!normalized) continue;
           
-          // ✅ v3.18.127: Parse # comments as single tokens
+          // ✅ v3.18.130: Parse # comments as single tokens
           const tokens: string[] = [];
           let i = 0;
           while (i < normalized.length) {
@@ -2769,7 +2769,7 @@ useEffect(() => {
             }
           }
           
-          // ✅ v3.18.127: Group ties with their preceding chord/rest (including cross-bar)
+          // ✅ v3.18.130: Group ties with their preceding chord/rest (including cross-bar)
           const groupedItems: Array<{text: string, count: number, isComment: boolean}> = [];
           
           for (let j = 0; j < tokens.length; j++) {
@@ -2784,7 +2784,7 @@ useEffect(() => {
                 // Tie to previous item in same bar
                 groupedItems[groupedItems.length - 1].count++;
               } else if (j === 0 && lastChordOrRest) {
-                // ✅ v3.18.127: Cross-bar tie! Just add a * with duration
+                // ✅ v3.18.130: Cross-bar tie! Just add a * with duration
                 // The * won't retrigger, it just holds the previous chord
                 groupedItems.push({text: '*', count: 1, isComment: false});
               }
@@ -4034,7 +4034,7 @@ useEffect(() => {
         togglePlayPause();
       } else if (e.key === 'Escape') {
         e.preventDefault();
-        // ✅ v3.18.127: Escape closes everything
+        // ✅ v3.18.130: Escape closes everything
         stopPlayback();
         setShowKeyDropdown(false);
         setShowTransposeDropdown(false);
@@ -4214,7 +4214,7 @@ useEffect(() => {
     const currentItem = sequence[seqIndex];
     const isTie = currentItem?.kind === "comment" && currentItem.raw === '*';
     
-    // ✅ v3.18.127: Comments with chords should also play audio
+    // ✅ v3.18.130: Comments with chords should also play audio
     const isPlayableItem = (currentItem?.kind === "chord" || 
                            (currentItem?.kind === "comment" && currentItem.chord)) && 
                            currentItem.chord && 
@@ -4234,7 +4234,7 @@ useEffect(() => {
     // Duration is in bars (1=whole, 0.5=half, 0.25=quarter)
     const itemDuration = currentItem?.duration || 1.0; // Default to 1 bar if not specified
     
-    // ✅ v3.18.127: Only # comments WITHOUT chords have zero duration
+    // ✅ v3.18.130: Only # comments WITHOUT chords have zero duration
     const isAnnotationOnly = currentItem?.kind === "comment" && 
                             currentItem.raw?.startsWith('#') && 
                             !currentItem.chord;
@@ -4247,7 +4247,7 @@ useEffect(() => {
       // Advance to next item
       let nextIndex = seqIndex + 1;
       
-      // ✅ v3.18.127: Don't skip comments - they have duration:0 and advance instantly
+      // ✅ v3.18.130: Don't skip comments - they have duration:0 and advance instantly
       // Only skip titles and @modifiers
       while (nextIndex < sequence.length) {
         const nextItem = sequence[nextIndex];
@@ -4264,7 +4264,7 @@ useEffect(() => {
       if (nextIndex < sequence.length) {
         setSeqIndex(nextIndex);
         
-        // ✅ v3.18.127: For display, show the chord being held, not the tie/annotation
+        // ✅ v3.18.130: For display, show the chord being held, not the tie/annotation
         const nextItem = sequence[nextIndex];
         const isTie = nextItem?.kind === "comment" && nextItem.raw === '*';
         const isAnnotation = nextItem?.kind === "comment" && nextItem.raw?.startsWith('#') && !nextItem.chord;
@@ -4287,7 +4287,7 @@ useEffect(() => {
             startIdx++;
           }
           setSeqIndex(startIdx);
-          setDisplayIndex(startIdx); // ✅ v3.18.127: Highlight on loop
+          setDisplayIndex(startIdx); // ✅ v3.18.130: Highlight on loop
           applySeqItem(sequence[startIdx]);
           setTimeout(() => selectCurrentItem(), 0);
         } else {
@@ -8337,8 +8337,8 @@ useEffect(() => {
               {/* UNIFIED LAYOUT - Same structure always, no shifting */}
               
               
-              {/* Row 1: Sequence display - v3.4.3: Always visible, shows message when not EXPERT */}
-              {skillLevel === "EXPERT" ? (
+              {/* Row 1: Sequence display - v3.18.130: Show when EXPERT OR playing */}
+              {(skillLevel === "EXPERT" || isPlaying) ? (
                 sequence.length > 0 ? (
                   <div style={{
                     border:'1px solid #374151',
@@ -8392,7 +8392,7 @@ useEffect(() => {
                               const isComment = item.kind === "comment";
                               const isTitle = item.kind === "title";
                               
-                              // ✅ v3.18.127: Highlight related items together
+                              // ✅ v3.18.130: Highlight related items together
                               // 1. Comment before current chord: #label: Chord
                               const isCommentForNextChord = isComment && 
                                                            item.raw?.startsWith('#') && 
@@ -8811,7 +8811,7 @@ useEffect(() => {
                       const m=+mStr;
                       const held=disp.has(m);
                       const highlighted = keyboardHighlightNotes.has(m);
-                      const latched = latchedAbsNotes.includes(m); // ✅ v3.18.127: Show during sequence playback
+                      const latched = latchedAbsNotes.includes(m); // ✅ v3.18.130: Show during sequence playback
                       if (!held && !highlighted && !latched) return null;
                       
                       // ✅ Chord-aware spelling - use chord root for context
@@ -8891,7 +8891,7 @@ useEffect(() => {
                       const m=+mStr;
                       const held=disp.has(m);
                       const highlighted = keyboardHighlightNotes.has(m);
-                      const latched = latchedAbsNotes.includes(m); // ✅ v3.18.127: Show during sequence playback
+                      const latched = latchedAbsNotes.includes(m); // ✅ v3.18.130: Show during sequence playback
                       if (!held && !highlighted && !latched) return null;
                       
                       // ✅ Chord-aware spelling - use chord root for context
@@ -9173,10 +9173,60 @@ useEffect(() => {
               </div>
               
               
-              {/* Row: Transport Controls + Step Record - v3.4.3: Fixed missing buttons */}
+              {/* Row: Transport Controls + Step Record - v3.18.130: Play button first, fixed size */}
               {skillLevel === "EXPERT" && sequence.length > 0 && (
                 <div style={{display:'flex', gap:8, alignItems:'center', marginTop:6, marginBottom:0, flexWrap:'wrap'  /* ✅ marginBottom:0 to prevent scrollbar */}}>
-                  {/* 1. Go to start */}
+                  
+                  {/* 1. Play/Stop - GREEN for ▷, RED for ■ - FIRST BUTTON */}
+                  <button 
+                    onClick={togglePlayPause}
+                    style={{
+                      padding:'6px 10px',
+                      minWidth: 50,
+                      width: 50,
+                      height: 40,
+                      border: isPlaying ? '2px solid #EF4444' : '2px solid #10B981', 
+                      borderRadius:8, 
+                      background: isPlaying ? '#2a1a1a' : '#1a3a2a', 
+                      color:'#fff', 
+                      cursor:'pointer', 
+                      fontSize:18,
+                      fontWeight:700,
+                      display:'flex',
+                      alignItems:'center',
+                      justifyContent:'center',
+                      flexShrink: 0
+                    }}
+                    title={isPlaying ? "Stop (Space)" : "Play (Space)"}
+                  >
+                    {isPlaying ? '■' : '▷'}
+                  </button>
+                  
+                  {/* 2. Loop button */}
+                  <button 
+                    onClick={() => setLoopEnabled(!loopEnabled)}
+                    style={{
+                      padding:'6px 10px',
+                      minWidth: 50,
+                      width: 50,
+                      height: 40,
+                      border: loopEnabled ? '2px solid #10B981' : '2px solid #374151', 
+                      borderRadius:8, 
+                      background: loopEnabled ? '#1a3a2a' : '#111', 
+                      color:'#fff', 
+                      cursor:'pointer', 
+                      fontSize:18,
+                      display:'flex',
+                      alignItems:'center',
+                      justifyContent:'center',
+                      flexShrink: 0
+                    }} 
+                    title={loopEnabled ? "Loop enabled" : "Loop disabled"}
+                  >
+                    🔁
+                  </button>
+                  
+                  {/* 3. Go to start */}
                   <button 
                     onClick={goToStart} 
                     style={{
@@ -9193,7 +9243,7 @@ useEffect(() => {
                     ⏮️
                   </button>
                   
-                  {/* 2. Prev chord - BLUE */}
+                  {/* 4. Prev chord - BLUE */}
                   <button 
                     onClick={stepPrev} 
                     style={{
@@ -9213,7 +9263,7 @@ useEffect(() => {
                     &lt;
                   </button>
                   
-                  {/* 3. Next chord - BLUE */}
+                  {/* 5. Next chord - BLUE */}
                   <button 
                     onClick={stepNext} 
                     style={{
@@ -9231,41 +9281,6 @@ useEffect(() => {
                     title="Next chord (>)"
                   >
                     &gt;
-                  </button>
-                  
-                  {/* 4. Play/Stop - GREEN for ▷, RED for ■ */}
-                  <button 
-                    onClick={togglePlayPause}
-                    style={{
-                      padding:'6px 10px',
-                      border: isPlaying ? '2px solid #EF4444' : '2px solid #10B981', 
-                      borderRadius:8, 
-                      background: isPlaying ? '#2a1a1a' : '#1a3a2a', 
-                      color:'#fff', 
-                      cursor:'pointer', 
-                      fontSize:16,
-                      fontWeight:700
-                    }}
-                    title={isPlaying ? "Stop (Space)" : "Play (Space)"}
-                  >
-                    {isPlaying ? '■' : '▷'}
-                  </button>
-                  
-                  {/* 5. Loop button */}
-                  <button 
-                    onClick={() => setLoopEnabled(!loopEnabled)}
-                    style={{
-                      padding:'6px 10px', 
-                      border: loopEnabled ? '2px solid #10B981' : '2px solid #374151', 
-                      borderRadius:8, 
-                      background: loopEnabled ? '#1a3a2a' : '#111', 
-                      color:'#fff', 
-                      cursor:'pointer', 
-                      fontSize:16
-                    }} 
-                    title={loopEnabled ? "Loop enabled" : "Loop disabled"}
-                  >
-                    🔁
                   </button>
                   
                   {/* 6. Prev comment - GREY */}
@@ -9641,6 +9656,34 @@ useEffect(() => {
                 
                 {/* Row 1: Performance Mode */}
                 <div style={{display:'flex', gap:8, alignItems:'center', flexWrap:'wrap'}}>
+                  
+                  {/* ✅ v3.18.130: Play/Stop button in non-EXPERT modes (when sequence loaded) */}
+                  {skillLevel !== "EXPERT" && sequence.length > 0 && (
+                    <button 
+                      onClick={togglePlayPause}
+                      style={{
+                        padding:'6px 10px',
+                        minWidth: 50,
+                        width: 50,
+                        height: 40,
+                        border: isPlaying ? '2px solid #EF4444' : '2px solid #10B981', 
+                        borderRadius:8, 
+                        background: isPlaying ? '#2a1a1a' : '#1a3a2a', 
+                        color:'#fff', 
+                        cursor:'pointer', 
+                        fontSize:18,
+                        fontWeight:700,
+                        display:'flex',
+                        alignItems:'center',
+                        justifyContent:'center',
+                        flexShrink: 0
+                      }}
+                      title={isPlaying ? "Stop (Space)" : "Play (Space)"}
+                    >
+                      {isPlaying ? '■' : '▷'}
+                    </button>
+                  )}
+                  
                   {/* ✅ Clear open/closed states */}
                   {performanceMode ? (
                     /* OPEN STATE - Yellow border, TWO ROWS: number pads + rhythm controls */
@@ -10142,6 +10185,6 @@ useEffect(() => {
   );
 }
 
-// HarmonyWheel v3.18.127 - Compiler fix + E7 debugging
+// HarmonyWheel v3.18.130 - Compiler fix + E7 debugging
 
-// EOF - HarmonyWheel.tsx v3.18.127
+// EOF - HarmonyWheel.tsx v3.18.130
