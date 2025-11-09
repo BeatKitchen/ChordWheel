@@ -1,5 +1,5 @@
 /*
- * HarmonyWheel.tsx — v3.19.42 🔧 Compiler Fix + Minimal Logging
+ * HarmonyWheel.tsx — v3.19.45 🔧 Compiler Fix + Minimal Logging
  * 
  * 🔧 TYPESCRIPT COMPILER FIX:
  * - Fixed: absName used before declaration (line 4685 before 4747)
@@ -1858,7 +1858,7 @@ import {
   parseSongMetadata
 } from "./lib/songManager";
 
-const HW_VERSION = 'v3.19.42';
+const HW_VERSION = 'v3.19.45';
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -2346,7 +2346,7 @@ useEffect(() => {
   const lastInputWasPreviewRef = useRef(false);
 
   const lastMidiEventRef = useRef<"on"|"off"|"cc"|"other">("other");
-  const lastPlayedMidiNotesRef = useRef<number[]>([]); // v3.19.42: For voice leading in sequencer
+  const lastPlayedMidiNotesRef = useRef<number[]>([]); // v3.19.45: For voice leading in sequencer
 
 
   const bindToInput=(id:string, acc:any)=>{
@@ -2558,7 +2558,7 @@ useEffect(() => {
   const [songTitle, setSongTitle] = useState(""); // Static song title from @TITLE
   const [bannerMessage, setBannerMessage] = useState(""); // ✅ Configurable banner message from @BANNER
   
-  // v3.19.42: Calendar events for ticker
+  // v3.19.45: Calendar events for ticker
   const [calendarEvents, setCalendarEvents] = useState<Array<{
     title: string;
     start: Date;
@@ -2566,7 +2566,7 @@ useEffect(() => {
     isLive: boolean;
   }>>([]);
   const [tickerText, setTickerText] = useState("Loading schedule...");
-  const [tickerEvents, setTickerEvents] = useState<Array<{text: string; isLive: boolean}>>([]);  // v3.19.42: Store event objects with live status
+  const [tickerEvents, setTickerEvents] = useState<Array<{text: string; isLive: boolean; isSoon: boolean}>>([]);  // v3.19.45: Added isSoon for orange color
   
   // Autoload preloaded playlist on mount
   useEffect(() => {
@@ -2575,12 +2575,12 @@ useEffect(() => {
     }
   }, []); // Run once on mount
   
-  // v3.19.42: Fetch calendar events from Teamup API
+  // v3.19.45: Fetch calendar events from Teamup API
   useEffect(() => {
     const fetchCalendarEvents = async () => {
       console.log('🗓️ Fetching Teamup calendar events...');
       
-      // v3.19.42: FALLBACK - Hardcoded events (update these manually if API fails)
+      // v3.19.45: FALLBACK - Hardcoded events (update these manually if API fails)
       const FALLBACK_EVENTS = [
         { title: 'Music Theory Gym', date: '2025-01-14T18:00:00-08:00' },
         { title: 'Office Hours', date: '2025-01-15T15:00:00-08:00' },
@@ -2641,7 +2641,7 @@ useEffect(() => {
             end: new Date(event.end_dt),
             subcalendar_ids: event.subcalendar_ids || []
           }))
-          .filter((e: any) => e.end > now)  // v3.19.42: Include events that haven't ended yet (captures live events!)
+          .filter((e: any) => e.end > now)  // v3.19.45: Include events that haven't ended yet (captures live events!)
           .sort((a: any, b: any) => a.start.getTime() - b.start.getTime());
         
         console.log('🗓️ Total upcoming events:', upcomingEvents.length);
@@ -2663,33 +2663,39 @@ useEffect(() => {
         console.log('🗓️ Other events:', otherGyms.length);
         
         // Build ticker: 1 theory gym, 1 office hours, 1 other event
-        const tickerEvents: Array<{text: string; isLive: boolean}> = [];
+        const tickerEvents: Array<{text: string; isLive: boolean; isSoon: boolean}> = [];
         
         if (theoryGyms.length > 0) {
           const event = theoryGyms[0];
           const isLive = now >= event.start && now <= event.end;
+          const hoursUntil = (event.start.getTime() - now.getTime()) / (1000 * 60 * 60);
+          const isSoon = !isLive && hoursUntil <= 12;  // v3.19.45: Orange if within 12h but not live
           const timeStr = formatEventTime(event.start, now);
           const cleanTitle = event.title.replace(/Live\s+/i, '').trim();
-          console.log('🗓️ Next theory gym:', cleanTitle, '→', timeStr, isLive ? '🔴 LIVE' : '');
-          tickerEvents.push({ text: `${cleanTitle} ${timeStr}`, isLive });
+          console.log('🗓️ Next theory gym:', cleanTitle, '→', timeStr, isLive ? '🔴 LIVE' : isSoon ? '🟠 SOON' : '');
+          tickerEvents.push({ text: `${cleanTitle} ${timeStr}`, isLive, isSoon });
         }
         
         if (officeHours.length > 0) {
           const event = officeHours[0];
           const isLive = now >= event.start && now <= event.end;
+          const hoursUntil = (event.start.getTime() - now.getTime()) / (1000 * 60 * 60);
+          const isSoon = !isLive && hoursUntil <= 12;
           const timeStr = formatEventTime(event.start, now);
           const cleanTitle = event.title.replace(/Live\s+/i, '').trim();
-          console.log('🗓️ Next office hours:', cleanTitle, '→', timeStr, isLive ? '🔴 LIVE' : '');
-          tickerEvents.push({ text: `${cleanTitle} ${timeStr}`, isLive });
+          console.log('🗓️ Next office hours:', cleanTitle, '→', timeStr, isLive ? '🔴 LIVE' : isSoon ? '🟠 SOON' : '');
+          tickerEvents.push({ text: `${cleanTitle} ${timeStr}`, isLive, isSoon });
         }
         
         if (otherGyms.length > 0) {
           const event = otherGyms[0];
           const isLive = now >= event.start && now <= event.end;
+          const hoursUntil = (event.start.getTime() - now.getTime()) / (1000 * 60 * 60);
+          const isSoon = !isLive && hoursUntil <= 12;
           const timeStr = formatEventTime(event.start, now);
           const cleanTitle = event.title.replace(/Live\s+/i, '').trim();
-          console.log('🗓️ Next other event:', cleanTitle, '→', timeStr, isLive ? '🔴 LIVE' : '');
-          tickerEvents.push({ text: `${cleanTitle} ${timeStr}`, isLive });
+          console.log('🗓️ Next other event:', cleanTitle, '→', timeStr, isLive ? '🔴 LIVE' : isSoon ? '🟠 SOON' : '');
+          tickerEvents.push({ text: `${cleanTitle} ${timeStr}`, isLive, isSoon });
         }
         
         if (tickerEvents.length > 0) {
@@ -2699,7 +2705,7 @@ useEffect(() => {
           console.log('🗓️ 🎬 What will display:', tickerEvents.map((e, i) => 
             `${e.isLive ? '🔴 Now in session:' : (i === 0 ? 'Next' : 'Coming up:')} ${e.text.replace(/@/g, 'with ')}`
           ).join(' ••• '));
-          setTickerEvents(tickerEvents);  // v3.19.42: Store event objects
+          setTickerEvents(tickerEvents);  // v3.19.45: Store event objects
           setTickerText(finalText);
         } else {
           console.log('🗓️ No categorized events found');
@@ -2712,20 +2718,20 @@ useEffect(() => {
         
         // Use fallback events and format them
         const now = new Date();
-        const tickerEvents: Array<{text: string; isLive: boolean}> = [];
+        const tickerEvents: Array<{text: string; isLive: boolean; isSoon: boolean}> = [];
         
         for (const event of FALLBACK_EVENTS) {
           const eventDate = new Date(event.date);
           if (eventDate > now) {
             const timeStr = formatEventTime(eventDate, now);
-            tickerEvents.push({ text: `${event.title} ${timeStr}`, isLive: false });
+            tickerEvents.push({ text: `${event.title} ${timeStr}`, isLive: false, isSoon: false });
           }
         }
         
         if (tickerEvents.length > 0) {
           const finalText = `Next: ${tickerEvents.map(e => e.text).join(' • ')}`;
           console.log('🗓️ Using fallback ticker:', finalText);
-          setTickerEvents(tickerEvents);  // v3.19.42: Store event objects
+          setTickerEvents(tickerEvents);  // v3.19.45: Store event objects
           setTickerText(finalText);
         } else {
           setTickerEvents([]);
@@ -2748,7 +2754,7 @@ useEffect(() => {
         return `in ${hours}h`;
       } else {
         const mins = Math.floor(diff / (1000 * 60));
-        return mins > 0 ? `in ${mins}m` : '';  // v3.19.42: Empty string for live events (we show "Now in session" instead)
+        return mins > 0 ? `in ${mins}m` : '';  // v3.19.45: Empty string for live events (we show "Now in session" instead)
       }
     };
     
@@ -2871,7 +2877,7 @@ useEffect(() => {
   };
 
   const parseAndLoadSequence = ()=>{
-    const APP_VERSION = "v3.19.42-harmony-wheel";
+    const APP_VERSION = "v3.19.45-harmony-wheel";
     console.log('=== PARSE AND LOAD START ===');
     console.log('🏷️  APP VERSION:', APP_VERSION);
     console.log('Input text:', inputText);
@@ -2912,7 +2918,7 @@ useEffect(() => {
     const segments = cleanedInput.split(',').map(s => s.trim()).filter(Boolean);
     
     for (const segment of segments) {
-      // ✅ v3.19.42: Check for @directives FIRST - split multiple directives on same line
+      // ✅ v3.19.45: Check for @directives FIRST - split multiple directives on same line
       // Allow: "@KEY C @TEMPO 160 @LOOP" or "@KEY C, @TEMPO 160, @LOOP"
       if (segment.trim().startsWith('@')) {
         // Split by @ to get individual directives
@@ -2929,7 +2935,7 @@ useEffect(() => {
         // Parse bars: "|C Am F G|" or "|C Am|F G|" or "| C Am F G" (unclosed)
         const bars = segment.split('|').filter(s => s.trim());
         
-        // ✅ v3.19.42: Track last chord across bars for cross-bar ties
+        // ✅ v3.19.45: Track last chord across bars for cross-bar ties
         let lastChordOrRest: string | null = null;
         
         for (const bar of bars) {
@@ -2937,7 +2943,7 @@ useEffect(() => {
           const normalized = bar.trim().replace(/\s+/g, ' ');
           if (!normalized) continue;
           
-          // ✅ v3.19.42: Parse # comments as single tokens
+          // ✅ v3.19.45: Parse # comments as single tokens
           const tokens: string[] = [];
           let i = 0;
           while (i < normalized.length) {
@@ -2967,7 +2973,7 @@ useEffect(() => {
             }
           }
           
-          // ✅ v3.19.42: Group ties with their preceding chord/rest (including cross-bar)
+          // ✅ v3.19.45: Group ties with their preceding chord/rest (including cross-bar)
           const groupedItems: Array<{text: string, count: number, isComment: boolean}> = [];
           
           for (let j = 0; j < tokens.length; j++) {
@@ -2982,7 +2988,7 @@ useEffect(() => {
                 // Tie to previous item in same bar
                 groupedItems[groupedItems.length - 1].count++;
               } else if (j === 0 && lastChordOrRest) {
-                // ✅ v3.19.42: Cross-bar tie! Just add a * with duration
+                // ✅ v3.19.45: Cross-bar tie! Just add a * with duration
                 // The * won't retrigger, it just holds the previous chord
                 groupedItems.push({text: '*', count: 1, isComment: false});
               }
@@ -3468,7 +3474,7 @@ useEffect(() => {
         playChord(notesToPlay, noteDuration);
       }
       
-      // ✅ v3.19.42: Mark as preview mode for eraser display
+      // ✅ v3.19.45: Mark as preview mode for eraser display
       lastInputWasPreviewRef.current = true;
       
       // NOW start the playback loop
@@ -3774,11 +3780,11 @@ useEffect(() => {
       }
       
       // Create MIDI notes - use voice leading to transition smoothly between chords
-      // v3.19.42: Smart voice leading - start in lower octave, use previous chord position
+      // v3.19.45: Smart voice leading - start in lower octave, use previous chord position
       const baseMidi = 48; // Start lower (C3) to ensure all notes fit in keyboard window (48-71)
       let midiNotes = intervals.map(interval => baseMidi + rootPc + interval);
       
-      // v3.19.42: Voice leading - if there was a previous chord, find closest inversion
+      // v3.19.45: Voice leading - if there was a previous chord, find closest inversion
       if (lastPlayedMidiNotesRef.current.length > 0) {
         const prevChord = lastPlayedMidiNotesRef.current;
         const prevCenter = prevChord.reduce((a,b) => a+b, 0) / prevChord.length;
@@ -4265,7 +4271,7 @@ useEffect(() => {
         togglePlayPause();
       } else if (e.key === 'Escape') {
         e.preventDefault();
-        // ✅ v3.19.42: Escape closes everything
+        // ✅ v3.19.45: Escape closes everything
         stopPlayback();
         setShowKeyDropdown(false);
         setShowTransposeDropdown(false);
@@ -4445,7 +4451,7 @@ useEffect(() => {
     const currentItem = sequence[seqIndex];
     const isTie = currentItem?.kind === "comment" && currentItem.raw === '*';
     
-    // ✅ v3.19.42: Comments with chords should also play audio
+    // ✅ v3.19.45: Comments with chords should also play audio
     const isPlayableItem = (currentItem?.kind === "chord" || 
                            (currentItem?.kind === "comment" && currentItem.chord)) && 
                            currentItem.chord && 
@@ -4465,7 +4471,7 @@ useEffect(() => {
     // Duration is in bars (1=whole, 0.5=half, 0.25=quarter)
     const itemDuration = currentItem?.duration || 1.0; // Default to 1 bar if not specified
     
-    // ✅ v3.19.42: Only # comments WITHOUT chords have zero duration
+    // ✅ v3.19.45: Only # comments WITHOUT chords have zero duration
     const isAnnotationOnly = currentItem?.kind === "comment" && 
                             currentItem.raw?.startsWith('#') && 
                             !currentItem.chord;
@@ -4478,7 +4484,7 @@ useEffect(() => {
       // Advance to next item
       let nextIndex = seqIndex + 1;
       
-      // ✅ v3.19.42: Don't skip comments - they have duration:0 and advance instantly
+      // ✅ v3.19.45: Don't skip comments - they have duration:0 and advance instantly
       // Only skip titles and @modifiers
       while (nextIndex < sequence.length) {
         const nextItem = sequence[nextIndex];
@@ -4495,7 +4501,7 @@ useEffect(() => {
       if (nextIndex < sequence.length) {
         setSeqIndex(nextIndex);
         
-        // ✅ v3.19.42: For display, show the chord being held, not the tie/annotation
+        // ✅ v3.19.45: For display, show the chord being held, not the tie/annotation
         const nextItem = sequence[nextIndex];
         const isTie = nextItem?.kind === "comment" && nextItem.raw === '*';
         const isAnnotation = nextItem?.kind === "comment" && nextItem.raw?.startsWith('#') && !nextItem.chord;
@@ -4518,7 +4524,7 @@ useEffect(() => {
             startIdx++;
           }
           setSeqIndex(startIdx);
-          setDisplayIndex(startIdx); // ✅ v3.19.42: Highlight on loop
+          setDisplayIndex(startIdx); // ✅ v3.19.45: Highlight on loop
           applySeqItem(sequence[startIdx]);
           setTimeout(() => selectCurrentItem(), 0);
         } else {
@@ -5352,7 +5358,7 @@ useEffect(() => {
       setActiveWithTrail("I", absName || "C"); setCenterLabel("C"); return;
     }
     const gPresentTap = visitorActiveRef.current && (isSubset([7,11,2]) || isSubset([7,11,2,5]));
-    // ✅ v3.19.42: V7 detection - exclude Em7 [4,7,11,2] by checking !pcsRel.has(4)
+    // ✅ v3.19.45: V7 detection - exclude Em7 [4,7,11,2] by checking !pcsRel.has(4)
     if (!visitorActiveRef.current && (isSubset([7,11,2]) || isSubset([7,11,2,5])) && !pcsRel.has(4)) {
       if (subdomActiveRef.current) subSpinExit();
       setSubdomActive(false); subdomLatchedRef.current=false; subHasSpunRef.current=false;
@@ -7226,7 +7232,7 @@ useEffect(() => {
     
     const mainGain = ctx.createGain();
     mainGain.gain.value = 0;
-    // ✅ v3.19.42: RESTORED v3.19.42 audio settings - no changes to audio
+    // ✅ v3.19.45: RESTORED v3.19.45 audio settings - no changes to audio
     const mobileBoost = !isDesktop ? 2.0 : 1.5;
     const chordSafety = 0.5; // Divide by 2 since chords can have 3-4 notes
     mainGain.gain.linearRampToValueAtTime(0.6 * velocity * chordSafety, now + 0.015);
@@ -7687,7 +7693,7 @@ useEffect(() => {
   const keyboardHighlightNotes = (() => {
     // Priority 1: If from preview/playlist, show yellow highlights
     if (latchedAbsNotes.length > 0 && lastInputWasPreviewRef.current) {
-      // ✅ v3.19.42: Filter to visible keyboard range to prevent duplicates
+      // ✅ v3.19.45: Filter to visible keyboard range to prevent duplicates
       const filtered = latchedAbsNotes.filter(note => note >= KBD_LOW && note <= KBD_HIGH);
       console.log('🎹 HIGHLIGHT: latchedAbsNotes:', latchedAbsNotes, '→ filtered:', filtered);
       return new Set(filtered);
@@ -8102,7 +8108,7 @@ useEffect(() => {
         )}
         {/* END TESTING - Logo hidden */}
         
-        {/* ✅ v3.19.42: Skill selector moved to bottom row - removed from upper right */}
+        {/* ✅ v3.19.45: Skill selector moved to bottom row - removed from upper right */}
 
         {/* Wheel - v3.18.34: Keep wheel position normal, move controls instead */}
         <div style={{
@@ -8510,7 +8516,7 @@ useEffect(() => {
           const rhDisplaySet = ()=>{ 
             const phys=[...rightHeld.current], sus=sustainOn.current?[...rightSus.current]:[], merged=new Set<number>([...phys,...sus]);
             let src = Array.from(new Set(Array.from(merged))).sort((a,b)=>a-b);
-            // ✅ v3.19.42: Don't use latchedAbsNotes for disp during playback - it's already in keyboardHighlightNotes
+            // ✅ v3.19.45: Don't use latchedAbsNotes for disp during playback - it's already in keyboardHighlightNotes
             // Only use latchedAbsNotes for LATCH_PREVIEW (step recording), not for sequence playback
             if(src.length===0 && LATCH_PREVIEW && lastInputWasPreviewRef.current && latchedAbsNotes.length && !isPlaying){
               src = [...new Set(latchedAbsNotes)].sort((a,b)=>a-b);
@@ -8572,13 +8578,13 @@ useEffect(() => {
               {/* UNIFIED LAYOUT - Same structure always, no shifting */}
               
               
-              {/* v3.19.42: Two-line display - ALWAYS visible, FIXED HEIGHT */}
+              {/* v3.19.45: Two-line display - ALWAYS visible, FIXED HEIGHT */}
               <div style={{
                 border:'1px solid #374151',
                 borderRadius:8,
                 background:'#0f172a',
                 overflow:'hidden',
-                marginBottom: 8,  /* v3.19.42: Add space to prevent overlap with buttons below */
+                marginBottom: 8,  /* v3.19.45: Add space to prevent overlap with buttons below */
                 height: 56  /* FIXED HEIGHT - never changes */
               }}>
                 
@@ -8812,19 +8818,30 @@ useEffect(() => {
                             {[0, 1].map(copyIdx => (
                               <div key={copyIdx} className="ticker-item">
                                 {tickerEvents.map((eventObj, idx) => (
-                                  <span 
+                                  <a
                                     key={`${copyIdx}-${idx}`}
+                                    href="https://beatkitchen.io/classroom/"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
                                     style={{
                                       display: 'inline-block',
                                       paddingRight: '150px',
                                       fontStyle:'italic',
-                                      color: eventObj.isLive ? '#EF4444' : '#39FF14',
-                                      fontWeight: eventObj.isLive ? 600 : 400
+                                      color: eventObj.isLive ? '#EF4444' : eventObj.isSoon ? '#FF8C00' : '#39FF14',
+                                      fontWeight: eventObj.isLive ? 600 : eventObj.isSoon ? 500 : 400,
+                                      textDecoration: 'none',
+                                      cursor: 'pointer'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                      e.currentTarget.style.opacity = '0.8';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                      e.currentTarget.style.opacity = '1';
                                     }}
                                   >
                                     {eventObj.isLive ? '🔴 Now in session: ' : (idx === 0 ? 'Next ' : 'Coming up: ')}
                                     {eventObj.text.replace(/@/g, 'with ')}
-                                  </span>
+                                  </a>
                                 ))}
                               </div>
                             ))}
@@ -9049,7 +9066,7 @@ useEffect(() => {
                       const m=+mStr;
                       const held=disp.has(m); // MIDI notes (transposed to window)
                       const highlighted = keyboardHighlightNotes.has(m); // Preview/playback notes
-                      // ✅ v3.19.42: Don't double-check latchedAbsNotes (already in highlighted or disp)
+                      // ✅ v3.19.45: Don't double-check latchedAbsNotes (already in highlighted or disp)
                       if (!held && !highlighted) return null;
                       
                       // ✅ Chord-aware spelling - use chord root for context
@@ -9064,7 +9081,7 @@ useEffect(() => {
                         const rootMatch = chordToUse.match(/^([A-G][b#]?)/);
                         if (rootMatch) {
                           let chordRoot = rootMatch[1];
-                          // ✅ v3.19.42: Convert sharps to flats for NAME_TO_PC lookup
+                          // ✅ v3.19.45: Convert sharps to flats for NAME_TO_PC lookup
                           const sharpToFlat: Record<string, string> = {
                             'C#': 'Db', 'D#': 'Eb', 'F#': 'Gb', 'G#': 'Ab', 'A#': 'Bb'
                           };
@@ -9135,7 +9152,7 @@ useEffect(() => {
                       const m=+mStr;
                       const held=disp.has(m);
                       const highlighted = keyboardHighlightNotes.has(m);
-                      // ✅ v3.19.42: Don't double-check latchedAbsNotes
+                      // ✅ v3.19.45: Don't double-check latchedAbsNotes
                       if (!held && !highlighted) return null;
                       
                       // ✅ Chord-aware spelling - use chord root for context
@@ -9150,7 +9167,7 @@ useEffect(() => {
                         const rootMatch = chordToUse.match(/^([A-G][b#]?)/);
                         if (rootMatch) {
                           let chordRoot = rootMatch[1];
-                          // ✅ v3.19.42: Convert sharps to flats for NAME_TO_PC lookup
+                          // ✅ v3.19.45: Convert sharps to flats for NAME_TO_PC lookup
                           const sharpToFlat: Record<string, string> = {
                             'C#': 'Db', 'D#': 'Eb', 'F#': 'Gb', 'G#': 'Ab', 'A#': 'Bb'
                           };
@@ -9423,7 +9440,7 @@ useEffect(() => {
               </div>
               
               
-              {/* Row: Transport Controls + Step Record - v3.19.42: Play button first, fixed size */}
+              {/* Row: Transport Controls + Step Record - v3.19.45: Play button first, fixed size */}
               {skillLevel === "EXPERT" && sequence.length > 0 && (
                 <div style={{display:'flex', gap:8, alignItems:'center', marginTop:6, marginBottom:0, flexWrap:'wrap'  /* ✅ marginBottom:0 to prevent scrollbar */}}>
                   
@@ -9432,7 +9449,7 @@ useEffect(() => {
                     onClick={togglePlayPause}
                     style={{
                       padding:'6px 10px',
-                      border: isPlaying ? '2px solid #F97316' : '2px solid #10B981',  /* v3.19.42: Orange for stop */
+                      border: isPlaying ? '2px solid #F97316' : '2px solid #10B981',  /* v3.19.45: Orange for stop */
                       borderRadius:8, 
                       background: isPlaying ? '#2a1e1a' : '#1a3a2a', 
                       color:'#fff', 
@@ -9442,7 +9459,7 @@ useEffect(() => {
                       display:'flex',
                       alignItems:'center',
                       justifyContent:'center',
-                      minWidth:44  /* v3.19.42: Fixed width to prevent shift */
+                      minWidth:44  /* v3.19.45: Fixed width to prevent shift */
                     }}
                     title={isPlaying ? "Stop (Space)" : "Play (Space)"}
                   >
@@ -9907,13 +9924,13 @@ useEffect(() => {
                 {/* Row 1: Performance Mode */}
                 <div style={{display:'flex', gap:8, alignItems:'center', flexWrap:'wrap'}}>
                   
-                  {/* ✅ v3.19.42: Play/Stop button in non-EXPERT modes (when sequence loaded) */}
+                  {/* ✅ v3.19.45: Play/Stop button in non-EXPERT modes (when sequence loaded) */}
                   {skillLevel !== "EXPERT" && sequence.length > 0 && (
                     <button 
                       onClick={togglePlayPause}
                       style={{
                         padding:'8px 12px',
-                        border: isPlaying ? '2px solid #F97316' : '2px solid #10B981',  /* v3.19.42: Orange for stop */
+                        border: isPlaying ? '2px solid #F97316' : '2px solid #10B981',  /* v3.19.45: Orange for stop */
                         borderRadius:6, 
                         background: isPlaying ? '#2a1e1a' : '#1a3a2a', 
                         color:'#fff', 
@@ -9924,7 +9941,7 @@ useEffect(() => {
                         alignItems:'center',
                         justifyContent:'center',
                         lineHeight: 1,
-                        minWidth:48  /* v3.19.42: Fixed width to prevent shift */
+                        minWidth:48  /* v3.19.45: Fixed width to prevent shift */
                       }}
                       title={isPlaying ? "Stop (Space)" : "Play (Space)"}
                     >
@@ -9976,7 +9993,7 @@ useEffect(() => {
                     <span style={{fontSize:10, opacity:0.6}}>{performanceMode ? '▼' : '▶'}</span>
                   </button>
                   
-                  {/* ✅ v3.19.42: Custom skill dropdown with icon */}
+                  {/* ✅ v3.19.45: Custom skill dropdown with icon */}
                   <div style={{ marginLeft: 'auto', position: 'relative' }}>
                     <select
                       value={skillLevel}
@@ -10472,6 +10489,6 @@ useEffect(() => {
   );
 }
 
-// HarmonyWheel v3.19.42 - Compiler fix + E7 debugging
+// HarmonyWheel v3.19.45 - Compiler fix + E7 debugging
 
-// EOF - HarmonyWheel.tsx v3.19.42
+// EOF - HarmonyWheel.tsx v3.19.45
