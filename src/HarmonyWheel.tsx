@@ -1,5 +1,5 @@
 /*
- * HarmonyWheel.tsx — v3.19.16 🔧 Compiler Fix + Minimal Logging
+ * HarmonyWheel.tsx — v3.19.29 🔧 Compiler Fix + Minimal Logging
  * 
  * 🔧 TYPESCRIPT COMPILER FIX:
  * - Fixed: absName used before declaration (line 4685 before 4747)
@@ -1858,7 +1858,7 @@ import {
   parseSongMetadata
 } from "./lib/songManager";
 
-const HW_VERSION = 'v3.19.16';
+const HW_VERSION = 'v3.19.29';
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -2346,7 +2346,7 @@ useEffect(() => {
   const lastInputWasPreviewRef = useRef(false);
 
   const lastMidiEventRef = useRef<"on"|"off"|"cc"|"other">("other");
-  const lastPlayedMidiNotesRef = useRef<number[]>([]); // v3.19.16: For voice leading in sequencer
+  const lastPlayedMidiNotesRef = useRef<number[]>([]); // v3.19.29: For voice leading in sequencer
 
 
   const bindToInput=(id:string, acc:any)=>{
@@ -2558,12 +2558,198 @@ useEffect(() => {
   const [songTitle, setSongTitle] = useState(""); // Static song title from @TITLE
   const [bannerMessage, setBannerMessage] = useState(""); // ✅ Configurable banner message from @BANNER
   
+  // v3.19.29: Calendar events for ticker
+  const [calendarEvents, setCalendarEvents] = useState<Array<{
+    title: string;
+    start: Date;
+    end: Date;
+    isLive: boolean;
+  }>>([]);
+  const [tickerText, setTickerText] = useState("Loading schedule...");
+  const [tickerEvents, setTickerEvents] = useState<string[]>([]);  // v3.19.29: Store individual events for styling
+  
   // Autoload preloaded playlist on mount
   useEffect(() => {
     if (inputText && sequence.length === 0) {
       parseAndLoadSequence();
     }
   }, []); // Run once on mount
+  
+  // v3.19.29: Fetch calendar events from Teamup API
+  useEffect(() => {
+    const fetchCalendarEvents = async () => {
+      console.log('🗓️ Fetching Teamup calendar events...');
+      
+      // v3.19.29: FALLBACK - Hardcoded events (update these manually if API fails)
+      const FALLBACK_EVENTS = [
+        { title: 'Music Theory Gym', date: '2025-01-14T18:00:00-08:00' },
+        { title: 'Office Hours', date: '2025-01-15T15:00:00-08:00' },
+        { title: 'Rhythm Workshop', date: '2025-01-16T19:00:00-08:00' }
+      ];
+      
+      try {
+        const TEAMUP_CALENDAR_KEY = 'ks6brk633c2o4cdi4o';  // BeatKitchenSchool read-only link
+        const TEAMUP_API_KEY = 'bb96785e7f5939b9861b22175de7715b16410337614c923d161c7ff2b1f510d3';
+        
+        // Get events for next 30 days
+        const today = new Date();
+        const endDate = new Date(today);
+        endDate.setDate(today.getDate() + 30);
+        
+        const formatDate = (d: Date) => {
+          const year = d.getFullYear();
+          const month = String(d.getMonth() + 1).padStart(2, '0');
+          const day = String(d.getDate()).padStart(2, '0');
+          return `${year}-${month}-${day}`;
+        };
+        
+        const startDateStr = formatDate(today);
+        const endDateStr = formatDate(endDate);
+        
+        const url = `https://api.teamup.com/${TEAMUP_CALENDAR_KEY}/events?startDate=${startDateStr}&endDate=${endDateStr}`;
+        
+        console.log('🗓️ Fetching from Teamup:', url);
+        
+        const response = await fetch(url, {
+          headers: {
+            'Teamup-Token': TEAMUP_API_KEY,
+            'Accept': 'application/json'
+          }
+        });
+        
+        console.log('🗓️ Response status:', response.status);
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('🗓️ ❌ Teamup API error:', response.status, errorText);
+          throw new Error(`Teamup API returned ${response.status}: ${errorText}`);
+        }
+        
+        const data = await response.json();
+        console.log('🗓️ ✅ Teamup response:', data);
+        
+        if (!data.events || data.events.length === 0) {
+          throw new Error('No events found in Teamup calendar');
+        }
+        
+        // Filter and sort events
+        const now = new Date();
+        const upcomingEvents = data.events
+          .map((event: any) => ({
+            title: event.title,
+            start: new Date(event.start_dt),
+            end: new Date(event.end_dt),
+            subcalendar_ids: event.subcalendar_ids || []
+          }))
+          .filter((e: any) => e.start > now)
+          .sort((a: any, b: any) => a.start.getTime() - b.start.getTime());
+        
+        console.log('🗓️ Total upcoming events:', upcomingEvents.length);
+        
+        // Categorize events
+        const theoryGyms = upcomingEvents.filter((e: any) => 
+          e.title.toLowerCase().includes('theory')
+        );
+        const officeHours = upcomingEvents.filter((e: any) => 
+          e.title.toLowerCase().includes('office')
+        );
+        const otherGyms = upcomingEvents.filter((e: any) => 
+          !e.title.toLowerCase().includes('theory') && 
+          !e.title.toLowerCase().includes('office')
+        );
+        
+        console.log('🗓️ Theory gyms:', theoryGyms.length);
+        console.log('🗓️ Office hours:', officeHours.length);
+        console.log('🗓️ Other events:', otherGyms.length);
+        
+        // Build ticker: 1 theory gym, 1 office hours, 1 other event
+        const tickerEvents: string[] = [];
+        
+        if (theoryGyms.length > 0) {
+          const event = theoryGyms[0];
+          const timeStr = formatEventTime(event.start, now);
+          const cleanTitle = event.title.replace(/Live\s+/i, '').trim();
+          console.log('🗓️ Next theory gym:', cleanTitle, '→', timeStr);
+          tickerEvents.push(`${cleanTitle} ${timeStr}`);
+        }
+        
+        if (officeHours.length > 0) {
+          const event = officeHours[0];
+          const timeStr = formatEventTime(event.start, now);
+          const cleanTitle = event.title.replace(/Live\s+/i, '').trim();
+          console.log('🗓️ Next office hours:', cleanTitle, '→', timeStr);
+          tickerEvents.push(`${cleanTitle} ${timeStr}`);
+        }
+        
+        if (otherGyms.length > 0) {
+          const event = otherGyms[0];
+          const timeStr = formatEventTime(event.start, now);
+          const cleanTitle = event.title.replace(/Live\s+/i, '').trim();
+          console.log('🗓️ Next other event:', cleanTitle, '→', timeStr);
+          tickerEvents.push(`${cleanTitle} ${timeStr}`);
+        }
+        
+        if (tickerEvents.length > 0) {
+          const finalText = `Next: ${tickerEvents.join(' • ')}`; // Keep for fallback
+          console.log('🗓️ ✅ Setting ticker text:', finalText);
+          setTickerEvents(tickerEvents);  // v3.19.29: Store array for styling
+          setTickerText(finalText);
+        } else {
+          console.log('🗓️ No categorized events found');
+          setTickerEvents([]);
+          setTickerText("Check beatkitchen.io/classroom for upcoming events");
+        }
+        
+      } catch (error) {
+        console.warn('⚠️ Teamup fetch failed, using fallback events:', error);
+        
+        // Use fallback events and format them
+        const now = new Date();
+        const tickerEvents: string[] = [];
+        
+        for (const event of FALLBACK_EVENTS) {
+          const eventDate = new Date(event.date);
+          if (eventDate > now) {
+            const timeStr = formatEventTime(eventDate, now);
+            tickerEvents.push(`${event.title} ${timeStr}`);
+          }
+        }
+        
+        if (tickerEvents.length > 0) {
+          const finalText = `Next: ${tickerEvents.join(' • ')}`;
+          console.log('🗓️ Using fallback ticker:', finalText);
+          setTickerEvents(tickerEvents);  // v3.19.29: Store array
+          setTickerText(finalText);
+        } else {
+          setTickerEvents([]);
+          setTickerText("Check beatkitchen.io/classroom for upcoming events");
+        }
+      }
+    };
+    
+    // Helper to format event time
+    const formatEventTime = (eventDate: Date, now: Date) => {
+      const diff = eventDate.getTime() - now.getTime();
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const days = Math.floor(hours / 24);
+      
+      if (days > 7) {
+        return eventDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      } else if (days > 0) {
+        return `in ${days}d`;
+      } else if (hours > 0) {
+        return `in ${hours}h`;
+      } else {
+        const mins = Math.floor(diff / (1000 * 60));
+        return mins > 0 ? `in ${mins}m` : 'starting now';
+      }
+    };
+    
+    fetchCalendarEvents();
+    // Refetch every 5 minutes
+    const interval = setInterval(fetchCalendarEvents, 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, []);
   
   // Comment only shows if immediately following current chord
   const activeComment = (() => {
@@ -2678,7 +2864,7 @@ useEffect(() => {
   };
 
   const parseAndLoadSequence = ()=>{
-    const APP_VERSION = "v3.19.16-harmony-wheel";
+    const APP_VERSION = "v3.19.29-harmony-wheel";
     console.log('=== PARSE AND LOAD START ===');
     console.log('🏷️  APP VERSION:', APP_VERSION);
     console.log('Input text:', inputText);
@@ -2719,7 +2905,7 @@ useEffect(() => {
     const segments = cleanedInput.split(',').map(s => s.trim()).filter(Boolean);
     
     for (const segment of segments) {
-      // ✅ v3.19.16: Check for @directives FIRST - split multiple directives on same line
+      // ✅ v3.19.29: Check for @directives FIRST - split multiple directives on same line
       // Allow: "@KEY C @TEMPO 160 @LOOP" or "@KEY C, @TEMPO 160, @LOOP"
       if (segment.trim().startsWith('@')) {
         // Split by @ to get individual directives
@@ -2736,7 +2922,7 @@ useEffect(() => {
         // Parse bars: "|C Am F G|" or "|C Am|F G|" or "| C Am F G" (unclosed)
         const bars = segment.split('|').filter(s => s.trim());
         
-        // ✅ v3.19.16: Track last chord across bars for cross-bar ties
+        // ✅ v3.19.29: Track last chord across bars for cross-bar ties
         let lastChordOrRest: string | null = null;
         
         for (const bar of bars) {
@@ -2744,7 +2930,7 @@ useEffect(() => {
           const normalized = bar.trim().replace(/\s+/g, ' ');
           if (!normalized) continue;
           
-          // ✅ v3.19.16: Parse # comments as single tokens
+          // ✅ v3.19.29: Parse # comments as single tokens
           const tokens: string[] = [];
           let i = 0;
           while (i < normalized.length) {
@@ -2774,7 +2960,7 @@ useEffect(() => {
             }
           }
           
-          // ✅ v3.19.16: Group ties with their preceding chord/rest (including cross-bar)
+          // ✅ v3.19.29: Group ties with their preceding chord/rest (including cross-bar)
           const groupedItems: Array<{text: string, count: number, isComment: boolean}> = [];
           
           for (let j = 0; j < tokens.length; j++) {
@@ -2789,7 +2975,7 @@ useEffect(() => {
                 // Tie to previous item in same bar
                 groupedItems[groupedItems.length - 1].count++;
               } else if (j === 0 && lastChordOrRest) {
-                // ✅ v3.19.16: Cross-bar tie! Just add a * with duration
+                // ✅ v3.19.29: Cross-bar tie! Just add a * with duration
                 // The * won't retrigger, it just holds the previous chord
                 groupedItems.push({text: '*', count: 1, isComment: false});
               }
@@ -3275,7 +3461,7 @@ useEffect(() => {
         playChord(notesToPlay, noteDuration);
       }
       
-      // ✅ v3.19.16: Mark as preview mode for eraser display
+      // ✅ v3.19.29: Mark as preview mode for eraser display
       lastInputWasPreviewRef.current = true;
       
       // NOW start the playback loop
@@ -3581,11 +3767,11 @@ useEffect(() => {
       }
       
       // Create MIDI notes - use voice leading to transition smoothly between chords
-      // v3.19.16: Smart voice leading - start in lower octave, use previous chord position
+      // v3.19.29: Smart voice leading - start in lower octave, use previous chord position
       const baseMidi = 48; // Start lower (C3) to ensure all notes fit in keyboard window (48-71)
       let midiNotes = intervals.map(interval => baseMidi + rootPc + interval);
       
-      // v3.19.16: Voice leading - if there was a previous chord, find closest inversion
+      // v3.19.29: Voice leading - if there was a previous chord, find closest inversion
       if (lastPlayedMidiNotesRef.current.length > 0) {
         const prevChord = lastPlayedMidiNotesRef.current;
         const prevCenter = prevChord.reduce((a,b) => a+b, 0) / prevChord.length;
@@ -4072,7 +4258,7 @@ useEffect(() => {
         togglePlayPause();
       } else if (e.key === 'Escape') {
         e.preventDefault();
-        // ✅ v3.19.16: Escape closes everything
+        // ✅ v3.19.29: Escape closes everything
         stopPlayback();
         setShowKeyDropdown(false);
         setShowTransposeDropdown(false);
@@ -4252,7 +4438,7 @@ useEffect(() => {
     const currentItem = sequence[seqIndex];
     const isTie = currentItem?.kind === "comment" && currentItem.raw === '*';
     
-    // ✅ v3.19.16: Comments with chords should also play audio
+    // ✅ v3.19.29: Comments with chords should also play audio
     const isPlayableItem = (currentItem?.kind === "chord" || 
                            (currentItem?.kind === "comment" && currentItem.chord)) && 
                            currentItem.chord && 
@@ -4272,7 +4458,7 @@ useEffect(() => {
     // Duration is in bars (1=whole, 0.5=half, 0.25=quarter)
     const itemDuration = currentItem?.duration || 1.0; // Default to 1 bar if not specified
     
-    // ✅ v3.19.16: Only # comments WITHOUT chords have zero duration
+    // ✅ v3.19.29: Only # comments WITHOUT chords have zero duration
     const isAnnotationOnly = currentItem?.kind === "comment" && 
                             currentItem.raw?.startsWith('#') && 
                             !currentItem.chord;
@@ -4285,7 +4471,7 @@ useEffect(() => {
       // Advance to next item
       let nextIndex = seqIndex + 1;
       
-      // ✅ v3.19.16: Don't skip comments - they have duration:0 and advance instantly
+      // ✅ v3.19.29: Don't skip comments - they have duration:0 and advance instantly
       // Only skip titles and @modifiers
       while (nextIndex < sequence.length) {
         const nextItem = sequence[nextIndex];
@@ -4302,7 +4488,7 @@ useEffect(() => {
       if (nextIndex < sequence.length) {
         setSeqIndex(nextIndex);
         
-        // ✅ v3.19.16: For display, show the chord being held, not the tie/annotation
+        // ✅ v3.19.29: For display, show the chord being held, not the tie/annotation
         const nextItem = sequence[nextIndex];
         const isTie = nextItem?.kind === "comment" && nextItem.raw === '*';
         const isAnnotation = nextItem?.kind === "comment" && nextItem.raw?.startsWith('#') && !nextItem.chord;
@@ -4325,7 +4511,7 @@ useEffect(() => {
             startIdx++;
           }
           setSeqIndex(startIdx);
-          setDisplayIndex(startIdx); // ✅ v3.19.16: Highlight on loop
+          setDisplayIndex(startIdx); // ✅ v3.19.29: Highlight on loop
           applySeqItem(sequence[startIdx]);
           setTimeout(() => selectCurrentItem(), 0);
         } else {
@@ -5159,7 +5345,7 @@ useEffect(() => {
       setActiveWithTrail("I", absName || "C"); setCenterLabel("C"); return;
     }
     const gPresentTap = visitorActiveRef.current && (isSubset([7,11,2]) || isSubset([7,11,2,5]));
-    // ✅ v3.19.16: V7 detection - exclude Em7 [4,7,11,2] by checking !pcsRel.has(4)
+    // ✅ v3.19.29: V7 detection - exclude Em7 [4,7,11,2] by checking !pcsRel.has(4)
     if (!visitorActiveRef.current && (isSubset([7,11,2]) || isSubset([7,11,2,5])) && !pcsRel.has(4)) {
       if (subdomActiveRef.current) subSpinExit();
       setSubdomActive(false); subdomLatchedRef.current=false; subHasSpunRef.current=false;
@@ -7033,7 +7219,7 @@ useEffect(() => {
     
     const mainGain = ctx.createGain();
     mainGain.gain.value = 0;
-    // ✅ v3.19.16: RESTORED v3.19.2 audio settings - no changes to audio
+    // ✅ v3.19.29: RESTORED v3.19.29 audio settings - no changes to audio
     const mobileBoost = !isDesktop ? 2.0 : 1.5;
     const chordSafety = 0.5; // Divide by 2 since chords can have 3-4 notes
     mainGain.gain.linearRampToValueAtTime(0.6 * velocity * chordSafety, now + 0.015);
@@ -7494,7 +7680,7 @@ useEffect(() => {
   const keyboardHighlightNotes = (() => {
     // Priority 1: If from preview/playlist, show yellow highlights
     if (latchedAbsNotes.length > 0 && lastInputWasPreviewRef.current) {
-      // ✅ v3.19.16: Filter to visible keyboard range to prevent duplicates
+      // ✅ v3.19.29: Filter to visible keyboard range to prevent duplicates
       const filtered = latchedAbsNotes.filter(note => note >= KBD_LOW && note <= KBD_HIGH);
       console.log('🎹 HIGHLIGHT: latchedAbsNotes:', latchedAbsNotes, '→ filtered:', filtered);
       return new Set(filtered);
@@ -7909,7 +8095,7 @@ useEffect(() => {
         )}
         {/* END TESTING - Logo hidden */}
         
-        {/* ✅ v3.19.16: Skill selector moved to bottom row - removed from upper right */}
+        {/* ✅ v3.19.29: Skill selector moved to bottom row - removed from upper right */}
 
         {/* Wheel - v3.18.34: Keep wheel position normal, move controls instead */}
         <div style={{
@@ -8317,7 +8503,7 @@ useEffect(() => {
           const rhDisplaySet = ()=>{ 
             const phys=[...rightHeld.current], sus=sustainOn.current?[...rightSus.current]:[], merged=new Set<number>([...phys,...sus]);
             let src = Array.from(new Set(Array.from(merged))).sort((a,b)=>a-b);
-            // ✅ v3.19.16: Don't use latchedAbsNotes for disp during playback - it's already in keyboardHighlightNotes
+            // ✅ v3.19.29: Don't use latchedAbsNotes for disp during playback - it's already in keyboardHighlightNotes
             // Only use latchedAbsNotes for LATCH_PREVIEW (step recording), not for sequence playback
             if(src.length===0 && LATCH_PREVIEW && lastInputWasPreviewRef.current && latchedAbsNotes.length && !isPlaying){
               src = [...new Set(latchedAbsNotes)].sort((a,b)=>a-b);
@@ -8379,45 +8565,128 @@ useEffect(() => {
               {/* UNIFIED LAYOUT - Same structure always, no shifting */}
               
               
-              {/* Row 1: Sequence display - v3.18.129: Show when EXPERT OR playing */}
-              {(skillLevel === "EXPERT" || isPlaying) ? (
-                sequence.length > 0 ? (
-                  <div style={{
-                    border:'1px solid #374151',
-                    borderRadius:8,
-                    background:'#0f172a',
-                    overflow:'hidden',
-                    marginBottom: 0
-                  }}>
-                    {/* Song Title */}
-                    {songTitle && (
-                      <div style={{
-                        padding:'2px 8px',
-                        fontSize:11,
-                        fontWeight:600,
-                        color:'#39FF14',
-                        textAlign:'left',
-                        display:'flex',
-                        justifyContent:'space-between',
-                        alignItems:'center'
-                      }}>
-                        <span>{songTitle}</span>
-                        <span style={{fontSize:10, color:'#9CA3AF', fontWeight:400}}>
-                          {baseKey} major
-                        </span>
-                      </div>
-                    )}
-                    
-                    {/* Windowed sequence view */}
+              {/* v3.19.29: Two-line display - ALWAYS visible, FIXED HEIGHT */}
+              <div style={{
+                border:'1px solid #374151',
+                borderRadius:8,
+                background:'#0f172a',
+                overflow:'hidden',
+                marginBottom: 8,  /* v3.19.29: Add space to prevent overlap with buttons below */
+                height: 56  /* FIXED HEIGHT - never changes */
+              }}>
+                
+                {/* LINE 1 (Top Line - 28px fixed height) */}
+                <div style={{
+                  height: 28,
+                  padding:'2px 8px',
+                  fontSize:11,
+                  fontWeight:600,
+                  display:'flex',
+                  alignItems:'center',
+                  borderBottom:'1px solid #374151'
+                }}>
+                  {isPlaying && sequence.length > 0 && songTitle ? (
+                    /* Playing with sequence - show title + key */
+                    <>
+                      <span style={{color:'#39FF14', flex:1}}>{songTitle}</span>
+                      <span style={{fontSize:10, color:'#9CA3AF', fontWeight:400}}>
+                        {baseKey} major
+                      </span>
+                    </>
+                  ) : (
+                    /* Not playing or no sequence - show banner */
                     <div style={{
-                      padding:'4px 8px',
+                      color:'#6b7280',
+                      fontStyle:'italic',
+                      fontWeight:400,
+                      overflow:'hidden',
+                      textOverflow:'ellipsis',
+                      whiteSpace:'nowrap',
+                      width:'100%'
+                    }}>
+                      {(() => {
+                        const message = (bannerMessage && bannerMessage.trim())
+                          ? bannerMessage 
+                          : DEFAULT_BANNER;
+                        
+                        // Parse [[text|url]] links in banner
+                        const linkRegex = /\[\[([^\]|]+)\|([^\]]+)\]\]/g;
+                        const parts: React.ReactNode[] = [];
+                        let lastIndex = 0;
+                        let match;
+                        
+                        while ((match = linkRegex.exec(message)) !== null) {
+                          if (match.index > lastIndex) {
+                            parts.push(
+                              <span key={`text-${lastIndex}`}>
+                                {message.substring(lastIndex, match.index)}
+                              </span>
+                            );
+                          }
+                          
+                          const linkText = match[1];
+                          const linkUrl = match[2];
+                          parts.push(
+                            <a
+                              key={`link-${match.index}`}
+                              href={linkUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{
+                                color: '#39FF14',
+                                textDecoration: 'underline',
+                                cursor: 'pointer',
+                                background: 'rgba(57, 255, 20, 0.1)',
+                                padding: '1px 4px',
+                                borderRadius: '3px'
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.background = 'rgba(57, 255, 20, 0.2)';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.background = 'rgba(57, 255, 20, 0.1)';
+                              }}
+                            >
+                              {linkText}
+                            </a>
+                          );
+                          
+                          lastIndex = linkRegex.lastIndex;
+                        }
+                        
+                        if (lastIndex < message.length) {
+                          parts.push(
+                            <span key={`text-${lastIndex}`}>
+                              {message.substring(lastIndex)}
+                            </span>
+                          );
+                        }
+                        
+                        return parts.length > 0 ? parts : message;
+                      })()}
+                    </div>
+                  )}
+                </div>
+                
+                {/* LINE 2 (Bottom Line - 28px fixed height) */}
+                <div style={{
+                  height: 28,
+                  padding:'4px 0px',
+                  fontSize:12,
+                  display:'flex',
+                  alignItems:'center',
+                  overflow:'hidden',
+                  position:'relative'
+                }}>
+                  {isPlaying && sequence.length > 0 ? (
+                    /* Playing - show scrolling chord sequence (not clickable) */
+                    <div style={{
                       color:'#e5e7eb',
-                      fontSize:12,
-                      minHeight:24,
-                      display:'flex',
-                      alignItems:'center',
-                      justifyContent:'center',
-                      whiteSpace:'nowrap'
+                      whiteSpace:'nowrap',
+                      overflow:'hidden',
+                      width:'100%',
+                      paddingLeft:'8px',
+                      paddingRight:'8px'
                     }}>
                       {(() => {
                         const WINDOW_SIZE = 3;
@@ -8434,36 +8703,30 @@ useEffect(() => {
                               const isComment = item.kind === "comment";
                               const isTitle = item.kind === "title";
                               
-                              // ✅ v3.19.16: Highlight related items together
-                              // 1. Comment before current chord: #label: Chord
                               const isCommentForNextChord = isComment && 
                                                            item.raw?.startsWith('#') && 
                                                            item.raw?.includes(':') &&
                                                            globalIdx + 1 === displayIndex;
                               
-                              // 2. Tie after current chord: Chord * * *
                               const isTieAfterCurrent = item.raw === '*' && 
                                                        globalIdx > 0 &&
                                                        sequence[displayIndex]?.kind === "chord" &&
                                                        globalIdx > displayIndex;
                               
-                              // 3. Check if we're part of a tied group with current displayIndex
                               const isPartOfTiedGroup = (() => {
                                 if (item.raw !== '*') return false;
-                                // Walk backwards from this tie to find the chord it belongs to
                                 for (let k = globalIdx - 1; k >= 0; k--) {
-                                  if (sequence[k]?.raw === '*') continue; // Skip other ties
+                                  if (sequence[k]?.raw === '*') continue;
                                   if (sequence[k]?.kind === "chord") {
-                                    return k === displayIndex; // This tie belongs to current chord
+                                    return k === displayIndex;
                                   }
-                                  break; // Hit something else, not a tie group
+                                  break;
                                 }
                                 return false;
                               })();
                               
                               const shouldHighlight = isCurrent || isCommentForNextChord || isPartOfTiedGroup;
                               
-                              // ✅ Hide RHYTHM, LOOP, and TEMPO directives from display
                               const isConfig = item.kind === "modifier" && item.chord && 
                                 (item.chord.startsWith("RHYTHM") || 
                                  item.chord === "LOOP" || 
@@ -8483,9 +8746,7 @@ useEffect(() => {
                                 }}>
                                   {isComment ? (
                                     item.chord ? 
-                                      // Comment with chord: show both (e.g., "passing: Abm7")
                                       `${item.comment}: ${item.chord}` : 
-                                      // Regular comment: strip # and show text
                                       item.raw.replace(/^#\s*/, '')
                                   ) : item.raw}
                                 </span>
@@ -8496,158 +8757,90 @@ useEffect(() => {
                         );
                       })()}
                     </div>
-                  </div>
-                ) : (
-                  // ✅ Placeholder when no sequence loaded in EXPERT mode
-                  <div style={{
-                    border:'1px solid #374151',
-                    borderRadius:8,
-                    background:'#0f172a',
-                    padding:'8px 12px',
-                    marginBottom: 0,
-                    textAlign:'center',
-                    color:'#6b7280',
-                    fontSize:11,
-                    fontStyle:'italic'
-                  }}>
-                    Load a demo song or type chords above to begin
-                  </div>
-                )
-              ) : (
-                <div style={{
-                  border:'1px solid #374151',
-                  borderRadius:8,
-                  background:'#0f172a',
-                  padding:'8px 12px',
-                  marginBottom: 2,
-                  marginTop: 0,
-                  textAlign:'center',
-                  color:'#6b7280',
-                  fontSize:11,
-                  fontStyle:'italic',
-                  whiteSpace:'nowrap',
-                  overflow:'hidden',
-                  textOverflow:'ellipsis'
-                }}>
-                  {/* ✅ Dynamic banner message with link parsing */}
-                  {(() => {
-                    // ✅ Use DEFAULT_BANNER from demoSongs.ts - no more hardcoded messages!
-                    const message = (bannerMessage && bannerMessage.trim())
-                      ? bannerMessage 
-                      : DEFAULT_BANNER;
-                    // console.log('🎨 Banner message:', message);
-                    // console.log('🎨 bannerMessage state:', bannerMessage);
-                    // console.log('🎨 Using fallback?', bannerMessage === undefined || bannerMessage === null);
-                    
-                    // Parse [[link text|url]] format
-                    const linkRegex = /\[\[([^\|]+)\|([^\]]+)\]\]/g;
-                    const parts = [];
-                    let lastIndex = 0;
-                    let match;
-                    
-                    while ((match = linkRegex.exec(message)) !== null) {
-                      // Add text before link
-                      if (match.index > lastIndex) {
-                        parts.push(
-                          <span key={`text-${lastIndex}`}>
-                            {message.substring(lastIndex, match.index)}
-                          </span>
-                        );
-                      }
-                      
-                      // Add link
-                      const [, linkText, url] = match;
-                      const isExpertButton = linkText.toLowerCase().includes('expert');
-                      
-                      if (isExpertButton) {
-                        parts.push(
-                          <button
-                            key={`link-${match.index}`}
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              setSkillLevel('EXPERT');
-                            }}
-                            style={{
-                              color: '#39FF14',
-                              cursor: 'pointer',
-                              textDecoration: 'none',
-                              fontWeight: 600,
-                              background: 'rgba(57, 255, 20, 0.1)',
-                              border: '1px solid transparent',
-                              padding: '2px 6px',
-                              margin: '0 2px',
-                              borderRadius: '3px',
-                              font: 'inherit',
-                              fontSize: 11,
-                              fontStyle: 'normal',
-                              display: 'inline-block',
-                              position: 'relative',
-                              zIndex: 9999,
-                              pointerEvents: 'auto',
-                              userSelect: 'none',
-                              WebkitUserSelect: 'none'
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.background = 'rgba(57, 255, 20, 0.2)';
-                              e.currentTarget.style.borderColor = '#39FF14';
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.background = 'rgba(57, 255, 20, 0.1)';
-                              e.currentTarget.style.borderColor = 'transparent';
-                            }}
-                          >
-                            {linkText}
-                          </button>
-                        );
-                      } else {
-                        parts.push(
-                          <a
-                            key={`link-${match.index}`}
-                            href={url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            onClick={(e) => e.stopPropagation()}
-                            style={{
-                              color: '#39FF14',
-                              textDecoration: 'none',
-                              fontWeight: 600,
-                              cursor: 'pointer',
-                              background: 'rgba(57, 255, 20, 0.1)',
-                              padding: '2px 4px',
-                              borderRadius: '3px',
-                              position: 'relative',
-                              zIndex: 9999,
-                              pointerEvents: 'auto'
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.background = 'rgba(57, 255, 20, 0.2)';
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.background = 'rgba(57, 255, 20, 0.1)';
-                            }}
-                          >
-                            {linkText}
-                          </a>
-                        );
-                      }
-                      
-                      lastIndex = linkRegex.lastIndex;
-                    }
-                    
-                    // Add remaining text
-                    if (lastIndex < message.length) {
-                      parts.push(
-                        <span key={`text-${lastIndex}`}>
-                          {message.substring(lastIndex)}
+                  ) : (
+                    /* Not playing - show event ticker (clickable, scrolling) */
+                    <a
+                      href="https://beatkitchen.io/classroom/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        textDecoration:'none',
+                        overflow:'hidden',
+                        whiteSpace:'nowrap',
+                        width:'100%',
+                        cursor:'pointer',
+                        display:'flex',
+                        alignItems:'center',
+                        height:'100%',
+                        userSelect:'auto',
+                        WebkitUserSelect:'auto',
+                        pointerEvents:'auto',
+                        position:'relative'
+                      }}
+                      title="Click to view BeatKitchen schedule"
+                    >
+                      {tickerEvents.length > 0 ? (
+                        <div style={{
+                          display:'inline-flex',
+                          alignItems:'center',
+                          animation: 'tickerScroll 40s linear infinite',
+                          whiteSpace:'nowrap'
+                        }}>
+                          <style>{`
+                            @keyframes tickerScroll {
+                              0% { transform: translateX(0); }
+                              100% { transform: translateX(-100%); }
+                            }
+                          `}</style>
+                          {/* First complete set */}
+                          <div style={{display:'inline-flex', gap:'64px', paddingRight:'64px'}}>
+                            {tickerEvents.map((event, idx) => (
+                              <span 
+                                key={`event-1-${idx}`}
+                                style={{
+                                  fontStyle:'italic',
+                                  color:'#39FF14',
+                                  fontWeight: 400,
+                                  whiteSpace:'nowrap'
+                                }}
+                              >
+                                {idx === 0 ? 'Next: ' : 'Coming up: '}
+                                {event.replace(/@/g, 'with')}
+                              </span>
+                            ))}
+                          </div>
+                          {/* Second complete set (exact duplicate) */}
+                          <div style={{display:'inline-flex', gap:'64px', paddingRight:'64px'}}>
+                            {tickerEvents.map((event, idx) => (
+                              <span 
+                                key={`event-2-${idx}`}
+                                style={{
+                                  fontStyle:'italic',
+                                  color:'#39FF14',
+                                  fontWeight: 400,
+                                  whiteSpace:'nowrap'
+                                }}
+                              >
+                                {idx === 0 ? 'Next: ' : 'Coming up: '}
+                                {event.replace(/@/g, 'with')}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      ) : (
+                        <span style={{
+                          fontStyle:'italic',
+                          color:'#9CA3AF',
+                          paddingLeft:'8px'
+                        }}>
+                          {tickerText}
                         </span>
-                      );
-                    }
-                    
-                    return parts.length > 0 ? parts : message;
-                  })()}
+                      )}
+                    </a>
+                  )}
                 </div>
-              )}
+              </div>
+
               
               <div style={{
                 display:'grid', 
@@ -8853,7 +9046,7 @@ useEffect(() => {
                       const m=+mStr;
                       const held=disp.has(m); // MIDI notes (transposed to window)
                       const highlighted = keyboardHighlightNotes.has(m); // Preview/playback notes
-                      // ✅ v3.19.16: Don't double-check latchedAbsNotes (already in highlighted or disp)
+                      // ✅ v3.19.29: Don't double-check latchedAbsNotes (already in highlighted or disp)
                       if (!held && !highlighted) return null;
                       
                       // ✅ Chord-aware spelling - use chord root for context
@@ -8868,7 +9061,7 @@ useEffect(() => {
                         const rootMatch = chordToUse.match(/^([A-G][b#]?)/);
                         if (rootMatch) {
                           let chordRoot = rootMatch[1];
-                          // ✅ v3.19.16: Convert sharps to flats for NAME_TO_PC lookup
+                          // ✅ v3.19.29: Convert sharps to flats for NAME_TO_PC lookup
                           const sharpToFlat: Record<string, string> = {
                             'C#': 'Db', 'D#': 'Eb', 'F#': 'Gb', 'G#': 'Ab', 'A#': 'Bb'
                           };
@@ -8939,7 +9132,7 @@ useEffect(() => {
                       const m=+mStr;
                       const held=disp.has(m);
                       const highlighted = keyboardHighlightNotes.has(m);
-                      // ✅ v3.19.16: Don't double-check latchedAbsNotes
+                      // ✅ v3.19.29: Don't double-check latchedAbsNotes
                       if (!held && !highlighted) return null;
                       
                       // ✅ Chord-aware spelling - use chord root for context
@@ -8954,7 +9147,7 @@ useEffect(() => {
                         const rootMatch = chordToUse.match(/^([A-G][b#]?)/);
                         if (rootMatch) {
                           let chordRoot = rootMatch[1];
-                          // ✅ v3.19.16: Convert sharps to flats for NAME_TO_PC lookup
+                          // ✅ v3.19.29: Convert sharps to flats for NAME_TO_PC lookup
                           const sharpToFlat: Record<string, string> = {
                             'C#': 'Db', 'D#': 'Eb', 'F#': 'Gb', 'G#': 'Ab', 'A#': 'Bb'
                           };
@@ -9227,7 +9420,7 @@ useEffect(() => {
               </div>
               
               
-              {/* Row: Transport Controls + Step Record - v3.19.16: Play button first, fixed size */}
+              {/* Row: Transport Controls + Step Record - v3.19.29: Play button first, fixed size */}
               {skillLevel === "EXPERT" && sequence.length > 0 && (
                 <div style={{display:'flex', gap:8, alignItems:'center', marginTop:6, marginBottom:0, flexWrap:'wrap'  /* ✅ marginBottom:0 to prevent scrollbar */}}>
                   
@@ -9236,20 +9429,28 @@ useEffect(() => {
                     onClick={togglePlayPause}
                     style={{
                       padding:'6px 10px',
-                      border: isPlaying ? '2px solid #EF4444' : '2px solid #10B981', 
+                      border: isPlaying ? '2px solid #F97316' : '2px solid #10B981',  /* v3.19.29: Orange for stop */
                       borderRadius:8, 
-                      background: isPlaying ? '#2a1a1a' : '#1a3a2a', 
+                      background: isPlaying ? '#2a1e1a' : '#1a3a2a', 
                       color:'#fff', 
                       cursor:'pointer', 
                       fontSize:16,
                       fontWeight:700,
                       display:'flex',
                       alignItems:'center',
-                      justifyContent:'center'
+                      justifyContent:'center',
+                      minWidth:44  /* v3.19.29: Fixed width to prevent shift */
                     }}
                     title={isPlaying ? "Stop (Space)" : "Play (Space)"}
                   >
-                    {isPlaying ? '■' : '▷'}
+                    {isPlaying ? (
+                      <div style={{
+                        width: 10,
+                        height: 10,
+                        background: '#fff',
+                        borderRadius: 2
+                      }} />
+                    ) : '▷'}
                   </button>
                   
                   {/* 2. Go to start */}
@@ -9703,15 +9904,15 @@ useEffect(() => {
                 {/* Row 1: Performance Mode */}
                 <div style={{display:'flex', gap:8, alignItems:'center', flexWrap:'wrap'}}>
                   
-                  {/* ✅ v3.19.16: Play/Stop button in non-EXPERT modes (when sequence loaded) */}
+                  {/* ✅ v3.19.29: Play/Stop button in non-EXPERT modes (when sequence loaded) */}
                   {skillLevel !== "EXPERT" && sequence.length > 0 && (
                     <button 
                       onClick={togglePlayPause}
                       style={{
                         padding:'8px 12px',
-                        border: isPlaying ? '2px solid #EF4444' : '2px solid #10B981', 
+                        border: isPlaying ? '2px solid #F97316' : '2px solid #10B981',  /* v3.19.29: Orange for stop */
                         borderRadius:6, 
-                        background: isPlaying ? '#2a1a1a' : '#1a3a2a', 
+                        background: isPlaying ? '#2a1e1a' : '#1a3a2a', 
                         color:'#fff', 
                         cursor:'pointer', 
                         fontSize:14,
@@ -9719,11 +9920,19 @@ useEffect(() => {
                         display:'flex',
                         alignItems:'center',
                         justifyContent:'center',
-                        lineHeight: 1
+                        lineHeight: 1,
+                        minWidth:48  /* v3.19.29: Fixed width to prevent shift */
                       }}
                       title={isPlaying ? "Stop (Space)" : "Play (Space)"}
                     >
-                      {isPlaying ? '■' : '▷'}
+                      {isPlaying ? (
+                        <div style={{
+                          width: 9,
+                          height: 9,
+                          background: '#fff',
+                          borderRadius: 2
+                        }} />
+                      ) : '▷'}
                     </button>
                   )}
                   
@@ -9764,7 +9973,7 @@ useEffect(() => {
                     <span style={{fontSize:10, opacity:0.6}}>{performanceMode ? '▼' : '▶'}</span>
                   </button>
                   
-                  {/* ✅ v3.19.16: Custom skill dropdown with icon */}
+                  {/* ✅ v3.19.29: Custom skill dropdown with icon */}
                   <div style={{ marginLeft: 'auto', position: 'relative' }}>
                     <select
                       value={skillLevel}
@@ -10260,6 +10469,6 @@ useEffect(() => {
   );
 }
 
-// HarmonyWheel v3.19.16 - Compiler fix + E7 debugging
+// HarmonyWheel v3.19.29 - Compiler fix + E7 debugging
 
-// EOF - HarmonyWheel.tsx v3.19.16
+// EOF - HarmonyWheel.tsx v3.19.29
