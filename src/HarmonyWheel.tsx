@@ -1,5 +1,5 @@
 /*
- * HarmonyWheel.tsx — v3.19.11 🔧 Compiler Fix + Minimal Logging
+ * HarmonyWheel.tsx — v3.19.12 🔧 Compiler Fix + Minimal Logging
  * 
  * 🔧 TYPESCRIPT COMPILER FIX:
  * - Fixed: absName used before declaration (line 4685 before 4747)
@@ -1858,7 +1858,7 @@ import {
   parseSongMetadata
 } from "./lib/songManager";
 
-const HW_VERSION = 'v3.19.11';
+const HW_VERSION = 'v3.19.12';
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -2677,7 +2677,7 @@ useEffect(() => {
   };
 
   const parseAndLoadSequence = ()=>{
-    const APP_VERSION = "v3.19.11-harmony-wheel";
+    const APP_VERSION = "v3.19.12-harmony-wheel";
     console.log('=== PARSE AND LOAD START ===');
     console.log('🏷️  APP VERSION:', APP_VERSION);
     console.log('Input text:', inputText);
@@ -2731,7 +2731,7 @@ useEffect(() => {
         // Parse bars: "|C Am F G|" or "|C Am|F G|" or "| C Am F G" (unclosed)
         const bars = segment.split('|').filter(s => s.trim());
         
-        // ✅ v3.19.11: Track last chord across bars for cross-bar ties
+        // ✅ v3.19.12: Track last chord across bars for cross-bar ties
         let lastChordOrRest: string | null = null;
         
         for (const bar of bars) {
@@ -2739,7 +2739,7 @@ useEffect(() => {
           const normalized = bar.trim().replace(/\s+/g, ' ');
           if (!normalized) continue;
           
-          // ✅ v3.19.11: Parse # comments as single tokens
+          // ✅ v3.19.12: Parse # comments as single tokens
           const tokens: string[] = [];
           let i = 0;
           while (i < normalized.length) {
@@ -2769,7 +2769,7 @@ useEffect(() => {
             }
           }
           
-          // ✅ v3.19.11: Group ties with their preceding chord/rest (including cross-bar)
+          // ✅ v3.19.12: Group ties with their preceding chord/rest (including cross-bar)
           const groupedItems: Array<{text: string, count: number, isComment: boolean}> = [];
           
           for (let j = 0; j < tokens.length; j++) {
@@ -2784,7 +2784,7 @@ useEffect(() => {
                 // Tie to previous item in same bar
                 groupedItems[groupedItems.length - 1].count++;
               } else if (j === 0 && lastChordOrRest) {
-                // ✅ v3.19.11: Cross-bar tie! Just add a * with duration
+                // ✅ v3.19.12: Cross-bar tie! Just add a * with duration
                 // The * won't retrigger, it just holds the previous chord
                 groupedItems.push({text: '*', count: 1, isComment: false});
               }
@@ -4034,7 +4034,7 @@ useEffect(() => {
         togglePlayPause();
       } else if (e.key === 'Escape') {
         e.preventDefault();
-        // ✅ v3.19.11: Escape closes everything
+        // ✅ v3.19.12: Escape closes everything
         stopPlayback();
         setShowKeyDropdown(false);
         setShowTransposeDropdown(false);
@@ -4214,7 +4214,7 @@ useEffect(() => {
     const currentItem = sequence[seqIndex];
     const isTie = currentItem?.kind === "comment" && currentItem.raw === '*';
     
-    // ✅ v3.19.11: Comments with chords should also play audio
+    // ✅ v3.19.12: Comments with chords should also play audio
     const isPlayableItem = (currentItem?.kind === "chord" || 
                            (currentItem?.kind === "comment" && currentItem.chord)) && 
                            currentItem.chord && 
@@ -4234,7 +4234,7 @@ useEffect(() => {
     // Duration is in bars (1=whole, 0.5=half, 0.25=quarter)
     const itemDuration = currentItem?.duration || 1.0; // Default to 1 bar if not specified
     
-    // ✅ v3.19.11: Only # comments WITHOUT chords have zero duration
+    // ✅ v3.19.12: Only # comments WITHOUT chords have zero duration
     const isAnnotationOnly = currentItem?.kind === "comment" && 
                             currentItem.raw?.startsWith('#') && 
                             !currentItem.chord;
@@ -4247,7 +4247,7 @@ useEffect(() => {
       // Advance to next item
       let nextIndex = seqIndex + 1;
       
-      // ✅ v3.19.11: Don't skip comments - they have duration:0 and advance instantly
+      // ✅ v3.19.12: Don't skip comments - they have duration:0 and advance instantly
       // Only skip titles and @modifiers
       while (nextIndex < sequence.length) {
         const nextItem = sequence[nextIndex];
@@ -4264,7 +4264,7 @@ useEffect(() => {
       if (nextIndex < sequence.length) {
         setSeqIndex(nextIndex);
         
-        // ✅ v3.19.11: For display, show the chord being held, not the tie/annotation
+        // ✅ v3.19.12: For display, show the chord being held, not the tie/annotation
         const nextItem = sequence[nextIndex];
         const isTie = nextItem?.kind === "comment" && nextItem.raw === '*';
         const isAnnotation = nextItem?.kind === "comment" && nextItem.raw?.startsWith('#') && !nextItem.chord;
@@ -4287,7 +4287,7 @@ useEffect(() => {
             startIdx++;
           }
           setSeqIndex(startIdx);
-          setDisplayIndex(startIdx); // ✅ v3.19.11: Highlight on loop
+          setDisplayIndex(startIdx); // ✅ v3.19.12: Highlight on loop
           applySeqItem(sequence[startIdx]);
           setTimeout(() => selectCurrentItem(), 0);
         } else {
@@ -5121,7 +5121,7 @@ useEffect(() => {
       setActiveWithTrail("I", absName || "C"); setCenterLabel("C"); return;
     }
     const gPresentTap = visitorActiveRef.current && (isSubset([7,11,2]) || isSubset([7,11,2,5]));
-    // ✅ v3.19.11: V7 detection - exclude Em7 [4,7,11,2] by checking !pcsRel.has(4)
+    // ✅ v3.19.12: V7 detection - exclude Em7 [4,7,11,2] by checking !pcsRel.has(4)
     if (!visitorActiveRef.current && (isSubset([7,11,2]) || isSubset([7,11,2,5])) && !pcsRel.has(4)) {
       if (subdomActiveRef.current) subSpinExit();
       setSubdomActive(false); subdomLatchedRef.current=false; subHasSpunRef.current=false;
@@ -6995,7 +6995,7 @@ useEffect(() => {
     
     const mainGain = ctx.createGain();
     mainGain.gain.value = 0;
-    // ✅ v3.19.11: RESTORED v3.19.2 audio settings - no changes to audio
+    // ✅ v3.19.12: RESTORED v3.19.2 audio settings - no changes to audio
     const mobileBoost = !isDesktop ? 2.0 : 1.5;
     const chordSafety = 0.5; // Divide by 2 since chords can have 3-4 notes
     mainGain.gain.linearRampToValueAtTime(0.6 * velocity * chordSafety, now + 0.015);
@@ -7456,7 +7456,9 @@ useEffect(() => {
   const keyboardHighlightNotes = (() => {
     // Priority 1: If from preview/playlist, show yellow highlights
     if (latchedAbsNotes.length > 0 && lastInputWasPreviewRef.current) {
-      return new Set(latchedAbsNotes);
+      // ✅ v3.19.12: Filter to visible keyboard range to prevent duplicates
+      const filtered = latchedAbsNotes.filter(note => note >= KBD_LOW && note <= KBD_HIGH);
+      return new Set(filtered);
     }
     // Priority 2: If active function but no manual play, AND in preview mode, calculate root position
     // ✅ Only show canonical voicing for wedge clicks, not MIDI input
@@ -7868,7 +7870,7 @@ useEffect(() => {
         )}
         {/* END TESTING - Logo hidden */}
         
-        {/* ✅ v3.19.11: Skill selector moved to bottom row - removed from upper right */}
+        {/* ✅ v3.19.12: Skill selector moved to bottom row - removed from upper right */}
 
         {/* Wheel - v3.18.34: Keep wheel position normal, move controls instead */}
         <div style={{
@@ -8391,7 +8393,7 @@ useEffect(() => {
                               const isComment = item.kind === "comment";
                               const isTitle = item.kind === "title";
                               
-                              // ✅ v3.19.11: Highlight related items together
+                              // ✅ v3.19.12: Highlight related items together
                               // 1. Comment before current chord: #label: Chord
                               const isCommentForNextChord = isComment && 
                                                            item.raw?.startsWith('#') && 
@@ -8808,12 +8810,10 @@ useEffect(() => {
                     {/* Note labels - rendered last so they're on top */}
                     {Object.entries(whitePos).map(([mStr,x])=>{
                       const m=+mStr;
-                      const held=disp.has(m); // ✅ v3.19.11: Transposed MIDI notes
-                      const highlighted = keyboardHighlightNotes.has(m); // Wedge canonical voicing
-                      // ✅ v3.19.11: Only check latched for wedge/preview mode, not MIDI input
-                      const latched = lastInputWasPreviewRef.current && latchedAbsNotes.includes(m);
-                      // ✅ v3.19.11: STRICT - only show if THIS exact note is held/highlighted/latched
-                      if (!held && !highlighted && !latched) return null;
+                      const held=disp.has(m); // MIDI notes (transposed to window)
+                      const highlighted = keyboardHighlightNotes.has(m); // Preview/playback notes
+                      // ✅ v3.19.12: Don't double-check latchedAbsNotes (already in highlighted or disp)
+                      if (!held && !highlighted) return null;
                       
                       // ✅ Chord-aware spelling - use chord root for context
                       let noteName: string;
@@ -8827,7 +8827,7 @@ useEffect(() => {
                         const rootMatch = chordToUse.match(/^([A-G][b#]?)/);
                         if (rootMatch) {
                           let chordRoot = rootMatch[1];
-                          // ✅ v3.19.11: Convert sharps to flats for NAME_TO_PC lookup
+                          // ✅ v3.19.12: Convert sharps to flats for NAME_TO_PC lookup
                           const sharpToFlat: Record<string, string> = {
                             'C#': 'Db', 'D#': 'Eb', 'F#': 'Gb', 'G#': 'Ab', 'A#': 'Bb'
                           };
@@ -8898,9 +8898,8 @@ useEffect(() => {
                       const m=+mStr;
                       const held=disp.has(m);
                       const highlighted = keyboardHighlightNotes.has(m);
-                      // ✅ v3.19.11: Only check latched for wedge/preview mode, not MIDI input
-                      const latched = lastInputWasPreviewRef.current && latchedAbsNotes.includes(m);
-                      if (!held && !highlighted && !latched) return null;
+                      // ✅ v3.19.12: Don't double-check latchedAbsNotes
+                      if (!held && !highlighted) return null;
                       
                       // ✅ Chord-aware spelling - use chord root for context
                       let noteName: string;
@@ -8914,7 +8913,7 @@ useEffect(() => {
                         const rootMatch = chordToUse.match(/^([A-G][b#]?)/);
                         if (rootMatch) {
                           let chordRoot = rootMatch[1];
-                          // ✅ v3.19.11: Convert sharps to flats for NAME_TO_PC lookup
+                          // ✅ v3.19.12: Convert sharps to flats for NAME_TO_PC lookup
                           const sharpToFlat: Record<string, string> = {
                             'C#': 'Db', 'D#': 'Eb', 'F#': 'Gb', 'G#': 'Ab', 'A#': 'Bb'
                           };
@@ -9187,7 +9186,7 @@ useEffect(() => {
               </div>
               
               
-              {/* Row: Transport Controls + Step Record - v3.19.11: Play button first, fixed size */}
+              {/* Row: Transport Controls + Step Record - v3.19.12: Play button first, fixed size */}
               {skillLevel === "EXPERT" && sequence.length > 0 && (
                 <div style={{display:'flex', gap:8, alignItems:'center', marginTop:6, marginBottom:0, flexWrap:'wrap'  /* ✅ marginBottom:0 to prevent scrollbar */}}>
                   
@@ -9663,7 +9662,7 @@ useEffect(() => {
                 {/* Row 1: Performance Mode */}
                 <div style={{display:'flex', gap:8, alignItems:'center', flexWrap:'wrap'}}>
                   
-                  {/* ✅ v3.19.11: Play/Stop button in non-EXPERT modes (when sequence loaded) */}
+                  {/* ✅ v3.19.12: Play/Stop button in non-EXPERT modes (when sequence loaded) */}
                   {skillLevel !== "EXPERT" && sequence.length > 0 && (
                     <button 
                       onClick={togglePlayPause}
@@ -9724,7 +9723,7 @@ useEffect(() => {
                     <span style={{fontSize:10, opacity:0.6}}>{performanceMode ? '▼' : '▶'}</span>
                   </button>
                   
-                  {/* ✅ v3.19.11: Custom skill dropdown with icon */}
+                  {/* ✅ v3.19.12: Custom skill dropdown with icon */}
                   <div style={{ marginLeft: 'auto', position: 'relative' }}>
                     <select
                       value={skillLevel}
@@ -10220,6 +10219,6 @@ useEffect(() => {
   );
 }
 
-// HarmonyWheel v3.19.11 - Compiler fix + E7 debugging
+// HarmonyWheel v3.19.12 - Compiler fix + E7 debugging
 
-// EOF - HarmonyWheel.tsx v3.19.11
+// EOF - HarmonyWheel.tsx v3.19.12
