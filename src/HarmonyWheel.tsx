@@ -1,5 +1,5 @@
 /*
- * HarmonyWheel.tsx — v3.18.136 🔧 Compiler Fix + Minimal Logging
+ * HarmonyWheel.tsx — v3.18.141 🔧 Compiler Fix + Minimal Logging
  * 
  * 🔧 TYPESCRIPT COMPILER FIX:
  * - Fixed: absName used before declaration (line 4685 before 4747)
@@ -1858,7 +1858,7 @@ import {
   parseSongMetadata
 } from "./lib/songManager";
 
-const HW_VERSION = 'v3.18.136';
+const HW_VERSION = 'v3.18.141';
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -2677,7 +2677,7 @@ useEffect(() => {
   };
 
   const parseAndLoadSequence = ()=>{
-    const APP_VERSION = "v3.18.136-harmony-wheel";
+    const APP_VERSION = "v3.18.141-harmony-wheel";
     console.log('=== PARSE AND LOAD START ===');
     console.log('🏷️  APP VERSION:', APP_VERSION);
     console.log('Input text:', inputText);
@@ -2731,7 +2731,7 @@ useEffect(() => {
         // Parse bars: "|C Am F G|" or "|C Am|F G|" or "| C Am F G" (unclosed)
         const bars = segment.split('|').filter(s => s.trim());
         
-        // ✅ v3.18.136: Track last chord across bars for cross-bar ties
+        // ✅ v3.18.141: Track last chord across bars for cross-bar ties
         let lastChordOrRest: string | null = null;
         
         for (const bar of bars) {
@@ -2739,7 +2739,7 @@ useEffect(() => {
           const normalized = bar.trim().replace(/\s+/g, ' ');
           if (!normalized) continue;
           
-          // ✅ v3.18.136: Parse # comments as single tokens
+          // ✅ v3.18.141: Parse # comments as single tokens
           const tokens: string[] = [];
           let i = 0;
           while (i < normalized.length) {
@@ -2769,7 +2769,7 @@ useEffect(() => {
             }
           }
           
-          // ✅ v3.18.136: Group ties with their preceding chord/rest (including cross-bar)
+          // ✅ v3.18.141: Group ties with their preceding chord/rest (including cross-bar)
           const groupedItems: Array<{text: string, count: number, isComment: boolean}> = [];
           
           for (let j = 0; j < tokens.length; j++) {
@@ -2784,7 +2784,7 @@ useEffect(() => {
                 // Tie to previous item in same bar
                 groupedItems[groupedItems.length - 1].count++;
               } else if (j === 0 && lastChordOrRest) {
-                // ✅ v3.18.136: Cross-bar tie! Just add a * with duration
+                // ✅ v3.18.141: Cross-bar tie! Just add a * with duration
                 // The * won't retrigger, it just holds the previous chord
                 groupedItems.push({text: '*', count: 1, isComment: false});
               }
@@ -4034,7 +4034,7 @@ useEffect(() => {
         togglePlayPause();
       } else if (e.key === 'Escape') {
         e.preventDefault();
-        // ✅ v3.18.136: Escape closes everything
+        // ✅ v3.18.141: Escape closes everything
         stopPlayback();
         setShowKeyDropdown(false);
         setShowTransposeDropdown(false);
@@ -4214,7 +4214,7 @@ useEffect(() => {
     const currentItem = sequence[seqIndex];
     const isTie = currentItem?.kind === "comment" && currentItem.raw === '*';
     
-    // ✅ v3.18.136: Comments with chords should also play audio
+    // ✅ v3.18.141: Comments with chords should also play audio
     const isPlayableItem = (currentItem?.kind === "chord" || 
                            (currentItem?.kind === "comment" && currentItem.chord)) && 
                            currentItem.chord && 
@@ -4234,7 +4234,7 @@ useEffect(() => {
     // Duration is in bars (1=whole, 0.5=half, 0.25=quarter)
     const itemDuration = currentItem?.duration || 1.0; // Default to 1 bar if not specified
     
-    // ✅ v3.18.136: Only # comments WITHOUT chords have zero duration
+    // ✅ v3.18.141: Only # comments WITHOUT chords have zero duration
     const isAnnotationOnly = currentItem?.kind === "comment" && 
                             currentItem.raw?.startsWith('#') && 
                             !currentItem.chord;
@@ -4247,7 +4247,7 @@ useEffect(() => {
       // Advance to next item
       let nextIndex = seqIndex + 1;
       
-      // ✅ v3.18.136: Don't skip comments - they have duration:0 and advance instantly
+      // ✅ v3.18.141: Don't skip comments - they have duration:0 and advance instantly
       // Only skip titles and @modifiers
       while (nextIndex < sequence.length) {
         const nextItem = sequence[nextIndex];
@@ -4264,7 +4264,7 @@ useEffect(() => {
       if (nextIndex < sequence.length) {
         setSeqIndex(nextIndex);
         
-        // ✅ v3.18.136: For display, show the chord being held, not the tie/annotation
+        // ✅ v3.18.141: For display, show the chord being held, not the tie/annotation
         const nextItem = sequence[nextIndex];
         const isTie = nextItem?.kind === "comment" && nextItem.raw === '*';
         const isAnnotation = nextItem?.kind === "comment" && nextItem.raw?.startsWith('#') && !nextItem.chord;
@@ -4287,7 +4287,7 @@ useEffect(() => {
             startIdx++;
           }
           setSeqIndex(startIdx);
-          setDisplayIndex(startIdx); // ✅ v3.18.136: Highlight on loop
+          setDisplayIndex(startIdx); // ✅ v3.18.141: Highlight on loop
           applySeqItem(sequence[startIdx]);
           setTimeout(() => selectCurrentItem(), 0);
         } else {
@@ -7843,36 +7843,11 @@ useEffect(() => {
             HarmonyWheel {HW_VERSION}
           </div>
           </div>
-          
-          {/* Skill Wheel only - top right - v3.18.22: Aligned with logo text */}
-          <div style={{
-            display:'flex', 
-            alignItems:'center',  
-            position:'relative',
-            right: 0,
-            top: 8,
-            zIndex:10001,
-            marginRight: 8
-          }}>
-            {/* Circular Skill Selector */}
-            <SkillWheel current={skillLevel} onChange={setSkillLevel} />
-          </div>
         </div>
         )}
         {/* END TESTING - Logo hidden */}
         
-        {/* ✅ Skill button - mobile Safari adjustments */}
-        <div style={{
-          display:'flex', 
-          alignItems:'flex-start',
-          position:'absolute',
-          right: isDesktop ? 12 : (isSafariBrowser ? 8 : 12),
-          top: isDesktop ? 12 : (isSafariBrowser ? 12 : 52),
-          zIndex:10001,
-          minHeight: 72
-        }}>
-          <SkillWheel current={skillLevel} onChange={setSkillLevel} />
-        </div>
+        {/* ✅ v3.18.141: Skill selector moved to bottom row - removed from upper right */}
 
         {/* Wheel - v3.18.34: Keep wheel position normal, move controls instead */}
         <div style={{
@@ -8392,7 +8367,7 @@ useEffect(() => {
                               const isComment = item.kind === "comment";
                               const isTitle = item.kind === "title";
                               
-                              // ✅ v3.18.136: Highlight related items together
+                              // ✅ v3.18.141: Highlight related items together
                               // 1. Comment before current chord: #label: Chord
                               const isCommentForNextChord = isComment && 
                                                            item.raw?.startsWith('#') && 
@@ -8811,7 +8786,7 @@ useEffect(() => {
                       const m=+mStr;
                       const held=disp.has(m);
                       const highlighted = keyboardHighlightNotes.has(m);
-                      const latched = latchedAbsNotes.includes(m); // ✅ v3.18.136: Show during sequence playback
+                      const latched = latchedAbsNotes.includes(m); // ✅ v3.18.141: Show during sequence playback
                       if (!held && !highlighted && !latched) return null;
                       
                       // ✅ Chord-aware spelling - use chord root for context
@@ -8891,7 +8866,7 @@ useEffect(() => {
                       const m=+mStr;
                       const held=disp.has(m);
                       const highlighted = keyboardHighlightNotes.has(m);
-                      const latched = latchedAbsNotes.includes(m); // ✅ v3.18.136: Show during sequence playback
+                      const latched = latchedAbsNotes.includes(m); // ✅ v3.18.141: Show during sequence playback
                       if (!held && !highlighted && !latched) return null;
                       
                       // ✅ Chord-aware spelling - use chord root for context
@@ -9173,7 +9148,7 @@ useEffect(() => {
               </div>
               
               
-              {/* Row: Transport Controls + Step Record - v3.18.136: Play button first, fixed size */}
+              {/* Row: Transport Controls + Step Record - v3.18.141: Play button first, fixed size */}
               {skillLevel === "EXPERT" && sequence.length > 0 && (
                 <div style={{display:'flex', gap:8, alignItems:'center', marginTop:6, marginBottom:0, flexWrap:'wrap'  /* ✅ marginBottom:0 to prevent scrollbar */}}>
                   
@@ -9649,7 +9624,7 @@ useEffect(() => {
                 {/* Row 1: Performance Mode */}
                 <div style={{display:'flex', gap:8, alignItems:'center', flexWrap:'wrap'}}>
                   
-                  {/* ✅ v3.18.136: Play/Stop button in non-EXPERT modes (when sequence loaded) */}
+                  {/* ✅ v3.18.141: Play/Stop button in non-EXPERT modes (when sequence loaded) */}
                   {skillLevel !== "EXPERT" && sequence.length > 0 && (
                     <button 
                       onClick={togglePlayPause}
@@ -9709,6 +9684,57 @@ useEffect(() => {
                     <span>Performance Pad</span>
                     <span style={{fontSize:10, opacity:0.6}}>{performanceMode ? '▼' : '▶'}</span>
                   </button>
+                  
+                  {/* ✅ v3.18.141: Custom skill dropdown with icon */}
+                  <div style={{ marginLeft: 'auto', position: 'relative' }}>
+                    <select
+                      value={skillLevel}
+                      onChange={(e) => {
+                        const newLevel = e.target.value as SkillLevel;
+                        setSkillLevel(newLevel);
+                        skillLevelRef.current = newLevel;
+                      }}
+                      style={{
+                        padding:'8px 12px 8px 40px', // Extra left padding for icon
+                        border:'1px solid #4B5563',
+                        borderRadius:6,
+                        background:'#1F2937',
+                        color:'#D1D5DB',
+                        cursor:'pointer',
+                        fontSize:11,
+                        fontWeight:500,
+                        appearance: 'none',
+                        WebkitAppearance: 'none',
+                        MozAppearance: 'none',
+                        backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'12\' height=\'12\' viewBox=\'0 0 12 12\'%3E%3Cpath fill=\'%239CA3AF\' d=\'M6 9L1 4h10z\'/%3E%3C/svg%3E")',
+                        backgroundRepeat: 'no-repeat',
+                        backgroundPosition: 'right 8px center',
+                        paddingRight: '28px'
+                      }}
+                      title="Select skill level"
+                    >
+                      <option value="ROOKIE">Rookie</option>
+                      <option value="NOVICE">Novice</option>
+                      <option value="SOPHOMORE">Sophomore</option>
+                      <option value="INTERMEDIATE">Intermediate</option>
+                      <option value="ADVANCED">Advanced</option>
+                      <option value="EXPERT">Expert</option>
+                    </select>
+                    {/* Icon overlay */}
+                    <img 
+                      src={`/assets/${skillLevel.toLowerCase()}.png`}
+                      alt={skillLevel}
+                      style={{
+                        position: 'absolute',
+                        left: 8,
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        width: 24,
+                        height: 24,
+                        pointerEvents: 'none'
+                      }}
+                    />
+                  </div>
                   
                   {/* Performance Pad expanded content */}
                   {performanceMode && (
@@ -10155,6 +10181,6 @@ useEffect(() => {
   );
 }
 
-// HarmonyWheel v3.18.136 - Compiler fix + E7 debugging
+// HarmonyWheel v3.18.141 - Compiler fix + E7 debugging
 
-// EOF - HarmonyWheel.tsx v3.18.136
+// EOF - HarmonyWheel.tsx v3.18.141
