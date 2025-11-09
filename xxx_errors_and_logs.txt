@@ -1,804 +1,825 @@
- Download the React DevTools for a better development experience: https://reactjs.org/link/react-devtools
- 🔑 [v3.6.0] baseKey synced to ref: C
- 🍎 Safari detection: false
- 🎹 TRANSPOSE STATE: Object
- 🎯 EFFECTIVE BASE KEY: C (original: C )
- === PARSE AND LOAD START ===
- 🏷️  APP VERSION: v3.18.122-harmony-wheel
- Input text: @TITLE WELCOME TO BEAT KITCHEN
-@KEY C
-@TEMPO 160
-@LOOP
-
-|Fmaj7 * * * / / / E7 |* / E7 * * * * *|
-|Am7 #passing chord: Abm7 | Gm7 C7 |
-|Fmaj7 * * * / / / E7 |* / E7 * * * * *|
-|Am|Am7
-
-@RHYTHM1 |x x x x|
-@RHYTHM2 |x / x /|
-@RHYTHM3 |x x / x x x / x|
- Parsed tokens with rhythm: Array(26)
- 🎵 TEMPO detected: 160 BPM
- 🔁 LOOP detected - enabling loop mode
- 📝 Parsing comment: #passing chord: Abm7 → commentText: passing chord: Abm7
-   Found colon! before: passing chord after: Abm7
-   ✅ Chord matched! Abm7
- 📋 Filtered sequence - removed 2 config directives
- 🔑 [v3.6.0] No @KEY directive, preserving baseKey: C
- Setting initial index to: 2 chord = Fmaj7
- === PARSE AND LOAD END ===
-
- 🎵 Auto-loading default song on mount
- 🏷️ WEDGE LABEL KEY: Object
-:5173/favicon.ico:1  Failed to load resource: the server responded with a status of 404 (Not Found)
- === PARSE AND LOAD START ===
- 🏷️  APP VERSION: v3.18.122-harmony-wheel
- Input text: @TITLE WELCOME TO BEAT KITCHEN
-@KEY C
-@TEMPO 160
-@LOOP
-
-|Fmaj7 * * * / / / E7 |* / E7 * * * * *|
-|Am7 #passing chord: Abm7 | Gm7 C7 |
-|Fmaj7 * * * / / / E7 |* / E7 * * * * *|
-|Am|Am7
-
-@RHYTHM1 |x x x x|
-@RHYTHM2 |x / x /|
-@RHYTHM3 |x x / x x x / x|
- Parsed tokens with rhythm: Array(26)
- 🎵 TEMPO detected: 160 BPM
- 🔁 LOOP detected - enabling loop mode
- 📝 Parsing comment: #passing chord: Abm7 → commentText: passing chord: Abm7
-   Found colon! before: passing chord after: Abm7
-   ✅ Chord matched! Abm7
- 📋 Filtered sequence - removed 2 config directives
- 🔑 [v3.6.0] No @KEY directive, preserving baseKey: C
- Setting initial index to: 2 chord = Fmaj7
- === PARSE AND LOAD END ===
-
- 🎹 Simulating MIDI for sequencer: Fmaj7
- 🔍 Parsed: Object
- ✅ Root PC: 5
- 🎹 Simulated MIDI notes: Array(4) for chord: Fmaj7 transpose: 0
- 🔑 [SEQ-FIX v3.8.0] baseKeyRef synced to: C (original baseKey: C )
- 💎 lastDetectedChordRef set to: Fmaj7 (from theory.ts)
- 🔍 [DIM7 ALWAYS-CHECK] Object
- 🔧 SUB SECTION START: Object
- 🏠 HOME CHECK: Object
- 🔒 ALLOW HOME CHECK: Object
- 🔍 V/vi CALC: Object
- ✅ EARLY Fmaj7 CHECK: [5,9,0,4] → IV wedge
- 🎯 setActiveWithTrail called: Object
- 📍 Stack trace:     at setActiveWithTrail (http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:1999:23)
-    at detect (http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:3215:9)
-    at applySeqItem (http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:1357:7)
-    at togglePlayPause (http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:1119:7)
-    at HTMLUnknownElement.callCallback2 (http://localhost:5173/node_modules/.vite/deps/chunk-NGODP64W.js?v=7b8148d9:3674:22)
-    at Object.invokeGuardedCallbackDev (http://localhost:5173/node_modules/.vite/deps/chunk-NGODP64W.js?v=7b8148d9:3699:24)
-    at invokeGuardedCallback (http://localhost:5173/node_modules/.vite/deps/chunk-NGODP64W.js?v=7b8148d9:3733:39)
- 💾 Saved latched chord: Object
- 📝 lastPlayedChordRef set to: Fmaj7
- ✅ Sequencer detection complete
- 🎵 playNote START: Object
- 🔊 Initializing audio context...
- 🔊 Context state: running Sample rate: 44100
- 🆔 Generated note ID: 53-1762641479359-0.7272315843023781
- 📊 Frequency: 174.61 Hz, Time: 9.584
- 🎹 Creating oscillators...
- 🔗 Connecting audio graph...
- ▶️ Starting oscillators...
- ✅ Oscillators started successfully!
- 💾 Stored note. Active count: 1
- ✅ playNote COMPLETE, returning ID: 53-1762641479359-0.7272315843023781
- 🎵 playNote START: Object
- 🔊 Initializing audio context...
- 🔊 Context state: running Sample rate: 44100
- 🆔 Generated note ID: 57-1762641479360-0.5241803434288832
- 📊 Frequency: 220.00 Hz, Time: 9.584
- 🎹 Creating oscillators...
- 🔗 Connecting audio graph...
- ▶️ Starting oscillators...
- ✅ Oscillators started successfully!
- 💾 Stored note. Active count: 2
- ✅ playNote COMPLETE, returning ID: 57-1762641479360-0.5241803434288832
- 🎵 playNote START: Object
- 🔊 Initializing audio context...
- 🔊 Context state: running Sample rate: 44100
- 🆔 Generated note ID: 60-1762641479360-0.06795825692620339
- 📊 Frequency: 261.63 Hz, Time: 9.584
- 🎹 Creating oscillators...
- 🔗 Connecting audio graph...
- ▶️ Starting oscillators...
- ✅ Oscillators started successfully!
- 💾 Stored note. Active count: 3
- ✅ playNote COMPLETE, returning ID: 60-1762641479360-0.06795825692620339
- 🎵 playNote START: Object
- 🔊 Initializing audio context...
- 🔊 Context state: running Sample rate: 44100
- 🆔 Generated note ID: 64-1762641479361-0.24878545519678485
- 📊 Frequency: 329.63 Hz, Time: 9.584
- 🎹 Creating oscillators...
- 🔗 Connecting audio graph...
- ▶️ Starting oscillators...
- ✅ Oscillators started successfully!
- 💾 Stored note. Active count: 4
- ✅ playNote COMPLETE, returning ID: 64-1762641479361-0.24878545519678485
-:5173/favicon.ico:1  Failed to load resource: the server responded with a status of 404 (Not Found)
- 🎹 Simulating MIDI for sequencer: E7
- 🔍 Parsed: Object
- ✅ Root PC: 4
- 🎹 Simulated MIDI notes: Array(4) for chord: E7 transpose: 0
- 🔑 [SEQ-FIX v3.8.0] baseKeyRef synced to: C (original baseKey: C )
- 🔍 E7 DETECTED: Object
- 💎 lastDetectedChordRef set to: E7 (from theory.ts)
- 🔍 [DIM7 ALWAYS-CHECK] Object
- 🎯 setActiveWithTrail called: Object
- 📍 Stack trace:     at setActiveWithTrail (http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:1999:23)
-    at detect (http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:2634:9)
-    at applySeqItem (http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:1357:7)
-    at http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:1878:9
- 💾 Saved latched chord: Object
- 📝 lastPlayedChordRef set to: E7
- ✅ Sequencer detection complete
- 🎵 playNote START: Object
- 🔊 Initializing audio context...
- 🔊 Context state: running Sample rate: 44100
- 🆔 Generated note ID: 64-1762641480684-0.42898908398635816
- 📊 Frequency: 329.63 Hz, Time: 10.908
- 🎹 Creating oscillators...
- 🔗 Connecting audio graph...
- ▶️ Starting oscillators...
- ✅ Oscillators started successfully!
- 💾 Stored note. Active count: 1
- ✅ playNote COMPLETE, returning ID: 64-1762641480684-0.42898908398635816
- 🎵 playNote START: Object
- 🔊 Initializing audio context...
- 🔊 Context state: running Sample rate: 44100
- 🆔 Generated note ID: 68-1762641480684-0.49729563909329955
- 📊 Frequency: 415.30 Hz, Time: 10.908
- 🎹 Creating oscillators...
- 🔗 Connecting audio graph...
- ▶️ Starting oscillators...
- ✅ Oscillators started successfully!
- 💾 Stored note. Active count: 2
- ✅ playNote COMPLETE, returning ID: 68-1762641480684-0.49729563909329955
- 🎵 playNote START: Object
- 🔊 Initializing audio context...
- 🔊 Context state: running Sample rate: 44100
- 🆔 Generated note ID: 71-1762641480685-0.03871537533581004
- 📊 Frequency: 493.88 Hz, Time: 10.908
- 🎹 Creating oscillators...
- 🔗 Connecting audio graph...
- ▶️ Starting oscillators...
- ✅ Oscillators started successfully!
- 💾 Stored note. Active count: 3
- ✅ playNote COMPLETE, returning ID: 71-1762641480685-0.03871537533581004
- 🎵 playNote START: Object
- 🔊 Initializing audio context...
- 🔊 Context state: running Sample rate: 44100
- 🆔 Generated note ID: 74-1762641480685-0.7806567780182857
- 📊 Frequency: 587.33 Hz, Time: 10.908
- 🎹 Creating oscillators...
- 🔗 Connecting audio graph...
- ▶️ Starting oscillators...
- ✅ Oscillators started successfully!
- 💾 Stored note. Active count: 4
- ✅ playNote COMPLETE, returning ID: 74-1762641480685-0.7806567780182857
- 🎹 Simulating MIDI for sequencer: E7
- 🔍 Parsed: Object
- ✅ Root PC: 4
- 🎹 Simulated MIDI notes: Array(4) for chord: E7 transpose: 0
- 🔑 [SEQ-FIX v3.8.0] baseKeyRef synced to: C (original baseKey: C )
- 🔍 E7 DETECTED: Object
- 💎 lastDetectedChordRef set to: E7 (from theory.ts)
- 🔍 [DIM7 ALWAYS-CHECK] Object
- 🎯 setActiveWithTrail called: Object
- 📍 Stack trace:     at setActiveWithTrail (http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:1999:23)
-    at detect (http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:2634:9)
-    at applySeqItem (http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:1357:7)
-    at http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:1878:9
- 💾 Saved latched chord: Object
- 📝 lastPlayedChordRef set to: E7
- ✅ Sequencer detection complete
- 🎵 playNote START: Object
- 🔊 Initializing audio context...
- 🔊 Context state: running Sample rate: 44100
- 🆔 Generated note ID: 64-1762641481256-0.2932826900590403
- 📊 Frequency: 329.63 Hz, Time: 11.482
- 🎹 Creating oscillators...
- 🔗 Connecting audio graph...
- ▶️ Starting oscillators...
- ✅ Oscillators started successfully!
- 💾 Stored note. Active count: 5
- ✅ playNote COMPLETE, returning ID: 64-1762641481256-0.2932826900590403
- 🎵 playNote START: Object
- 🔊 Initializing audio context...
- 🔊 Context state: running Sample rate: 44100
- 🆔 Generated note ID: 68-1762641481256-0.7052471899785248
- 📊 Frequency: 415.30 Hz, Time: 11.482
- 🎹 Creating oscillators...
- 🔗 Connecting audio graph...
- ▶️ Starting oscillators...
- ✅ Oscillators started successfully!
- 💾 Stored note. Active count: 6
- ✅ playNote COMPLETE, returning ID: 68-1762641481256-0.7052471899785248
- 🎵 playNote START: Object
- 🔊 Initializing audio context...
- 🔊 Context state: running Sample rate: 44100
- 🆔 Generated note ID: 71-1762641481257-0.47656303906104514
- 📊 Frequency: 493.88 Hz, Time: 11.482
- 🎹 Creating oscillators...
- 🔗 Connecting audio graph...
- ▶️ Starting oscillators...
- ✅ Oscillators started successfully!
- 💾 Stored note. Active count: 7
- ✅ playNote COMPLETE, returning ID: 71-1762641481257-0.47656303906104514
- 🎵 playNote START: Object
- 🔊 Initializing audio context...
- 🔊 Context state: running Sample rate: 44100
- 🆔 Generated note ID: 74-1762641481257-0.6251314200997554
- 📊 Frequency: 587.33 Hz, Time: 11.482
- 🎹 Creating oscillators...
- 🔗 Connecting audio graph...
- ▶️ Starting oscillators...
- ✅ Oscillators started successfully!
- 💾 Stored note. Active count: 8
- ✅ playNote COMPLETE, returning ID: 74-1762641481257-0.6251314200997554
- 🎹 Simulating MIDI for sequencer: Am7
- 🔍 Parsed: Object
- ✅ Root PC: 9
- 🎹 Simulated MIDI notes: Array(4) for chord: Am7 transpose: 0
- 🔑 [SEQ-FIX v3.8.0] baseKeyRef synced to: C (original baseKey: C )
- 💎 lastDetectedChordRef set to: Am7 (from theory.ts)
- 🔍 [DIM7 ALWAYS-CHECK] Object
- 🏠 HOME CHECK: Object
- 🔒 ALLOW HOME CHECK: Object
- 🔍 V/vi CALC: Object
- 🎯 setActiveWithTrail called: Object
- 📍 Stack trace:     at setActiveWithTrail (http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:1999:23)
-    at detect (http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:3221:9)
-    at applySeqItem (http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:1357:7)
-    at http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:1878:9
- 💾 Saved latched chord: Object
- 📝 lastPlayedChordRef set to: Am7
- ✅ Sequencer detection complete
- 🎵 playNote START: Object
- 🔊 Initializing audio context...
- 🔊 Context state: running Sample rate: 44100
- 🆔 Generated note ID: 57-1762641482386-0.5835496557037515
- 📊 Frequency: 220.00 Hz, Time: 12.608
- 🎹 Creating oscillators...
- 🔗 Connecting audio graph...
- ▶️ Starting oscillators...
- ✅ Oscillators started successfully!
- 💾 Stored note. Active count: 5
- ✅ playNote COMPLETE, returning ID: 57-1762641482386-0.5835496557037515
- 🎵 playNote START: Object
- 🔊 Initializing audio context...
- 🔊 Context state: running Sample rate: 44100
- 🆔 Generated note ID: 60-1762641482386-0.3475587878248805
- 📊 Frequency: 261.63 Hz, Time: 12.608
- 🎹 Creating oscillators...
- 🔗 Connecting audio graph...
- ▶️ Starting oscillators...
- ✅ Oscillators started successfully!
- 💾 Stored note. Active count: 6
- ✅ playNote COMPLETE, returning ID: 60-1762641482386-0.3475587878248805
- 🎵 playNote START: Object
- 🔊 Initializing audio context...
- 🔊 Context state: running Sample rate: 44100
- 🆔 Generated note ID: 64-1762641482386-0.6531113882814898
- 📊 Frequency: 329.63 Hz, Time: 12.608
- 🎹 Creating oscillators...
- 🔗 Connecting audio graph...
- ▶️ Starting oscillators...
- ✅ Oscillators started successfully!
- 💾 Stored note. Active count: 7
- ✅ playNote COMPLETE, returning ID: 64-1762641482386-0.6531113882814898
- 🎵 playNote START: Object
- 🔊 Initializing audio context...
- 🔊 Context state: running Sample rate: 44100
- 🆔 Generated note ID: 67-1762641482387-0.6232220382677767
- 📊 Frequency: 392.00 Hz, Time: 12.608
- 🎹 Creating oscillators...
- 🔗 Connecting audio graph...
- ▶️ Starting oscillators...
- ✅ Oscillators started successfully!
- 💾 Stored note. Active count: 8
- ✅ playNote COMPLETE, returning ID: 67-1762641482387-0.6232220382677767
- 🔄 Combined comment: passing chord + chord: Abm7
- 🎹 Simulating MIDI for sequencer: Abm7
- 🔍 Parsed: Object
- ✅ Root PC: 8
- 🎹 Simulated MIDI notes: Array(4) for chord: Abm7 transpose: 0
- 🔑 [SEQ-FIX v3.8.0] baseKeyRef synced to: C (original baseKey: C )
- 💎 lastDetectedChordRef set to: Abm7 (from theory.ts)
- 🔍 [DIM7 ALWAYS-CHECK] Object
- 🏠 HOME CHECK: Object
- 🔒 ALLOW HOME CHECK: Object
- 🔍 V/vi CALC: Object
- 🎭 shouldShowBonusOverlay: Object
- 🔍 Bm7♭5 bonus check: Object
- 🎯 centerOnly called: Object
- 📝 lastPlayedChordRef set to: Abm7
- ✅ Sequencer detection complete
- 🎹 Simulating MIDI for sequencer: Gm7
- 🔍 Parsed: Object
- ✅ Root PC: 7
- 🎹 Simulated MIDI notes: Array(4) for chord: Gm7 transpose: 0
- 🔑 [SEQ-FIX v3.8.0] baseKeyRef synced to: C (original baseKey: C )
- 💎 lastDetectedChordRef set to: Gm7 (from theory.ts)
- 🔍 [DIM7 ALWAYS-CHECK] Object
- 🎯 setActiveWithTrail called: Object
- 📍 Stack trace:     at setActiveWithTrail (http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:1999:23)
-    at detect (http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:2718:11)
-    at applySeqItem (http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:1357:7)
-    at http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:1878:9
- 💾 Saved latched chord: Object
- 📝 lastPlayedChordRef set to: Gm7
- ✅ Sequencer detection complete
- 🎵 playNote START: Object
- 🔊 Initializing audio context...
- 🔊 Context state: running Sample rate: 44100
- 🆔 Generated note ID: 55-1762641483900-0.8266676567024385
- 📊 Frequency: 196.00 Hz, Time: 14.124
- 🎹 Creating oscillators...
- 🔗 Connecting audio graph...
- ▶️ Starting oscillators...
- ✅ Oscillators started successfully!
- 💾 Stored note. Active count: 5
- ✅ playNote COMPLETE, returning ID: 55-1762641483900-0.8266676567024385
- 🎵 playNote START: Object
- 🔊 Initializing audio context...
- 🔊 Context state: running Sample rate: 44100
- 🆔 Generated note ID: 58-1762641483900-0.6831112964050656
- 📊 Frequency: 233.08 Hz, Time: 14.124
- 🎹 Creating oscillators...
- 🔗 Connecting audio graph...
- ▶️ Starting oscillators...
- ✅ Oscillators started successfully!
- 💾 Stored note. Active count: 6
- ✅ playNote COMPLETE, returning ID: 58-1762641483900-0.6831112964050656
- 🎵 playNote START: Object
- 🔊 Initializing audio context...
- 🔊 Context state: running Sample rate: 44100
- 🆔 Generated note ID: 62-1762641483901-0.5383967108000394
- 📊 Frequency: 293.66 Hz, Time: 14.124
- 🎹 Creating oscillators...
- 🔗 Connecting audio graph...
- ▶️ Starting oscillators...
- ✅ Oscillators started successfully!
- 💾 Stored note. Active count: 7
- ✅ playNote COMPLETE, returning ID: 62-1762641483901-0.5383967108000394
- 🎵 playNote START: Object
- 🔊 Initializing audio context...
- 🔊 Context state: running Sample rate: 44100
- 🆔 Generated note ID: 65-1762641483901-0.41358939503846437
- 📊 Frequency: 349.23 Hz, Time: 14.124
- 🎹 Creating oscillators...
- 🔗 Connecting audio graph...
- ▶️ Starting oscillators...
- ✅ Oscillators started successfully!
- 💾 Stored note. Active count: 8
- ✅ playNote COMPLETE, returning ID: 65-1762641483901-0.41358939503846437
- 🏷️ WEDGE LABEL KEY: Object
- 🎹 Simulating MIDI for sequencer: C7
- 🔍 Parsed: Object
- ✅ Root PC: 0
- 🎹 Simulated MIDI notes: Array(4) for chord: C7 transpose: 0
- 🔑 [SEQ-FIX v3.8.0] baseKeyRef synced to: C (original baseKey: C )
- 💎 lastDetectedChordRef set to: C7 (from theory.ts)
- 🔍 [DIM7 ALWAYS-CHECK] Object
- 🎯 setActiveWithTrail called: Object
- 📍 Stack trace:     at setActiveWithTrail (http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:1999:23)
-    at detect (http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:2837:13)
-    at applySeqItem (http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:1357:7)
-    at http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:1878:9
- 💾 Saved latched chord: Object
- 📝 lastPlayedChordRef set to: C7
- ✅ Sequencer detection complete
- 🎵 playNote START: Object
- 🔊 Initializing audio context...
- 🔊 Context state: running Sample rate: 44100
- 🆔 Generated note ID: 60-1762641484655-0.1155624378619432
- 📊 Frequency: 261.63 Hz, Time: 14.878
- 🎹 Creating oscillators...
- 🔗 Connecting audio graph...
- ▶️ Starting oscillators...
- ✅ Oscillators started successfully!
- 💾 Stored note. Active count: 5
- ✅ playNote COMPLETE, returning ID: 60-1762641484655-0.1155624378619432
- 🎵 playNote START: Object
- 🔊 Initializing audio context...
- 🔊 Context state: running Sample rate: 44100
- 🆔 Generated note ID: 64-1762641484656-0.5604705787541538
- 📊 Frequency: 329.63 Hz, Time: 14.878
- 🎹 Creating oscillators...
- 🔗 Connecting audio graph...
- ▶️ Starting oscillators...
- ✅ Oscillators started successfully!
- 💾 Stored note. Active count: 6
- ✅ playNote COMPLETE, returning ID: 64-1762641484656-0.5604705787541538
- 🎵 playNote START: Object
- 🔊 Initializing audio context...
- 🔊 Context state: running Sample rate: 44100
- 🆔 Generated note ID: 67-1762641484656-0.9864831484844779
- 📊 Frequency: 392.00 Hz, Time: 14.878
- 🎹 Creating oscillators...
- 🔗 Connecting audio graph...
- ▶️ Starting oscillators...
- ✅ Oscillators started successfully!
- 💾 Stored note. Active count: 7
- ✅ playNote COMPLETE, returning ID: 67-1762641484656-0.9864831484844779
- 🎵 playNote START: Object
- 🔊 Initializing audio context...
- 🔊 Context state: running Sample rate: 44100
- 🆔 Generated note ID: 70-1762641484656-0.6742356863876133
- 📊 Frequency: 466.16 Hz, Time: 14.878
- 🎹 Creating oscillators...
- 🔗 Connecting audio graph...
- ▶️ Starting oscillators...
- ✅ Oscillators started successfully!
- 💾 Stored note. Active count: 8
- ✅ playNote COMPLETE, returning ID: 70-1762641484656-0.6742356863876133
- 🎹 Simulating MIDI for sequencer: Fmaj7
- 🔍 Parsed: Object
- ✅ Root PC: 5
- 🎹 Simulated MIDI notes: Array(4) for chord: Fmaj7 transpose: 0
- 🔑 [SEQ-FIX v3.8.0] baseKeyRef synced to: C (original baseKey: C )
- 💎 lastDetectedChordRef set to: Fmaj7 (from theory.ts)
- 🔍 [DIM7 ALWAYS-CHECK] Object
- 🔧 SUB SECTION START: Object
- 🔍 SUB F/Fmaj7 CHECK: Object
- 🎯 setActiveWithTrail called: Object
- 📍 Stack trace:     at setActiveWithTrail (http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:1999:23)
-    at detect (http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:2831:13)
-    at applySeqItem (http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:1357:7)
-    at http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:1878:9
- 💾 Saved latched chord: Object
- 📝 lastPlayedChordRef set to: Fmaj7
- ✅ Sequencer detection complete
- 🎵 playNote START: Object
- 🔊 Initializing audio context...
- 🔊 Context state: running Sample rate: 44100
- 🆔 Generated note ID: 53-1762641485410-0.9233289641851756
- 📊 Frequency: 174.61 Hz, Time: 15.633
- 🎹 Creating oscillators...
- 🔗 Connecting audio graph...
- ▶️ Starting oscillators...
- ✅ Oscillators started successfully!
- 💾 Stored note. Active count: 5
- ✅ playNote COMPLETE, returning ID: 53-1762641485410-0.9233289641851756
- 🎵 playNote START: Object
- 🔊 Initializing audio context...
- 🔊 Context state: running Sample rate: 44100
- 🆔 Generated note ID: 57-1762641485410-0.8578408487931715
- 📊 Frequency: 220.00 Hz, Time: 15.633
- 🎹 Creating oscillators...
- 🔗 Connecting audio graph...
- ▶️ Starting oscillators...
- ✅ Oscillators started successfully!
- 💾 Stored note. Active count: 6
- ✅ playNote COMPLETE, returning ID: 57-1762641485410-0.8578408487931715
- 🎵 playNote START: Object
- 🔊 Initializing audio context...
- 🔊 Context state: running Sample rate: 44100
- 🆔 Generated note ID: 60-1762641485410-0.23161280739962464
- 📊 Frequency: 261.63 Hz, Time: 15.633
- 🎹 Creating oscillators...
- 🔗 Connecting audio graph...
- ▶️ Starting oscillators...
- ✅ Oscillators started successfully!
- 💾 Stored note. Active count: 7
- ✅ playNote COMPLETE, returning ID: 60-1762641485410-0.23161280739962464
- 🎵 playNote START: Object
- 🔊 Initializing audio context...
- 🔊 Context state: running Sample rate: 44100
- 🆔 Generated note ID: 64-1762641485411-0.755283728961736
- 📊 Frequency: 329.63 Hz, Time: 15.633
- 🎹 Creating oscillators...
- 🔗 Connecting audio graph...
- ▶️ Starting oscillators...
- ✅ Oscillators started successfully!
- 💾 Stored note. Active count: 8
- ✅ playNote COMPLETE, returning ID: 64-1762641485411-0.755283728961736
- 🎹 Simulating MIDI for sequencer: E7
- 🔍 Parsed: Object
- ✅ Root PC: 4
- 🎹 Simulated MIDI notes: Array(4) for chord: E7 transpose: 0
- 🔑 [SEQ-FIX v3.8.0] baseKeyRef synced to: C (original baseKey: C )
- 🔍 E7 DETECTED: Object
- 💎 lastDetectedChordRef set to: E7 (from theory.ts)
- 🔍 [DIM7 ALWAYS-CHECK] Object
- 🎯 setActiveWithTrail called: Object
- 📍 Stack trace:     at setActiveWithTrail (http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:1999:23)
-    at detect (http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:2634:9)
-    at applySeqItem (http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:1357:7)
-    at http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:1878:9
- 💾 Saved latched chord: Object
- 📝 lastPlayedChordRef set to: E7
- ✅ Sequencer detection complete
- 🎵 playNote START: Object
- 🔊 Initializing audio context...
- 🔊 Context state: running Sample rate: 44100
- 🆔 Generated note ID: 64-1762641486739-0.17203841642632367
- 📊 Frequency: 329.63 Hz, Time: 16.962
- 🎹 Creating oscillators...
- 🔗 Connecting audio graph...
- ▶️ Starting oscillators...
- ✅ Oscillators started successfully!
- 💾 Stored note. Active count: 1
- ✅ playNote COMPLETE, returning ID: 64-1762641486739-0.17203841642632367
- 🎵 playNote START: Object
- 🔊 Initializing audio context...
- 🔊 Context state: running Sample rate: 44100
- 🆔 Generated note ID: 68-1762641486739-0.4984329430331542
- 📊 Frequency: 415.30 Hz, Time: 16.962
- 🎹 Creating oscillators...
- 🔗 Connecting audio graph...
- ▶️ Starting oscillators...
- ✅ Oscillators started successfully!
- 💾 Stored note. Active count: 2
- ✅ playNote COMPLETE, returning ID: 68-1762641486739-0.4984329430331542
- 🎵 playNote START: Object
- 🔊 Initializing audio context...
- 🔊 Context state: running Sample rate: 44100
- 🆔 Generated note ID: 71-1762641486739-0.5344631500797938
- 📊 Frequency: 493.88 Hz, Time: 16.962
- 🎹 Creating oscillators...
- 🔗 Connecting audio graph...
- ▶️ Starting oscillators...
- ✅ Oscillators started successfully!
- 💾 Stored note. Active count: 3
- ✅ playNote COMPLETE, returning ID: 71-1762641486739-0.5344631500797938
- 🎵 playNote START: Object
- 🔊 Initializing audio context...
- 🔊 Context state: running Sample rate: 44100
- 🆔 Generated note ID: 74-1762641486739-0.5969691796224039
- 📊 Frequency: 587.33 Hz, Time: 16.962
- 🎹 Creating oscillators...
- 🔗 Connecting audio graph...
- ▶️ Starting oscillators...
- ✅ Oscillators started successfully!
- 💾 Stored note. Active count: 4
- ✅ playNote COMPLETE, returning ID: 74-1762641486739-0.5969691796224039
- 🏷️ WEDGE LABEL KEY: Object
- 🎹 Simulating MIDI for sequencer: E7
- 🔍 Parsed: Object
- ✅ Root PC: 4
- 🎹 Simulated MIDI notes: Array(4) for chord: E7 transpose: 0
- 🔑 [SEQ-FIX v3.8.0] baseKeyRef synced to: C (original baseKey: C )
- 🔍 E7 DETECTED: Object
- 💎 lastDetectedChordRef set to: E7 (from theory.ts)
- 🔍 [DIM7 ALWAYS-CHECK] Object
- 🎯 setActiveWithTrail called: Object
- 📍 Stack trace:     at setActiveWithTrail (http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:1999:23)
-    at detect (http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:2634:9)
-    at applySeqItem (http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:1357:7)
-    at http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:1878:9
- 💾 Saved latched chord: Object
- 📝 lastPlayedChordRef set to: E7
- ✅ Sequencer detection complete
- 🎵 playNote START: Object
- 🔊 Initializing audio context...
- 🔊 Context state: running Sample rate: 44100
- 🆔 Generated note ID: 64-1762641487310-0.3671026592966472
- 📊 Frequency: 329.63 Hz, Time: 17.531
- 🎹 Creating oscillators...
- 🔗 Connecting audio graph...
- ▶️ Starting oscillators...
- ✅ Oscillators started successfully!
- 💾 Stored note. Active count: 5
- ✅ playNote COMPLETE, returning ID: 64-1762641487310-0.3671026592966472
- 🎵 playNote START: Object
- 🔊 Initializing audio context...
- 🔊 Context state: running Sample rate: 44100
- 🆔 Generated note ID: 68-1762641487310-0.3481308949266263
- 📊 Frequency: 415.30 Hz, Time: 17.531
- 🎹 Creating oscillators...
- 🔗 Connecting audio graph...
- ▶️ Starting oscillators...
- ✅ Oscillators started successfully!
- 💾 Stored note. Active count: 6
- ✅ playNote COMPLETE, returning ID: 68-1762641487310-0.3481308949266263
- 🎵 playNote START: Object
- 🔊 Initializing audio context...
- 🔊 Context state: running Sample rate: 44100
- 🆔 Generated note ID: 71-1762641487310-0.6727615189146304
- 📊 Frequency: 493.88 Hz, Time: 17.537
- 🎹 Creating oscillators...
- 🔗 Connecting audio graph...
- ▶️ Starting oscillators...
- ✅ Oscillators started successfully!
- 💾 Stored note. Active count: 7
- ✅ playNote COMPLETE, returning ID: 71-1762641487310-0.6727615189146304
- 🎵 playNote START: Object
- 🔊 Initializing audio context...
- 🔊 Context state: running Sample rate: 44100
- 🆔 Generated note ID: 74-1762641487311-0.6905602542355378
- 📊 Frequency: 587.33 Hz, Time: 17.537
- 🎹 Creating oscillators...
- 🔗 Connecting audio graph...
- ▶️ Starting oscillators...
- ✅ Oscillators started successfully!
- 💾 Stored note. Active count: 8
- ✅ playNote COMPLETE, returning ID: 74-1762641487311-0.6905602542355378
- 🎹 Simulating MIDI for sequencer: Am
- 🔍 Parsed: Object
- ✅ Root PC: 9
- 🎹 Simulated MIDI notes: Array(3) for chord: Am transpose: 0
- 🔑 [SEQ-FIX v3.8.0] baseKeyRef synced to: C (original baseKey: C )
- 💎 lastDetectedChordRef set to: Am (from theory.ts)
- 🔍 [DIM7 ALWAYS-CHECK] Object
- 🏠 HOME CHECK: Object
- 🔒 ALLOW HOME CHECK: Object
- 🔍 V/vi CALC: Object
- 🎯 setActiveWithTrail called: Object
- 📍 Stack trace:     at setActiveWithTrail (http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:1999:23)
-    at detect (http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:3221:9)
-    at applySeqItem (http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:1357:7)
-    at http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:1878:9
- 💾 Saved latched chord: Object
- 📝 lastPlayedChordRef set to: Am
- ✅ Sequencer detection complete
- 🎵 playNote START: Object
- 🔊 Initializing audio context...
- 🔊 Context state: running Sample rate: 44100
- 🆔 Generated note ID: 57-1762641488440-0.7110737166266634
- 📊 Frequency: 220.00 Hz, Time: 18.663
- 🎹 Creating oscillators...
- 🔗 Connecting audio graph...
- ▶️ Starting oscillators...
- ✅ Oscillators started successfully!
- 💾 Stored note. Active count: 5
- ✅ playNote COMPLETE, returning ID: 57-1762641488440-0.7110737166266634
- 🎵 playNote START: Object
- 🔊 Initializing audio context...
- 🔊 Context state: running Sample rate: 44100
- 🆔 Generated note ID: 60-1762641488441-0.6614510638550811
- 📊 Frequency: 261.63 Hz, Time: 18.663
- 🎹 Creating oscillators...
- 🔗 Connecting audio graph...
- ▶️ Starting oscillators...
- ✅ Oscillators started successfully!
- 💾 Stored note. Active count: 6
- ✅ playNote COMPLETE, returning ID: 60-1762641488441-0.6614510638550811
- 🎵 playNote START: Object
- 🔊 Initializing audio context...
- 🔊 Context state: running Sample rate: 44100
- 🆔 Generated note ID: 64-1762641488441-0.20417489628192587
- 📊 Frequency: 329.63 Hz, Time: 18.663
- 🎹 Creating oscillators...
- 🔗 Connecting audio graph...
- ▶️ Starting oscillators...
- ✅ Oscillators started successfully!
- 💾 Stored note. Active count: 7
- ✅ playNote COMPLETE, returning ID: 64-1762641488441-0.20417489628192587
- 🎹 Simulating MIDI for sequencer: Am7
- 🔍 Parsed: Object
- ✅ Root PC: 9
- 🎹 Simulated MIDI notes: Array(4) for chord: Am7 transpose: 0
- 🔑 [SEQ-FIX v3.8.0] baseKeyRef synced to: C (original baseKey: C )
- 💎 lastDetectedChordRef set to: Am7 (from theory.ts)
- 🔍 [DIM7 ALWAYS-CHECK] Object
- 🏠 HOME CHECK: Object
- 🔒 ALLOW HOME CHECK: Object
- 🔍 V/vi CALC: Object
- 🎯 setActiveWithTrail called: Object
- 📍 Stack trace:     at setActiveWithTrail (http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:1999:23)
-    at detect (http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:3221:9)
-    at applySeqItem (http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:1357:7)
-    at http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:1878:9
- 💾 Saved latched chord: Object
-HarmonyWheel.tsx:4352 📝 lastPlayedChordRef set to: Am7
-HarmonyWheel.tsx:3594 ✅ Sequencer detection complete
-HarmonyWheel.tsx:6921 🎵 playNote START: Object
-HarmonyWheel.tsx:6928 🔊 Initializing audio context...
-HarmonyWheel.tsx:6930 🔊 Context state: running Sample rate: 44100
-HarmonyWheel.tsx:6939 🆔 Generated note ID: 57-1762641489946-0.19098170751470056
-HarmonyWheel.tsx:6943 📊 Frequency: 220.00 Hz, Time: 20.172
-HarmonyWheel.tsx:6946 🎹 Creating oscillators...
-HarmonyWheel.tsx:6974 🔗 Connecting audio graph...
-HarmonyWheel.tsx:6982 ▶️ Starting oscillators...
-HarmonyWheel.tsx:6986 ✅ Oscillators started successfully!
-HarmonyWheel.tsx:6993 💾 Stored note. Active count: 4
-HarmonyWheel.tsx:7016 ✅ playNote COMPLETE, returning ID: 57-1762641489946-0.19098170751470056
-HarmonyWheel.tsx:6921 🎵 playNote START: Object
-HarmonyWheel.tsx:6928 🔊 Initializing audio context...
-HarmonyWheel.tsx:6930 🔊 Context state: running Sample rate: 44100
-HarmonyWheel.tsx:6939 🆔 Generated note ID: 60-1762641489946-0.7986861210489504
-HarmonyWheel.tsx:6943 📊 Frequency: 261.63 Hz, Time: 20.172
-HarmonyWheel.tsx:6946 🎹 Creating oscillators...
-HarmonyWheel.tsx:6974 🔗 Connecting audio graph...
-HarmonyWheel.tsx:6982 ▶️ Starting oscillators...
-HarmonyWheel.tsx:6986 ✅ Oscillators started successfully!
-HarmonyWheel.tsx:6993 💾 Stored note. Active count: 5
-HarmonyWheel.tsx:7016 ✅ playNote COMPLETE, returning ID: 60-1762641489946-0.7986861210489504
-HarmonyWheel.tsx:6921 🎵 playNote START: Object
-HarmonyWheel.tsx:6928 🔊 Initializing audio context...
-HarmonyWheel.tsx:6930 🔊 Context state: running Sample rate: 44100
-HarmonyWheel.tsx:6939 🆔 Generated note ID: 64-1762641489946-0.7009772434282423
-HarmonyWheel.tsx:6943 📊 Frequency: 329.63 Hz, Time: 20.172
-HarmonyWheel.tsx:6946 🎹 Creating oscillators...
-HarmonyWheel.tsx:6974 🔗 Connecting audio graph...
-HarmonyWheel.tsx:6982 ▶️ Starting oscillators...
-HarmonyWheel.tsx:6986 ✅ Oscillators started successfully!
-HarmonyWheel.tsx:6993 💾 Stored note. Active count: 6
-HarmonyWheel.tsx:7016 ✅ playNote COMPLETE, returning ID: 64-1762641489946-0.7009772434282423
-HarmonyWheel.tsx:6921 🎵 playNote START: Object
-HarmonyWheel.tsx:6928 🔊 Initializing audio context...
-HarmonyWheel.tsx:6930 🔊 Context state: running Sample rate: 44100
-HarmonyWheel.tsx:6939 🆔 Generated note ID: 67-1762641489946-0.7357055858347162
-HarmonyWheel.tsx:6943 📊 Frequency: 392.00 Hz, Time: 20.172
-HarmonyWheel.tsx:6946 🎹 Creating oscillators...
-HarmonyWheel.tsx:6974 🔗 Connecting audio graph...
-HarmonyWheel.tsx:6982 ▶️ Starting oscillators...
-HarmonyWheel.tsx:6986 ✅ Oscillators started successfully!
-HarmonyWheel.tsx:6993 💾 Stored note. Active count: 7
-HarmonyWheel.tsx:7016 ✅ playNote COMPLETE, returning ID: 67-1762641489946-0.7357055858347162
-HarmonyWheel.tsx:3499 🎹 Simulating MIDI for sequencer: Fmaj7
-HarmonyWheel.tsx:3524 🔍 Parsed: Object
-HarmonyWheel.tsx:3533 ✅ Root PC: 5
-HarmonyWheel.tsx:3569 🎹 Simulated MIDI notes: Array(4) for chord: Fmaj7 transpose: 0
-HarmonyWheel.tsx:3581 🔑 [SEQ-FIX v3.8.0] baseKeyRef synced to: C (original baseKey: C )
-HarmonyWheel.tsx:4857 💎 lastDetectedChordRef set to: Fmaj7 (from theory.ts)
-HarmonyWheel.tsx:4874 🔍 [DIM7 ALWAYS-CHECK] Object
-HarmonyWheel.tsx:5241 🔧 SUB SECTION START: Object
-HarmonyWheel.tsx:5643 🏠 HOME CHECK: Object
-HarmonyWheel.tsx:5682 🔒 ALLOW HOME CHECK: Object
-HarmonyWheel.tsx:5719 🔍 V/vi CALC: Object
-HarmonyWheel.tsx:5859 ✅ EARLY Fmaj7 CHECK: [5,9,0,4] → IV wedge
-HarmonyWheel.tsx:4336 🎯 setActiveWithTrail called: Object
-HarmonyWheel.tsx:4337 📍 Stack trace:     at setActiveWithTrail (http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:1999:23)
-    at detect (http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:3215:9)
-    at applySeqItem (http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:1357:7)
-    at http://localhost:5173/src/HarmonyWheel.tsx?t=1762641457359:1888:11
-HarmonyWheel.tsx:4341 💾 Saved latched chord: Object
-HarmonyWheel.tsx:4352 📝 lastPlayedChordRef set to: Fmaj7
-HarmonyWheel.tsx:3594 ✅ Sequencer detection complete
-HarmonyWheel.tsx:6921 🎵 playNote START: Object
-HarmonyWheel.tsx:6928 🔊 Initializing audio context...
-HarmonyWheel.tsx:6930 🔊 Context state: running Sample rate: 44100
-HarmonyWheel.tsx:6939 🆔 Generated note ID: 53-1762641491451-0.4341370314497254
-HarmonyWheel.tsx:6943 📊 Frequency: 174.61 Hz, Time: 21.676
-HarmonyWheel.tsx:6946 🎹 Creating oscillators...
-HarmonyWheel.tsx:6974 🔗 Connecting audio graph...
-HarmonyWheel.tsx:6982 ▶️ Starting oscillators...
-HarmonyWheel.tsx:6986 ✅ Oscillators started successfully!
-HarmonyWheel.tsx:6993 💾 Stored note. Active count: 5
-HarmonyWheel.tsx:7016 ✅ playNote COMPLETE, returning ID: 53-1762641491451-0.4341370314497254
-HarmonyWheel.tsx:6921 🎵 playNote START: Object
-HarmonyWheel.tsx:6928 🔊 Initializing audio context...
-HarmonyWheel.tsx:6930 🔊 Context state: running Sample rate: 44100
-HarmonyWheel.tsx:6939 🆔 Generated note ID: 57-1762641491452-0.304578378120097
-HarmonyWheel.tsx:6943 📊 Frequency: 220.00 Hz, Time: 21.676
-HarmonyWheel.tsx:6946 🎹 Creating oscillators...
-HarmonyWheel.tsx:6974 🔗 Connecting audio graph...
-HarmonyWheel.tsx:6982 ▶️ Starting oscillators...
-HarmonyWheel.tsx:6986 ✅ Oscillators started successfully!
-HarmonyWheel.tsx:6993 💾 Stored note. Active count: 6
-HarmonyWheel.tsx:7016 ✅ playNote COMPLETE, returning ID: 57-1762641491452-0.304578378120097
-HarmonyWheel.tsx:6921 🎵 playNote START: Object
-HarmonyWheel.tsx:6928 🔊 Initializing audio context...
-HarmonyWheel.tsx:6930 🔊 Context state: running Sample rate: 44100
-HarmonyWheel.tsx:6939 🆔 Generated note ID: 60-1762641491452-0.34313398089752245
-HarmonyWheel.tsx:6943 📊 Frequency: 261.63 Hz, Time: 21.676
-HarmonyWheel.tsx:6946 🎹 Creating oscillators...
-HarmonyWheel.tsx:6974 🔗 Connecting audio graph...
-HarmonyWheel.tsx:6982 ▶️ Starting oscillators...
-HarmonyWheel.tsx:6986 ✅ Oscillators started successfully!
-HarmonyWheel.tsx:6993 💾 Stored note. Active count: 7
-HarmonyWheel.tsx:7016 ✅ playNote COMPLETE, returning ID: 60-1762641491452-0.34313398089752245
-HarmonyWheel.tsx:6921 🎵 playNote START: Object
-HarmonyWheel.tsx:6928 🔊 Initializing audio context...
-HarmonyWheel.tsx:6930 🔊 Context state: running Sample rate: 44100
-HarmonyWheel.tsx:6939 🆔 Generated note ID: 64-1762641491452-0.05473125920556032
-HarmonyWheel.tsx:6943 📊 Frequency: 329.63 Hz, Time: 21.676
-HarmonyWheel.tsx:6946 🎹 Creating oscillators...
-HarmonyWheel.tsx:6974 🔗 Connecting audio graph...
-HarmonyWheel.tsx:6982 ▶️ Starting oscillators...
-HarmonyWheel.tsx:6986 ✅ Oscillators started successfully!
-HarmonyWheel.tsx:6993 💾 Stored note. Active count: 8
-HarmonyWheel.tsx:7016 ✅ playNote COMPLETE, returning ID: 64-1762641491452-0.05473125920556032
+[{
+	"resource": "/Users/nathanrosenberg/Documents/GitHub/BKS-ChordWheel/ChordWheel/src/HarmonyWheel.tsx",
+	"owner": "typescript",
+	"code": "2322",
+	"severity": 8,
+	"message": "Type '() => JSX.Element' is not assignable to type 'ReactNode'.",
+	"source": "ts",
+	"startLineNumber": 7862,
+	"startColumn": 9,
+	"endLineNumber": 7862,
+	"endColumn": 42,
+	"origin": "extHost1"
+},{
+	"resource": "/Users/nathanrosenberg/Documents/GitHub/BKS-ChordWheel/ChordWheel/src/HarmonyWheel.tsx",
+	"owner": "typescript",
+	"code": "2304",
+	"severity": 8,
+	"message": "Cannot find name 'div'.",
+	"source": "ts",
+	"startLineNumber": 8370,
+	"startColumn": 22,
+	"endLineNumber": 8370,
+	"endColumn": 25,
+	"origin": "extHost1"
+},{
+	"resource": "/Users/nathanrosenberg/Documents/GitHub/BKS-ChordWheel/ChordWheel/src/HarmonyWheel.tsx",
+	"owner": "typescript",
+	"code": "1005",
+	"severity": 8,
+	"message": "')' expected.",
+	"source": "ts",
+	"startLineNumber": 8370,
+	"startColumn": 26,
+	"endLineNumber": 8370,
+	"endColumn": 31,
+	"origin": "extHost1"
+},{
+	"resource": "/Users/nathanrosenberg/Documents/GitHub/BKS-ChordWheel/ChordWheel/src/HarmonyWheel.tsx",
+	"owner": "typescript",
+	"code": "2353",
+	"severity": 8,
+	"message": "Object literal may only specify known properties, and 'padding' does not exist in type 'ReactElement<any, string | JSXElementConstructor<any>> | Iterable<ReactNode> | ReactPortal'.",
+	"source": "ts",
+	"startLineNumber": 8371,
+	"startColumn": 23,
+	"endLineNumber": 8371,
+	"endColumn": 30,
+	"origin": "extHost1"
+},{
+	"resource": "/Users/nathanrosenberg/Documents/GitHub/BKS-ChordWheel/ChordWheel/src/HarmonyWheel.tsx",
+	"owner": "typescript",
+	"code": "1382",
+	"severity": 8,
+	"message": "Unexpected token. Did you mean `{'>'}` or `&gt;`?",
+	"source": "ts",
+	"startLineNumber": 8379,
+	"startColumn": 23,
+	"endLineNumber": 8379,
+	"endColumn": 24,
+	"origin": "extHost1"
+},{
+	"resource": "/Users/nathanrosenberg/Documents/GitHub/BKS-ChordWheel/ChordWheel/src/HarmonyWheel.tsx",
+	"owner": "typescript",
+	"code": "1005",
+	"severity": 8,
+	"message": "';' expected.",
+	"source": "ts",
+	"startLineNumber": 8458,
+	"startColumn": 19,
+	"endLineNumber": 8458,
+	"endColumn": 20,
+	"origin": "extHost1"
+},{
+	"resource": "/Users/nathanrosenberg/Documents/GitHub/BKS-ChordWheel/ChordWheel/src/HarmonyWheel.tsx",
+	"owner": "typescript",
+	"code": "1381",
+	"severity": 8,
+	"message": "Unexpected token. Did you mean `{'}'}` or `&rbrace;`?",
+	"source": "ts",
+	"startLineNumber": 8608,
+	"startColumn": 16,
+	"endLineNumber": 8608,
+	"endColumn": 17,
+	"origin": "extHost1"
+},{
+	"resource": "/Users/nathanrosenberg/Documents/GitHub/BKS-ChordWheel/ChordWheel/src/HarmonyWheel.tsx",
+	"owner": "typescript",
+	"code": "2304",
+	"severity": 8,
+	"message": "Cannot find name 'totalW'.",
+	"source": "ts",
+	"startLineNumber": 8695,
+	"startColumn": 42,
+	"endLineNumber": 8695,
+	"endColumn": 48,
+	"origin": "extHost1"
+},{
+	"resource": "/Users/nathanrosenberg/Documents/GitHub/BKS-ChordWheel/ChordWheel/src/HarmonyWheel.tsx",
+	"owner": "typescript",
+	"code": "2304",
+	"severity": 8,
+	"message": "Cannot find name 'HW'.",
+	"source": "ts",
+	"startLineNumber": 8695,
+	"startColumn": 52,
+	"endLineNumber": 8695,
+	"endColumn": 54,
+	"origin": "extHost1"
+},{
+	"resource": "/Users/nathanrosenberg/Documents/GitHub/BKS-ChordWheel/ChordWheel/src/HarmonyWheel.tsx",
+	"owner": "typescript",
+	"code": "2304",
+	"severity": 8,
+	"message": "Cannot find name 'whitePos'.",
+	"source": "ts",
+	"startLineNumber": 8697,
+	"startColumn": 37,
+	"endLineNumber": 8697,
+	"endColumn": 45,
+	"origin": "extHost1"
+},{
+	"resource": "/Users/nathanrosenberg/Documents/GitHub/BKS-ChordWheel/ChordWheel/src/HarmonyWheel.tsx",
+	"owner": "typescript",
+	"code": "2304",
+	"severity": 8,
+	"message": "Cannot find name 'disp'.",
+	"source": "ts",
+	"startLineNumber": 8699,
+	"startColumn": 34,
+	"endLineNumber": 8699,
+	"endColumn": 38,
+	"origin": "extHost1"
+},{
+	"resource": "/Users/nathanrosenberg/Documents/GitHub/BKS-ChordWheel/ChordWheel/src/HarmonyWheel.tsx",
+	"owner": "typescript",
+	"code": "2322",
+	"severity": 8,
+	"message": "Type 'unknown' is not assignable to type 'string | number | undefined'.",
+	"source": "ts",
+	"startLineNumber": 8710,
+	"startColumn": 33,
+	"endLineNumber": 8710,
+	"endColumn": 34,
+	"relatedInformation": [
+		{
+			"startLineNumber": 3949,
+			"startColumn": 9,
+			"endLineNumber": 3949,
+			"endColumn": 10,
+			"message": "The expected type comes from property 'x' which is declared here on type 'SVGProps<SVGRectElement>'",
+			"resource": "/Users/nathanrosenberg/Documents/GitHub/BKS-ChordWheel/ChordWheel/node_modules/@types/react/index.d.ts"
+		}
+	],
+	"origin": "extHost1"
+},{
+	"resource": "/Users/nathanrosenberg/Documents/GitHub/BKS-ChordWheel/ChordWheel/src/HarmonyWheel.tsx",
+	"owner": "typescript",
+	"code": "2304",
+	"severity": 8,
+	"message": "Cannot find name 'WW'.",
+	"source": "ts",
+	"startLineNumber": 8710,
+	"startColumn": 52,
+	"endLineNumber": 8710,
+	"endColumn": 54,
+	"origin": "extHost1"
+},{
+	"resource": "/Users/nathanrosenberg/Documents/GitHub/BKS-ChordWheel/ChordWheel/src/HarmonyWheel.tsx",
+	"owner": "typescript",
+	"code": "2304",
+	"severity": 8,
+	"message": "Cannot find name 'HW'.",
+	"source": "ts",
+	"startLineNumber": 8710,
+	"startColumn": 64,
+	"endLineNumber": 8710,
+	"endColumn": 66,
+	"origin": "extHost1"
+},{
+	"resource": "/Users/nathanrosenberg/Documents/GitHub/BKS-ChordWheel/ChordWheel/src/HarmonyWheel.tsx",
+	"owner": "typescript",
+	"code": "2304",
+	"severity": 8,
+	"message": "Cannot find name 'blackPos'.",
+	"source": "ts",
+	"startLineNumber": 8752,
+	"startColumn": 37,
+	"endLineNumber": 8752,
+	"endColumn": 45,
+	"origin": "extHost1"
+},{
+	"resource": "/Users/nathanrosenberg/Documents/GitHub/BKS-ChordWheel/ChordWheel/src/HarmonyWheel.tsx",
+	"owner": "typescript",
+	"code": "2304",
+	"severity": 8,
+	"message": "Cannot find name 'disp'.",
+	"source": "ts",
+	"startLineNumber": 8754,
+	"startColumn": 34,
+	"endLineNumber": 8754,
+	"endColumn": 38,
+	"origin": "extHost1"
+},{
+	"resource": "/Users/nathanrosenberg/Documents/GitHub/BKS-ChordWheel/ChordWheel/src/HarmonyWheel.tsx",
+	"owner": "typescript",
+	"code": "2322",
+	"severity": 8,
+	"message": "Type 'unknown' is not assignable to type 'string | number | undefined'.",
+	"source": "ts",
+	"startLineNumber": 8766,
+	"startColumn": 33,
+	"endLineNumber": 8766,
+	"endColumn": 34,
+	"relatedInformation": [
+		{
+			"startLineNumber": 3949,
+			"startColumn": 9,
+			"endLineNumber": 3949,
+			"endColumn": 10,
+			"message": "The expected type comes from property 'x' which is declared here on type 'SVGProps<SVGRectElement>'",
+			"resource": "/Users/nathanrosenberg/Documents/GitHub/BKS-ChordWheel/ChordWheel/node_modules/@types/react/index.d.ts"
+		}
+	],
+	"origin": "extHost1"
+},{
+	"resource": "/Users/nathanrosenberg/Documents/GitHub/BKS-ChordWheel/ChordWheel/src/HarmonyWheel.tsx",
+	"owner": "typescript",
+	"code": "2304",
+	"severity": 8,
+	"message": "Cannot find name 'WB'.",
+	"source": "ts",
+	"startLineNumber": 8766,
+	"startColumn": 52,
+	"endLineNumber": 8766,
+	"endColumn": 54,
+	"origin": "extHost1"
+},{
+	"resource": "/Users/nathanrosenberg/Documents/GitHub/BKS-ChordWheel/ChordWheel/src/HarmonyWheel.tsx",
+	"owner": "typescript",
+	"code": "2304",
+	"severity": 8,
+	"message": "Cannot find name 'HB'.",
+	"source": "ts",
+	"startLineNumber": 8766,
+	"startColumn": 64,
+	"endLineNumber": 8766,
+	"endColumn": 66,
+	"origin": "extHost1"
+},{
+	"resource": "/Users/nathanrosenberg/Documents/GitHub/BKS-ChordWheel/ChordWheel/src/HarmonyWheel.tsx",
+	"owner": "typescript",
+	"code": "2304",
+	"severity": 8,
+	"message": "Cannot find name 'whitePos'.",
+	"source": "ts",
+	"startLineNumber": 8810,
+	"startColumn": 37,
+	"endLineNumber": 8810,
+	"endColumn": 45,
+	"origin": "extHost1"
+},{
+	"resource": "/Users/nathanrosenberg/Documents/GitHub/BKS-ChordWheel/ChordWheel/src/HarmonyWheel.tsx",
+	"owner": "typescript",
+	"code": "2304",
+	"severity": 8,
+	"message": "Cannot find name 'disp'.",
+	"source": "ts",
+	"startLineNumber": 8812,
+	"startColumn": 34,
+	"endLineNumber": 8812,
+	"endColumn": 38,
+	"origin": "extHost1"
+},{
+	"resource": "/Users/nathanrosenberg/Documents/GitHub/BKS-ChordWheel/ChordWheel/src/HarmonyWheel.tsx",
+	"owner": "typescript",
+	"code": "18046",
+	"severity": 8,
+	"message": "'x' is of type 'unknown'.",
+	"source": "ts",
+	"startLineNumber": 8856,
+	"startColumn": 33,
+	"endLineNumber": 8856,
+	"endColumn": 34,
+	"origin": "extHost1"
+},{
+	"resource": "/Users/nathanrosenberg/Documents/GitHub/BKS-ChordWheel/ChordWheel/src/HarmonyWheel.tsx",
+	"owner": "typescript",
+	"code": "2304",
+	"severity": 8,
+	"message": "Cannot find name 'WW'.",
+	"source": "ts",
+	"startLineNumber": 8856,
+	"startColumn": 37,
+	"endLineNumber": 8856,
+	"endColumn": 39,
+	"origin": "extHost1"
+},{
+	"resource": "/Users/nathanrosenberg/Documents/GitHub/BKS-ChordWheel/ChordWheel/src/HarmonyWheel.tsx",
+	"owner": "typescript",
+	"code": "2304",
+	"severity": 8,
+	"message": "Cannot find name 'WW'.",
+	"source": "ts",
+	"startLineNumber": 8858,
+	"startColumn": 32,
+	"endLineNumber": 8858,
+	"endColumn": 34,
+	"origin": "extHost1"
+},{
+	"resource": "/Users/nathanrosenberg/Documents/GitHub/BKS-ChordWheel/ChordWheel/src/HarmonyWheel.tsx",
+	"owner": "typescript",
+	"code": "18046",
+	"severity": 8,
+	"message": "'x' is of type 'unknown'.",
+	"source": "ts",
+	"startLineNumber": 8864,
+	"startColumn": 32,
+	"endLineNumber": 8864,
+	"endColumn": 33,
+	"origin": "extHost1"
+},{
+	"resource": "/Users/nathanrosenberg/Documents/GitHub/BKS-ChordWheel/ChordWheel/src/HarmonyWheel.tsx",
+	"owner": "typescript",
+	"code": "2304",
+	"severity": 8,
+	"message": "Cannot find name 'WW'.",
+	"source": "ts",
+	"startLineNumber": 8864,
+	"startColumn": 36,
+	"endLineNumber": 8864,
+	"endColumn": 38,
+	"origin": "extHost1"
+},{
+	"resource": "/Users/nathanrosenberg/Documents/GitHub/BKS-ChordWheel/ChordWheel/src/HarmonyWheel.tsx",
+	"owner": "typescript",
+	"code": "2304",
+	"severity": 8,
+	"message": "Cannot find name 'WW'.",
+	"source": "ts",
+	"startLineNumber": 8865,
+	"startColumn": 37,
+	"endLineNumber": 8865,
+	"endColumn": 39,
+	"origin": "extHost1"
+},{
+	"resource": "/Users/nathanrosenberg/Documents/GitHub/BKS-ChordWheel/ChordWheel/src/HarmonyWheel.tsx",
+	"owner": "typescript",
+	"code": "2304",
+	"severity": 8,
+	"message": "Cannot find name 'WW'.",
+	"source": "ts",
+	"startLineNumber": 8867,
+	"startColumn": 39,
+	"endLineNumber": 8867,
+	"endColumn": 41,
+	"origin": "extHost1"
+},{
+	"resource": "/Users/nathanrosenberg/Documents/GitHub/BKS-ChordWheel/ChordWheel/src/HarmonyWheel.tsx",
+	"owner": "typescript",
+	"code": "18046",
+	"severity": 8,
+	"message": "'x' is of type 'unknown'.",
+	"source": "ts",
+	"startLineNumber": 8877,
+	"startColumn": 32,
+	"endLineNumber": 8877,
+	"endColumn": 33,
+	"origin": "extHost1"
+},{
+	"resource": "/Users/nathanrosenberg/Documents/GitHub/BKS-ChordWheel/ChordWheel/src/HarmonyWheel.tsx",
+	"owner": "typescript",
+	"code": "2304",
+	"severity": 8,
+	"message": "Cannot find name 'WW'.",
+	"source": "ts",
+	"startLineNumber": 8877,
+	"startColumn": 36,
+	"endLineNumber": 8877,
+	"endColumn": 38,
+	"origin": "extHost1"
+},{
+	"resource": "/Users/nathanrosenberg/Documents/GitHub/BKS-ChordWheel/ChordWheel/src/HarmonyWheel.tsx",
+	"owner": "typescript",
+	"code": "2304",
+	"severity": 8,
+	"message": "Cannot find name 'HW'.",
+	"source": "ts",
+	"startLineNumber": 8878,
+	"startColumn": 32,
+	"endLineNumber": 8878,
+	"endColumn": 34,
+	"origin": "extHost1"
+},{
+	"resource": "/Users/nathanrosenberg/Documents/GitHub/BKS-ChordWheel/ChordWheel/src/HarmonyWheel.tsx",
+	"owner": "typescript",
+	"code": "2304",
+	"severity": 8,
+	"message": "Cannot find name 'WW'.",
+	"source": "ts",
+	"startLineNumber": 8879,
+	"startColumn": 36,
+	"endLineNumber": 8879,
+	"endColumn": 38,
+	"origin": "extHost1"
+},{
+	"resource": "/Users/nathanrosenberg/Documents/GitHub/BKS-ChordWheel/ChordWheel/src/HarmonyWheel.tsx",
+	"owner": "typescript",
+	"code": "2304",
+	"severity": 8,
+	"message": "Cannot find name 'WW'.",
+	"source": "ts",
+	"startLineNumber": 8880,
+	"startColumn": 37,
+	"endLineNumber": 8880,
+	"endColumn": 39,
+	"origin": "extHost1"
+},{
+	"resource": "/Users/nathanrosenberg/Documents/GitHub/BKS-ChordWheel/ChordWheel/src/HarmonyWheel.tsx",
+	"owner": "typescript",
+	"code": "2304",
+	"severity": 8,
+	"message": "Cannot find name 'WW'.",
+	"source": "ts",
+	"startLineNumber": 8881,
+	"startColumn": 33,
+	"endLineNumber": 8881,
+	"endColumn": 35,
+	"origin": "extHost1"
+},{
+	"resource": "/Users/nathanrosenberg/Documents/GitHub/BKS-ChordWheel/ChordWheel/src/HarmonyWheel.tsx",
+	"owner": "typescript",
+	"code": "2304",
+	"severity": 8,
+	"message": "Cannot find name 'WW'.",
+	"source": "ts",
+	"startLineNumber": 8882,
+	"startColumn": 33,
+	"endLineNumber": 8882,
+	"endColumn": 35,
+	"origin": "extHost1"
+},{
+	"resource": "/Users/nathanrosenberg/Documents/GitHub/BKS-ChordWheel/ChordWheel/src/HarmonyWheel.tsx",
+	"owner": "typescript",
+	"code": "18046",
+	"severity": 8,
+	"message": "'x' is of type 'unknown'.",
+	"source": "ts",
+	"startLineNumber": 8885,
+	"startColumn": 69,
+	"endLineNumber": 8885,
+	"endColumn": 70,
+	"origin": "extHost1"
+},{
+	"resource": "/Users/nathanrosenberg/Documents/GitHub/BKS-ChordWheel/ChordWheel/src/HarmonyWheel.tsx",
+	"owner": "typescript",
+	"code": "2304",
+	"severity": 8,
+	"message": "Cannot find name 'WW'.",
+	"source": "ts",
+	"startLineNumber": 8885,
+	"startColumn": 73,
+	"endLineNumber": 8885,
+	"endColumn": 75,
+	"origin": "extHost1"
+},{
+	"resource": "/Users/nathanrosenberg/Documents/GitHub/BKS-ChordWheel/ChordWheel/src/HarmonyWheel.tsx",
+	"owner": "typescript",
+	"code": "2304",
+	"severity": 8,
+	"message": "Cannot find name 'HW'.",
+	"source": "ts",
+	"startLineNumber": 8885,
+	"startColumn": 82,
+	"endLineNumber": 8885,
+	"endColumn": 84,
+	"origin": "extHost1"
+},{
+	"resource": "/Users/nathanrosenberg/Documents/GitHub/BKS-ChordWheel/ChordWheel/src/HarmonyWheel.tsx",
+	"owner": "typescript",
+	"code": "2304",
+	"severity": 8,
+	"message": "Cannot find name 'blackPos'.",
+	"source": "ts",
+	"startLineNumber": 8890,
+	"startColumn": 37,
+	"endLineNumber": 8890,
+	"endColumn": 45,
+	"origin": "extHost1"
+},{
+	"resource": "/Users/nathanrosenberg/Documents/GitHub/BKS-ChordWheel/ChordWheel/src/HarmonyWheel.tsx",
+	"owner": "typescript",
+	"code": "2304",
+	"severity": 8,
+	"message": "Cannot find name 'disp'.",
+	"source": "ts",
+	"startLineNumber": 8892,
+	"startColumn": 34,
+	"endLineNumber": 8892,
+	"endColumn": 38,
+	"origin": "extHost1"
+},{
+	"resource": "/Users/nathanrosenberg/Documents/GitHub/BKS-ChordWheel/ChordWheel/src/HarmonyWheel.tsx",
+	"owner": "typescript",
+	"code": "18046",
+	"severity": 8,
+	"message": "'x' is of type 'unknown'.",
+	"source": "ts",
+	"startLineNumber": 8936,
+	"startColumn": 33,
+	"endLineNumber": 8936,
+	"endColumn": 34,
+	"origin": "extHost1"
+},{
+	"resource": "/Users/nathanrosenberg/Documents/GitHub/BKS-ChordWheel/ChordWheel/src/HarmonyWheel.tsx",
+	"owner": "typescript",
+	"code": "2304",
+	"severity": 8,
+	"message": "Cannot find name 'WB'.",
+	"source": "ts",
+	"startLineNumber": 8936,
+	"startColumn": 37,
+	"endLineNumber": 8936,
+	"endColumn": 39,
+	"origin": "extHost1"
+},{
+	"resource": "/Users/nathanrosenberg/Documents/GitHub/BKS-ChordWheel/ChordWheel/src/HarmonyWheel.tsx",
+	"owner": "typescript",
+	"code": "2304",
+	"severity": 8,
+	"message": "Cannot find name 'WW'.",
+	"source": "ts",
+	"startLineNumber": 8938,
+	"startColumn": 32,
+	"endLineNumber": 8938,
+	"endColumn": 34,
+	"origin": "extHost1"
+},{
+	"resource": "/Users/nathanrosenberg/Documents/GitHub/BKS-ChordWheel/ChordWheel/src/HarmonyWheel.tsx",
+	"owner": "typescript",
+	"code": "18046",
+	"severity": 8,
+	"message": "'x' is of type 'unknown'.",
+	"source": "ts",
+	"startLineNumber": 8944,
+	"startColumn": 32,
+	"endLineNumber": 8944,
+	"endColumn": 33,
+	"origin": "extHost1"
+},{
+	"resource": "/Users/nathanrosenberg/Documents/GitHub/BKS-ChordWheel/ChordWheel/src/HarmonyWheel.tsx",
+	"owner": "typescript",
+	"code": "2304",
+	"severity": 8,
+	"message": "Cannot find name 'WB'.",
+	"source": "ts",
+	"startLineNumber": 8944,
+	"startColumn": 36,
+	"endLineNumber": 8944,
+	"endColumn": 38,
+	"origin": "extHost1"
+},{
+	"resource": "/Users/nathanrosenberg/Documents/GitHub/BKS-ChordWheel/ChordWheel/src/HarmonyWheel.tsx",
+	"owner": "typescript",
+	"code": "2304",
+	"severity": 8,
+	"message": "Cannot find name 'WW'.",
+	"source": "ts",
+	"startLineNumber": 8945,
+	"startColumn": 37,
+	"endLineNumber": 8945,
+	"endColumn": 39,
+	"origin": "extHost1"
+},{
+	"resource": "/Users/nathanrosenberg/Documents/GitHub/BKS-ChordWheel/ChordWheel/src/HarmonyWheel.tsx",
+	"owner": "typescript",
+	"code": "2304",
+	"severity": 8,
+	"message": "Cannot find name 'WW'.",
+	"source": "ts",
+	"startLineNumber": 8947,
+	"startColumn": 39,
+	"endLineNumber": 8947,
+	"endColumn": 41,
+	"origin": "extHost1"
+},{
+	"resource": "/Users/nathanrosenberg/Documents/GitHub/BKS-ChordWheel/ChordWheel/src/HarmonyWheel.tsx",
+	"owner": "typescript",
+	"code": "18046",
+	"severity": 8,
+	"message": "'x' is of type 'unknown'.",
+	"source": "ts",
+	"startLineNumber": 8957,
+	"startColumn": 32,
+	"endLineNumber": 8957,
+	"endColumn": 33,
+	"origin": "extHost1"
+},{
+	"resource": "/Users/nathanrosenberg/Documents/GitHub/BKS-ChordWheel/ChordWheel/src/HarmonyWheel.tsx",
+	"owner": "typescript",
+	"code": "2304",
+	"severity": 8,
+	"message": "Cannot find name 'WB'.",
+	"source": "ts",
+	"startLineNumber": 8957,
+	"startColumn": 36,
+	"endLineNumber": 8957,
+	"endColumn": 38,
+	"origin": "extHost1"
+},{
+	"resource": "/Users/nathanrosenberg/Documents/GitHub/BKS-ChordWheel/ChordWheel/src/HarmonyWheel.tsx",
+	"owner": "typescript",
+	"code": "2304",
+	"severity": 8,
+	"message": "Cannot find name 'HB'.",
+	"source": "ts",
+	"startLineNumber": 8958,
+	"startColumn": 32,
+	"endLineNumber": 8958,
+	"endColumn": 34,
+	"origin": "extHost1"
+},{
+	"resource": "/Users/nathanrosenberg/Documents/GitHub/BKS-ChordWheel/ChordWheel/src/HarmonyWheel.tsx",
+	"owner": "typescript",
+	"code": "2304",
+	"severity": 8,
+	"message": "Cannot find name 'WB'.",
+	"source": "ts",
+	"startLineNumber": 8959,
+	"startColumn": 36,
+	"endLineNumber": 8959,
+	"endColumn": 38,
+	"origin": "extHost1"
+},{
+	"resource": "/Users/nathanrosenberg/Documents/GitHub/BKS-ChordWheel/ChordWheel/src/HarmonyWheel.tsx",
+	"owner": "typescript",
+	"code": "2304",
+	"severity": 8,
+	"message": "Cannot find name 'WB'.",
+	"source": "ts",
+	"startLineNumber": 8960,
+	"startColumn": 37,
+	"endLineNumber": 8960,
+	"endColumn": 39,
+	"origin": "extHost1"
+},{
+	"resource": "/Users/nathanrosenberg/Documents/GitHub/BKS-ChordWheel/ChordWheel/src/HarmonyWheel.tsx",
+	"owner": "typescript",
+	"code": "2304",
+	"severity": 8,
+	"message": "Cannot find name 'WB'.",
+	"source": "ts",
+	"startLineNumber": 8961,
+	"startColumn": 33,
+	"endLineNumber": 8961,
+	"endColumn": 35,
+	"origin": "extHost1"
+},{
+	"resource": "/Users/nathanrosenberg/Documents/GitHub/BKS-ChordWheel/ChordWheel/src/HarmonyWheel.tsx",
+	"owner": "typescript",
+	"code": "2304",
+	"severity": 8,
+	"message": "Cannot find name 'WB'.",
+	"source": "ts",
+	"startLineNumber": 8962,
+	"startColumn": 33,
+	"endLineNumber": 8962,
+	"endColumn": 35,
+	"origin": "extHost1"
+},{
+	"resource": "/Users/nathanrosenberg/Documents/GitHub/BKS-ChordWheel/ChordWheel/src/HarmonyWheel.tsx",
+	"owner": "typescript",
+	"code": "18046",
+	"severity": 8,
+	"message": "'x' is of type 'unknown'.",
+	"source": "ts",
+	"startLineNumber": 8965,
+	"startColumn": 69,
+	"endLineNumber": 8965,
+	"endColumn": 70,
+	"origin": "extHost1"
+},{
+	"resource": "/Users/nathanrosenberg/Documents/GitHub/BKS-ChordWheel/ChordWheel/src/HarmonyWheel.tsx",
+	"owner": "typescript",
+	"code": "2304",
+	"severity": 8,
+	"message": "Cannot find name 'WB'.",
+	"source": "ts",
+	"startLineNumber": 8965,
+	"startColumn": 73,
+	"endLineNumber": 8965,
+	"endColumn": 75,
+	"origin": "extHost1"
+},{
+	"resource": "/Users/nathanrosenberg/Documents/GitHub/BKS-ChordWheel/ChordWheel/src/HarmonyWheel.tsx",
+	"owner": "typescript",
+	"code": "2304",
+	"severity": 8,
+	"message": "Cannot find name 'HB'.",
+	"source": "ts",
+	"startLineNumber": 8965,
+	"startColumn": 82,
+	"endLineNumber": 8965,
+	"endColumn": 84,
+	"origin": "extHost1"
+},{
+	"resource": "/Users/nathanrosenberg/Documents/GitHub/BKS-ChordWheel/ChordWheel/src/HarmonyWheel.tsx",
+	"owner": "typescript",
+	"code": "2304",
+	"severity": 8,
+	"message": "Cannot find name 'HW'.",
+	"source": "ts",
+	"startLineNumber": 8982,
+	"startColumn": 32,
+	"endLineNumber": 8982,
+	"endColumn": 34,
+	"origin": "extHost1"
+},{
+	"resource": "/Users/nathanrosenberg/Documents/GitHub/BKS-ChordWheel/ChordWheel/src/HarmonyWheel.tsx",
+	"owner": "typescript",
+	"code": "2304",
+	"severity": 8,
+	"message": "Cannot find name 'HW'.",
+	"source": "ts",
+	"startLineNumber": 8983,
+	"startColumn": 32,
+	"endLineNumber": 8983,
+	"endColumn": 34,
+	"origin": "extHost1"
+},{
+	"resource": "/Users/nathanrosenberg/Documents/GitHub/BKS-ChordWheel/ChordWheel/src/HarmonyWheel.tsx",
+	"owner": "typescript",
+	"code": "2304",
+	"severity": 8,
+	"message": "Cannot find name 'totalW'.",
+	"source": "ts",
+	"startLineNumber": 8986,
+	"startColumn": 71,
+	"endLineNumber": 8986,
+	"endColumn": 77,
+	"origin": "extHost1"
+},{
+	"resource": "/Users/nathanrosenberg/Documents/GitHub/BKS-ChordWheel/ChordWheel/src/HarmonyWheel.tsx",
+	"owner": "typescript",
+	"code": "2304",
+	"severity": 8,
+	"message": "Cannot find name 'HW'.",
+	"source": "ts",
+	"startLineNumber": 8986,
+	"startColumn": 94,
+	"endLineNumber": 8986,
+	"endColumn": 96,
+	"origin": "extHost1"
+},{
+	"resource": "/Users/nathanrosenberg/Documents/GitHub/BKS-ChordWheel/ChordWheel/src/HarmonyWheel.tsx",
+	"owner": "typescript",
+	"code": "1381",
+	"severity": 8,
+	"message": "Unexpected token. Did you mean `{'}'}` or `&rbrace;`?",
+	"source": "ts",
+	"startLineNumber": 10181,
+	"startColumn": 9,
+	"endLineNumber": 10181,
+	"endColumn": 10,
+	"origin": "extHost1"
+},{
+	"resource": "/Users/nathanrosenberg/Documents/GitHub/BKS-ChordWheel/ChordWheel/src/HarmonyWheel.tsx",
+	"owner": "typescript",
+	"code": "1381",
+	"severity": 8,
+	"message": "Unexpected token. Did you mean `{'}'}` or `&rbrace;`?",
+	"source": "ts",
+	"startLineNumber": 10181,
+	"startColumn": 13,
+	"endLineNumber": 10181,
+	"endColumn": 14,
+	"origin": "extHost1"
+},{
+	"resource": "/Users/nathanrosenberg/Documents/GitHub/BKS-ChordWheel/ChordWheel/src/HarmonyWheel.tsx",
+	"owner": "typescript",
+	"code": "1005",
+	"severity": 8,
+	"message": "')' expected.",
+	"source": "ts",
+	"startLineNumber": 10185,
+	"startColumn": 7,
+	"endLineNumber": 10185,
+	"endColumn": 8,
+	"origin": "extHost1"
+},{
+	"resource": "/Users/nathanrosenberg/Documents/GitHub/BKS-ChordWheel/ChordWheel/src/HarmonyWheel.tsx",
+	"owner": "typescript",
+	"code": "1128",
+	"severity": 8,
+	"message": "Declaration or statement expected.",
+	"source": "ts",
+	"startLineNumber": 10189,
+	"startColumn": 5,
+	"endLineNumber": 10189,
+	"endColumn": 7,
+	"origin": "extHost1"
+},{
+	"resource": "/Users/nathanrosenberg/Documents/GitHub/BKS-ChordWheel/ChordWheel/src/HarmonyWheel.tsx",
+	"owner": "typescript",
+	"code": "2304",
+	"severity": 8,
+	"message": "Cannot find name 'div'.",
+	"source": "ts",
+	"startLineNumber": 10189,
+	"startColumn": 7,
+	"endLineNumber": 10189,
+	"endColumn": 10,
+	"origin": "extHost1"
+},{
+	"resource": "/Users/nathanrosenberg/Documents/GitHub/BKS-ChordWheel/ChordWheel/src/HarmonyWheel.tsx",
+	"owner": "typescript",
+	"code": "1109",
+	"severity": 8,
+	"message": "Expression expected.",
+	"source": "ts",
+	"startLineNumber": 10190,
+	"startColumn": 3,
+	"endLineNumber": 10190,
+	"endColumn": 4,
+	"origin": "extHost1"
+}]
