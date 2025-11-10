@@ -1,5 +1,5 @@
 /*
- * HarmonyWheel.tsx — v3.19.45 🔧 Compiler Fix + Minimal Logging
+ * HarmonyWheel.tsx — v3.19.55 🔧 Compiler Fix + Minimal Logging
  * 
  * 🔧 TYPESCRIPT COMPILER FIX:
  * - Fixed: absName used before declaration (line 4685 before 4747)
@@ -1858,7 +1858,7 @@ import {
   parseSongMetadata
 } from "./lib/songManager";
 
-const HW_VERSION = 'v3.19.45';
+const HW_VERSION = 'v3.19.55';
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
 import { DIM_OPACITY } from "./lib/config";
@@ -2346,7 +2346,7 @@ useEffect(() => {
   const lastInputWasPreviewRef = useRef(false);
 
   const lastMidiEventRef = useRef<"on"|"off"|"cc"|"other">("other");
-  const lastPlayedMidiNotesRef = useRef<number[]>([]); // v3.19.45: For voice leading in sequencer
+  const lastPlayedMidiNotesRef = useRef<number[]>([]); // v3.19.55: For voice leading in sequencer
 
 
   const bindToInput=(id:string, acc:any)=>{
@@ -2558,7 +2558,7 @@ useEffect(() => {
   const [songTitle, setSongTitle] = useState(""); // Static song title from @TITLE
   const [bannerMessage, setBannerMessage] = useState(""); // ✅ Configurable banner message from @BANNER
   
-  // v3.19.45: Calendar events for ticker
+  // v3.19.55: Calendar events for ticker
   const [calendarEvents, setCalendarEvents] = useState<Array<{
     title: string;
     start: Date;
@@ -2566,7 +2566,7 @@ useEffect(() => {
     isLive: boolean;
   }>>([]);
   const [tickerText, setTickerText] = useState("Loading schedule...");
-  const [tickerEvents, setTickerEvents] = useState<Array<{text: string; isLive: boolean; isSoon: boolean}>>([]);  // v3.19.45: Added isSoon for orange color
+  const [tickerEvents, setTickerEvents] = useState<Array<{text: string; isLive: boolean; isSoon: boolean}>>([]);  // v3.19.55: Added isSoon for orange color
   
   // Autoload preloaded playlist on mount
   useEffect(() => {
@@ -2575,12 +2575,12 @@ useEffect(() => {
     }
   }, []); // Run once on mount
   
-  // v3.19.45: Fetch calendar events from Teamup API
+  // v3.19.55: Fetch calendar events from Teamup API
   useEffect(() => {
     const fetchCalendarEvents = async () => {
       console.log('🗓️ Fetching Teamup calendar events...');
       
-      // v3.19.45: FALLBACK - Hardcoded events (update these manually if API fails)
+      // v3.19.55: FALLBACK - Hardcoded events (update these manually if API fails)
       const FALLBACK_EVENTS = [
         { title: 'Music Theory Gym', date: '2025-01-14T18:00:00-08:00' },
         { title: 'Office Hours', date: '2025-01-15T15:00:00-08:00' },
@@ -2641,7 +2641,7 @@ useEffect(() => {
             end: new Date(event.end_dt),
             subcalendar_ids: event.subcalendar_ids || []
           }))
-          .filter((e: any) => e.end > now)  // v3.19.45: Include events that haven't ended yet (captures live events!)
+          .filter((e: any) => e.end > now)  // v3.19.55: Include events that haven't ended yet (captures live events!)
           .sort((a: any, b: any) => a.start.getTime() - b.start.getTime());
         
         console.log('🗓️ Total upcoming events:', upcomingEvents.length);
@@ -2669,7 +2669,7 @@ useEffect(() => {
           const event = theoryGyms[0];
           const isLive = now >= event.start && now <= event.end;
           const hoursUntil = (event.start.getTime() - now.getTime()) / (1000 * 60 * 60);
-          const isSoon = !isLive && hoursUntil <= 12;  // v3.19.45: Orange if within 12h but not live
+          const isSoon = !isLive && hoursUntil <= 12;  // v3.19.55: Orange if within 12h but not live
           const timeStr = formatEventTime(event.start, now);
           const cleanTitle = event.title.replace(/Live\s+/i, '').trim();
           console.log('🗓️ Next theory gym:', cleanTitle, '→', timeStr, isLive ? '🔴 LIVE' : isSoon ? '🟠 SOON' : '');
@@ -2705,7 +2705,7 @@ useEffect(() => {
           console.log('🗓️ 🎬 What will display:', tickerEvents.map((e, i) => 
             `${e.isLive ? '🔴 Now in session:' : (i === 0 ? 'Next' : 'Coming up:')} ${e.text.replace(/@/g, 'with ')}`
           ).join(' ••• '));
-          setTickerEvents(tickerEvents);  // v3.19.45: Store event objects
+          setTickerEvents(tickerEvents);  // v3.19.55: Store event objects
           setTickerText(finalText);
         } else {
           console.log('🗓️ No categorized events found');
@@ -2731,7 +2731,7 @@ useEffect(() => {
         if (tickerEvents.length > 0) {
           const finalText = `Next: ${tickerEvents.map(e => e.text).join(' • ')}`;
           console.log('🗓️ Using fallback ticker:', finalText);
-          setTickerEvents(tickerEvents);  // v3.19.45: Store event objects
+          setTickerEvents(tickerEvents);  // v3.19.55: Store event objects
           setTickerText(finalText);
         } else {
           setTickerEvents([]);
@@ -2754,7 +2754,7 @@ useEffect(() => {
         return `in ${hours}h`;
       } else {
         const mins = Math.floor(diff / (1000 * 60));
-        return mins > 0 ? `in ${mins}m` : '';  // v3.19.45: Empty string for live events (we show "Now in session" instead)
+        return mins > 0 ? `in ${mins}m` : '';  // v3.19.55: Empty string for live events (we show "Now in session" instead)
       }
     };
     
@@ -2877,7 +2877,7 @@ useEffect(() => {
   };
 
   const parseAndLoadSequence = ()=>{
-    const APP_VERSION = "v3.19.45-harmony-wheel";
+    const APP_VERSION = "v3.19.55-harmony-wheel";
     console.log('=== PARSE AND LOAD START ===');
     console.log('🏷️  APP VERSION:', APP_VERSION);
     console.log('Input text:', inputText);
@@ -2918,7 +2918,7 @@ useEffect(() => {
     const segments = cleanedInput.split(',').map(s => s.trim()).filter(Boolean);
     
     for (const segment of segments) {
-      // ✅ v3.19.45: Check for @directives FIRST - split multiple directives on same line
+      // ✅ v3.19.55: Check for @directives FIRST - split multiple directives on same line
       // Allow: "@KEY C @TEMPO 160 @LOOP" or "@KEY C, @TEMPO 160, @LOOP"
       if (segment.trim().startsWith('@')) {
         // Split by @ to get individual directives
@@ -2935,7 +2935,7 @@ useEffect(() => {
         // Parse bars: "|C Am F G|" or "|C Am|F G|" or "| C Am F G" (unclosed)
         const bars = segment.split('|').filter(s => s.trim());
         
-        // ✅ v3.19.45: Track last chord across bars for cross-bar ties
+        // ✅ v3.19.55: Track last chord across bars for cross-bar ties
         let lastChordOrRest: string | null = null;
         
         for (const bar of bars) {
@@ -2943,7 +2943,7 @@ useEffect(() => {
           const normalized = bar.trim().replace(/\s+/g, ' ');
           if (!normalized) continue;
           
-          // ✅ v3.19.45: Parse # comments as single tokens
+          // ✅ v3.19.55: Parse # comments as single tokens
           const tokens: string[] = [];
           let i = 0;
           while (i < normalized.length) {
@@ -2973,7 +2973,7 @@ useEffect(() => {
             }
           }
           
-          // ✅ v3.19.45: Group ties with their preceding chord/rest (including cross-bar)
+          // ✅ v3.19.55: Group ties with their preceding chord/rest (including cross-bar)
           const groupedItems: Array<{text: string, count: number, isComment: boolean}> = [];
           
           for (let j = 0; j < tokens.length; j++) {
@@ -2988,7 +2988,7 @@ useEffect(() => {
                 // Tie to previous item in same bar
                 groupedItems[groupedItems.length - 1].count++;
               } else if (j === 0 && lastChordOrRest) {
-                // ✅ v3.19.45: Cross-bar tie! Just add a * with duration
+                // ✅ v3.19.55: Cross-bar tie! Just add a * with duration
                 // The * won't retrigger, it just holds the previous chord
                 groupedItems.push({text: '*', count: 1, isComment: false});
               }
@@ -3474,7 +3474,7 @@ useEffect(() => {
         playChord(notesToPlay, noteDuration);
       }
       
-      // ✅ v3.19.45: Mark as preview mode for eraser display
+      // ✅ v3.19.55: Mark as preview mode for eraser display
       lastInputWasPreviewRef.current = true;
       
       // NOW start the playback loop
@@ -3780,11 +3780,11 @@ useEffect(() => {
       }
       
       // Create MIDI notes - use voice leading to transition smoothly between chords
-      // v3.19.45: Smart voice leading - start in lower octave, use previous chord position
+      // v3.19.55: Smart voice leading - start in lower octave, use previous chord position
       const baseMidi = 48; // Start lower (C3) to ensure all notes fit in keyboard window (48-71)
       let midiNotes = intervals.map(interval => baseMidi + rootPc + interval);
       
-      // v3.19.45: Voice leading - if there was a previous chord, find closest inversion
+      // v3.19.55: Voice leading - if there was a previous chord, find closest inversion
       if (lastPlayedMidiNotesRef.current.length > 0) {
         const prevChord = lastPlayedMidiNotesRef.current;
         const prevCenter = prevChord.reduce((a,b) => a+b, 0) / prevChord.length;
@@ -4271,7 +4271,7 @@ useEffect(() => {
         togglePlayPause();
       } else if (e.key === 'Escape') {
         e.preventDefault();
-        // ✅ v3.19.45: Escape closes everything
+        // ✅ v3.19.55: Escape closes everything
         stopPlayback();
         setShowKeyDropdown(false);
         setShowTransposeDropdown(false);
@@ -4451,7 +4451,7 @@ useEffect(() => {
     const currentItem = sequence[seqIndex];
     const isTie = currentItem?.kind === "comment" && currentItem.raw === '*';
     
-    // ✅ v3.19.45: Comments with chords should also play audio
+    // ✅ v3.19.55: Comments with chords should also play audio
     const isPlayableItem = (currentItem?.kind === "chord" || 
                            (currentItem?.kind === "comment" && currentItem.chord)) && 
                            currentItem.chord && 
@@ -4471,7 +4471,7 @@ useEffect(() => {
     // Duration is in bars (1=whole, 0.5=half, 0.25=quarter)
     const itemDuration = currentItem?.duration || 1.0; // Default to 1 bar if not specified
     
-    // ✅ v3.19.45: Only # comments WITHOUT chords have zero duration
+    // ✅ v3.19.55: Only # comments WITHOUT chords have zero duration
     const isAnnotationOnly = currentItem?.kind === "comment" && 
                             currentItem.raw?.startsWith('#') && 
                             !currentItem.chord;
@@ -4484,7 +4484,7 @@ useEffect(() => {
       // Advance to next item
       let nextIndex = seqIndex + 1;
       
-      // ✅ v3.19.45: Don't skip comments - they have duration:0 and advance instantly
+      // ✅ v3.19.55: Don't skip comments - they have duration:0 and advance instantly
       // Only skip titles and @modifiers
       while (nextIndex < sequence.length) {
         const nextItem = sequence[nextIndex];
@@ -4501,7 +4501,7 @@ useEffect(() => {
       if (nextIndex < sequence.length) {
         setSeqIndex(nextIndex);
         
-        // ✅ v3.19.45: For display, show the chord being held, not the tie/annotation
+        // ✅ v3.19.55: For display, show the chord being held, not the tie/annotation
         const nextItem = sequence[nextIndex];
         const isTie = nextItem?.kind === "comment" && nextItem.raw === '*';
         const isAnnotation = nextItem?.kind === "comment" && nextItem.raw?.startsWith('#') && !nextItem.chord;
@@ -4524,7 +4524,7 @@ useEffect(() => {
             startIdx++;
           }
           setSeqIndex(startIdx);
-          setDisplayIndex(startIdx); // ✅ v3.19.45: Highlight on loop
+          setDisplayIndex(startIdx); // ✅ v3.19.55: Highlight on loop
           applySeqItem(sequence[startIdx]);
           setTimeout(() => selectCurrentItem(), 0);
         } else {
@@ -5254,8 +5254,22 @@ useEffect(() => {
       return;
     }
     
-    // ✅ v3.17.85 FIX: C#dim triad [1,4,7] → V/ii bonus (must check before diatonic)
-    if (pcsRel.has(1) && pcsRel.has(4) && pcsRel.has(7) && pcsRel.size === 3) {
+    // ✅ v3.19.55: C#dim triad detection - check ABSOLUTE pitch classes [1,4,7]
+    // This works in ALL keys because C#-E-G is always [1,4,7] absolute
+    const absolutePcs = new Set([...merged].map(n => n % 12));
+    const hasCSharpDimTriad = absolutePcs.has(1) && absolutePcs.has(4) && absolutePcs.has(7) && absolutePcs.size === 3;
+    
+    console.log('🔍 C#dim triad check:', {
+      absolutePcs: Array.from(absolutePcs).sort((a,b) => a-b),
+      has1: absolutePcs.has(1),
+      has4: absolutePcs.has(4),
+      has7: absolutePcs.has(7),
+      size: absolutePcs.size,
+      shouldShow: shouldShowBonusOverlay(),
+      match: hasCSharpDimTriad
+    });
+    
+    if (hasCSharpDimTriad) {
       if (shouldShowBonusOverlay()) {
         console.log('✅ C#dim TRIAD EARLY CHECK → V/ii bonus');
         setActiveFn("");
@@ -5292,8 +5306,9 @@ useEffect(() => {
       }
     }
     
-    // ✅ v3.17.85 FIX: C#dim7 [1,4,7,10] → V/ii bonus (removed bass requirement for sequencer)
-    if (currentPcsRel.size >= 4 && [1,4,7,10].every(pc => currentPcsRel.has(pc))) {
+    // ✅ v3.19.55: C#dim7 detection - check ABSOLUTE pitch classes [1,4,7,10]
+    const hasCSharpDim7 = absolutePcs.size >= 4 && [1,4,7,10].every(pc => absolutePcs.has(pc));
+    if (hasCSharpDim7) {
       if (shouldShowBonusOverlay()) {
         console.log('✅ C#dim7 EARLY CHECK (any inversion) → V/ii bonus');
         setActiveFn("");
@@ -5358,7 +5373,7 @@ useEffect(() => {
       setActiveWithTrail("I", absName || "C"); setCenterLabel("C"); return;
     }
     const gPresentTap = visitorActiveRef.current && (isSubset([7,11,2]) || isSubset([7,11,2,5]));
-    // ✅ v3.19.45: V7 detection - exclude Em7 [4,7,11,2] by checking !pcsRel.has(4)
+    // ✅ v3.19.55: V7 detection - exclude Em7 [4,7,11,2] by checking !pcsRel.has(4)
     if (!visitorActiveRef.current && (isSubset([7,11,2]) || isSubset([7,11,2,5])) && !pcsRel.has(4)) {
       if (subdomActiveRef.current) subSpinExit();
       setSubdomActive(false); subdomLatchedRef.current=false; subHasSpunRef.current=false;
@@ -6077,10 +6092,12 @@ useEffect(() => {
       // Bug: A7 [9,1,4,7] matches vi_triad check [9,0,4] via isSubsetIn (9 and 4 present)
       // This causes vi to return before A7 bonus check can run
       // Solution: Check A7 bonus family first (must be EXACT size match)
-      const hasA = isSubset([9,1,4]) && pcsRel.size === 3; // A triad, any inversion
-      const hasA7 = isSubset([9,1,4,7]) && pcsRel.size === 4; // A7, any inversion
-      const hasCSharpDimTriad = isSubset([1,4,7]) && pcsRel.size === 3; // C#dim triad [C#,E,G], any inversion
-      const hasCSharpHalfDim = isSubset([1,4,7,11]) && pcsRel.size === 4; // C#m7♭5, any inversion
+      // ✅ v3.19.55: Use ABSOLUTE pitch classes to work in all keys
+      // A = [9,1,4] absolute, C#dim = [1,4,7] absolute, C#m7♭5 = [1,4,7,11] absolute
+      const hasA = absolutePcs.has(9) && absolutePcs.has(1) && absolutePcs.has(4) && absolutePcs.size === 3;
+      const hasA7 = absolutePcs.has(9) && absolutePcs.has(1) && absolutePcs.has(4) && absolutePcs.has(7) && absolutePcs.size === 4;
+      const hasCSharpDimTriad = absolutePcs.has(1) && absolutePcs.has(4) && absolutePcs.has(7) && absolutePcs.size === 3;
+      const hasCSharpHalfDim = absolutePcs.has(1) && absolutePcs.has(4) && absolutePcs.has(7) && absolutePcs.has(11) && absolutePcs.size === 4;
       
       if (!visitorActiveRef.current && (hasA || hasA7 || hasCSharpDimTriad || hasCSharpHalfDim) && shouldShowBonusOverlay()) {
         const recordName = absName || displayName;
@@ -6151,13 +6168,14 @@ useEffect(() => {
       
       // PRIORITY: Check bonus chords (triads and half-dim only - dim7 checked above)
       // ii/vi bonus: Bdim triad (any inversion) or Bm7♭5 (any inversion)
-      const hasBdimTriad = isSubset([11,2,5]) && pcsRel.size === 3; // Bdim triad, any inversion
-      const hasBm7b5 = isSubset([11,2,5,9]) && pcsRel.size === 4; // Bm7♭5, any inversion
+      // ✅ v3.19.55: Use ABSOLUTE pitch classes [11,2,5] to work in all keys
+      const hasBdimTriad = absolutePcs.has(11) && absolutePcs.has(2) && absolutePcs.has(5) && absolutePcs.size === 3;
+      const hasBm7b5 = absolutePcs.has(11) && absolutePcs.has(2) && absolutePcs.has(5) && absolutePcs.has(9) && absolutePcs.size === 4;
       
       console.log('🔍 Bm7♭5 bonus check:', {
+        absolutePcs: Array.from(absolutePcs).sort((a,b) => a-b),
         hasBdimTriad,
         hasBm7b5,
-        pcsRel: Array.from(pcsRel),
         visitorActive: visitorActiveRef.current,
         shouldShow: shouldShowBonusOverlay(),
         skillLevel
@@ -7176,7 +7194,11 @@ useEffect(() => {
   /* ---------- Audio Synthesis (Vintage Rhodes) ---------- */
   const initAudioContext = () => {
     if (!audioContextRef.current) {
-      audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+      // v3.19.55: Add latencyHint for better buffer management on MacBook
+      audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({
+        latencyHint: 'interactive', // Prioritize low latency
+        sampleRate: 44100 // Standard sample rate
+      });
     }
     // ✅ Resume audio context on mobile (required by iOS/Android)
     if (audioContextRef.current.state === 'suspended') {
@@ -7232,10 +7254,11 @@ useEffect(() => {
     
     const mainGain = ctx.createGain();
     mainGain.gain.value = 0;
-    // ✅ v3.19.45: RESTORED v3.19.45 audio settings - no changes to audio
+    // v3.19.55: Faster attack (5ms) for more percussive sound, adjusted envelope
     const mobileBoost = !isDesktop ? 2.0 : 1.5;
     const chordSafety = 0.5; // Divide by 2 since chords can have 3-4 notes
-    mainGain.gain.linearRampToValueAtTime(0.6 * velocity * chordSafety, now + 0.015);
+    mainGain.gain.setValueAtTime(0, now);
+    mainGain.gain.linearRampToValueAtTime(0.6 * velocity * chordSafety, now + 0.005); // Faster attack: 5ms
     mainGain.gain.linearRampToValueAtTime(0.45 * velocity * chordSafety, now + 0.08);
     mainGain.gain.linearRampToValueAtTime(0.4 * velocity * chordSafety, now + 0.3);
     
@@ -7250,13 +7273,13 @@ useEffect(() => {
     highpass.frequency.value = 200; // Roll off below 200Hz
     highpass.Q.value = 0.7; // Gentle rolloff
     
-    // Compressor
+    // Compressor - v3.19.55: Softer settings to prevent crackling on MacBook
     const compressor = ctx.createDynamicsCompressor();
-    compressor.threshold.value = -15;
-    compressor.knee.value = 30;
-    compressor.ratio.value = 12;
-    compressor.attack.value = 0.05;
-    compressor.release.value = 0.15;
+    compressor.threshold.value = -20; // Higher threshold
+    compressor.knee.value = 40; // Softer knee
+    compressor.ratio.value = 8; // Less aggressive ratio
+    compressor.attack.value = 0.003; // Faster attack to catch peaks
+    compressor.release.value = 0.25; // Longer release
     
     // Makeup gain
     const makeupGain = ctx.createGain();
@@ -7693,7 +7716,7 @@ useEffect(() => {
   const keyboardHighlightNotes = (() => {
     // Priority 1: If from preview/playlist, show yellow highlights
     if (latchedAbsNotes.length > 0 && lastInputWasPreviewRef.current) {
-      // ✅ v3.19.45: Filter to visible keyboard range to prevent duplicates
+      // ✅ v3.19.55: Filter to visible keyboard range to prevent duplicates
       const filtered = latchedAbsNotes.filter(note => note >= KBD_LOW && note <= KBD_HIGH);
       console.log('🎹 HIGHLIGHT: latchedAbsNotes:', latchedAbsNotes, '→ filtered:', filtered);
       return new Set(filtered);
@@ -8108,7 +8131,7 @@ useEffect(() => {
         )}
         {/* END TESTING - Logo hidden */}
         
-        {/* ✅ v3.19.45: Skill selector moved to bottom row - removed from upper right */}
+        {/* ✅ v3.19.55: Skill selector moved to bottom row - removed from upper right */}
 
         {/* Wheel - v3.18.34: Keep wheel position normal, move controls instead */}
         <div style={{
@@ -8189,6 +8212,23 @@ useEffect(() => {
               {/* -------- BEGIN BONUS BLOCK -------- */}
 {/* Persistent bonus wedges (opacity controlled for smooth fade) - EXPERT only */}
 {!bonusActive && skillLevel === "EXPERT" && (() => {
+  // v3.19.55: Cosmetic helper - translate C-based labels to current key
+  const translateBonusLabel = (label: string): string => {
+    if (label === 'A7') {
+      const targetPc = (NAME_TO_PC['C'] + 9) % 12;
+      const offset = (NAME_TO_PC[baseKey] - NAME_TO_PC['C'] + 12) % 12;
+      const newPc = (targetPc + offset) % 12;
+      return pcNameForKey(newPc, baseKey) + '7';
+    }
+    if (label === 'Bm7♭5') {
+      const targetPc = (NAME_TO_PC['C'] + 11) % 12;
+      const offset = (NAME_TO_PC[baseKey] - NAME_TO_PC['C'] + 12) % 12;
+      const newPc = (targetPc + offset) % 12;
+      return pcNameForKey(newPc, baseKey) + 'm7♭5';
+    }
+    return label;
+  };
+  
   const toRad = (deg:number) => (deg - 90) * Math.PI/180;
   const arc = (cx:number, cy:number, r:number, a0:number, a1:number) => {
     const x0 = cx + r * Math.cos(toRad(a0));
@@ -8328,7 +8368,7 @@ useEffect(() => {
             </text>
             <text x={tx} y={ty+12} textAnchor="middle" fontSize={BONUS_TEXT_SIZE}
                   style={{ fill: BONUS_TEXT_FILL, fontWeight: 700, paintOrder:'stroke', stroke:'#000', strokeWidth:1 as any, pointerEvents: 'none' }}>
-              {w.label}
+              {translateBonusLabel(w.label)}
             </text>
           </g>
         );
@@ -8339,6 +8379,25 @@ useEffect(() => {
 
 {/* Active bonus wedge (full opacity when clicked) */}
 {bonusActive && (() => {
+  // v3.19.55: Cosmetic helper - translate C-based labels to current key
+  const translateBonusLabel = (label: string): string => {
+    if (label === 'A7') {
+      // A7 in C = pitch class 9, transpose to current key
+      const targetPc = (NAME_TO_PC['C'] + 9) % 12; // A in C
+      const offset = (NAME_TO_PC[baseKey] - NAME_TO_PC['C'] + 12) % 12;
+      const newPc = (targetPc + offset) % 12;
+      return pcNameForKey(newPc, baseKey) + '7';
+    }
+    if (label === 'Bm7♭5') {
+      // B in C = pitch class 11, transpose to current key  
+      const targetPc = (NAME_TO_PC['C'] + 11) % 12; // B in C
+      const offset = (NAME_TO_PC[baseKey] - NAME_TO_PC['C'] + 12) % 12;
+      const newPc = (targetPc + offset) % 12;
+      return pcNameForKey(newPc, baseKey) + 'm7♭5';
+    }
+    return label; // passthrough for any other labels
+  };
+  
   // Basic arc ring between inner/outer radii
   const toRad = (deg:number) => (deg - 90) * Math.PI/180; // 0° at 12 o'clock
   const arc = (cx:number, cy:number, r:number, a0:number, a1:number) => {
@@ -8381,7 +8440,7 @@ useEffect(() => {
         {funcLabel}
       </text>\n          <text x={tx} y={ty+12} textAnchor="middle" fontSize={BONUS_TEXT_SIZE}
                 style={{ fill: BONUS_TEXT_FILL, fontWeight: 700, paintOrder:'stroke', stroke:'#000', strokeWidth:1 as any }}>
-            {bonusLabel}
+            {translateBonusLabel(bonusLabel)}
           </text>
     </g>
   );
@@ -8516,7 +8575,7 @@ useEffect(() => {
           const rhDisplaySet = ()=>{ 
             const phys=[...rightHeld.current], sus=sustainOn.current?[...rightSus.current]:[], merged=new Set<number>([...phys,...sus]);
             let src = Array.from(new Set(Array.from(merged))).sort((a,b)=>a-b);
-            // ✅ v3.19.45: Don't use latchedAbsNotes for disp during playback - it's already in keyboardHighlightNotes
+            // ✅ v3.19.55: Don't use latchedAbsNotes for disp during playback - it's already in keyboardHighlightNotes
             // Only use latchedAbsNotes for LATCH_PREVIEW (step recording), not for sequence playback
             if(src.length===0 && LATCH_PREVIEW && lastInputWasPreviewRef.current && latchedAbsNotes.length && !isPlaying){
               src = [...new Set(latchedAbsNotes)].sort((a,b)=>a-b);
@@ -8578,13 +8637,13 @@ useEffect(() => {
               {/* UNIFIED LAYOUT - Same structure always, no shifting */}
               
               
-              {/* v3.19.45: Two-line display - ALWAYS visible, FIXED HEIGHT */}
+              {/* v3.19.55: Two-line display - ALWAYS visible, FIXED HEIGHT */}
               <div style={{
                 border:'1px solid #374151',
                 borderRadius:8,
                 background:'#0f172a',
                 overflow:'hidden',
-                marginBottom: 8,  /* v3.19.45: Add space to prevent overlap with buttons below */
+                marginBottom: 8,  /* v3.19.55: Add space to prevent overlap with buttons below */
                 height: 56  /* FIXED HEIGHT - never changes */
               }}>
                 
@@ -9066,7 +9125,7 @@ useEffect(() => {
                       const m=+mStr;
                       const held=disp.has(m); // MIDI notes (transposed to window)
                       const highlighted = keyboardHighlightNotes.has(m); // Preview/playback notes
-                      // ✅ v3.19.45: Don't double-check latchedAbsNotes (already in highlighted or disp)
+                      // ✅ v3.19.55: Don't double-check latchedAbsNotes (already in highlighted or disp)
                       if (!held && !highlighted) return null;
                       
                       // ✅ Chord-aware spelling - use chord root for context
@@ -9081,7 +9140,7 @@ useEffect(() => {
                         const rootMatch = chordToUse.match(/^([A-G][b#]?)/);
                         if (rootMatch) {
                           let chordRoot = rootMatch[1];
-                          // ✅ v3.19.45: Convert sharps to flats for NAME_TO_PC lookup
+                          // ✅ v3.19.55: Convert sharps to flats for NAME_TO_PC lookup
                           const sharpToFlat: Record<string, string> = {
                             'C#': 'Db', 'D#': 'Eb', 'F#': 'Gb', 'G#': 'Ab', 'A#': 'Bb'
                           };
@@ -9152,7 +9211,7 @@ useEffect(() => {
                       const m=+mStr;
                       const held=disp.has(m);
                       const highlighted = keyboardHighlightNotes.has(m);
-                      // ✅ v3.19.45: Don't double-check latchedAbsNotes
+                      // ✅ v3.19.55: Don't double-check latchedAbsNotes
                       if (!held && !highlighted) return null;
                       
                       // ✅ Chord-aware spelling - use chord root for context
@@ -9167,7 +9226,7 @@ useEffect(() => {
                         const rootMatch = chordToUse.match(/^([A-G][b#]?)/);
                         if (rootMatch) {
                           let chordRoot = rootMatch[1];
-                          // ✅ v3.19.45: Convert sharps to flats for NAME_TO_PC lookup
+                          // ✅ v3.19.55: Convert sharps to flats for NAME_TO_PC lookup
                           const sharpToFlat: Record<string, string> = {
                             'C#': 'Db', 'D#': 'Eb', 'F#': 'Gb', 'G#': 'Ab', 'A#': 'Bb'
                           };
@@ -9440,7 +9499,7 @@ useEffect(() => {
               </div>
               
               
-              {/* Row: Transport Controls + Step Record - v3.19.45: Play button first, fixed size */}
+              {/* Row: Transport Controls + Step Record - v3.19.55: Play button first, fixed size */}
               {skillLevel === "EXPERT" && sequence.length > 0 && (
                 <div style={{display:'flex', gap:8, alignItems:'center', marginTop:6, marginBottom:0, flexWrap:'wrap'  /* ✅ marginBottom:0 to prevent scrollbar */}}>
                   
@@ -9449,7 +9508,7 @@ useEffect(() => {
                     onClick={togglePlayPause}
                     style={{
                       padding:'6px 10px',
-                      border: isPlaying ? '2px solid #F97316' : '2px solid #10B981',  /* v3.19.45: Orange for stop */
+                      border: isPlaying ? '2px solid #F97316' : '2px solid #10B981',  /* v3.19.55: Orange for stop */
                       borderRadius:8, 
                       background: isPlaying ? '#2a1e1a' : '#1a3a2a', 
                       color:'#fff', 
@@ -9459,7 +9518,7 @@ useEffect(() => {
                       display:'flex',
                       alignItems:'center',
                       justifyContent:'center',
-                      minWidth:44  /* v3.19.45: Fixed width to prevent shift */
+                      minWidth:44  /* v3.19.55: Fixed width to prevent shift */
                     }}
                     title={isPlaying ? "Stop (Space)" : "Play (Space)"}
                   >
@@ -9924,13 +9983,13 @@ useEffect(() => {
                 {/* Row 1: Performance Mode */}
                 <div style={{display:'flex', gap:8, alignItems:'center', flexWrap:'wrap'}}>
                   
-                  {/* ✅ v3.19.45: Play/Stop button in non-EXPERT modes (when sequence loaded) */}
+                  {/* ✅ v3.19.55: Play/Stop button in non-EXPERT modes (when sequence loaded) */}
                   {skillLevel !== "EXPERT" && sequence.length > 0 && (
                     <button 
                       onClick={togglePlayPause}
                       style={{
                         padding:'8px 12px',
-                        border: isPlaying ? '2px solid #F97316' : '2px solid #10B981',  /* v3.19.45: Orange for stop */
+                        border: isPlaying ? '2px solid #F97316' : '2px solid #10B981',  /* v3.19.55: Orange for stop */
                         borderRadius:6, 
                         background: isPlaying ? '#2a1e1a' : '#1a3a2a', 
                         color:'#fff', 
@@ -9941,7 +10000,7 @@ useEffect(() => {
                         alignItems:'center',
                         justifyContent:'center',
                         lineHeight: 1,
-                        minWidth:48  /* v3.19.45: Fixed width to prevent shift */
+                        minWidth:48  /* v3.19.55: Fixed width to prevent shift */
                       }}
                       title={isPlaying ? "Stop (Space)" : "Play (Space)"}
                     >
@@ -9993,7 +10052,7 @@ useEffect(() => {
                     <span style={{fontSize:10, opacity:0.6}}>{performanceMode ? '▼' : '▶'}</span>
                   </button>
                   
-                  {/* ✅ v3.19.45: Custom skill dropdown with icon */}
+                  {/* ✅ v3.19.55: Custom skill dropdown with icon */}
                   <div style={{ marginLeft: 'auto', position: 'relative' }}>
                     <select
                       value={skillLevel}
@@ -10489,6 +10548,6 @@ useEffect(() => {
   );
 }
 
-// HarmonyWheel v3.19.45 - Compiler fix + E7 debugging
+// HarmonyWheel v3.19.55 - Compiler fix + E7 debugging
 
-// EOF - HarmonyWheel.tsx v3.19.45
+// EOF - HarmonyWheel.tsx v3.19.55
