@@ -1,5 +1,12 @@
 /*
- * theory.ts - v3.10.2
+ * theory.ts - v3.10.3
+ * 
+ * CHANGES FROM v3.10.2:
+ * - Made dimRootName() key-aware to respect flat/sharp key centers
+ * - Now uses FLAT_NAMES in flat keys (C, F, Bb, Eb, Ab, Db, Gb)
+ * - Uses SHARP_NAMES in sharp keys (G, D, A, E, B)
+ * - Fixes: Gbdim now shows in Eb (not F#dim), consistent across all keys
+ * - Affects: dim, dim7, and m7♭5 chord spellings
  * 
  * CHANGES FROM v3.10.1:
  * - Added "V/ii" case to realizeFunction() (A7 in key of C)
@@ -60,7 +67,10 @@ const TPL_7THS_REAL = [
 
 const rot=(pc:number,r:number)=>((pc-r)%12+12)%12;
 const better=(a:AbsMatch|null,b:AbsMatch)=>!a?b:(b.rank!==a.rank? (b.rank>a.rank?b:a) : (b.matched!==a.matched? (b.matched>a.matched?b:a):a));
-const dimRootName=(pc:number)=> pc===10?"Bb":(pc===3?"Eb":(pc===1?"C#":SHARP_NAMES[pc]));
+// v3.10.3: Made dimRootName key-aware to respect flat/sharp key centers
+// In flat keys (C, F, Bb, Eb, Ab, Db, Gb), use flat names (Db, Eb, Gb, Ab, Bb)
+// In sharp keys (G, D, A, E, B), use sharp names (C#, F#, G#, A#)
+const dimRootName=(pc:number, baseKey: KeyName)=> (SHARP_KEY_CENTERS.has(baseKey) ? SHARP_NAMES : FLAT_NAMES)[pc];
 
 function findDim7RootFromLowest(pcs: Set<number>, lowestPC: number): number | null {
   if (pcs.has(lowestPC) && 
@@ -115,7 +125,7 @@ export function internalAbsoluteName(pcsAbs:Set<number>, baseKey:KeyName, midiNo
   }
   
   if (isDim7 && dim7Root !== null) {
-    const rootName = dimRootName(dim7Root);
+    const rootName = dimRootName(dim7Root, baseKey);
     return `${rootName}dim7`;
   }
   
@@ -132,7 +142,8 @@ export function internalAbsoluteName(pcsAbs:Set<number>, baseKey:KeyName, midiNo
   if(!best) return "";
   
   const actualRootPc = best.root;
-  let rootName=(best.qual==="dim"||best.qual==="dim7"||best.qual==="m7b5")? dimRootName(actualRootPc)
+  // v3.10.3: Use key-aware dimRootName for consistent spelling (Gbdim in Eb, not F#dim)
+  let rootName=(best.qual==="dim"||best.qual==="dim7"||best.qual==="m7b5")? dimRootName(actualRootPc, baseKey)
               : pcNameForKey(actualRootPc, baseKey);
   const qual = best.qual==="m7b5" ? "m7♭5" : best.qual;
   return `${rootName}${qual}`;
@@ -175,4 +186,4 @@ export function getParKey(metaKey: KeyName): KeyName {
   return FLAT_NAMES[parPc];
 }
 
-// EOF - theory.ts v3.10.2
+// EOF - theory.ts v3.10.3

@@ -1,6 +1,20 @@
 /*
- * HarmonyWheel.tsx — v4.0.50 🚀 ERASER + NOTE SPELLING FIXES
+ * HarmonyWheel.tsx — v4.0.52 🚀 KEY + SOUND + ERASER FIXES
  * 
+ * 
+ * 🔧 v4.0.52 CHANGES:
+ * - FIXED: @KEY directive now RE-APPLIES when pressing ⏮️ (Go to Start) or ⏯️ (Play/Pause)
+ * - FIXED: Continuous playback (⏯️) now produces sound (was reading stale ref)
+ * - FIXED: Play/Pause button uses returned notes from applySeqItem
+ * - ADDED: Debug logging for KEY directive re-application
+ * - Result: Key resets correctly, sequencer plays sound
+ *
+ * 🔧 v4.0.51 CHANGES:
+ * - FIXED: @KEY directive now applies correctly (was checking only index 0, not after TITLE)
+ * - FIXED: Sequencer playback now produces sound (mapping works in correct key)
+ * - FIXED: White key erasers moved down to +25 (user requested 50% more than +10)
+ * - CLEANED: Reduced verbose logging (bar parsing, parse markers)
+ * - Result: Sequencer works, key changes apply, erasers positioned correctly
  * 
  * 🔧 v4.0.50 CHANGES:
  * - FIXED: White key erasers repositioned (was too high at 0.54, now 0.56+10)
@@ -91,7 +105,7 @@ import {
   parseSongMetadata
 } from "./lib/songManager";
 
-const HW_VERSION = 'v4.0.50';
+const HW_VERSION = 'v4.0.52';
 
 // v4.0.24: Fallback constants for old code (not used by new engine)
 const EPS_DEG = 0.1;
@@ -1121,8 +1135,8 @@ useEffect(() => {
   };
 
   const parseAndLoadSequence = ()=>{
-    const APP_VERSION = "v4.0.50-eraser-fix";
-    console.log('=== PARSE AND LOAD START ===');
+    const APP_VERSION = "v4.0.52-key-sound-eraser-fix";
+    // console.log('=== PARSE AND LOAD START ===');
     console.log('ðŸ·ï¸  APP VERSION:', APP_VERSION);
     console.log('Input text:', inputText);
     setLoadedSongText(inputText); // Save what we're loading
@@ -1249,7 +1263,7 @@ useEffect(() => {
           console.log(`ðŸ“Š Bar: "${normalized}" ⏺†’ ${groupedItems.length} items, totalCount: ${totalCount}, unitDuration: ${unitDuration}`);
           groupedItems.forEach((item, idx) => {
             const dur = item.isComment ? 0 : item.count * unitDuration;
-            console.log(`  ${idx}: "${item.text}" count:${item.count} isComment:${item.isComment} ⏺†’ duration:${dur}`);
+            // console.log(`  ${idx}: "${item.text}" count:${item.count} isComment:${item.isComment} ⏺†’ duration:${dur}`);
           });
           
           // Add to rawTokens and track last chord
@@ -1269,7 +1283,7 @@ useEffect(() => {
       }
     }
     
-    console.log('Parsed tokens with rhythm:', rawTokens);
+    // console.log('Parsed tokens with rhythm:', rawTokens);
     let title = "";
     // ✅ v3.6.0 FIX: Start from current baseKey, don't reset to C
     // This preserves manual key selector changes
@@ -1544,34 +1558,30 @@ useEffect(() => {
       initialIdx++;
     }
     
-    // Check if first item is @KEY, apply it first
-    if (playableItems.length) {
-      const firstItem = playableItems[0];
-      if (firstItem.kind === "modifier" && firstItem.chord?.startsWith("KEY:")) {
-        // First item sets key, apply it
-        applySeqItem(firstItem);
-      } else {
-        // ✅ v3.6.0 FIX: No @KEY directive found
-        // DON'T reset baseKey - preserve manual key selector setting!
-        // Old behavior: setBaseKey("C") - this broke key selector
-        // New behavior: Keep current baseKey (set via selector or previous sequence)
-        console.log('ðŸ”‘ [v3.6.0] No @KEY directive, preserving baseKey:', baseKey);
-        goHome();
+    // ✅ v4.0.51b DEBUG: Apply ALL @KEY directives before first playable chord
+    console.log('🔍 Looking for KEY directives before index', initialIdx);
+    for (let i = 0; i < initialIdx; i++) {
+      const item = playableItems[i];
+      console.log(`  [${i}] kind=${item.kind} chord=${item.chord}`);
+      if (item.kind === "modifier" && item.chord?.startsWith("KEY:")) {
+        console.log('  ✅ Found KEY directive, applying:', item.chord);
+        applySeqItem(item);
       }
-      
-      // Set index to first playable item (but don't play it yet - v3.2.5)
-      if (initialIdx < playableItems.length) {
-        console.log('Setting initial index to:', initialIdx, 'chord =', playableItems[initialIdx]?.raw);
-        setSeqIndex(initialIdx);
-        setDisplayIndex(initialIdx);
-        // REMOVED v3.2.5: Don't auto-play first chord on load
-        // applySeqItem(playableItems[initialIdx]);
-        selectCurrentItem(initialIdx); // Pass explicit index
-        console.log('=== PARSE AND LOAD END ===\n');
-      } else {
-        setSeqIndex(-1);
-        setDisplayIndex(-1);
-      }
+    }
+    const hadKeyDirective = playableItems.slice(0, initialIdx).some(
+      item => item.kind === "modifier" && item.chord?.startsWith("KEY:")
+    );
+    console.log('🔍 Had KEY directive?', hadKeyDirective);
+    if (!hadKeyDirective) {
+      console.log('  -> No KEY found, going HOME');
+      goHome();
+    }
+    
+    // Set index to first playable item
+    if (initialIdx < playableItems.length) {
+      setSeqIndex(initialIdx);
+      setDisplayIndex(initialIdx);
+      selectCurrentItem(initialIdx);
     } else {
       setSeqIndex(-1);
       setDisplayIndex(-1);
@@ -1635,9 +1645,12 @@ useEffect(() => {
     console.log('ðŸ“‹ Captured notes to play:', notesToPlay);
     
     // Play it with the captured notes
+    console.log("DEBUG: willPlay check", { notesLen: notesToPlay.length, audio: audioEnabledRef.current });
     if (notesToPlay.length > 0 && audioEnabledRef.current) {
       console.log('ðŸ”Š Playing:', sequence[currentIdx].raw, 'notes:', notesToPlay.length);
       playChord(notesToPlay, 1.5);
+    } else {
+      console.warn("NOT PLAYING - notesLen:", notesToPlay.length, "audio:", audioEnabledRef.current);
     }
     
     // Update displayIndex to show what we just played
@@ -1706,16 +1719,30 @@ useEffect(() => {
         startIdx = 0;
       }
       
-      // Apply the first item to get notes
-      applySeqItem(sequence[startIdx]);
+      // ✅ v4.0.52: Re-apply KEY directives before starting playback
+      // This ensures we play in the correct key even if user manually changed it
+      console.log('🔍 [Play/Pause] Scanning for KEY directives...');
+      for (let i = 0; i < startIdx; i++) {
+        const item = sequence[i];
+        if (item.kind === "modifier" && item.chord?.startsWith("KEY:")) {
+          console.log('  ✅ Re-applying KEY directive:', item.chord);
+          applySeqItem(item);
+          break;
+        }
+      }
       
-      // Immediately play it using the ref (like stepNext does)
-      const notesToPlay = [...latchedAbsNotesRef.current];
+      // Apply the first item to get notes
+      const notesToPlay = applySeqItem(sequence[startIdx]);
+      
+      // ✅ v4.0.52: Use RETURNED notes, not ref (ref might be stale)
       const currentItem = sequence[startIdx];
       if (currentItem?.kind === "chord" && notesToPlay.length > 0) {
+        console.log('🔊 [Play/Pause] Playing first chord:', currentItem.chord, 'notes:', notesToPlay);
         // v3.5.0: Notes already transposed, don't transpose again
         const noteDuration = (60 / tempo) * 0.8;
         playChord(notesToPlay, noteDuration);
+      } else {
+        console.warn('⚠️ [Play/Pause] No notes to play:', { itemKind: currentItem?.kind, notesLength: notesToPlay.length });
       }
       
       // ✅ v3.19.55: Mark as preview mode for eraser display
@@ -1756,6 +1783,25 @@ useEffect(() => {
     
     console.log('=== GO TO START ===');
     if (sequence.length > 0) {
+      // ✅ v4.0.52: ALWAYS re-apply KEY directives when rewinding
+      // This resets the key even if user manually changed it
+      console.log('🔍 Scanning for KEY directives to re-apply...');
+      let foundKeyDirective = false;
+      for (let i = 0; i < sequence.length; i++) {
+        const item = sequence[i];
+        if (item.kind === "modifier" && item.chord?.startsWith("KEY:")) {
+          console.log('  ✅ Re-applying KEY directive:', item.chord);
+          applySeqItem(item); // This will call setBaseKey
+          foundKeyDirective = true;
+          break; // Only apply first KEY directive
+        }
+        // Stop scanning once we hit a playable chord
+        if (item.kind === "chord") break;
+      }
+      if (!foundKeyDirective) {
+        console.log('  ℹ️ No KEY directive found, keeping current key');
+      }
+      
       // Find first playable item (skip titles and KEY-only modifiers)
       let startIdx = 0;
       while (startIdx < sequence.length) {
@@ -1947,7 +1993,9 @@ useEffect(() => {
         const parts = arg?.split(":") || [];
         const newKey = parts[0]?.trim() as KeyName;
         const chordAfterKey = parts.slice(1).join(":").trim();
+        console.log("KEY directive parsed:", { newKey, valid: FLAT_NAMES.includes(newKey) });
         
+          console.log("Calling setBaseKey with:", newKey);
         if (newKey && FLAT_NAMES.includes(newKey)) {
           setBaseKey(newKey);
         }
@@ -2695,9 +2743,16 @@ useEffect(() => {
     const currentItem = sequence[seqIndex];
     const isTie = currentItem?.kind === "comment" && currentItem.raw === '*';
     
-    // ✅ v3.19.55: Comments with chords should also play audio
-    // ✅ v4.0.39: Use REF not state - state is async, ref is immediate
-    const currentNotes = latchedAbsNotesRef.current;
+    // ✅ v4.0.52: Call applySeqItem to ensure notes are fresh
+    // This updates latchedAbsNotesRef AND returns the notes
+    let currentNotes: number[] = [];
+    if (currentItem?.kind === "chord" || (currentItem?.kind === "comment" && currentItem.chord)) {
+      currentNotes = applySeqItem(currentItem);
+    } else {
+      // For other items, use latched notes from last chord
+      currentNotes = latchedAbsNotesRef.current;
+    }
+    
     const isPlayableItem = (currentItem?.kind === "chord" || 
                            (currentItem?.kind === "comment" && currentItem.chord)) && 
                            currentItem.chord && 
@@ -2878,6 +2933,7 @@ useEffect(() => {
     setActiveFn(fn); 
     setCenterLabel(SHOW_CENTER_LABEL?label:""); 
     lastPlayedChordRef.current = label; // Save for Make My Key
+    lastDetectedChordRef.current = label; // ✅ v4.0.51b: Update for keyboard eraser root highlighting
     console.log('ðŸ“ lastPlayedChordRef set to:', label);
     
     // ✅ Step record - insert BEFORE @RHYTHM directives, not at end
@@ -3333,6 +3389,12 @@ useEffect(() => {
     }
     
     // Now handle function (if present)
+    // ✅ v4.0.51b: ALWAYS update lastDetectedChordRef for keyboard blue erasers, even for illegal chords
+    if (result.chordName) {
+      lastDetectedChordRef.current = result.chordName;
+      lastPlayedChordRef.current = result.chordName;
+    }
+    
     if (!result.function) {
       setActiveFn("");
       setCenterLabel(result.chordName || "");
@@ -3368,8 +3430,7 @@ useEffect(() => {
         return prev ? `${prev}, ${result.chordName}` : result.chordName;
       });
     }
-    lastDetectedChordRef.current = result.chordName;
-    lastPlayedChordRef.current = result.chordName;
+    // MIDI latch
     latchedChordRef.current = { fn: result.function, label: result.chordName };
     if (midiLatchTimeoutRef.current) { clearTimeout(midiLatchTimeoutRef.current); }
     midiLatchTimeoutRef.current = setTimeout(() => {
@@ -6402,7 +6463,7 @@ useEffect(() => {
               {isSafariBrowser ? 'Safari' : 'Chrome/Other'}
             </div>
             <div style={{ marginTop: 4, fontSize: 7 }}>
-              Â© Beat Kitchen LLC, 2025
+              © Beat Kitchen LLC, 2025
             </div>
           </div>
           </div>
@@ -7538,7 +7599,7 @@ useEffect(() => {
                           {/* ✅ Eraser branding - WHITE KEYS: Restored working position from v4.0.48 */}
                           <rect
                             x={x + WW * 0.31}
-                            y={HW * 0.56 + 10}
+                            y={HW * 0.56 + 25}
                             width={WW * 0.38}
                             height={WW * 0.5}
                             rx={WW * 0.08}
@@ -8897,4 +8958,4 @@ useEffect(() => {
 }
 
 
-// EOF - HarmonyWheel.tsx v4.0.49
+// EOF - HarmonyWheel.tsx v4.0.52
