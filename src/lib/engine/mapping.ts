@@ -1,8 +1,8 @@
 /**
- * mapping.ts — v4.0.12
+ * mapping.ts — v4.0.45
  * 
  * 📁 INSTALL TO: src/lib/engine/mapping.ts
- * 🔄 VERSION: 4.0.12 (CRITICAL FIX: F#dim and G#dim ALWAYS map to V/V and V/vi - NOT gated by showBonusWedges)
+ * 🔄 VERSION: 4.0.45 (CRITICAL FIX: F#dim and G#dim ALWAYS map to V/V and V/vi - NOT gated by showBonusWedges)
  * 
  * Maps detected chords to harmonic functions
  * 
@@ -415,4 +415,4 @@ function getTonicPC(pcsAbsolute: Set<number>): number {
   return 0;
 }
 
-// EOF - mapping.ts v4.0.11 - ADDED: C#m7b5, F#dim/F#m7b5, G#dim bonus patterns - FIX: Proper 7th chord validation with exact 4th note checks
+// EOF - mapping.ts v4.0.45

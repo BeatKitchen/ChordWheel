@@ -1,0 +1,40 @@
+{
+  "hash": "3742fc5d",
+  "configHash": "2fbd24c8",
+  "lockfileHash": "62f41304",
+  "browserHash": "71a64078",
+  "optimized": {
+    "react/jsx-dev-runtime": {
+      "src": "../../node_modules/react/jsx-dev-runtime.js",
+      "file": "react_jsx-dev-runtime.js",
+      "fileHash": "76c8a885",
+      "needsInterop": true
+    },
+    "react-dom/client": {
+      "src": "../../node_modules/react-dom/client.js",
+      "file": "react-dom_client.js",
+      "fileHash": "088cf0ec",
+      "needsInterop": true
+    },
+    "react": {
+      "src": "../../node_modules/react/index.js",
+      "file": "react.js",
+      "fileHash": "3a168345",
+      "needsInterop": true
+    },
+    "svguitar": {
+      "src": "../../node_modules/svguitar/dist/svguitar.es5.js",
+      "file": "svguitar.js",
+      "fileHash": "4811a80a",
+      "needsInterop": false
+    }
+  },
+  "chunks": {
+    "chunk-JCH2SJW3": {
+      "file": "chunk-JCH2SJW3.js"
+    },
+    "chunk-BUSYA2B4": {
+      "file": "chunk-BUSYA2B4.js"
+    }
+  }
+}

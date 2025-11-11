@@ -1,6 +1,6 @@
 /**
  * wedges.ts - Map functions to physical wedge positions
- * VERSION: v4.0.0-engine.1
+ * VERSION: v4.0.45
  * 
  * Pure mapping: harmonic function + space → wedge ID (0-11)
  * 
@@ -162,5 +162,6 @@ export function isValidWedgeId(wedgeId: number): boolean {
 
 /**
  * END wedges.ts
- * VERSION: v4.0.0-engine.1
+ // EOF - wedges.ts v4.0.45
+ * VERSION: v4.0.45
  */

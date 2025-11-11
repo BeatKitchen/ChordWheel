@@ -1,8 +1,8 @@
 /**
- * stability.ts — v4.0.6
+ * stability.ts — v4.0.45
  * 
  * 📁 INSTALL TO: src/lib/engine/stability.ts
- * 🔄 VERSION: 4.0.1
+ * 🔄 VERSION: 4.0.45
  * 
  * Timing guards and stability logic
  * Implements debounce, hysteresis, anti-steal, extension merging
@@ -191,4 +191,4 @@ export function createStabilityState(): StabilityState {
   };
 }
 
-// EOF - stability.ts v4.0.6
+// EOF - stability.ts v4.0.45

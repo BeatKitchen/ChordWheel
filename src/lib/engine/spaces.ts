@@ -1,8 +1,8 @@
 /**
- * spaces.ts — v4.0.13
+ * spaces.ts — v4.0.45
  * 
  * 📁 INSTALL TO: src/lib/engine/spaces.ts
- * 🔄 VERSION: 4.0.13 (FIXES: Partial chord exits, triple-tap I in SUB)
+ * 🔄 VERSION: 4.0.45 (FIXES: Partial chord exits, triple-tap I in SUB)
  * 
  * Space transition logic for HOME/SUB/PAR/REL
  * 
@@ -295,4 +295,4 @@ function checkTripleTap(fn: Fn, tapHistory: TapEvent[]): boolean {
   return true;
 }
 
-// EOF - spaces.ts v4.0.12
+// EOF - spaces.ts v4.0.45

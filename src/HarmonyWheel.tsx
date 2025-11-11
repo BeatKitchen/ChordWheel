@@ -1,5 +1,28 @@
 /*
- * HarmonyWheel.tsx — v4.0.39 🚀 NEW ENGINE ARCHITECTURE
+ * HarmonyWheel.tsx — v4.0.49 🚀 CALENDAR + KEYBOARD FIXES
+ * 
+ * 
+ * 🔧 v4.0.49 CHANGES:
+ * - FIXED: Calendar ticker now filters by subcalendar IDs (13985904, 13985917)
+ * - FIXED: White key erasers moved DOWN 30px (user feedback)
+ * - FIXED: Circular key labels moved UP 10px
+ * - FIXED: Circle stroke width reduced to 1px (was 2px)
+ * 🔧 v4.0.48 CHANGES:
+ * - FIXED: White key erasers moved HIGHER (y = HW * 0.56 + 10, was 0.62 + 30)
+ * - User feedback: erasers and labels were too low
+ * 
+ * 🔧 v4.0.47 CHANGES:
+ * - FIXED: Copied EXACT eraser formulas from reference file (OLD-do_not_use)
+ * - White keys: y = HW * 0.62 + 30 (not 0.56)
+ * - Black keys: Uses WB dimensions, y = HB * 0.55 + 5
+ * 
+ * 🔧 v4.0.46 CHANGES:
+ * - FIXED: Reverted black key erasers to old working formula (same as white keys)
+ * - Black and white keys now use identical positioning (looks better per user feedback)
+ * 
+ * 🔧 v4.0.45 CHANGES:
+ * - FIXED: All version numbers now consistent (v4.0.45 everywhere)
+ * - IMPROVED: Bigger guitar tab display (scale 1.5x, larger container)
  * 
  * 🔧 v4.0.39 CHANGES:
  * - **SEQUENCER FIX**: Use latchedAbsNotesRef instead of state (async issue)
@@ -62,7 +85,7 @@ import {
   parseSongMetadata
 } from "./lib/songManager";
 
-const HW_VERSION = 'v4.0.24';
+const HW_VERSION = 'v4.0.49';
 
 // v4.0.24: Fallback constants for old code (not used by new engine)
 const EPS_DEG = 0.1;
@@ -851,6 +874,12 @@ useEffect(() => {
         const data = await response.json();
         console.log('ðŸ—“ï¸ ✅ Teamup response:', data);
         
+        // DEBUG: Log subcalendar IDs to find correct filter values
+        console.log('🔍 DEBUG: First 10 events with their subcalendar IDs:');
+        data.events.slice(0, 10).forEach((event: any, i: number) => {
+          console.log(`  [${i}] "${event.title}" - subcalendar_ids:`, event.subcalendar_ids);
+        });
+        
         if (!data.events || data.events.length === 0) {
           throw new Error('No events found in Teamup calendar');
         }
@@ -869,33 +898,31 @@ useEffect(() => {
         
         console.log('ðŸ—“ï¸ Total upcoming events:', upcomingEvents.length);
         
-        // Categorize events
-        const theoryGyms = upcomingEvents.filter((e: any) => 
-          e.title.toLowerCase().includes('theory')
+        // Categorize events by specific subcalendar IDs
+        const GYMS_CALENDAR_ID = 13985904;  // INSTRUMENT GYM / gyms calendar
+        const OFFICE_HOURS_CALENDAR_ID = 13985917;  // OFFICE HOURS calendar
+        
+        const gyms = upcomingEvents.filter((e: any) => 
+          e.subcalendar_ids && e.subcalendar_ids.includes(GYMS_CALENDAR_ID)
         );
         const officeHours = upcomingEvents.filter((e: any) => 
-          e.title.toLowerCase().includes('office')
-        );
-        const otherGyms = upcomingEvents.filter((e: any) => 
-          !e.title.toLowerCase().includes('theory') && 
-          !e.title.toLowerCase().includes('office')
+          e.subcalendar_ids && e.subcalendar_ids.includes(OFFICE_HOURS_CALENDAR_ID)
         );
         
-        console.log('ðŸ—“ï¸ Theory gyms:', theoryGyms.length);
-        console.log('ðŸ—“ï¸ Office hours:', officeHours.length);
-        console.log('ðŸ—“ï¸ Other events:', otherGyms.length);
+        console.log('🗓️ Gyms (from calendar 13985904):', gyms.length);
+        console.log('🗓️ Office hours (from calendar 13985917):', officeHours.length);
         
-        // Build ticker: 1 theory gym, 1 office hours, 1 other event
+        // Build ticker: 1 gym event, 1 office hours event
         const tickerEvents: Array<{text: string; isLive: boolean; isSoon: boolean}> = [];
         
-        if (theoryGyms.length > 0) {
-          const event = theoryGyms[0];
+        if (gyms.length > 0) {
+          const event = gyms[0];
           const isLive = now >= event.start && now <= event.end;
           const hoursUntil = (event.start.getTime() - now.getTime()) / (1000 * 60 * 60);
           const isSoon = !isLive && hoursUntil <= 12;  // v3.19.55: Orange if within 12h but not live
           const timeStr = formatEventTime(event.start, now);
           const cleanTitle = event.title.replace(/Live\s+/i, '').trim();
-          console.log('ðŸ—“ï¸ Next theory gym:', cleanTitle, '⏺†’', timeStr, isLive ? 'ðŸ”´ LIVE' : isSoon ? 'ðŸŸ  SOON' : '');
+          console.log('ðŸ—“ï¸ Next gym:', cleanTitle, '⏺†’', timeStr, isLive ? 'ðŸ”´ LIVE' : isSoon ? 'ðŸŸ  SOON' : '');
           tickerEvents.push({ text: `${cleanTitle} ${timeStr}`, isLive, isSoon });
         }
         
@@ -909,25 +936,13 @@ useEffect(() => {
           console.log('ðŸ—“ï¸ Next office hours:', cleanTitle, '⏺†’', timeStr, isLive ? 'ðŸ”´ LIVE' : isSoon ? 'ðŸŸ  SOON' : '');
           tickerEvents.push({ text: `${cleanTitle} ${timeStr}`, isLive, isSoon });
         }
-        
-        if (otherGyms.length > 0) {
-          const event = otherGyms[0];
-          const isLive = now >= event.start && now <= event.end;
-          const hoursUntil = (event.start.getTime() - now.getTime()) / (1000 * 60 * 60);
-          const isSoon = !isLive && hoursUntil <= 12;
-          const timeStr = formatEventTime(event.start, now);
-          const cleanTitle = event.title.replace(/Live\s+/i, '').trim();
-          console.log('ðŸ—“ï¸ Next other event:', cleanTitle, '⏺†’', timeStr, isLive ? 'ðŸ”´ LIVE' : isSoon ? 'ðŸŸ  SOON' : '');
-          tickerEvents.push({ text: `${cleanTitle} ${timeStr}`, isLive, isSoon });
-        }
-        
         if (tickerEvents.length > 0) {
-          const finalText = `Next: ${tickerEvents.map(e => e.text).join(' ⏺€¢ ')}`; // Keep for fallback
+          const finalText = `Next: ${tickerEvents.map(e => e.text).join(' • ')}`; // Keep for fallback
           console.log('ðŸ—“ï¸ ✅ Setting ticker text:', finalText);
           console.log('ðŸ—“ï¸ ðŸ“Š Ticker events array:', tickerEvents.map((e, i) => `[${i}] ${e.isLive ? 'ðŸ”´ LIVE' : '⏺°'} "${e.text}"`));
           console.log('ðŸ—“ï¸ ðŸŽ¬ What will display:', tickerEvents.map((e, i) => 
             `${e.isLive ? 'ðŸ”´ Now in session:' : (i === 0 ? 'Next' : 'Coming up:')} ${e.text.replace(/@/g, 'with ')}`
-          ).join(' ⏺€¢⏺€¢⏺€¢ '));
+          ).join(' • • • '));
           setTickerEvents(tickerEvents);  // v3.19.55: Store event objects
           setTickerText(finalText);
         } else {
@@ -952,7 +967,7 @@ useEffect(() => {
         }
         
         if (tickerEvents.length > 0) {
-          const finalText = `Next: ${tickerEvents.map(e => e.text).join(' ⏺€¢ ')}`;
+          const finalText = `Next: ${tickerEvents.map(e => e.text).join(' • ')}`;
           console.log('ðŸ—“ï¸ Using fallback ticker:', finalText);
           setTickerEvents(tickerEvents);  // v3.19.55: Store event objects
           setTickerText(finalText);
@@ -1100,7 +1115,7 @@ useEffect(() => {
   };
 
   const parseAndLoadSequence = ()=>{
-    const APP_VERSION = "v4.0.24-harmony-wheel";
+    const APP_VERSION = "v4.0.49-calendar-keyboard-fix";
     console.log('=== PARSE AND LOAD START ===');
     console.log('ðŸ·ï¸  APP VERSION:', APP_VERSION);
     console.log('Input text:', inputText);
@@ -7496,15 +7511,15 @@ useEffect(() => {
                           {/* Top circle with note name label (unchanged) */}
                           <circle
                             cx={x + WW/2}
-                            cy={20}
+                            cy={10}
                             r={WW * 0.4}
                             fill="#ffffff"
                             stroke="#000000"
-                            strokeWidth={2}
+                            strokeWidth={1}
                           />
                           <text 
                             x={x + WW/2} 
-                            y={20 + WW * 0.15}
+                            y={10 + WW * 0.15}
                             textAnchor="middle" 
                             fontSize={WW * 0.5}
                             fontWeight={700}
@@ -7514,17 +7529,17 @@ useEffect(() => {
                             {noteName}
                           </text>
                           
-                          {/* ✅ Eraser branding - rounded rectangle at finger position */}
+                          {/* ✅ Eraser branding - WHITE KEYS: Adjusted higher (was too low) */}
                           <rect
                             x={x + WW * 0.31}
-                            y={HW * 0.56}
+                            y={HW * 0.56 + 40}
                             width={WW * 0.38}
                             height={WW * 0.5}
                             rx={WW * 0.08}
                             ry={WW * 0.08}
                             fill={eraserColor}
                             opacity={0.95}
-                            transform={`rotate(${randomRotation}, ${x + WW/2}, ${HW * 0.70})`}
+                            transform={`rotate(${randomRotation}, ${x + WW/2}, ${HW * 0.68 + 10})`}
                           />
                         </g>
                       );
@@ -7582,15 +7597,15 @@ useEffect(() => {
                           {/* Top circle with note name label (unchanged) */}
                           <circle
                             cx={x + WB/2}
-                            cy={20}
+                            cy={10}
                             r={WW * 0.4}
                             fill="#ffffff"
                             stroke="#000000"
-                            strokeWidth={2}
+                            strokeWidth={1}
                           />
                           <text 
                             x={x + WB/2} 
-                            y={20 + WW * 0.15}
+                            y={10 + WW * 0.15}
                             textAnchor="middle" 
                             fontSize={WW * 0.5}
                             fontWeight={700}
@@ -7600,17 +7615,17 @@ useEffect(() => {
                             {noteName}
                           </text>
                           
-                          {/* ✅ Eraser branding - rounded rectangle at finger position */}
+                          {/* ✅ Eraser branding - BLACK KEYS: Exact formula from reference file */}
                           <rect
-                            x={x + WW * 0.31}
-                            y={HW * 0.56}
-                            width={WW * 0.38}
-                            height={WW * 0.5}
-                            rx={WW * 0.08}
-                            ry={WW * 0.08}
+                            x={x + WB * 0.29}
+                            y={HB * 0.55 + 5}
+                            width={WB * 0.42}
+                            height={WB * 0.64}
+                            rx={WB * 0.1}
+                            ry={WB * 0.1}
                             fill={eraserColor}
                             opacity={0.95}
-                            transform={`rotate(${randomRotation}, ${x + WW/2}, ${HW * 0.70})`}
+                            transform={`rotate(${randomRotation}, ${x + WB/2}, ${HB * 0.7 + 5})`}
                           />
                         </g>
                       );
@@ -7619,7 +7634,7 @@ useEffect(() => {
                 </div>
                 </div>
                 
-                {/* Guitar Tab - v3.17.85: Always visible, scales on mobile */}
+                {/* Guitar Tab - v4.0.48: Bigger display (1.5x scale, larger container) */}
                 <div style={{
                   border:'1px solid #374151',
                   borderRadius:8,
@@ -7627,13 +7642,13 @@ useEffect(() => {
                     display:'flex',
                     alignItems:'center',
                     justifyContent:'center',
-                    minHeight: HW + 44,
-                    maxHeight: HW + 44,
+                    minHeight: HW * 1.2 + 44,
+                    maxHeight: HW * 1.2 + 44,
                     overflow:'hidden',
                     position:'relative'
                   }}>
-                    <div style={{transform: 'scale(1.3)', transformOrigin: 'center'}}>
-                      <GuitarTab chordLabel={currentGuitarLabel} width={totalW * 0.35} height={HW + 30}/>
+                    <div style={{transform: 'scale(1.5)', transformOrigin: 'center'}}>
+                      <GuitarTab chordLabel={currentGuitarLabel} width={totalW * 0.40} height={HW + 40}/>
                     </div>
                   </div>
               </div>
@@ -8875,6 +8890,5 @@ useEffect(() => {
   );
 }
 
-// HarmonyWheel v4.0.24 - New engine architecture
 
-// EOF - HarmonyWheel.tsx v4.0.39 - SEQUENCER FIX: Use ref not state, eraser adjust, tab scale
+// EOF - HarmonyWheel.tsx v4.0.49

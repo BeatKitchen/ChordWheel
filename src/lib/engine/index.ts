@@ -1,8 +1,8 @@
 /**
- * index.ts — v4.0.5
+ * index.ts — v4.0.45
  * 
  * 📁 INSTALL TO: src/lib/engine/index.ts
- * 🔄 VERSION: 4.0.5 (FIXED: Triple-tap triggers on 3rd tap, not 4th)
+ * 🔄 VERSION: 4.0.45 (FIXED: Triple-tap triggers on 3rd tap, not 4th)
  * 
  * Main engine orchestrator - PURE, no React deps
  * Orchestrates: detection → mapping → spaces → stability
@@ -217,3 +217,5 @@ export function updateEngineState(
     stability: newStability
   };
 }
+
+// EOF - index.ts v4.0.45

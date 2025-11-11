@@ -1,8 +1,8 @@
 /**
- * detection.ts — v4.0.1
+ * detection.ts — v4.0.45
  * 
  * 📁 INSTALL TO: src/lib/engine/detection.ts
- * 🔄 VERSION: 4.0.1 (added quality extraction)
+ * 🔄 VERSION: 4.0.45
  * 
  * Detects chord name from MIDI notes using absolute pitch classes.
  * Leverages existing theory.ts for chord naming logic.
@@ -145,3 +145,5 @@ function extractQuality(chordName: string, pcs: Set<number>): ChordQuality {
   // Default to major if no other quality detected
   return "maj";
 }
+
+// EOF - detection.ts v4.0.45
