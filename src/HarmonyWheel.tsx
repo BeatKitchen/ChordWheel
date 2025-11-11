@@ -1,10 +1,16 @@
 /*
- * HarmonyWheel.tsx — v4.0.49 🚀 CALENDAR + KEYBOARD FIXES
+ * HarmonyWheel.tsx — v4.0.50 🚀 ERASER + NOTE SPELLING FIXES
  * 
+ * 
+ * 🔧 v4.0.50 CHANGES:
+ * - FIXED: White key erasers repositioned (was too high at 0.54, now 0.56+10)
+ * - FIXED: Note spelling now uses flat names (Eb not D#) based on key context
+ * - Changed: Both white and black keys use chordRootForLookup for pcNameForKey()
+ * - Result: Erasers visible, notes spelled correctly in key context
  * 
  * 🔧 v4.0.49 CHANGES:
  * - FIXED: Calendar ticker now filters by subcalendar IDs (13985904, 13985917)
- * - FIXED: White key erasers moved DOWN 30px (user feedback)
+ * - FIXED: White key erasers moved DOWN 30px (user feedback) <- THIS CAUSED BUG
  * - FIXED: Circular key labels moved UP 10px
  * - FIXED: Circle stroke width reduced to 1px (was 2px)
  * 🔧 v4.0.48 CHANGES:
@@ -85,7 +91,7 @@ import {
   parseSongMetadata
 } from "./lib/songManager";
 
-const HW_VERSION = 'v4.0.49';
+const HW_VERSION = 'v4.0.50';
 
 // v4.0.24: Fallback constants for old code (not used by new engine)
 const EPS_DEG = 0.1;
@@ -1115,7 +1121,7 @@ useEffect(() => {
   };
 
   const parseAndLoadSequence = ()=>{
-    const APP_VERSION = "v4.0.49-calendar-keyboard-fix";
+    const APP_VERSION = "v4.0.50-eraser-fix";
     console.log('=== PARSE AND LOAD START ===');
     console.log('ðŸ·ï¸  APP VERSION:', APP_VERSION);
     console.log('Input text:', inputText);
@@ -7483,7 +7489,7 @@ useEffect(() => {
                           };
                           const chordRootForLookup = sharpToFlat[chordRoot] || chordRoot;
                           
-                          noteName = pcNameForKey(m % 12, chordRoot as KeyName);
+                          noteName = pcNameForKey(m % 12, chordRootForLookup as KeyName);
                           // Check if this note is the root
                           const rootPc = NAME_TO_PC[chordRootForLookup as KeyName];
                           isRoot = (m % 12) === rootPc;
@@ -7529,17 +7535,17 @@ useEffect(() => {
                             {noteName}
                           </text>
                           
-                          {/* ✅ Eraser branding - WHITE KEYS: Adjusted higher (was too low) */}
+                          {/* ✅ Eraser branding - WHITE KEYS: Restored working position from v4.0.48 */}
                           <rect
                             x={x + WW * 0.31}
-                            y={HW * 0.56 + 40}
+                            y={HW * 0.56 + 10}
                             width={WW * 0.38}
                             height={WW * 0.5}
                             rx={WW * 0.08}
                             ry={WW * 0.08}
                             fill={eraserColor}
                             opacity={0.95}
-                            transform={`rotate(${randomRotation}, ${x + WW/2}, ${HW * 0.68 + 10})`}
+                            transform={`rotate(${randomRotation}, ${x + WW/2}, ${HW * 0.68})`}
                           />
                         </g>
                       );
@@ -7569,7 +7575,7 @@ useEffect(() => {
                           };
                           const chordRootForLookup = sharpToFlat[chordRoot] || chordRoot;
                           
-                          noteName = pcNameForKey(m % 12, chordRoot as KeyName);
+                          noteName = pcNameForKey(m % 12, chordRootForLookup as KeyName);
                           // Check if this note is the root
                           const rootPc = NAME_TO_PC[chordRootForLookup as KeyName];
                           isRoot = (m % 12) === rootPc;
