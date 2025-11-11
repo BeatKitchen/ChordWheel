@@ -4,8 +4,7 @@ import type { Fn, SizeSpec } from "./types";
 export const ACTIVE_STROKE = "#39FF14";
 export const INACTIVE_WEDGE_OPACITY = 0.35;
 
-export const DIM_OPACITY = 0.28; // 0..1 (lower = darker). Tweak to taste.
-
+export const DIM_OPACITY = 0.28;
 
 export const WHEEL_W = 520;
 export const WHEEL_H = 560;
@@ -43,11 +42,15 @@ export const WEDGE_DEGREES: SizeSpec = {
   "V/V": 33,
   iii: 13,
   "V/vi": 30,
+  "V/ii": 30,
   iv: 13,
   IV: 35,
+  V: 40,
   V7: 40,
   vi: 35,
   "♭VII": 15,
+  "ii/vi": 13,
+  "vii°": 13,
 };
 
 export const WEDGE_ANCHOR_DEG: Partial<Record<Fn, number>> = {
@@ -56,11 +59,14 @@ export const WEDGE_ANCHOR_DEG: Partial<Record<Fn, number>> = {
   "V/V": 52,
   iii: 79,
   "V/vi": 106,
+  "V/ii": 52,
   iv: 134,
   IV: 168,
   V7: 210,
   vi: 289,
   "♭VII": 325,
+  "ii/vi": 24,
+  "vii°": 24,
 };
 
 export const WEDGE_GAP_DEG = 0;
@@ -76,11 +82,15 @@ export const FN_COLORS: Record<Fn, string> = {
   "V/V": "#CE6F6F",
   iii: "#36B5CA",
   "V/vi": "#D88484",
+  "V/ii": "#CE6F6F",
   iv: "#2AA3B8",
   IV: "#14B8A6",
+  V: "#7A1B1D",
   V7: "#7A1B1D",
   vi: "#F0AD21",
   "♭VII": "#2F9BB0",
+  "ii/vi": "#36C0CA",
+  "vii°": "#36C0CA",
 };
 
 export const FN_LABEL_COLORS: Record<Fn, string> = {
@@ -89,16 +99,20 @@ export const FN_LABEL_COLORS: Record<Fn, string> = {
   "V/V": "#fff",
   iii: "#fff",
   "V/vi": "#fff",
+  "V/ii": "#fff",
   iv: "#fff",
   IV: "#fff",
+  V: "#fff",
   V7: "#fff",
   vi: "#111",
   "♭VII": "#fff",
+  "ii/vi": "#fff",
+  "vii°": "#fff",
 };
 
 /** Rotation + animation */
-export const VISITOR_ROTATE_DEG = 70;     // Parallel / Relative spin
-export const IV_ROTATE_DEG = -168;        // (historical SUB spin value if/when used)
+export const VISITOR_ROTATE_DEG = 70;
+export const IV_ROTATE_DEG = -168;
 export const ROTATION_ANIM_MS = 260;
 export const EPS_DEG = 0.4;
 export const NEGATIVE_ON_VISITOR = false;
@@ -113,6 +127,12 @@ export const BONUS_INNER_R = 0.20;
 export const BONUS_OUTER_R = 0.99;
 export const BONUS_OUTER_OVER = 1.07;
 export const BONUS_CENTER_ANCHOR_DEG: number | null = 305;
+
+// Static positions for bonus wedges (do not move - always visible in Expert mode)
+export const BONUS_WEDGE_POSITIONS: Record<string, number> = {
+  "V/ii": 285,     // A7 - left side between vi and V7
+  "ii/vi": 335,    // Bm7♭5 - top-left between ♭VII and I
+};
 export const BONUS_TEXT_SIZE = 12;
 export const BONUS_TEXT_FILL = "#ffffff";
 export const BONUS_FILL = "#9F171B";
@@ -124,7 +144,6 @@ export const BONUS_FADE_MS = 300;
 export const BONUS_FUNCTION_BY_LABEL: Record<string, string> = {
   "Bm7♭5": "viiø7",
   Bdim: "vii°",
-  // A7 bonus family mapping (used elsewhere for triggers)
   A: "V/ii",
   A7: "V/ii",
   "C#dim": "V/ii",
@@ -140,28 +159,23 @@ export const MIDI_SUPPORTED =
   typeof navigator !== "undefined" && "requestMIDIAccess" in navigator;
 
 /** Preview behavior */
-export const PREVIEW_USE_SEVENTHS = false; // forces sevenths on previews if true
-export const LATCH_PREVIEW = true;         // keep showing last preview if no keys held
+export const PREVIEW_USE_SEVENTHS = false;
+export const LATCH_PREVIEW = true;
 
-/** Global UI scale + keyboard sizing (no UI sliders; change here only) */
-export const UI_SCALE_DEFAULT = 1.0;       // wheel + keyboard global CSS scale
-export const KBD_WIDTH_FRACTION = 0.86;    // keyboard width as fraction of WHEEL_W
+/** Global UI scale + keyboard sizing */
+export const UI_SCALE_DEFAULT = 1.0;
+export const KBD_WIDTH_FRACTION = 0.86;
 
-// =========================
-// HARMONYWHEEL V3 ADDITIONS
-// =========================
+/** Visual transitions */
+export const DIM_FADE_MS = 750;
+export const JIGGLE_DEG = 30;
+export const JIGGLE_MS = 120;
+export const BONUS_DEBOUNCE_MS = 50;
 
-// Visual transitions
-export const DIM_FADE_MS = 750;      // fade duration (ms) for de-dimming other wedges
-export const JIGGLE_DEG = 30;        // ±degrees for SUB→HOME jiggle
-export const JIGGLE_MS = 120;        // duration of each jiggle phase (ms)
-export const BONUS_DEBOUNCE_MS = 50; // debounce for Bdim/Bm7b5 overlay (ms)
+/** Layout / UI sizing */
+export const KEYBOARD_WIDTH_FRACTION = 0.75;
+export const GUITAR_TAB_WIDTH_FRACTION = 0.25;
 
-// Layout / UI sizing (bottom panel split)
-export const KEYBOARD_WIDTH_FRACTION = 0.75;   // left: keyboard width share (0..1)
-export const GUITAR_TAB_WIDTH_FRACTION = 0.25; // right: guitar tab width share (0..1)
-
-// >>> PATCH START — lib/config.ts guitar theme + (optional) shorter keyboard
 export const GUITAR_THEME = {
   bg:     "#0b1220",
   border: "#334155",
@@ -171,7 +185,5 @@ export const GUITAR_THEME = {
   fret:   "#64748b",
 };
 
-// (optional) make the keyboard a touch shorter to free vertical space
-// Replace your existing export for KBD_HEIGHT_FACTOR_DEFAULT with this line:
 export const KBD_HEIGHT_FACTOR_DEFAULT = 1;
-// >>> PATCH END — lib/config.ts guitar theme + (optional) shorter keyboard
+// EOF - config.ts v4.0.1 - Added BONUS_WEDGE_POSITIONS for static bonus positions

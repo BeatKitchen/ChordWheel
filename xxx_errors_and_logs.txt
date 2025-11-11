@@ -1,655 +1,11 @@
-:5173/favicon.ico:1  Failed to load resource: the server responded with a status of 404 (Not Found)
-(index):1 Access to fetch at 'https://calendar.google.com/calendar/ical/a157900092cdb0f3d8a258e80b29e82acb3215b6b5a0451ceb748b319c705cff%40group.calendar.google.com/public/basic.ics' from origin 'http://localhost:5173' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
-calendar.google.com/calendar/ical/a157900092cdb0f3d8a258e80b29e82acb3215b6b5a0451ceb748b319c705cff%40group.calendar.google.com/public/basic.ics:1  Failed to load resource: net::ERR_FAILED
-(index):1 Access to fetch at 'https://calendar.google.com/calendar/ical/02c23a48835cfb8c795805a698e1079245ff2012562bc7ede1a26f1d3b14297e%40group.calendar.google.com/public/basic.ics' from origin 'http://localhost:5173' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
-calendar.google.com/calendar/ical/02c23a48835cfb8c795805a698e1079245ff2012562bc7ede1a26f1d3b14297e%40group.calendar.google.com/public/basic.ics:1  Failed to load resource: net::ERR_FAILED
-:5173/favicon.ico:1  Failed to load resource: the server responded with a status of 404 (Not Found)
- 🔊 Context state: running Sample rate: 44100
- 🆔 Generated note ID: 64-1762717553808-0.7217427669753774
- 📊 Frequency: 329.63 Hz, Time: 18.413
- 🎹 Creating oscillators...
- 🔗 Connecting audio graph...
- ▶️ Starting oscillators...
- ✅ Oscillators started successfully!
- 💾 Stored note. Active count: 7
- ✅ playNote COMPLETE, returning ID: 64-1762717553808-0.7217427669753774
- 🎵 playNote START: Object
- 🔊 Initializing audio context...
- 🔊 Context state: running Sample rate: 44100
- 🆔 Generated note ID: 67-1762717553809-0.9457681305509746
- 📊 Frequency: 392.00 Hz, Time: 18.413
- 🎹 Creating oscillators...
- 🔗 Connecting audio graph...
- ▶️ Starting oscillators...
- ✅ Oscillators started successfully!
- 💾 Stored note. Active count: 8
- ✅ playNote COMPLETE, returning ID: 67-1762717553809-0.9457681305509746
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 Simulating MIDI for sequencer: Abm7
- 🔍 Parsed: Object
- ✅ Root PC: 8
- 🎹 Simulated MIDI notes: Array(4) for chord: Abm7 transpose: 0
- 🔑 [SEQ-FIX v3.8.0] baseKeyRef synced to: C (original baseKey: C )
- 💎 lastDetectedChordRef set to: Abm7 (from theory.ts)
- 🔍 [DIM7 ALWAYS-CHECK] Object
- 🏠 HOME CHECK: Object
- 🔒 ALLOW HOME CHECK: Object
- 🔍 V/vi CALC: Object
- 🎭 shouldShowBonusOverlay: Object
- 🔍 Bm7♭5 bonus check: Object
- 🎯 centerOnly called: Object
- 📝 lastPlayedChordRef set to: Abm7
- ✅ Sequencer detection complete
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎵 playNote START: Object
- 🔊 Initializing audio context...
- 🔊 Context state: running Sample rate: 44100
- 🆔 Generated note ID: 56-1762717554565-0.9451195873161876
- 📊 Frequency: 207.65 Hz, Time: 19.168
- 🎹 Creating oscillators...
- 🔗 Connecting audio graph...
- ▶️ Starting oscillators...
- ✅ Oscillators started successfully!
- 💾 Stored note. Active count: 5
- ✅ playNote COMPLETE, returning ID: 56-1762717554565-0.9451195873161876
- 🎵 playNote START: Object
- 🔊 Initializing audio context...
- 🔊 Context state: running Sample rate: 44100
- 🆔 Generated note ID: 59-1762717554565-0.659621080009713
- 📊 Frequency: 246.94 Hz, Time: 19.168
- 🎹 Creating oscillators...
- 🔗 Connecting audio graph...
- ▶️ Starting oscillators...
- ✅ Oscillators started successfully!
- 💾 Stored note. Active count: 6
- ✅ playNote COMPLETE, returning ID: 59-1762717554565-0.659621080009713
- 🎵 playNote START: Object
- 🔊 Initializing audio context...
- 🔊 Context state: running Sample rate: 44100
- 🆔 Generated note ID: 63-1762717554565-0.7320067744209477
- 📊 Frequency: 311.13 Hz, Time: 19.168
- 🎹 Creating oscillators...
- 🔗 Connecting audio graph...
- ▶️ Starting oscillators...
- ✅ Oscillators started successfully!
- 💾 Stored note. Active count: 7
- ✅ playNote COMPLETE, returning ID: 63-1762717554565-0.7320067744209477
- 🎵 playNote START: Object
- 🔊 Initializing audio context...
- 🔊 Context state: running Sample rate: 44100
- 🆔 Generated note ID: 66-1762717554566-0.35327271082539324
- 📊 Frequency: 369.99 Hz, Time: 19.168
- 🎹 Creating oscillators...
- 🔗 Connecting audio graph...
- ▶️ Starting oscillators...
- ✅ Oscillators started successfully!
- 💾 Stored note. Active count: 8
- ✅ playNote COMPLETE, returning ID: 66-1762717554566-0.35327271082539324
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 Simulating MIDI for sequencer: Gm7
- 🔍 Parsed: Object
- ✅ Root PC: 7
- 🎹 Simulated MIDI notes: Array(4) for chord: Gm7 transpose: 0
- 🔑 [SEQ-FIX v3.8.0] baseKeyRef synced to: C (original baseKey: C )
- 💎 lastDetectedChordRef set to: Gm7 (from theory.ts)
- 🔍 [DIM7 ALWAYS-CHECK] Object
- 🎯 setActiveWithTrail called: Object
- 📍 Stack trace:     at setActiveWithTrail (http://localhost:5173/src/HarmonyWheel.tsx?t=1762717442511:2169:23)
-    at detect (http://localhost:5173/src/HarmonyWheel.tsx?t=1762717442511:2888:11)
-    at applySeqItem (http://localhost:5173/src/HarmonyWheel.tsx?t=1762717442511:1521:7)
-    at http://localhost:5173/src/HarmonyWheel.tsx?t=1762717442511:2048:9
- 💾 Saved latched chord: Object
- 📝 lastPlayedChordRef set to: Gm7
- ✅ Sequencer detection complete
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎵 playNote START: Object
- 🔊 Initializing audio context...
- 🔊 Context state: running Sample rate: 44100
- 🆔 Generated note ID: 55-1762717555324-0.37923365831712474
- 📊 Frequency: 196.00 Hz, Time: 19.929
- 🎹 Creating oscillators...
- 🔗 Connecting audio graph...
- ▶️ Starting oscillators...
- ✅ Oscillators started successfully!
- 💾 Stored note. Active count: 5
- ✅ playNote COMPLETE, returning ID: 55-1762717555324-0.37923365831712474
- 🎵 playNote START: Object
- 🔊 Initializing audio context...
- 🔊 Context state: running Sample rate: 44100
- 🆔 Generated note ID: 58-1762717555325-0.7771071184342997
- 📊 Frequency: 233.08 Hz, Time: 19.929
- 🎹 Creating oscillators...
- 🔗 Connecting audio graph...
- ▶️ Starting oscillators...
- ✅ Oscillators started successfully!
- 💾 Stored note. Active count: 6
- ✅ playNote COMPLETE, returning ID: 58-1762717555325-0.7771071184342997
- 🎵 playNote START: Object
- 🔊 Initializing audio context...
- 🔊 Context state: running Sample rate: 44100
- 🆔 Generated note ID: 62-1762717555325-0.40446862598419897
- 📊 Frequency: 293.66 Hz, Time: 19.929
- 🎹 Creating oscillators...
- 🔗 Connecting audio graph...
- ▶️ Starting oscillators...
- ✅ Oscillators started successfully!
- 💾 Stored note. Active count: 7
- ✅ playNote COMPLETE, returning ID: 62-1762717555325-0.40446862598419897
- 🎵 playNote START: Object
- 🔊 Initializing audio context...
- 🔊 Context state: running Sample rate: 44100
- 🆔 Generated note ID: 65-1762717555325-0.6236214930518473
- 📊 Frequency: 349.23 Hz, Time: 19.929
- 🎹 Creating oscillators...
- 🔗 Connecting audio graph...
- ▶️ Starting oscillators...
- ✅ Oscillators started successfully!
- 💾 Stored note. Active count: 8
- ✅ playNote COMPLETE, returning ID: 65-1762717555325-0.6236214930518473
- 🏷️ WEDGE LABEL KEY: Object
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 HIGHLIGHT: latchedAbsNotes: Array(4) → filtered: Array(4)
- 🎹 KB DISP SET: Array(4) size: 4
- 🎹 KB HIGHLIGHT SET: Array(4) size: 4
- 🎹 KB LATCHED NOTES: Array(4)
- 🎹 MIDI INPUT: Object
- 🎵 playNote START: Object
- 🔊 Initializing audio context...
- 🔊 Context state: running Sample rate: 44100
- 🆔 Generated note ID: 67-1762717744909-0.17260442115611163
- 📊 Frequency: 392.00 Hz, Time: 209.032
- 🎹 Creating oscillators...
- 🔗 Connecting audio graph...
- ▶️ Starting oscillators...
- ✅ Oscillators started successfully!
- 💾 Stored note. Active count: 1
- 🎹 MIDI note - sustaining until note-off
- ✅ playNote COMPLETE, returning ID: 67-1762717744909-0.17260442115611163
- 🔍 [DIM7 ALWAYS-CHECK] Object
- 🎹 KB DISP SET: Array(1) size: 1
- 🎹 KB HIGHLIGHT SET: Array(0) size: 0
- 🎹 KB LATCHED NOTES: Array(1)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(0) size: 0
- 🎹 KB LATCHED NOTES: Array(1)
- 🔍 No notes held - checking latch state: Object
- 🔒 MIDI latch active - keeping display: Object
- ⏱️ MIDI latch timer started - 10s until clear, timerId: 143
- ⏰ TIMEOUT FIRING - clearing everything
- ⏱️ MIDI latch timeout - cleared display and keyboard highlights
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(0) size: 0
- 🎹 KB LATCHED NOTES: Array(0)
-(index):1 Access to fetch at 'https://calendar.google.com/calendar/ical/a157900092cdb0f3d8a258e80b29e82acb3215b6b5a0451ceb748b319c705cff%40group.calendar.google.com/public/basic.ics' from origin 'http://localhost:5173' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
-calendar.google.com/calendar/ical/a157900092cdb0f3d8a258e80b29e82acb3215b6b5a0451ceb748b319c705cff%40group.calendar.google.com/public/basic.ics:1  Failed to load resource: net::ERR_FAILED
- Failed to fetch calendar events: 
-fetchCalendarEvents @ HarmonyWheel.tsx?t=1762717442511:758
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(0) size: 0
- 🎹 KB LATCHED NOTES: Array(0)
-(index):1 Access to fetch at 'https://calendar.google.com/calendar/ical/02c23a48835cfb8c795805a698e1079245ff2012562bc7ede1a26f1d3b14297e%40group.calendar.google.com/public/basic.ics' from origin 'http://localhost:5173' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
-calendar.google.com/calendar/ical/02c23a48835cfb8c795805a698e1079245ff2012562bc7ede1a26f1d3b14297e%40group.calendar.google.com/public/basic.ics:1  Failed to load resource: net::ERR_FAILED
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(0) size: 0
- 🎹 KB LATCHED NOTES: Array(0)
- 🔑 [v3.6.0] baseKey synced to ref: C
- 🍎 Safari detection: false
- 🎹 TRANSPOSE STATE: Object
- 🎯 EFFECTIVE BASE KEY: C (original: C )
- 🗓️ Fetching calendar events...
- 🗓️ Fetching gyms calendar: https://calendar.google.com/calendar/ical/02c23a48835cfb8c795805a698e1079245ff2012562bc7ede1a26f1d3b14297e%40group.calendar.google.com/public/basic.ics
- 🗓️ Fetching office calendar: https://calendar.google.com/calendar/ical/a157900092cdb0f3d8a258e80b29e82acb3215b6b5a0451ceb748b319c705cff%40group.calendar.google.com/public/basic.ics
- 🎵 Auto-loading default song on mount
- 🏷️ WEDGE LABEL KEY: Object
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(0) size: 0
- 🎹 KB LATCHED NOTES: Array(0)
- === PARSE AND LOAD START ===
- 🏷️  APP VERSION: v3.19.21-harmony-wheel
- Input text: @TITLE From today's Beat Kicthen MUSIC THEORY GYM
+chunk-NGODP64W.js?v=7b8148d9:21551 Download the React DevTools for a better development experience: https://reactjs.org/link/react-devtools
+HarmonyWheel.tsx:173 ðŸ”‘ [v3.6.0] baseKey synced to ref: C
+HarmonyWheel.tsx:552 ðŸŽ Safari detection: false
+HarmonyWheel.tsx:759 🎹 TRANSPOSE STATE: Object
+HarmonyWheel.tsx:770 ðŸŽ¯ EFFECTIVE BASE KEY: C (original: C )
+HarmonyWheel.tsx:1104 === PARSE AND LOAD START ===
+HarmonyWheel.tsx:1105 ðŸ·ï¸  APP VERSION: v4.0.24-harmony-wheel
+HarmonyWheel.tsx:1106 Input text: @TITLE From today's Beat Kicthen MUSIC THEORY GYM
 @KEY C, @TEMPO 160, @LOOP
 
 |Fmaj7 * * / Fmaj7 / Fmaj7 E7 |* / E7 * * * * *|
@@ -660,370 +16,164 @@ calendar.google.com/calendar/ical/02c23a48835cfb8c795805a698e1079245ff2012562bc7
 @RHYTHM1 |x x x x|
 @RHYTHM2 |x / x /|
 @RHYTHM3 |x x / x x x / x|
- 📊 Bar: "Fmaj7 * * / Fmaj7 / Fmaj7 E7" → 6 items, totalCount: 8, unitDuration: 0.125
-   0: "Fmaj7" count:3 isComment:false → duration:0.375
-   1: "/" count:1 isComment:false → duration:0.125
-   2: "Fmaj7" count:1 isComment:false → duration:0.125
-   3: "/" count:1 isComment:false → duration:0.125
-   4: "Fmaj7" count:1 isComment:false → duration:0.125
-   5: "E7" count:1 isComment:false → duration:0.125
- 📊 Bar: "* / E7 * * * * *" → 3 items, totalCount: 8, unitDuration: 0.125
-   0: "*" count:1 isComment:false → duration:0.125
-   1: "/" count:1 isComment:false → duration:0.125
-   2: "E7" count:6 isComment:false → duration:0.75
- 📊 Bar: "Am7 #passing chord: Abm7" → 3 items, totalCount: 2, unitDuration: 0.5
-   0: "Am7" count:1 isComment:false → duration:0.5
-   1: "#passing chord:" count:0 isComment:true → duration:0
-   2: "Abm7" count:1 isComment:false → duration:0.5
- 📊 Bar: "Gm7 C7" → 2 items, totalCount: 2, unitDuration: 0.5
-   0: "Gm7" count:1 isComment:false → duration:0.5
-   1: "C7" count:1 isComment:false → duration:0.5
- 📊 Bar: "Fmaj7 * * * / / / E7" → 5 items, totalCount: 8, unitDuration: 0.125
-   0: "Fmaj7" count:4 isComment:false → duration:0.5
-   1: "/" count:1 isComment:false → duration:0.125
-   2: "/" count:1 isComment:false → duration:0.125
-   3: "/" count:1 isComment:false → duration:0.125
-   4: "E7" count:1 isComment:false → duration:0.125
- 📊 Bar: "* / E7 * * * * *" → 3 items, totalCount: 8, unitDuration: 0.125
-   0: "*" count:1 isComment:false → duration:0.125
-   1: "/" count:1 isComment:false → duration:0.125
-   2: "E7" count:6 isComment:false → duration:0.75
- 📊 Bar: "Am" → 1 items, totalCount: 1, unitDuration: 1
-   0: "Am" count:1 isComment:false → duration:1
- 📊 Bar: "Am7" → 1 items, totalCount: 1, unitDuration: 1
-   0: "Am7" count:1 isComment:false → duration:1
- Parsed tokens with rhythm: Array(28)
- 🎵 TEMPO detected: 160 BPM
- 🔁 LOOP detected - enabling loop mode
- 📝 Parsing comment: #passing chord: → commentText: passing chord:
-   Found colon! before: passing chord after: 
-   ❌ Chord pattern did not match: 
- 📋 Filtered sequence - removed 2 config directives
- 🔑 [v3.6.0] No @KEY directive, preserving baseKey: C
- Setting initial index to: 2 chord = Fmaj7
- === PARSE AND LOAD END ===
+HarmonyWheel.tsx:1228 ðŸ“Š Bar: "Fmaj7 * * / Fmaj7 / Fmaj7 E7" ⏺†’ 6 items, totalCount: 8, unitDuration: 0.125
+HarmonyWheel.tsx:1231   0: "Fmaj7" count:3 isComment:false ⏺†’ duration:0.375
+HarmonyWheel.tsx:1231   1: "/" count:1 isComment:false ⏺†’ duration:0.125
+HarmonyWheel.tsx:1231   2: "Fmaj7" count:1 isComment:false ⏺†’ duration:0.125
+HarmonyWheel.tsx:1231   3: "/" count:1 isComment:false ⏺†’ duration:0.125
+HarmonyWheel.tsx:1231   4: "Fmaj7" count:1 isComment:false ⏺†’ duration:0.125
+HarmonyWheel.tsx:1231   5: "E7" count:1 isComment:false ⏺†’ duration:0.125
+HarmonyWheel.tsx:1228 ðŸ“Š Bar: "* / E7 * * * * *" ⏺†’ 3 items, totalCount: 8, unitDuration: 0.125
+HarmonyWheel.tsx:1231   0: "*" count:1 isComment:false ⏺†’ duration:0.125
+HarmonyWheel.tsx:1231   1: "/" count:1 isComment:false ⏺†’ duration:0.125
+HarmonyWheel.tsx:1231   2: "E7" count:6 isComment:false ⏺†’ duration:0.75
+HarmonyWheel.tsx:1228 ðŸ“Š Bar: "Am7 #passing chord: Abm7" ⏺†’ 3 items, totalCount: 2, unitDuration: 0.5
+HarmonyWheel.tsx:1231   0: "Am7" count:1 isComment:false ⏺†’ duration:0.5
+HarmonyWheel.tsx:1231   1: "#passing chord:" count:0 isComment:true ⏺†’ duration:0
+HarmonyWheel.tsx:1231   2: "Abm7" count:1 isComment:false ⏺†’ duration:0.5
+HarmonyWheel.tsx:1228 ðŸ“Š Bar: "Gm7 C7" ⏺†’ 2 items, totalCount: 2, unitDuration: 0.5
+HarmonyWheel.tsx:1231   0: "Gm7" count:1 isComment:false ⏺†’ duration:0.5
+HarmonyWheel.tsx:1231   1: "C7" count:1 isComment:false ⏺†’ duration:0.5
+HarmonyWheel.tsx:1228 ðŸ“Š Bar: "Fmaj7 * * * / / / E7" ⏺†’ 5 items, totalCount: 8, unitDuration: 0.125
+HarmonyWheel.tsx:1231   0: "Fmaj7" count:4 isComment:false ⏺†’ duration:0.5
+HarmonyWheel.tsx:1231   1: "/" count:1 isComment:false ⏺†’ duration:0.125
+HarmonyWheel.tsx:1231   2: "/" count:1 isComment:false ⏺†’ duration:0.125
+HarmonyWheel.tsx:1231   3: "/" count:1 isComment:false ⏺†’ duration:0.125
+HarmonyWheel.tsx:1231   4: "E7" count:1 isComment:false ⏺†’ duration:0.125
+HarmonyWheel.tsx:1228 ðŸ“Š Bar: "* / E7 * * * * *" ⏺†’ 3 items, totalCount: 8, unitDuration: 0.125
+HarmonyWheel.tsx:1231   0: "*" count:1 isComment:false ⏺†’ duration:0.125
+HarmonyWheel.tsx:1231   1: "/" count:1 isComment:false ⏺†’ duration:0.125
+HarmonyWheel.tsx:1231   2: "E7" count:6 isComment:false ⏺†’ duration:0.75
+HarmonyWheel.tsx:1228 ðŸ“Š Bar: "Am" ⏺†’ 1 items, totalCount: 1, unitDuration: 1
+HarmonyWheel.tsx:1231   0: "Am" count:1 isComment:false ⏺†’ duration:1
+HarmonyWheel.tsx:1228 ðŸ“Š Bar: "Am7" ⏺†’ 1 items, totalCount: 1, unitDuration: 1
+HarmonyWheel.tsx:1231   0: "Am7" count:1 isComment:false ⏺†’ duration:1
+HarmonyWheel.tsx:1251 Parsed tokens with rhythm: Array(28)
+HarmonyWheel.tsx:1323 🎵 TEMPO detected: 160 BPM
+HarmonyWheel.tsx:1354 ðŸ” LOOP detected - enabling loop mode
+HarmonyWheel.tsx:1272 ðŸ“ Parsing comment: #passing chord: ⏺†’ commentText: passing chord:
+HarmonyWheel.tsx:1279   Found colon! before: passing chord after: 
+HarmonyWheel.tsx:1287   ⏺Œ Chord pattern did not match: 
+HarmonyWheel.tsx:1512 ðŸ“‹ Filtered sequence - removed 2 config directives
+HarmonyWheel.tsx:1537 ðŸ”‘ [v3.6.0] No @KEY directive, preserving baseKey: C
+HarmonyWheel.tsx:1543 Setting initial index to: 2 chord = Fmaj7
+HarmonyWheel.tsx:1549 === PARSE AND LOAD END ===
 
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(0) size: 0
- 🎹 KB LATCHED NOTES: Array(0)
- 🏷️ WEDGE LABEL KEY: Object
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(0) size: 0
- 🎹 KB LATCHED NOTES: Array(0)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(0) size: 0
- 🎹 KB LATCHED NOTES: Array(0)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(0) size: 0
- 🎹 KB LATCHED NOTES: Array(0)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(0) size: 0
- 🎹 KB LATCHED NOTES: Array(0)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(0) size: 0
- 🎹 KB LATCHED NOTES: Array(0)
-(index):1 Access to fetch at 'https://calendar.google.com/calendar/ical/a157900092cdb0f3d8a258e80b29e82acb3215b6b5a0451ceb748b319c705cff%40group.calendar.google.com/public/basic.ics' from origin 'http://localhost:5173' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
-calendar.google.com/calendar/ical/a157900092cdb0f3d8a258e80b29e82acb3215b6b5a0451ceb748b319c705cff%40group.calendar.google.com/public/basic.ics:1  Failed to load resource: net::ERR_FAILED
- ❌ Failed to fetch calendar events: 
-fetchCalendarEvents @ HarmonyWheel.tsx?t=1762718050146:779
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(0) size: 0
- 🎹 KB LATCHED NOTES: Array(0)
-(index):1 Access to fetch at 'https://calendar.google.com/calendar/ical/02c23a48835cfb8c795805a698e1079245ff2012562bc7ede1a26f1d3b14297e%40group.calendar.google.com/public/basic.ics' from origin 'http://localhost:5173' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
-calendar.google.com/calendar/ical/02c23a48835cfb8c795805a698e1079245ff2012562bc7ede1a26f1d3b14297e%40group.calendar.google.com/public/basic.ics:1  Failed to load resource: net::ERR_FAILED
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(0) size: 0
- 🎹 KB LATCHED NOTES: Array(0)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(0) size: 0
- 🎹 KB LATCHED NOTES: Array(0)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(0) size: 0
- 🎹 KB LATCHED NOTES: Array(0)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(0) size: 0
- 🎹 KB LATCHED NOTES: Array(0)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(0) size: 0
- 🎹 KB LATCHED NOTES: Array(0)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(0) size: 0
- 🎹 KB LATCHED NOTES: Array(0)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(0) size: 0
- 🎹 KB LATCHED NOTES: Array(0)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(0) size: 0
- 🎹 KB LATCHED NOTES: Array(0)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(0) size: 0
- 🎹 KB LATCHED NOTES: Array(0)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(0) size: 0
- 🎹 KB LATCHED NOTES: Array(0)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(0) size: 0
- 🎹 KB LATCHED NOTES: Array(0)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(0) size: 0
- 🎹 KB LATCHED NOTES: Array(0)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(0) size: 0
-HarmonyWheel.tsx:8550 🎹 KB LATCHED NOTES: Array(0)
-HarmonyWheel.tsx:8548 🎹 KB DISP SET: Array(0) size: 0
-HarmonyWheel.tsx:8549 🎹 KB HIGHLIGHT SET: Array(0) size: 0
-HarmonyWheel.tsx:8550 🎹 KB LATCHED NOTES: Array(0)
-HarmonyWheel.tsx:8548 🎹 KB DISP SET: Array(0) size: 0
-HarmonyWheel.tsx:8549 🎹 KB HIGHLIGHT SET: Array(0) size: 0
-HarmonyWheel.tsx:8550 🎹 KB LATCHED NOTES: Array(0)
-HarmonyWheel.tsx:8548 🎹 KB DISP SET: Array(0) size: 0
-HarmonyWheel.tsx:8549 🎹 KB HIGHLIGHT SET: Array(0) size: 0
-HarmonyWheel.tsx:8550 🎹 KB LATCHED NOTES: Array(0)
-HarmonyWheel.tsx:8548 🎹 KB DISP SET: Array(0) size: 0
-HarmonyWheel.tsx:8549 🎹 KB HIGHLIGHT SET: Array(0) size: 0
-HarmonyWheel.tsx:8550 🎹 KB LATCHED NOTES: Array(0)
-HarmonyWheel.tsx:8548 🎹 KB DISP SET: Array(0) size: 0
-HarmonyWheel.tsx:8549 🎹 KB HIGHLIGHT SET: Array(0) size: 0
-HarmonyWheel.tsx:8550 🎹 KB LATCHED NOTES: Array(0)
-HarmonyWheel.tsx:8548 🎹 KB DISP SET: Array(0) size: 0
-HarmonyWheel.tsx:8549 🎹 KB HIGHLIGHT SET: Array(0) size: 0
-HarmonyWheel.tsx:8550 🎹 KB LATCHED NOTES: Array(0)
-HarmonyWheel.tsx:8548 🎹 KB DISP SET: Array(0) size: 0
-HarmonyWheel.tsx:8549 🎹 KB HIGHLIGHT SET: Array(0) size: 0
-HarmonyWheel.tsx:8550 🎹 KB LATCHED NOTES: Array(0)
-HarmonyWheel.tsx:8548 🎹 KB DISP SET: Array(0) size: 0
-HarmonyWheel.tsx:8549 🎹 KB HIGHLIGHT SET: Array(0) size: 0
-HarmonyWheel.tsx:8550 🎹 KB LATCHED NOTES: Array(0)
-HarmonyWheel.tsx:8548 🎹 KB DISP SET: Array(0) size: 0
-HarmonyWheel.tsx:8549 🎹 KB HIGHLIGHT SET: Array(0) size: 0
-HarmonyWheel.tsx:8550 🎹 KB LATCHED NOTES: Array(0)
-HarmonyWheel.tsx:8548 🎹 KB DISP SET: Array(0) size: 0
-HarmonyWheel.tsx:8549 🎹 KB HIGHLIGHT SET: Array(0) size: 0
-HarmonyWheel.tsx:8550 🎹 KB LATCHED NOTES: Array(0)
-HarmonyWheel.tsx:8548 🎹 KB DISP SET: Array(0) size: 0
-HarmonyWheel.tsx:8549 🎹 KB HIGHLIGHT SET: Array(0) size: 0
-HarmonyWheel.tsx:8550 🎹 KB LATCHED NOTES: Array(0)
-HarmonyWheel.tsx:8548 🎹 KB DISP SET: Array(0) size: 0
-HarmonyWheel.tsx:8549 🎹 KB HIGHLIGHT SET: Array(0) size: 0
-HarmonyWheel.tsx:8550 🎹 KB LATCHED NOTES: Array(0)
-HarmonyWheel.tsx:8548 🎹 KB DISP SET: Array(0) size: 0
-HarmonyWheel.tsx:8549 🎹 KB HIGHLIGHT SET: Array(0) size: 0
-HarmonyWheel.tsx:8550 🎹 KB LATCHED NOTES: Array(0)
-HarmonyWheel.tsx:8548 🎹 KB DISP SET: Array(0) size: 0
-HarmonyWheel.tsx:8549 🎹 KB HIGHLIGHT SET: Array(0) size: 0
-HarmonyWheel.tsx:8550 🎹 KB LATCHED NOTES: Array(0)
-HarmonyWheel.tsx:8548 🎹 KB DISP SET: Array(0) size: 0
-HarmonyWheel.tsx:8549 🎹 KB HIGHLIGHT SET: Array(0) size: 0
-HarmonyWheel.tsx:8550 🎹 KB LATCHED NOTES: Array(0)
-HarmonyWheel.tsx:8548 🎹 KB DISP SET: Array(0) size: 0
-HarmonyWheel.tsx:8549 🎹 KB HIGHLIGHT SET: Array(0) size: 0
-HarmonyWheel.tsx:8550 🎹 KB LATCHED NOTES: Array(0)
-HarmonyWheel.tsx:8548 🎹 KB DISP SET: Array(0) size: 0
-HarmonyWheel.tsx:8549 🎹 KB HIGHLIGHT SET: Array(0) size: 0
-HarmonyWheel.tsx:8550 🎹 KB LATCHED NOTES: Array(0)
-HarmonyWheel.tsx:5042 🔍 No notes held - checking latch state: Object
-HarmonyWheel.tsx:5070 ❌ No latch - clearing display
-HarmonyWheel.tsx:8548 🎹 KB DISP SET: Array(0) size: 0
-HarmonyWheel.tsx:8549 🎹 KB HIGHLIGHT SET: Array(0) size: 0
-HarmonyWheel.tsx:8550 🎹 KB LATCHED NOTES: Array(0)
-HarmonyWheel.tsx:8548 🎹 KB DISP SET: Array(0) size: 0
-HarmonyWheel.tsx:8549 🎹 KB HIGHLIGHT SET: Array(0) size: 0
-HarmonyWheel.tsx:8550 🎹 KB LATCHED NOTES: Array(0)
-HarmonyWheel.tsx:5042 🔍 No notes held - checking latch state: Object
-HarmonyWheel.tsx:5070 ❌ No latch - clearing display
-HarmonyWheel.tsx:8548 🎹 KB DISP SET: Array(0) size: 0
-HarmonyWheel.tsx:8549 🎹 KB HIGHLIGHT SET: Array(0) size: 0
-HarmonyWheel.tsx:8550 🎹 KB LATCHED NOTES: Array(0)
-HarmonyWheel.tsx:8548 🎹 KB DISP SET: Array(0) size: 0
-HarmonyWheel.tsx:8549 🎹 KB HIGHLIGHT SET: Array(0) size: 0
-HarmonyWheel.tsx:8550 🎹 KB LATCHED NOTES: Array(0)
-HarmonyWheel.tsx:8548 🎹 KB DISP SET: Array(0) size: 0
-HarmonyWheel.tsx:8549 🎹 KB HIGHLIGHT SET: Array(0) size: 0
-HarmonyWheel.tsx:8550 🎹 KB LATCHED NOTES: Array(0)
-HarmonyWheel.tsx:8548 🎹 KB DISP SET: Array(0) size: 0
-HarmonyWheel.tsx:8549 🎹 KB HIGHLIGHT SET: Array(0) size: 0
-HarmonyWheel.tsx:8550 🎹 KB LATCHED NOTES: Array(0)
-HarmonyWheel.tsx:8548 🎹 KB DISP SET: Array(0) size: 0
-HarmonyWheel.tsx:8549 🎹 KB HIGHLIGHT SET: Array(0) size: 0
-HarmonyWheel.tsx:8550 🎹 KB LATCHED NOTES: Array(0)
-HarmonyWheel.tsx:8548 🎹 KB DISP SET: Array(0) size: 0
-HarmonyWheel.tsx:8549 🎹 KB HIGHLIGHT SET: Array(0) size: 0
-HarmonyWheel.tsx:8550 🎹 KB LATCHED NOTES: Array(0)
-HarmonyWheel.tsx:8548 🎹 KB DISP SET: Array(0) size: 0
-HarmonyWheel.tsx:8549 🎹 KB HIGHLIGHT SET: Array(0) size: 0
-HarmonyWheel.tsx:8550 🎹 KB LATCHED NOTES: Array(0)
-HarmonyWheel.tsx:8548 🎹 KB DISP SET: Array(0) size: 0
-HarmonyWheel.tsx:8549 🎹 KB HIGHLIGHT SET: Array(0) size: 0
-HarmonyWheel.tsx:8550 🎹 KB LATCHED NOTES: Array(0)
-HarmonyWheel.tsx:8548 🎹 KB DISP SET: Array(0) size: 0
-HarmonyWheel.tsx:8549 🎹 KB HIGHLIGHT SET: Array(0) size: 0
-HarmonyWheel.tsx:8550 🎹 KB LATCHED NOTES: Array(0)
-HarmonyWheel.tsx:8548 🎹 KB DISP SET: Array(0) size: 0
-HarmonyWheel.tsx:8549 🎹 KB HIGHLIGHT SET: Array(0) size: 0
-HarmonyWheel.tsx:8550 🎹 KB LATCHED NOTES: Array(0)
-HarmonyWheel.tsx:8548 🎹 KB DISP SET: Array(0) size: 0
-HarmonyWheel.tsx:8549 🎹 KB HIGHLIGHT SET: Array(0) size: 0
-HarmonyWheel.tsx:8550 🎹 KB LATCHED NOTES: Array(0)
-HarmonyWheel.tsx:8548 🎹 KB DISP SET: Array(0) size: 0
-HarmonyWheel.tsx:8549 🎹 KB HIGHLIGHT SET: Array(0) size: 0
-HarmonyWheel.tsx:8550 🎹 KB LATCHED NOTES: Array(0)
-HarmonyWheel.tsx:8548 🎹 KB DISP SET: Array(0) size: 0
-HarmonyWheel.tsx:8549 🎹 KB HIGHLIGHT SET: Array(0) size: 0
-HarmonyWheel.tsx:8550 🎹 KB LATCHED NOTES: Array(0)
-HarmonyWheel.tsx:8548 🎹 KB DISP SET: Array(0) size: 0
-HarmonyWheel.tsx:8549 🎹 KB HIGHLIGHT SET: Array(0) size: 0
-HarmonyWheel.tsx:8550 🎹 KB LATCHED NOTES: Array(0)
-HarmonyWheel.tsx:8548 🎹 KB DISP SET: Array(0) size: 0
-HarmonyWheel.tsx:8549 🎹 KB HIGHLIGHT SET: Array(0) size: 0
-HarmonyWheel.tsx:8550 🎹 KB LATCHED NOTES: Array(0)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(0) size: 0
- 🎹 KB LATCHED NOTES: Array(0)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(0) size: 0
- 🎹 KB LATCHED NOTES: Array(0)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(0) size: 0
- 🎹 KB LATCHED NOTES: Array(0)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(0) size: 0
- 🎹 KB LATCHED NOTES: Array(0)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(0) size: 0
- 🎹 KB LATCHED NOTES: Array(0)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(0) size: 0
- 🎹 KB LATCHED NOTES: Array(0)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(0) size: 0
- 🎹 KB LATCHED NOTES: Array(0)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(0) size: 0
- 🎹 KB LATCHED NOTES: Array(0)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(0) size: 0
- 🎹 KB LATCHED NOTES: Array(0)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(0) size: 0
- 🎹 KB LATCHED NOTES: Array(0)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(0) size: 0
- 🎹 KB LATCHED NOTES: Array(0)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(0) size: 0
- 🎹 KB LATCHED NOTES: Array(0)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(0) size: 0
- 🎹 KB LATCHED NOTES: Array(0)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(0) size: 0
- 🎹 KB LATCHED NOTES: Array(0)
- 🎹 KB DISP SET: Array(0) size: 0
- 🎹 KB HIGHLIGHT SET: Array(0) size: 0
-HarmonyWheel.tsx:8550 🎹 KB LATCHED NOTES: Array(0)
-HarmonyWheel.tsx:8548 🎹 KB DISP SET: Array(0) size: 0
-HarmonyWheel.tsx:8549 🎹 KB HIGHLIGHT SET: Array(0) size: 0
-HarmonyWheel.tsx:8550 🎹 KB LATCHED NOTES: Array(0)
-HarmonyWheel.tsx:8548 🎹 KB DISP SET: Array(0) size: 0
-HarmonyWheel.tsx:8549 🎹 KB HIGHLIGHT SET: Array(0) size: 0
-HarmonyWheel.tsx:8550 🎹 KB LATCHED NOTES: Array(0)
-HarmonyWheel.tsx:8548 🎹 KB DISP SET: Array(0) size: 0
-HarmonyWheel.tsx:8549 🎹 KB HIGHLIGHT SET: Array(0) size: 0
-HarmonyWheel.tsx:8550 🎹 KB LATCHED NOTES: Array(0)
-HarmonyWheel.tsx:8548 🎹 KB DISP SET: Array(0) size: 0
-HarmonyWheel.tsx:8549 🎹 KB HIGHLIGHT SET: Array(0) size: 0
-HarmonyWheel.tsx:8550 🎹 KB LATCHED NOTES: Array(0)
-HarmonyWheel.tsx:8548 🎹 KB DISP SET: Array(0) size: 0
-HarmonyWheel.tsx:8549 🎹 KB HIGHLIGHT SET: Array(0) size: 0
-HarmonyWheel.tsx:8550 🎹 KB LATCHED NOTES: Array(0)
-HarmonyWheel.tsx:8548 🎹 KB DISP SET: Array(0) size: 0
-HarmonyWheel.tsx:8549 🎹 KB HIGHLIGHT SET: Array(0) size: 0
-HarmonyWheel.tsx:8550 🎹 KB LATCHED NOTES: Array(0)
-HarmonyWheel.tsx:8548 🎹 KB DISP SET: Array(0) size: 0
-HarmonyWheel.tsx:8549 🎹 KB HIGHLIGHT SET: Array(0) size: 0
-HarmonyWheel.tsx:8550 🎹 KB LATCHED NOTES: Array(0)
-HarmonyWheel.tsx:8548 🎹 KB DISP SET: Array(0) size: 0
-HarmonyWheel.tsx:8549 🎹 KB HIGHLIGHT SET: Array(0) size: 0
-HarmonyWheel.tsx:8550 🎹 KB LATCHED NOTES: Array(0)
-HarmonyWheel.tsx:8548 🎹 KB DISP SET: Array(0) size: 0
-HarmonyWheel.tsx:8549 🎹 KB HIGHLIGHT SET: Array(0) size: 0
-HarmonyWheel.tsx:8550 🎹 KB LATCHED NOTES: Array(0)
-HarmonyWheel.tsx:8548 🎹 KB DISP SET: Array(0) size: 0
-HarmonyWheel.tsx:8549 🎹 KB HIGHLIGHT SET: Array(0) size: 0
-HarmonyWheel.tsx:8550 🎹 KB LATCHED NOTES: Array(0)
-HarmonyWheel.tsx:8548 🎹 KB DISP SET: Array(0) size: 0
-HarmonyWheel.tsx:8549 🎹 KB HIGHLIGHT SET: Array(0) size: 0
-HarmonyWheel.tsx:8550 🎹 KB LATCHED NOTES: Array(0)
-HarmonyWheel.tsx:8548 🎹 KB DISP SET: Array(0) size: 0
-HarmonyWheel.tsx:8549 🎹 KB HIGHLIGHT SET: Array(0) size: 0
-HarmonyWheel.tsx:8550 🎹 KB LATCHED NOTES: Array(0)
-HarmonyWheel.tsx:8548 🎹 KB DISP SET: Array(0) size: 0
-HarmonyWheel.tsx:8549 🎹 KB HIGHLIGHT SET: Array(0) size: 0
-HarmonyWheel.tsx:8550 🎹 KB LATCHED NOTES: Array(0)
-HarmonyWheel.tsx:8548 🎹 KB DISP SET: Array(0) size: 0
-HarmonyWheel.tsx:8549 🎹 KB HIGHLIGHT SET: Array(0) size: 0
-HarmonyWheel.tsx:8550 🎹 KB LATCHED NOTES: Array(0)
-HarmonyWheel.tsx:8548 🎹 KB DISP SET: Array(0) size: 0
-HarmonyWheel.tsx:8549 🎹 KB HIGHLIGHT SET: Array(0) size: 0
-HarmonyWheel.tsx:8550 🎹 KB LATCHED NOTES: Array(0)
-HarmonyWheel.tsx:5042 🔍 No notes held - checking latch state: Object
-HarmonyWheel.tsx:5070 ❌ No latch - clearing display
-HarmonyWheel.tsx:8548 🎹 KB DISP SET: Array(0) size: 0
-HarmonyWheel.tsx:8549 🎹 KB HIGHLIGHT SET: Array(0) size: 0
-HarmonyWheel.tsx:8550 🎹 KB LATCHED NOTES: Array(0)
-HarmonyWheel.tsx:5042 🔍 No notes held - checking latch state: Object
-HarmonyWheel.tsx:5070 ❌ No latch - clearing display
-HarmonyWheel.tsx:8548 🎹 KB DISP SET: Array(0) size: 0
-HarmonyWheel.tsx:8549 🎹 KB HIGHLIGHT SET: Array(0) size: 0
-HarmonyWheel.tsx:8550 🎹 KB LATCHED NOTES: Array(0)
-HarmonyWheel.tsx:5042 🔍 No notes held - checking latch state: Object
-HarmonyWheel.tsx:5070 ❌ No latch - clearing display
-HarmonyWheel.tsx:8548 🎹 KB DISP SET: Array(0) size: 0
-HarmonyWheel.tsx:8549 🎹 KB HIGHLIGHT SET: Array(0) size: 0
-HarmonyWheel.tsx:8550 🎹 KB LATCHED NOTES: Array(0)
-HarmonyWheel.tsx:5042 🔍 No notes held - checking latch state: Object
-HarmonyWheel.tsx:5070 ❌ No latch - clearing display
-HarmonyWheel.tsx:8548 🎹 KB DISP SET: Array(0) size: 0
-HarmonyWheel.tsx:8549 🎹 KB HIGHLIGHT SET: Array(0) size: 0
-HarmonyWheel.tsx:8550 🎹 KB LATCHED NOTES: Array(0)
-HarmonyWheel.tsx:5042 🔍 No notes held - checking latch state: Object
-HarmonyWheel.tsx:5070 ❌ No latch - clearing display
-HarmonyWheel.tsx:8548 🎹 KB DISP SET: Array(0) size: 0
-HarmonyWheel.tsx:8549 🎹 KB HIGHLIGHT SET: Array(0) size: 0
-HarmonyWheel.tsx:8550 🎹 KB LATCHED NOTES: Array(0)
-HarmonyWheel.tsx:5042 🔍 No notes held - checking latch state: Object
-HarmonyWheel.tsx:5070 ❌ No latch - clearing display
-HarmonyWheel.tsx:8548 🎹 KB DISP SET: Array(0) size: 0
-HarmonyWheel.tsx:8549 🎹 KB HIGHLIGHT SET: Array(0) size: 0
-HarmonyWheel.tsx:8550 🎹 KB LATCHED NOTES: Array(0)
-HarmonyWheel.tsx:5042 🔍 No notes held - checking latch state: Object
-HarmonyWheel.tsx:5070 ❌ No latch - clearing display
-HarmonyWheel.tsx:8548 🎹 KB DISP SET: Array(0) size: 0
-HarmonyWheel.tsx:8549 🎹 KB HIGHLIGHT SET: Array(0) size: 0
-HarmonyWheel.tsx:8550 🎹 KB LATCHED NOTES: Array(0)
-HarmonyWheel.tsx:5042 🔍 No notes held - checking latch state: Object
-HarmonyWheel.tsx:5070 ❌ No latch - clearing display
-HarmonyWheel.tsx:8548 🎹 KB DISP SET: Array(0) size: 0
-HarmonyWheel.tsx:8549 🎹 KB HIGHLIGHT SET: Array(0) size: 0
-HarmonyWheel.tsx:8550 🎹 KB LATCHED NOTES: Array(0)
-HarmonyWheel.tsx:5042 🔍 No notes held - checking latch state: Object
-HarmonyWheel.tsx:5070 ❌ No latch - clearing display
-HarmonyWheel.tsx:8548 🎹 KB DISP SET: Array(0) size: 0
-HarmonyWheel.tsx:8549 🎹 KB HIGHLIGHT SET: Array(0) size: 0
-HarmonyWheel.tsx:8550 🎹 KB LATCHED NOTES: Array(0)
-HarmonyWheel.tsx:5042 🔍 No notes held - checking latch state: Object
-HarmonyWheel.tsx:5070 ❌ No latch - clearing display
-HarmonyWheel.tsx:8548 🎹 KB DISP SET: Array(0) size: 0
-HarmonyWheel.tsx:8549 🎹 KB HIGHLIGHT SET: Array(0) size: 0
-HarmonyWheel.tsx:8550 🎹 KB LATCHED NOTES: Array(0)
-HarmonyWheel.tsx:5042 🔍 No notes held - checking latch state: Object
-HarmonyWheel.tsx:5070 ❌ No latch - clearing display
-HarmonyWheel.tsx:8548 🎹 KB DISP SET: Array(0) size: 0
-HarmonyWheel.tsx:8549 🎹 KB HIGHLIGHT SET: Array(0) size: 0
-HarmonyWheel.tsx:8550 🎹 KB LATCHED NOTES: Array(0)
-HarmonyWheel.tsx:8548 🎹 KB DISP SET: Array(0) size: 0
-HarmonyWheel.tsx:8549 🎹 KB HIGHLIGHT SET: Array(0) size: 0
-HarmonyWheel.tsx:8550 🎹 KB LATCHED NOTES: Array(0)
-HarmonyWheel.tsx:8548 🎹 KB DISP SET: Array(0) size: 0
-HarmonyWheel.tsx:8549 🎹 KB HIGHLIGHT SET: Array(0) size: 0
-HarmonyWheel.tsx:8550 🎹 KB LATCHED NOTES: Array(0)
+HarmonyWheel.tsx:804 ðŸ—“ï¸ Fetching Teamup calendar events...
+HarmonyWheel.tsx:834 ðŸ—“ï¸ Fetching from Teamup: https://api.teamup.com/ks6brk633c2o4cdi4o/events?startDate=2025-11-10&endDate=2025-12-10
+HarmonyWheel.tsx:1562 🎵 Auto-loading default song on mount
+HarmonyWheel.tsx:4857 ðŸ·ï¸ WEDGE LABEL KEY: Object
+:5173/favicon.ico:1  Failed to load resource: the server responded with a status of 404 (Not Found)
+HarmonyWheel.tsx:843 ðŸ—“ï¸ Response status: 200
+HarmonyWheel.tsx:852 ðŸ—“ï¸ ✅ Teamup response: Object
+HarmonyWheel.tsx:870 ðŸ—“ï¸ Total upcoming events: 62
+HarmonyWheel.tsx:884 ðŸ—“ï¸ Theory gyms: 6
+HarmonyWheel.tsx:885 ðŸ—“ï¸ Office hours: 27
+HarmonyWheel.tsx:886 ðŸ—“ï¸ Other events: 29
+HarmonyWheel.tsx:898 ðŸ—“ï¸ Next theory gym: THEORY GYM
+@Nathan Rosenberg ⏺†’ in 2d 
+HarmonyWheel.tsx:909 ðŸ—“ï¸ Next office hours: OFFICE HOURS
+@Nathan Rosenberg ⏺†’ in 2d 
+HarmonyWheel.tsx:920 ðŸ—“ï¸ Next other event: Mixcraft
+@Jam Phelps ⏺†’  ðŸ”´ LIVE
+HarmonyWheel.tsx:926 ðŸ—“ï¸ ✅ Setting ticker text: Next: THEORY GYM
+@Nathan Rosenberg in 2d ⏺€¢ OFFICE HOURS
+@Nathan Rosenberg in 2d ⏺€¢ Mixcraft
+@Jam Phelps 
+HarmonyWheel.tsx:927 ðŸ—“ï¸ ðŸ“Š Ticker events array: Array(3)
+HarmonyWheel.tsx:928 ðŸ—“ï¸ ðŸŽ¬ What will display: Next THEORY GYM
+with Nathan Rosenberg in 2d ⏺€¢⏺€¢⏺€¢ Coming up: OFFICE HOURS
+with Nathan Rosenberg in 2d ⏺€¢⏺€¢⏺€¢ ðŸ”´ Now in session: Mixcraft
+with Jam Phelps 
+chunk-NGODP64W.js?v=7b8148d9:521 Warning: validateDOMNesting(...): <a> cannot appear as a descendant of <a>.
+    at a
+    at div
+    at div
+    at div
+    at a
+    at div
+    at div
+    at div
+    at div
+    at div
+    at HarmonyWheel (http://localhost:5173/src/HarmonyWheel.tsx?t=1762829236395:102:33)
+    at App
+printWarning @ chunk-NGODP64W.js?v=7b8148d9:521
+HarmonyWheel.tsx:1104 === PARSE AND LOAD START ===
+HarmonyWheel.tsx:1105 ðŸ·ï¸  APP VERSION: v4.0.24-harmony-wheel
+HarmonyWheel.tsx:1106 Input text: @TITLE From today's Beat Kicthen MUSIC THEORY GYM
+@KEY C, @TEMPO 160, @LOOP
+
+|Fmaj7 * * / Fmaj7 / Fmaj7 E7 |* / E7 * * * * *|
+|Am7 #passing chord: Abm7 | Gm7 C7 |
+|Fmaj7 * * * / / / E7 |* / E7 * * * * *|
+|Am |Am7 |
+
+@RHYTHM1 |x x x x|
+@RHYTHM2 |x / x /|
+@RHYTHM3 |x x / x x x / x|
+HarmonyWheel.tsx:1228 ðŸ“Š Bar: "Fmaj7 * * / Fmaj7 / Fmaj7 E7" ⏺†’ 6 items, totalCount: 8, unitDuration: 0.125
+HarmonyWheel.tsx:1231   0: "Fmaj7" count:3 isComment:false ⏺†’ duration:0.375
+HarmonyWheel.tsx:1231   1: "/" count:1 isComment:false ⏺†’ duration:0.125
+HarmonyWheel.tsx:1231   2: "Fmaj7" count:1 isComment:false ⏺†’ duration:0.125
+HarmonyWheel.tsx:1231   3: "/" count:1 isComment:false ⏺†’ duration:0.125
+HarmonyWheel.tsx:1231   4: "Fmaj7" count:1 isComment:false ⏺†’ duration:0.125
+HarmonyWheel.tsx:1231   5: "E7" count:1 isComment:false ⏺†’ duration:0.125
+HarmonyWheel.tsx:1228 ðŸ“Š Bar: "* / E7 * * * * *" ⏺†’ 3 items, totalCount: 8, unitDuration: 0.125
+HarmonyWheel.tsx:1231   0: "*" count:1 isComment:false ⏺†’ duration:0.125
+HarmonyWheel.tsx:1231   1: "/" count:1 isComment:false ⏺†’ duration:0.125
+HarmonyWheel.tsx:1231   2: "E7" count:6 isComment:false ⏺†’ duration:0.75
+HarmonyWheel.tsx:1228 ðŸ“Š Bar: "Am7 #passing chord: Abm7" ⏺†’ 3 items, totalCount: 2, unitDuration: 0.5
+HarmonyWheel.tsx:1231   0: "Am7" count:1 isComment:false ⏺†’ duration:0.5
+HarmonyWheel.tsx:1231   1: "#passing chord:" count:0 isComment:true ⏺†’ duration:0
+HarmonyWheel.tsx:1231   2: "Abm7" count:1 isComment:false ⏺†’ duration:0.5
+HarmonyWheel.tsx:1228 ðŸ“Š Bar: "Gm7 C7" ⏺†’ 2 items, totalCount: 2, unitDuration: 0.5
+HarmonyWheel.tsx:1231   0: "Gm7" count:1 isComment:false ⏺†’ duration:0.5
+HarmonyWheel.tsx:1231   1: "C7" count:1 isComment:false ⏺†’ duration:0.5
+HarmonyWheel.tsx:1228 ðŸ“Š Bar: "Fmaj7 * * * / / / E7" ⏺†’ 5 items, totalCount: 8, unitDuration: 0.125
+HarmonyWheel.tsx:1231   0: "Fmaj7" count:4 isComment:false ⏺†’ duration:0.5
+HarmonyWheel.tsx:1231   1: "/" count:1 isComment:false ⏺†’ duration:0.125
+HarmonyWheel.tsx:1231   2: "/" count:1 isComment:false ⏺†’ duration:0.125
+HarmonyWheel.tsx:1231   3: "/" count:1 isComment:false ⏺†’ duration:0.125
+HarmonyWheel.tsx:1231   4: "E7" count:1 isComment:false ⏺†’ duration:0.125
+HarmonyWheel.tsx:1228 ðŸ“Š Bar: "* / E7 * * * * *" ⏺†’ 3 items, totalCount: 8, unitDuration: 0.125
+HarmonyWheel.tsx:1231   0: "*" count:1 isComment:false ⏺†’ duration:0.125
+HarmonyWheel.tsx:1231   1: "/" count:1 isComment:false ⏺†’ duration:0.125
+HarmonyWheel.tsx:1231   2: "E7" count:6 isComment:false ⏺†’ duration:0.75
+HarmonyWheel.tsx:1228 ðŸ“Š Bar: "Am" ⏺†’ 1 items, totalCount: 1, unitDuration: 1
+HarmonyWheel.tsx:1231   0: "Am" count:1 isComment:false ⏺†’ duration:1
+HarmonyWheel.tsx:1228 ðŸ“Š Bar: "Am7" ⏺†’ 1 items, totalCount: 1, unitDuration: 1
+HarmonyWheel.tsx:1231   0: "Am7" count:1 isComment:false ⏺†’ duration:1
+HarmonyWheel.tsx:1251 Parsed tokens with rhythm: Array(28)
+HarmonyWheel.tsx:1323 🎵 TEMPO detected: 160 BPM
+HarmonyWheel.tsx:1354 ðŸ” LOOP detected - enabling loop mode
+HarmonyWheel.tsx:1272 ðŸ“ Parsing comment: #passing chord: ⏺†’ commentText: passing chord:
+HarmonyWheel.tsx:1279   Found colon! before: passing chord after: 
+HarmonyWheel.tsx:1287   ⏺Œ Chord pattern did not match: 
+HarmonyWheel.tsx:1512 ðŸ“‹ Filtered sequence - removed 2 config directives
+HarmonyWheel.tsx:1537 ðŸ”‘ [v3.6.0] No @KEY directive, preserving baseKey: C
+HarmonyWheel.tsx:1543 Setting initial index to: 2 chord = Fmaj7
+HarmonyWheel.tsx:1549 === PARSE AND LOAD END ===
+
+HarmonyWheel.tsx:3375 ðŸ” No notes held - checking latch state: {latchedChord: null, hasLatchedChord: false, subdomActive: false, subdomLatched: false}
+HarmonyWheel.tsx:3403 ⏺Œ No latch - clearing display
+HarmonyWheel.tsx:3375 ðŸ” No notes held - checking latch state: {latchedChord: null, hasLatchedChord: false, subdomActive: false, subdomLatched: false}
+HarmonyWheel.tsx:3403 ⏺Œ No latch - clearing display
+HarmonyWheel.tsx:3375 ðŸ” No notes held - checking latch state: {latchedChord: null, hasLatchedChord: false, subdomActive: false, subdomLatched: false}
+HarmonyWheel.tsx:3403 ⏺Œ No latch - clearing display
+HarmonyWheel.tsx:3375 ðŸ” No notes held - checking latch state: {latchedChord: null, hasLatchedChord: false, subdomActive: false, subdomLatched: false}
+HarmonyWheel.tsx:3403 ⏺Œ No latch - clearing display
+HarmonyWheel.tsx:3375 ðŸ” No notes held - checking latch state: {latchedChord: null, hasLatchedChord: false, subdomActive: false, subdomLatched: false}
+HarmonyWheel.tsx:3403 ⏺Œ No latch - clearing display
+HarmonyWheel.tsx:3375 ðŸ” No notes held - checking latch state: {latchedChord: null, hasLatchedChord: false, subdomActive: false, subdomLatched: false}
+HarmonyWheel.tsx:3403 ⏺Œ No latch - clearing display
+HarmonyWheel.tsx:3375 ðŸ” No notes held - checking latch state: {latchedChord: null, hasLatchedChord: false, subdomActive: false, subdomLatched: false}
+HarmonyWheel.tsx:3403 ⏺Œ No latch - clearing display
+HarmonyWheel.tsx:3375 ðŸ” No notes held - checking latch state: {latchedChord: null, hasLatchedChord: false, subdomActive: false, subdomLatched: false}
+HarmonyWheel.tsx:3403 ⏺Œ No latch - clearing display
+HarmonyWheel.tsx:3375 ðŸ” No notes held - checking latch state: {latchedChord: null, hasLatchedChord: false, subdomActive: false, subdomLatched: false}
+HarmonyWheel.tsx:3403 ⏺Œ No latch - clearing display
+HarmonyWheel.tsx:3375 ðŸ” No notes held - checking latch state: {latchedChord: null, hasLatchedChord: false, subdomActive: false, subdomLatched: false}
+HarmonyWheel.tsx:3403 ⏺Œ No latch - clearing display
+HarmonyWheel.tsx:3375 ðŸ” No notes held - checking latch state: {latchedChord: null, hasLatchedChord: false, subdomActive: false, subdomLatched: false}
+HarmonyWheel.tsx:3403 ⏺Œ No latch - clearing display
