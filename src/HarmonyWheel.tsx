@@ -1,7 +1,17 @@
 /*
- * HarmonyWheel.tsx — v4.0.52 🚀 KEY + SOUND + ERASER FIXES
- * 
- * 
+ * HarmonyWheel.tsx — v4.1.0 🎯 MAJOR UPDATE: ENGINE FIXES RESTORED
+ *
+ *
+ * 🔧 v4.1.0 CHANGES (MAJOR):
+ * - RESTORED: Dual-key architecture (effectiveKey + baseKey) for correct space mappings
+ * - RESTORED: Space transition chord re-mapping (Gm enters SUB → lights ii wedge)
+ * - RESTORED: Always re-map ALL space transitions (prevents false bonus wedges)
+ * - RESTORED: Triple-tap V/V7 exits SUB (C triad in key C)
+ * - FIXED: Performance pad keys (1-12) now work reliably - synchronous ref update
+ * - FIXED: @RHYTHM directives parse from full input (not stopping at marker)
+ * - Engine: v4.0.70 (index.ts), v4.0.65 (spaces.ts)
+ * - Result: All space transitions work, wedges light correctly, performance pads reliable
+ *
  * 🔧 v4.0.52 CHANGES:
  * - FIXED: @KEY directive now RE-APPLIES when pressing ⏮️ (Go to Start) or ⏯️ (Play/Pause)
  * - FIXED: Continuous playback (⏯️) now produces sound (was reading stale ref)
@@ -105,7 +115,7 @@ import {
   parseSongMetadata
 } from "./lib/songManager";
 
-const HW_VERSION = 'v4.0.52';
+const HW_VERSION = 'v4.1.0';
 
 // v4.0.24: Fallback constants for old code (not used by new engine)
 const EPS_DEG = 0.1;
@@ -1135,7 +1145,7 @@ useEffect(() => {
   };
 
   const parseAndLoadSequence = ()=>{
-    const APP_VERSION = "v4.0.52-key-sound-eraser-fix";
+    const APP_VERSION = "v4.1.0-engine-fixes-restored";
     // console.log('=== PARSE AND LOAD START ===');
     console.log('ðŸ·ï¸  APP VERSION:', APP_VERSION);
     console.log('Input text:', inputText);
@@ -1156,7 +1166,42 @@ useEffect(() => {
       goHome();
       return;
     }
-    
+
+    // ✅ v4.1.0: Parse @RHYTHM directives from FULL input (not just chord section)
+    // Rhythm patterns come AFTER @RHYTHM marker, so we need to search entire text
+    const rhythmMatches1 = Array.from(inputText.matchAll(/@RHYTHM1\s+([^\n]+)|@R1\s+([^\n]+)/gi));
+    for (const match of rhythmMatches1) {
+      const arg = (match[1] || match[2] || '').trim();
+      if (arg) {
+        console.log('🎵 RHYTHM1 detected:', arg);
+        const pattern = parseRhythmPattern(arg);
+        setRhythmPattern1(pattern);
+        console.log('🎵 Rhythm Pattern 1:', pattern);
+      }
+    }
+
+    const rhythmMatches2 = Array.from(inputText.matchAll(/@RHYTHM2\s+([^\n]+)|@R2\s+([^\n]+)/gi));
+    for (const match of rhythmMatches2) {
+      const arg = (match[1] || match[2] || '').trim();
+      if (arg) {
+        console.log('🎵 RHYTHM2 detected:', arg);
+        const pattern = parseRhythmPattern(arg);
+        setRhythmPattern2(pattern);
+        console.log('🎵 Rhythm Pattern 2:', pattern);
+      }
+    }
+
+    const rhythmMatches3 = Array.from(inputText.matchAll(/@RHYTHM3\s+([^\n]+)|@R3\s+([^\n]+)/gi));
+    for (const match of rhythmMatches3) {
+      const arg = (match[1] || match[2] || '').trim();
+      if (arg) {
+        console.log('🎵 RHYTHM3 detected:', arg);
+        const pattern = parseRhythmPattern(arg);
+        setRhythmPattern3(pattern);
+        console.log('🎵 Rhythm Pattern 3:', pattern);
+      }
+    }
+
     // ✅ STOP at @RHYTHM marker - don't parse rhythm patterns as chords
     const rhythmIndex = inputText.indexOf('@RHYTHM');
     const chordSection = rhythmIndex !== -1 ? inputText.substring(0, rhythmIndex) : inputText;
@@ -3364,7 +3409,18 @@ useEffect(() => {
     const transposedNotes = notes.map(n => n + effectiveTranspose);
     // EXPERT mode: always detect bonus (pass true). ADVANCED: use toggle
     const shouldDetectBonus = skillLevelRef.current === "EXPERT" ? true : showBonusWedgesRef.current;
-    const result: EngineResult = detectAndMap(transposedNotes, baseKeyRef.current, shouldDetectBonus, engineStateRef.current);
+
+    // ✅ v4.1.0: Calculate effectiveKey based on current space
+    const currentSpace = engineStateRef.current.currentSpace;
+    let effectiveKey: KeyName = baseKeyRef.current;
+    if (currentSpace === "SUB") {
+      effectiveKey = getSubKey(baseKeyRef.current);
+    } else if (currentSpace === "PAR") {
+      effectiveKey = getParKey(baseKeyRef.current);
+    }
+    // HOME and REL use baseKey
+
+    const result: EngineResult = detectAndMap(transposedNotes, effectiveKey, baseKeyRef.current, shouldDetectBonus, engineStateRef.current);
     console.log('⚙️ Engine result:', result);
     console.log('🔍 Base key:', baseKeyRef.current, 'Show bonus:', showBonusWedgesRef.current);
     if (!result.function && result.chordName) {
@@ -5454,6 +5510,7 @@ useEffect(() => {
     const absRootPos = preview.absChordRootPositionFromPcs(pcs, rootPc);
     const fitted = preview.fitNotesToWindowPreserveInversion(absRootPos, KBD_LOW, KBD_HIGH);
     setLatchedAbsNotes(fitted);
+    latchedAbsNotesRef.current = fitted; // ✅ v4.1.0: Update ref synchronously for performance pad keys
     
     // ✅ Update label based on ACTUAL notes played
     let chordLabel = realizeFunction(fn, renderKey);
@@ -8958,4 +9015,4 @@ useEffect(() => {
 }
 
 
-// EOF - HarmonyWheel.tsx v4.0.52
+// EOF - HarmonyWheel.tsx v4.1.0

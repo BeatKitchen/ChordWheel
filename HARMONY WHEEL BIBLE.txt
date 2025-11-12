@@ -1,0 +1,202 @@
+HARMONY WHEEL — FUNCTIONAL DETECTION SYSTEM
+VERSION 2.0 (REFRACTORING MASTER SPEC)
+
+OVERVIEW
+────────────────────────
+The Harmony Wheel is a function-based tonal engine built around a 12-chord circular system.  
+It is **functionally mapped**, not hard-coded for any key. All chords are expressed first as Roman-numeral functions, then rendered as specific chords based on the current key or “space.”  
+The system adapts automatically to new keys or spaces by rotating its functional map.
+
+Each wedge represents a harmonic function, not a specific pitch set.  
+All logic—lighting, transitions, and detection—occurs through functional mapping.
+
+────────────────────────
+A) CORE CONCEPTS
+────────────────────────
+• 12 wedges: 10 primary functions + 2 integrated bonus wedges.  
+• 4 tonal spaces: HOME, REL (relative), SUB (subdominant), PAR (parallel).  
+• Each wedge supports both 3-note (triad) and 4-note (extended) versions.  
+• Detection logic operates on function identity, not literal chord names.  
+• All spaces share the same underlying structure; only the tonic reference changes.
+
+────────────────────────
+B) FULL FUNCTION TABLE (KEY OF C EXAMPLE)
+────────────────────────
+Each wedge below lists:
+• function label
+• example chord(s) in key of C
+• triad (outer) and 4-note (inner) spellings
+• what function it triggers
+• special behaviors or exceptions
+
+| Wedge | Function | Example (C key) | 3-note | 4-note | Triggers / Notes |
+|:-----:|-----------|----------------|--------|--------|------------------|
+| 1 | I | C major | C-E-G | C-E-G-B | Home tonic. Triple-tap returns from REL or exits SUB. |
+| 2 | ii | D minor | D-F-A | D-F-A-C | Predominant. Enters REL on triple-tap if vi. |
+| 3 | V/V | D major | D-F#-A | D-F#-A-C | Secondary dominant → leads to G (V). |
+| 4 | iii | E minor | E-G-B | E-G-B-D | Mediant; neutral in HOME; in SUB may act as ii. |
+| 5 | V/vi | E major | E-G#-B | E-G#-B-D | Dominant of vi (A). Accepts G#dim stand-in. |
+| 6 | iv | F minor | F-A♭-C | F-A♭-C-E♭ | Parallel minor flavor; stable in PAR. |
+| 7 | IV | F major | F-A-C | F-A-C-E | Subdominant. Center of SUB space (becomes I in SUB). |
+| 8 | V | G major | G-B-D | G-B-D-F | Dominant of HOME. Stable across spaces. |
+| 9 | V/ii* | A major *(BONUS)* | A-C#-E | A-C#-E-G | Bonus wedge; lights from A/A7 or C#dim family (see Diminished Rules). |
+| 10 | vi | A minor | A-C-E | A-C-E-G | Relative minor. Triple-tap enters REL. |
+| 11 | ♭VII | B♭ major | B♭-D-F | (triad only; may double B♭) | Subtonic. No 7th; connects to PAR region. |
+| 12 | ii/vi* | B° *(BONUS)* | B-D-F | B-D-F-A | Bonus wedge; lights from B°, Bø7, or special B°7 inversion. |
+
+────────────────────────
+C) DIMINISHED FUNCTION RULES
+────────────────────────
+Diminished chords act as functional stand-ins for related dominants.  
+All logic transposes automatically by function.
+
+1. **F#° family → D7 (V/V)**
+   • F#°, F#°7, F#ø7 → light V/V wedge.  
+   • Hub label remains “F#dim” or “F#dim7.”
+
+2. **C#° family → A7 (V/ii BONUS)**
+   • C#°, C#°7, C#ø7 → light V/ii bonus wedge.  
+   • Requires bass = C# or stability per hysteresis.  
+   • Enharmonic label: use C#, not D♭, in C key.
+
+3. **G#° family → E7 (V/vi)**
+   • G#°, G#°7 → light V/vi wedge.  
+   • G#ø7 → display only (no lighting).
+
+4. **B° family (ii/vi BONUS)**
+   • B° → light outer ii/vi wedge.  
+   • Bø7 → light inner ii/vi wedge.  
+   • B°7 set {B,D,F,A♭}:  
+     – Bass = B → treat as G7♭9 (V).  
+     – Other bass → no light; just label by inversion.
+
+5. **General dim rules**
+   • Enharmonic preference: flats over sharps except for C#, F#, G#.  
+   • Bass determines function; no bass = hold previous dominant (anti-steal).  
+   • Diminished mapping is suppressed if within “dominant-guard window” (L1 in Addendum).
+
+────────────────────────
+D) SPACES — DEFINITIONS & LOGIC
+────────────────────────
+HOME  
+• Base major key; default state.  
+• All twelve wedges active.  
+• Entry: default or return from another space.  
+• Exit triggers:  
+  – vi triple-tap → REL  
+  – C7, Gm, or E° → SUB  
+  – Cm, E♭, A♭, or D♭ → PAR  
+
+RELATIVE (REL)  
+• Re-centers on relative minor (vi).  
+• Function map rotates so vi sits at 12 o’clock.  
+• Entry: triple-tap vi (Am/Am7).  
+• Exit: triple-tap I (C/Cmaj7).  
+• Same functional logic; different tonic anchor.
+
+SUBDOMINANT (SUB)  
+• Temporarily modulates to IV as tonic (e.g., F).  
+• Entry: C7, Gm/Gm7, E°, E°7, or Eø7.  
+• While in SUB:  
+  – F/Fmaj7, Gm/Gm7, E♭, B♭, B♭m = stay.  
+  – C triad = triple-tap to exit.  
+  – C7 = stay.  
+  – Any other = exit to HOME.  
+• Exit: C (triple-tap).
+
+PARALLEL (PAR)  
+• Moves to parallel minor (Cm) or its relative major (E♭).  
+• Entry: Cm, E♭, A♭, D♭.  
+• While in PAR:  
+  – Cm, D♭, E♭, Fm/Fm7 = stay.  
+  – F or F7 = exit HOME.  
+  – Gm = jump to SUB.  
+  – G7 = allowed (no exit).  
+• Exit: F/F7 or Gm.  
+• Tonic minor omits 7th (no harmonic/minor ambiguity).
+
+────────────────────────
+E) BONUS WEDGE DETAILS
+────────────────────────
+• Integrated into system; not separate from 12-chord layout.  
+• Detection always active; display optional (ALLOW_BONUS flag).  
+• Cannot enter or exit spaces directly; serve harmonic function only.  
+• Mapped and transposed by function (not hard-coded notes).
+
+────────────────────────
+F) ILLEGAL / OUTSIDE CHORDS
+────────────────────────
+• Any chord not mapped to current wheel functions, bonuses, or valid diminished forms.  
+• Examples in C: F# major, C#m, A♭m, clusters.  
+• Behavior:  
+  – Hub/keyboard/fretboard show spelling only.  
+  – Clear all wedges.  
+  – No space change; triple-tap counters reset.
+
+────────────────────────
+G) TRANSPOSITION SYSTEM
+────────────────────────
+• Wheel logic is **function-centric.**  
+• Changing key updates chord labels; functions stay fixed.  
+• Example: In G key, wedge 1 = G, wedge 2 = Am, etc.  
+• Visual rotation only occurs for space lens changes (REL, SUB, PAR).  
+• All diminished/bonus logic uses relative functional mapping, not fixed pitches.
+
+────────────────────────
+H) DETECTION LOGIC & TIMING
+────────────────────────
+• Notes arriving within CHORD_FRAME_MS (≈60 ms) grouped into one chord.  
+• Added notes within MERGE_EXTENSION_MS (≈300 ms) treated as same chord (C → C7).  
+• Function change requires FUNCTION_HYSTERESIS_MS (~220 ms) stability.  
+• Exits need EXIT_GUARD_MS (~250 ms) stable confirmation.  
+• Dominant-guard window (~350 ms) prevents upper-three diminished false flips.  
+• Triple-tap window: 3 hits ≤1.5 s, ≤0.5 s between taps.
+
+────────────────────────
+I) DOMINANT–DIMINISHED ANTI-STEAL
+────────────────────────
+• If last stable chord = dominant and new frame matches its upper-three (e.g., F#–A–C for D7),
+  treat as voicing variation, not a new diminished.  
+• Diminished requires correct bass or must persist beyond hysteresis to override a dominant.  
+• Priority:  
+  1. Same-root extension merge  
+  2. Dominant guard window  
+  3. Diminished validation (bass + stability)
+
+────────────────────────
+J) FUNCTIONAL ARCHITECTURE SUMMARY
+────────────────────────
+• System contains exactly 12 functional wedges.  
+• Each wedge = one Roman-numeral function.  
+• All chords map to these 12 roles, dynamically transposed by current key.  
+• Spaces = lenses that re-anchor tonic (C, A, F, Cm/E♭).  
+• Bonus and diminished logic extend functionally; no hard-coding by pitch.  
+• UI and display elements (wheel, hub, keyboard, guitar) read from the same functional state machine.
+
+────────────────────────
+K) DEMO SEQUENCER GRAMMAR (EXAMPLE)
+────────────────────────
+@KEY C
+@TEMPO 160
+@SPACE HOME
+@ALLOW_BONUS on
+@SIG 4/4
+| Fmaj7 * * / | Fmaj7 / Fmaj7 E7 |
+
+→ Bar1: beats 1-3 = Fmaj7, beat4 = sustain.  
+→ Bar2: Fmaj7, sustain, Fmaj7, E7.  
+Parser resolves each to functional events in HOME (IV and V/vi).
+
+────────────────────────
+L) QUICK FUNCTIONAL CHECK (KEY C)
+────────────────────────
+• 12 total chords: C, Dm, D, Em, E, Fm, F, G, A, Am, B♭, B°.
+• Functional equivalents exist in every key; transpose mapping, not note data.
+• Bonus: A/A7 (V/ii), B°/Bm7♭5 (ii/vi).
+• Diminished substitution: F#°→D7, C#°→A7, G#°→E7, B°→ii/vi, B°7(bass=B)→G7♭9.
+• Spaces: HOME ↔ REL ↔ SUB ↔ PAR defined by entry/exit logic above.
+• Anti-steal/debounce: prevents false dim triggers and premature space exits.
+
+────────────────────────
+END OF SPEC
+────────────────────────

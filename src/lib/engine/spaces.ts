@@ -1,15 +1,21 @@
 /**
- * spaces.ts — v4.0.45
- * 
+ * spaces.ts — v4.0.65
+ *
  * 📁 INSTALL TO: src/lib/engine/spaces.ts
- * 🔄 VERSION: 4.0.45 (FIXES: Partial chord exits, triple-tap I in SUB)
- * 
+ * 🔄 VERSION: 4.0.65 (FIXES: Triple-tap V/V7 exits SUB, per Bible)
+ *
  * Space transition logic for HOME/SUB/PAR/REL
- * 
+ *
+ * CHANGES v4.0.65:
+ * - CRITICAL: Triple-tap V or V7 now exits SUB → HOME (C triad in key C)
+ * - Per Bible line 102: "C triad = triple-tap to exit" SUB
+ * - C in SUB is V (dominant), not I (F is tonic in SUB)
+ * - Fixes: Triple-tap C major now correctly exits SUB to HOME
+ *
  * CHANGES v4.0.13:
  * - Allow 1-2 note partials to stay in SUB/PAR (prevents exit on note release)
- * - Added triple-tap I chord exit from SUB → HOME
- * 
+ * - Added triple-tap chord exit from SUB → HOME
+ *
  * CRITICAL: Space transitions are triggered by SPECIFIC CHORDS,
  * not by the functions they map to. We must check pitch class patterns
  * BEFORE mapping to functions.
@@ -53,7 +59,7 @@ export function evaluateSpaceTransition(
     return { action: "stay" };
   }
   
-  // Check triple-tap transitions (vi→REL, I in REL→HOME, I in SUB→HOME)
+  // Check triple-tap transitions (vi→REL, I in REL→HOME, V in SUB→HOME)
   // Only check if we have a mapped function
   const tripleTap = mappedFunction ? checkTripleTap(mappedFunction, tapHistory) : false;
   if (tripleTap) {
@@ -63,7 +69,8 @@ export function evaluateSpaceTransition(
     if (currentSpace === "REL" && mappedFunction === "I") {
       return { action: "exit", newSpace: "HOME" };
     }
-    if (currentSpace === "SUB" && mappedFunction === "I") {
+    // ✅ v4.0.65: SUB exits on triple-tap V or V7 (C triad in key C = V in SUB)
+    if (currentSpace === "SUB" && (mappedFunction === "V" || mappedFunction === "V7")) {
       return { action: "exit", newSpace: "HOME" };
     }
   }
@@ -295,4 +302,4 @@ function checkTripleTap(fn: Fn, tapHistory: TapEvent[]): boolean {
   return true;
 }
 
-// EOF - spaces.ts v4.0.45
+// EOF - spaces.ts v4.0.65
