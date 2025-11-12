@@ -854,7 +854,7 @@ useEffect(() => {
   // v3.19.55: Fetch calendar events from Teamup API
   useEffect(() => {
     const fetchCalendarEvents = async () => {
-      console.log('ðŸ—“ï¸ Fetching Teamup calendar events...');
+      console.log('🗓️ Fetching Teamup calendar events...');
       
       // v3.19.55: FALLBACK - Hardcoded events (update these manually if API fails)
       const FALLBACK_EVENTS = [
@@ -884,7 +884,7 @@ useEffect(() => {
         
         const url = `https://api.teamup.com/${TEAMUP_CALENDAR_KEY}/events?startDate=${startDateStr}&endDate=${endDateStr}`;
         
-        console.log('ðŸ—“ï¸ Fetching from Teamup:', url);
+        console.log('🗓️ Fetching from Teamup:', url);
         
         const response = await fetch(url, {
           headers: {
@@ -893,16 +893,16 @@ useEffect(() => {
           }
         });
         
-        console.log('ðŸ—“ï¸ Response status:', response.status);
+        console.log('🗓️ Response status:', response.status);
         
         if (!response.ok) {
           const errorText = await response.text();
-          console.error('ðŸ—“ï¸ ⏺Œ Teamup API error:', response.status, errorText);
+          console.error('🗓️ ⏺Œ Teamup API error:', response.status, errorText);
           throw new Error(`Teamup API returned ${response.status}: ${errorText}`);
         }
         
         const data = await response.json();
-        console.log('ðŸ—“ï¸ ✅ Teamup response:', data);
+        console.log('🗓️ ✅ Teamup response:', data);
         
         // DEBUG: Log subcalendar IDs to find correct filter values
         console.log('🔍 DEBUG: First 10 events with their subcalendar IDs:');
@@ -926,7 +926,7 @@ useEffect(() => {
           .filter((e: any) => e.end > now)  // v3.19.55: Include events that haven't ended yet (captures live events!)
           .sort((a: any, b: any) => a.start.getTime() - b.start.getTime());
         
-        console.log('ðŸ—“ï¸ Total upcoming events:', upcomingEvents.length);
+        console.log('🗓️ Total upcoming events:', upcomingEvents.length);
         
         // Categorize events by specific subcalendar IDs
         const GYMS_CALENDAR_ID = 13985904;  // INSTRUMENT GYM / gyms calendar
@@ -952,7 +952,7 @@ useEffect(() => {
           const isSoon = !isLive && hoursUntil <= 12;  // v3.19.55: Orange if within 12h but not live
           const timeStr = formatEventTime(event.start, now);
           const cleanTitle = event.title.replace(/Live\s+/i, '').trim();
-          console.log('ðŸ—“ï¸ Next gym:', cleanTitle, '⏺†’', timeStr, isLive ? 'ðŸ”´ LIVE' : isSoon ? 'ðŸŸ  SOON' : '');
+          console.log('🗓️ Next gym:', cleanTitle, '⏺†’', timeStr, isLive ? 'ðŸ”´ LIVE' : isSoon ? 'ðŸŸ  SOON' : '');
           tickerEvents.push({ text: `${cleanTitle} ${timeStr}`, isLive, isSoon });
         }
         
@@ -963,20 +963,20 @@ useEffect(() => {
           const isSoon = !isLive && hoursUntil <= 12;
           const timeStr = formatEventTime(event.start, now);
           const cleanTitle = event.title.replace(/Live\s+/i, '').trim();
-          console.log('ðŸ—“ï¸ Next office hours:', cleanTitle, '⏺†’', timeStr, isLive ? 'ðŸ”´ LIVE' : isSoon ? 'ðŸŸ  SOON' : '');
+          console.log('🗓️ Next office hours:', cleanTitle, '⏺†’', timeStr, isLive ? 'ðŸ”´ LIVE' : isSoon ? 'ðŸŸ  SOON' : '');
           tickerEvents.push({ text: `${cleanTitle} ${timeStr}`, isLive, isSoon });
         }
         if (tickerEvents.length > 0) {
           const finalText = `Next: ${tickerEvents.map(e => e.text).join(' • ')}`; // Keep for fallback
-          console.log('ðŸ—“ï¸ ✅ Setting ticker text:', finalText);
-          console.log('ðŸ—“ï¸ ðŸ“Š Ticker events array:', tickerEvents.map((e, i) => `[${i}] ${e.isLive ? 'ðŸ”´ LIVE' : '⏺°'} "${e.text}"`));
-          console.log('ðŸ—“ï¸ ðŸŽ¬ What will display:', tickerEvents.map((e, i) => 
+          console.log('🗓️ ✅ Setting ticker text:', finalText);
+          console.log('🗓️ ðŸ“Š Ticker events array:', tickerEvents.map((e, i) => `[${i}] ${e.isLive ? 'ðŸ”´ LIVE' : '⏺°'} "${e.text}"`));
+          console.log('🗓️ 🎬 What will display:', tickerEvents.map((e, i) => 
             `${e.isLive ? 'ðŸ”´ Now in session:' : (i === 0 ? 'Next' : 'Coming up:')} ${e.text.replace(/@/g, 'with ')}`
           ).join(' • • • '));
           setTickerEvents(tickerEvents);  // v3.19.55: Store event objects
           setTickerText(finalText);
         } else {
-          console.log('ðŸ—“ï¸ No categorized events found');
+          console.log('🗓️ No categorized events found');
           setTickerEvents([]);
           setTickerText("Check beatkitchen.io/classroom for upcoming events");
         }
@@ -998,7 +998,7 @@ useEffect(() => {
         
         if (tickerEvents.length > 0) {
           const finalText = `Next: ${tickerEvents.map(e => e.text).join(' • ')}`;
-          console.log('ðŸ—“ï¸ Using fallback ticker:', finalText);
+          console.log('🗓️ Using fallback ticker:', finalText);
           setTickerEvents(tickerEvents);  // v3.19.55: Store event objects
           setTickerText(finalText);
         } else {
@@ -6359,7 +6359,7 @@ useEffect(() => {
                 color: '#39FF14',
                 fontSize: 14
               }}>
-                ⏺œ“ Link copied! Send it to anyone.
+                ✅ Link copied! Send it to anyone.
               </div>
             )}
           </div>
@@ -8382,7 +8382,7 @@ useEffect(() => {
                               color:'#10B981',
                               wordBreak:'break-all'
                             }}>
-                              ⏺œ“ Link copied to clipboard!
+                              ✅ Link copied to clipboard!
                             </div>
                           )}
                         </div>
@@ -8436,7 +8436,7 @@ useEffect(() => {
                       }}
                       title="Share this song"
                     >
-                      <span style={{fontSize:18}}>{showShareCopied ? '⏺œ“' : '✉️'}</span>
+                      <span style={{fontSize:18}}>{showShareCopied ? '✅' : '✉️'}</span>
                       <span>{showShareCopied ? 'SENT' : 'SHARE'}</span>
                     </button>
                   </div>
@@ -8942,8 +8942,8 @@ useEffect(() => {
                       }}
                     >
                       {skillLevel === "EXPERT" 
-                        ? ((showBonusWedges || performanceMode) ? '⏺œ“ Reveal Bonus' : 'Reveal Bonus')
-                        : ((showBonusWedges || performanceMode) ? '⏺œ“ Allow Bonus' : 'Allow Bonus')
+                        ? ((showBonusWedges || performanceMode) ? '✅ Reveal Bonus' : 'Reveal Bonus')
+                        : ((showBonusWedges || performanceMode) ? '✅ Allow Bonus' : 'Allow Bonus')
                       }
                     </button>
                   )}
