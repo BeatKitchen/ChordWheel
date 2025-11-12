@@ -833,7 +833,9 @@ useEffect(() => {
   const baseKeyRef = useRef<KeyName>("C"); 
 
   const engineStateRef = useRef<EngineState>(createEngineState());
-  useEffect(() => { baseKeyRef.current = effectiveBaseKey; }, [effectiveBaseKey]);
+  // ✅ v4.1.1: Sync baseKeyRef to UNTRANSPOSED baseKey (not effectiveBaseKey!)
+  // v4 engine needs baseKey to stay untransposed for space transition checks
+  useEffect(() => { baseKeyRef.current = baseKey; }, [baseKey]);
   
   const [loopEnabled, setLoopEnabled] = useState(false);
   const playbackTimerRef = useRef<number | null>(null);
@@ -2158,11 +2160,12 @@ useEffect(() => {
         }
       }
       
-      // Remember this chord for next voice leading
-      lastPlayedMidiNotesRef.current = [...midiNotes];
-      
       // v3.5.0: Apply transpose to sequencer chords (like MIDI input)
       midiNotes = midiNotes.map(n => n + effectiveTranspose);
+
+      // ✅ v4.1.1: Remember TRANSPOSED chord for next voice leading
+      // CRITICAL: Must save AFTER transpose so voice leading uses correct octave
+      lastPlayedMidiNotesRef.current = [...midiNotes];
       
       console.log('🎹 Simulated MIDI notes:', midiNotes, 'for chord:', chordName, 'transpose:', effectiveTranspose);
       
@@ -2175,8 +2178,9 @@ useEffect(() => {
       // Bug: Was syncing to baseKey, so transpose didn't affect detection
       // Example: In Eb with transpose to C, Ab⏺†’F transposed but detected in Eb patterns
       // Ensures sequencer chords are detected in correct key context
-      baseKeyRef.current = effectiveBaseKey;
-      console.log('ðŸ”‘ [SEQ-FIX v3.8.0] baseKeyRef synced to:', effectiveBaseKey, '(original baseKey:', baseKey, ')');
+      // ✅ v4.1.1: DON'T change baseKeyRef - v4 engine needs untransposed baseKey
+      // baseKeyRef.current = effectiveBaseKey; // OLD v3.8.0 code - WRONG for v4!
+      console.log('🔑 [v4.1.1] Sequencer: baseKey stays', baseKey, 'effectiveBaseKey:', effectiveBaseKey, 'transpose:', effectiveTranspose);
       
       // ✅ v4.1.1: DON'T call detectV4 here - creates display lag
       // Display should update when audio plays, not before
@@ -2801,6 +2805,9 @@ useEffect(() => {
                            currentNotes.length > 0;
 
     if (isPlayableItem) {
+      // ✅ v4.1.1: Debug - what notes are we playing?
+      console.log('🎬 [Playback] Playing chord:', currentItem.chord, 'notes:', currentNotes);
+
       // ✅ v4.1.1: Update display RIGHT BEFORE playing audio (sync visual with audio)
       // Save previous MIDI state
       const savedRightHeld = new Set(rightHeld.current);
@@ -3423,20 +3430,25 @@ useEffect(() => {
       setCenterLabel("");
       return;
     }
-    const effectiveTranspose = transposeBypass ? 0 : transpose;
+    // ✅ v4.1.1: Don't double-transpose sequencer notes!
+    // Sequencer notes are ALREADY transposed in applySeqItem()
+    // Only transpose MIDI keyboard input
+    const effectiveTranspose = (transposeBypass || lastInputWasPreviewRef.current) ? 0 : transpose;
     const transposedNotes = notes.map(n => n + effectiveTranspose);
     // EXPERT mode: always detect bonus (pass true). ADVANCED: use toggle
     const shouldDetectBonus = skillLevelRef.current === "EXPERT" ? true : showBonusWedgesRef.current;
 
-    // ✅ v4.1.0: Calculate effectiveKey based on current space
+    // ✅ v4.1.1: Calculate effectiveKey from effectiveBaseKey (respects transpose!)
+    // When transpose is active, chord NAMING should use transposed key
+    // But space checks use untransposed baseKey
     const currentSpace = engineStateRef.current.currentSpace;
-    let effectiveKey: KeyName = baseKeyRef.current;
+    let effectiveKey: KeyName = effectiveBaseKey; // ✅ Use transposed key for naming!
     if (currentSpace === "SUB") {
-      effectiveKey = getSubKey(baseKeyRef.current);
+      effectiveKey = getSubKey(effectiveBaseKey);
     } else if (currentSpace === "PAR") {
-      effectiveKey = getParKey(baseKeyRef.current);
+      effectiveKey = getParKey(effectiveBaseKey);
     }
-    // HOME and REL use baseKey
+    // HOME and REL use effectiveBaseKey
 
     const result: EngineResult = detectAndMap(transposedNotes, effectiveKey, baseKeyRef.current, shouldDetectBonus, engineStateRef.current);
     console.log('⚙️ Engine result:', result);
