@@ -1,6 +1,12 @@
 /*
- * HarmonyWheel.tsx — v4.1.0 🎯 MAJOR UPDATE: ENGINE FIXES RESTORED
+ * HarmonyWheel.tsx — v4.1.1 🎯 FIXED: KEYBOARD DISPLAY LAG
  *
+ *
+ * 🔧 v4.1.1 CHANGES:
+ * - FIXED: Keyboard display now syncs with sequencer audio (was 1 token behind)
+ * - REMOVED: detectV4() call from applySeqItem() at line 2180 (caused lag)
+ * - ADDED: detectV4() call in playback timer right before playChord() at line 2808
+ * - Result: Display updates when audio plays, not before - visual and audio synchronized
  *
  * 🔧 v4.1.0 CHANGES (MAJOR):
  * - RESTORED: Dual-key architecture (effectiveKey + baseKey) for correct space mappings
@@ -115,7 +121,7 @@ import {
   parseSongMetadata
 } from "./lib/songManager";
 
-const HW_VERSION = 'v4.1.0';
+const HW_VERSION = 'v4.1.1';
 
 // v4.0.24: Fallback constants for old code (not used by new engine)
 const EPS_DEG = 0.1;
@@ -1145,7 +1151,7 @@ useEffect(() => {
   };
 
   const parseAndLoadSequence = ()=>{
-    const APP_VERSION = "v4.1.0-engine-fixes-restored";
+    const APP_VERSION = "v4.1.1-keyboard-display-sync";
     // console.log('=== PARSE AND LOAD START ===');
     console.log('ðŸ·ï¸  APP VERSION:', APP_VERSION);
     console.log('Input text:', inputText);
@@ -2172,21 +2178,12 @@ useEffect(() => {
       baseKeyRef.current = effectiveBaseKey;
       console.log('ðŸ”‘ [SEQ-FIX v3.8.0] baseKeyRef synced to:', effectiveBaseKey, '(original baseKey:', baseKey, ')');
       
-      // Simulate MIDI note-on
-      rightHeld.current = new Set(midiNotes);
-      lastMidiEventRef.current = "on";
-      
-      // Call the SAME detect() function that MIDI uses!
-      if (USE_NEW_ENGINE) { detectV4(); } else { detect(); }
-      
-      // Restore previous state (so we don't interfere with actual MIDI)
-      rightHeld.current = savedRightHeld;
-      lastMidiEventRef.current = savedEvent;
-      
-      console.log('✅ Sequencer detection complete');
-      
-      // ✅ Return notes instead of playing here
-      // Caller (stepNext/goToStart) will play them
+      // ✅ v4.1.1: DON'T call detectV4 here - creates display lag
+      // Display should update when audio plays, not before
+      // Detection will happen in playback timer right before playChord()
+
+      // ✅ Return notes AND MIDI state for caller to trigger detection at play time
+      // Caller will set rightHeld and call detectV4 right before playChord
       return midiNotes;
     }
     
@@ -2798,12 +2795,33 @@ useEffect(() => {
       currentNotes = latchedAbsNotesRef.current;
     }
     
-    const isPlayableItem = (currentItem?.kind === "chord" || 
-                           (currentItem?.kind === "comment" && currentItem.chord)) && 
-                           currentItem.chord && 
+    const isPlayableItem = (currentItem?.kind === "chord" ||
+                           (currentItem?.kind === "comment" && currentItem.chord)) &&
+                           currentItem.chord &&
                            currentNotes.length > 0;
-    
+
     if (isPlayableItem) {
+      // ✅ v4.1.1: Update display RIGHT BEFORE playing audio (sync visual with audio)
+      // Save previous MIDI state
+      const savedRightHeld = new Set(rightHeld.current);
+      const savedEvent = lastMidiEventRef.current;
+
+      // Set MIDI state to match what we're about to play
+      rightHeld.current = new Set(currentNotes);
+      lastMidiEventRef.current = "on";
+
+      // ✅ v4.1.1: Update latchedAbsNotes for keyboard highlighting
+      setLatchedAbsNotes(currentNotes);
+      latchedAbsNotesRef.current = currentNotes;
+      lastInputWasPreviewRef.current = true; // Mark as sequencer input
+
+      // Update display (keyboard, wheel, etc.)
+      if (USE_NEW_ENGINE) { detectV4(); } else { detect(); }
+
+      // Restore previous state (for next iteration)
+      rightHeld.current = savedRightHeld;
+      lastMidiEventRef.current = savedEvent;
+
       // ✅ Use duration from item (in bars)
       // Assuming 4/4 time: 1 bar = 4 beats
       const itemDuration = currentItem.duration || 1.0; // Default to 1 bar
@@ -2885,7 +2903,7 @@ useEffect(() => {
         playbackTimerRef.current = null;
       }
     };
-  }, [isPlaying, seqIndex, tempo, sequence, transpose, latchedAbsNotes, loopEnabled]);
+  }, [isPlaying, seqIndex, tempo, sequence, transpose, loopEnabled]); // ✅ v4.1.1: Removed latchedAbsNotes to prevent infinite loop
 
   /* ---------- layout & bonus geometry ---------- */
   const cx=260, cy=260, r=220;
@@ -9015,4 +9033,4 @@ useEffect(() => {
 }
 
 
-// EOF - HarmonyWheel.tsx v4.1.0
+// EOF - HarmonyWheel.tsx v4.1.1
