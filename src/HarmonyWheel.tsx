@@ -1,6 +1,12 @@
 /*
- * HarmonyWheel.tsx — v4.1.4 🎯 FIXED: KEY SELECTOR + STEP BUTTONS + OCTAVE DISPLAY
+ * HarmonyWheel.tsx — v4.1.5 🎯 FIXED: PAR G MAJOR + ORANGE TICKER
  *
+ *
+ * 🔧 v4.1.5 CHANGES:
+ * - FIXED: G major now allowed in PAR space (was incorrectly exiting to HOME)
+ * - FIXED: Only soonest event shows orange in ticker (was showing both if within 12h)
+ * - Engine v4.0.66: G major triad (3 notes) now stays in PAR alongside G7 (4 notes)
+ * - Result: Playing G or G7 in Cm (PAR) stays in space as per Bible line 114
  *
  * 🔧 v4.1.4 CHANGES:
  * - FIXED: Key selector now works for MIDI detection (was using stale state in detectV4)
@@ -148,7 +154,7 @@ import {
   parseSongMetadata
 } from "./lib/songManager";
 
-const HW_VERSION = 'v4.1.4';
+const HW_VERSION = 'v4.1.5';
 
 // v4.0.24: Fallback constants for old code (not used by new engine)
 const EPS_DEG = 0.1;
@@ -158,9 +164,9 @@ const DIM_FADE_MS = 300;
 const SHOW_CENTER_LABEL = true;
 const SHOW_WEDGE_LABELS = true;
 const PREVIEW_USE_SEVENTHS = true;
-const IV_ROTATE_DEG = 0;
-const JIGGLE_DEG = 2;
-const JIGGLE_MS = 100;
+const IV_ROTATE_DEG = -168;  // ✅ v4.1.6: Restored SUB entry 180° rotation animation
+const JIGGLE_DEG = 30;       // ✅ v4.1.6: Increased HOME return jiggle to 30° (was 2°)
+const JIGGLE_MS = 120;       // ✅ v4.1.6: Slightly increased jiggle timing
 const BONUS_DEBOUNCE_MS = 50;
 const PALETTE_ACCENT_GREEN = '#7CFF4F'; // palette green for active outlines
 
@@ -984,7 +990,7 @@ useEffect(() => {
           const event = gyms[0];
           const isLive = now >= event.start && now <= event.end;
           const hoursUntil = (event.start.getTime() - now.getTime()) / (1000 * 60 * 60);
-          const isSoon = !isLive && hoursUntil <= 12;  // v3.19.55: Orange if within 12h but not live
+          const isSoon = false;  // v4.1.5: Will be set to true for soonest event only
           const timeStr = formatEventTime(event.start, now);
           const cleanTitle = event.title.replace(/Live\s+/i, '').trim();
           console.log('🗓️ Next gym:', cleanTitle, '⏺†’', timeStr, isLive ? 'ðŸ”´ LIVE' : isSoon ? 'ðŸŸ  SOON' : '');
@@ -995,12 +1001,34 @@ useEffect(() => {
           const event = officeHours[0];
           const isLive = now >= event.start && now <= event.end;
           const hoursUntil = (event.start.getTime() - now.getTime()) / (1000 * 60 * 60);
-          const isSoon = !isLive && hoursUntil <= 12;
+          const isSoon = false;  // v4.1.5: Will be set to true for soonest event only
           const timeStr = formatEventTime(event.start, now);
           const cleanTitle = event.title.replace(/Live\s+/i, '').trim();
           console.log('🗓️ Next office hours:', cleanTitle, '⏺†’', timeStr, isLive ? 'ðŸ”´ LIVE' : isSoon ? 'ðŸŸ  SOON' : '');
           tickerEvents.push({ text: `${cleanTitle} ${timeStr}`, isLive, isSoon });
         }
+
+        // ✅ v4.1.5: Find and mark ONLY the soonest upcoming event as orange
+        if (tickerEvents.length > 0) {
+          // Collect both event sources with their times
+          const allEvents = [];
+          if (gyms.length > 0) allEvents.push({ event: tickerEvents[0], start: gyms[0].start, index: 0 });
+          if (officeHours.length > 0) allEvents.push({ event: tickerEvents[gyms.length > 0 ? 1 : 0], start: officeHours[0].start, index: gyms.length > 0 ? 1 : 0 });
+
+          // Filter to upcoming (not live) events within 12 hours
+          const upcomingEvents = allEvents.filter(item => {
+            const hoursUntil = (item.start.getTime() - now.getTime()) / (1000 * 60 * 60);
+            return !item.event.isLive && hoursUntil > 0 && hoursUntil <= 12;
+          });
+
+          // Sort by time and mark the soonest
+          if (upcomingEvents.length > 0) {
+            upcomingEvents.sort((a, b) => a.start.getTime() - b.start.getTime());
+            tickerEvents[upcomingEvents[0].index].isSoon = true;
+            console.log('🟠 Marked soonest event as orange:', tickerEvents[upcomingEvents[0].index].text);
+          }
+        }
+
         if (tickerEvents.length > 0) {
           const finalText = `Next: ${tickerEvents.map(e => e.text).join(' • ')}`; // Keep for fallback
           console.log('🗓️ ✅ Setting ticker text:', finalText);
@@ -1180,7 +1208,7 @@ useEffect(() => {
   };
 
   const parseAndLoadSequence = ()=>{
-    const APP_VERSION = "v4.1.4-key-selector-step-buttons-octave";
+    const APP_VERSION = "v4.1.5-par-g-major-orange-ticker";
     // console.log('=== PARSE AND LOAD START ===');
     console.log('ðŸ·ï¸  APP VERSION:', APP_VERSION);
     console.log('Input text:', inputText);
@@ -3625,6 +3653,7 @@ useEffect(() => {
     if (result.spaceAction.action === "enter") {
       if (result.spaceAction.newSpace === "SUB") {
         setSubdomActive(true); setVisitorActive(false); setRelMinorActive(false);
+        subSpinEnter(); // ✅ v4.1.6: Trigger SUB entry animation
       } else if (result.spaceAction.newSpace === "PAR") {
         setVisitorActive(true); setSubdomActive(false); setRelMinorActive(false);
       } else if (result.spaceAction.newSpace === "REL") {
@@ -3632,6 +3661,7 @@ useEffect(() => {
       }
     } else if (result.spaceAction.action === "exit") {
       setSubdomActive(false); setVisitorActive(false); setRelMinorActive(false);
+      subSpinExit(); // ✅ v4.1.6: Trigger HOME return animation (includes jiggle)
     }
     
     // Now handle function (if present)
@@ -9228,4 +9258,4 @@ useEffect(() => {
 }
 
 
-// EOF - HarmonyWheel.tsx v4.1.4
+// EOF - HarmonyWheel.tsx v4.1.5

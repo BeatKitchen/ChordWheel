@@ -66,13 +66,14 @@ The Harmony Wheel is **function-centric**, not pitch-centric:
 - Entry: C7, Gm/Gm7, E°/E°7/Eø7
 - **STAY chords**: F/Fmaj7, Gm/Gm7, E♭, B♭, B♭m, **C7**
 - **TRIPLE-TAP EXIT**: **C triad** (NOT C7) - this is the **V chord in SUB**
-- Exit: Any other illegal chord immediately exits to HOME
+- **Exit to PAR**: Cm, D♭, A♭ (parallel minor entry chords)
+- **Illegal chords**: Stay in SUB, display only (don't exit)
 - **Critical**: F is **I** in SUB, Gm is **ii**, C is **V** (not I!)
 
 **PAR (Parallel Minor)**
 - Tonic: Cm or relative E♭
 - Entry: Cm, E♭, A♭, D♭
-- Stay: Cm, D♭, E♭, Fm/Fm7, G7
+- Stay: Cm, D♭, E♭, A♭, Fm/Fm7, G7
 - Exit: F/F7 → HOME, Gm → SUB
 
 ### Dual-Key Architecture

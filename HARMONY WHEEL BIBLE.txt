@@ -104,15 +104,15 @@ SUBDOMINANT (SUB)
   – Any other = exit to HOME.  
 • Exit: C (triple-tap).
 
-PARALLEL (PAR)  
-• Moves to parallel minor (Cm) or its relative major (E♭).  
-• Entry: Cm, E♭, A♭, D♭.  
-• While in PAR:  
-  – Cm, D♭, E♭, Fm/Fm7 = stay.  
-  – F or F7 = exit HOME.  
-  – Gm = jump to SUB.  
-  – G7 = allowed (no exit).  
-• Exit: F/F7 or Gm.  
+PARALLEL (PAR)
+• Moves to parallel minor (Cm) or its relative major (E♭).
+• Entry: Cm, E♭, A♭, D♭.
+• While in PAR:
+  – Cm, D♭, E♭, A♭, Fm/Fm7 = stay.
+  – F or F7 = exit HOME.
+  – Gm = jump to SUB.
+  – G7 = allowed (no exit).
+• Exit: F/F7 or Gm.
 • Tonic minor omits 7th (no harmonic/minor ambiguity).
 
 ────────────────────────

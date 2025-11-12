@@ -1,10 +1,21 @@
 /**
- * spaces.ts — v4.0.65
+ * spaces.ts — v4.1.6
  *
  * 📁 INSTALL TO: src/lib/engine/spaces.ts
- * 🔄 VERSION: 4.0.65 (FIXES: Triple-tap V/V7 exits SUB, per Bible)
+ * 🔄 VERSION: 4.1.6 (FIXES: Illegal chords + SUB→PAR transitions)
  *
  * Space transition logic for HOME/SUB/PAR/REL
+ *
+ * CHANGES v4.1.6:
+ * - CRITICAL: Illegal chords now STAY in current space (don't exit)
+ * - CRITICAL: SUB → PAR transition on Cm/Db/Ab (parallel minor entry)
+ * - Fixed: Playing F# major in SUB no longer exits to HOME (stays in SUB)
+ * - Behavior: Only explicit transition chords change spaces, not illegal chords
+ *
+ * CHANGES v4.0.66:
+ * - CRITICAL: G major (triad) now allowed in PAR space (doesn't exit)
+ * - Bible line 114 says "G7 = allowed" - now also allows G major triad
+ * - Fixes: Playing G major in Cm (PAR) no longer exits to HOME
  *
  * CHANGES v4.0.65:
  * - CRITICAL: Triple-tap V or V7 now exits SUB → HOME (C triad in key C)
@@ -59,7 +70,7 @@ export function evaluateSpaceTransition(
     return { action: "stay" };
   }
   
-  // Check triple-tap transitions (vi→REL, I in REL→HOME, V in SUB→HOME)
+  // Check triple-tap transitions (vi→REL, I in REL→HOME, V in SUB→HOME, V/vi in PAR→HOME)
   // Only check if we have a mapped function
   const tripleTap = mappedFunction ? checkTripleTap(mappedFunction, tapHistory) : false;
   if (tripleTap) {
@@ -71,6 +82,10 @@ export function evaluateSpaceTransition(
     }
     // ✅ v4.0.65: SUB exits on triple-tap V or V7 (C triad in key C = V in SUB)
     if (currentSpace === "SUB" && (mappedFunction === "V" || mappedFunction === "V7")) {
+      return { action: "exit", newSpace: "HOME" };
+    }
+    // ✅ v4.1.6: PAR exits on triple-tap V/vi (G or G7 in Cm = V/vi)
+    if (currentSpace === "PAR" && mappedFunction === "V/vi") {
       return { action: "exit", newSpace: "HOME" };
     }
   }
@@ -201,14 +216,29 @@ function evaluateSubTransitions(
   if (hasF || hasGm || hasC7 || hasC || hasEb || hasBb || hasBbm) {
     return { action: "stay" };
   }
-  
-  // Any other chord exits SUB
-  return { action: "exit", newSpace: "HOME" };
+
+  // ✅ v4.1.6: Check for PAR entry chords (Cm, Db, Ab)
+  // Cm: [0,3,7]
+  const hasCm = (pcsRel.has(0) && pcsRel.has(3) && pcsRel.has(7) && !pcsRel.has(4)); // exclude C7
+
+  // Db: [1,5,8] or [1,5,8,11]
+  const hasDb = (pcsRel.has(1) && pcsRel.has(5) && pcsRel.has(8));
+
+  // Ab: [8,0,3] or [8,0,3,6]
+  const hasAb = (pcsRel.has(8) && pcsRel.has(0) && pcsRel.has(3));
+
+  if (hasCm || hasDb || hasAb) {
+    return { action: "exit", newSpace: "PAR" };
+  }
+
+  // ✅ v4.1.6: Illegal chords stay in SUB (don't exit to HOME)
+  // Only recognized transitions exit SUB
+  return { action: "stay" };
 }
 
 /**
  * PAR space transitions
- * STAY chords: Cm, Db, Eb, Fm, Fm7, G7
+ * STAY chords: Cm, Db, Eb, Ab, Fm, Fm7, G7
  * EXIT: F/F7 → HOME, Gm → SUB
  */
 function evaluateParTransitions(
@@ -238,25 +268,30 @@ function evaluateParTransitions(
   // STAY CHORDS:
   // Cm: [0,3,7] or [0,3,7,10]
   const hasCm = (pcsRel.has(0) && pcsRel.has(3) && pcsRel.has(7));
-  
+
   // Db: [1,5,8] or [1,5,8,11]
   const hasDb = (pcsRel.has(1) && pcsRel.has(5) && pcsRel.has(8));
-  
+
   // Eb: [3,7,10] or [3,7,10,2]
   const hasEb = (pcsRel.has(3) && pcsRel.has(7) && pcsRel.has(10));
-  
+
+  // Ab: [8,0,3] or [8,0,3,6] - ✅ v4.1.6: Added to PAR stay chords
+  const hasAb = (pcsRel.has(8) && pcsRel.has(0) && pcsRel.has(3));
+
   // Fm/Fm7: [5,8,0] or [5,8,0,3]
   const hasFm = (pcsRel.has(5) && pcsRel.has(8) && pcsRel.has(0));
-  
-  // G7: [7,11,2,5] (special: allowed but doesn't exit)
-  const hasG7 = (pcsRel.has(7) && pcsRel.has(11) && pcsRel.has(2) && pcsRel.has(5));
-  
-  if (hasCm || hasDb || hasEb || hasFm || hasG7) {
+
+  // G or G7: [7,11,2] or [7,11,2,5] (special: allowed but doesn't exit)
+  // Bible line 114: "G7 = allowed (no exit)" - also allow G triad
+  const hasG = (pcsRel.has(7) && pcsRel.has(11) && pcsRel.has(2));
+
+  if (hasCm || hasDb || hasEb || hasAb || hasFm || hasG) {
     return { action: "stay" };
   }
-  
-  // Any other chord exits to HOME
-  return { action: "exit", newSpace: "HOME" };
+
+  // ✅ v4.1.6: Illegal chords stay in PAR (don't exit to HOME)
+  // Only F/F7 and Gm exit (handled above)
+  return { action: "stay" };
 }
 
 
@@ -285,21 +320,23 @@ export function addTapToHistory(fn: Fn, history: TapEvent[]): TapEvent[] {
 function checkTripleTap(fn: Fn, tapHistory: TapEvent[]): boolean {
   const TAP_WINDOW_MS = 1500;
   const MAX_GAP_MS = 500;
-  
+
   const now = Date.now();
-  const recentTaps = tapHistory.filter(t => 
+  const recentTaps = tapHistory.filter(t =>
     t.function === fn && now - t.timestamp < TAP_WINDOW_MS
   );
-  
+
   if (recentTaps.length < 3) return false;
-  
-  // Check gaps between taps
-  for (let i = 1; i < recentTaps.length; i++) {
-    const gap = recentTaps[i].timestamp - recentTaps[i-1].timestamp;
+
+  // ✅ v4.1.6: Check gaps between FIRST 3 taps only (not all taps in window)
+  // This allows rapid triple-tap even if user continues holding/replaying
+  const firstThree = recentTaps.slice(0, 3);
+  for (let i = 1; i < firstThree.length; i++) {
+    const gap = firstThree[i].timestamp - firstThree[i-1].timestamp;
     if (gap > MAX_GAP_MS) return false;
   }
-  
+
   return true;
 }
 
-// EOF - spaces.ts v4.0.65
+// EOF - spaces.ts v4.1.6
