@@ -7395,12 +7395,23 @@ useEffect(() => {
                           
                           const linkText = match[1];
                           const linkUrl = match[2];
+
+                          // ✅ v4.1.6: Handle special "expert" link to set skill level
+                          const isExpertLink = linkUrl.toLowerCase() === 'expert';
+
                           parts.push(
                             <a
                               key={`link-${match.index}`}
-                              href={linkUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
+                              href={isExpertLink ? '#' : linkUrl}
+                              target={isExpertLink ? '_self' : '_blank'}
+                              rel={isExpertLink ? undefined : 'noopener noreferrer'}
+                              onClick={(e) => {
+                                if (isExpertLink) {
+                                  e.preventDefault();
+                                  setSkillLevel('EXPERT');
+                                  console.log('🎯 Expert mode activated from banner link');
+                                }
+                              }}
                               style={{
                                 color: '#39FF14',
                                 textDecoration: 'underline',
