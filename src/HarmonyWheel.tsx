@@ -1,6 +1,21 @@
 /*
- * HarmonyWheel.tsx — v4.1.2 🎯 FIXED: TRANSPOSE BUGS + KEY SELECTOR VISUAL
+ * HarmonyWheel.tsx — v4.1.4 🎯 FIXED: KEY SELECTOR + STEP BUTTONS + OCTAVE DISPLAY
  *
+ *
+ * 🔧 v4.1.4 CHANGES:
+ * - FIXED: Key selector now works for MIDI detection (was using stale state in detectV4)
+ * - CRITICAL: detectV4() now uses baseKeyRef.current instead of effectiveBaseKey state
+ * - ISSUE: React state updates async, but MIDI input arrives sync → stale closure
+ * - SOLUTION: Calculate effectiveKey from baseKeyRef (always fresh) not state
+ * - Result: Change key to D, play D major → I wedge lights correctly ✓
+ *
+ * 🔧 v4.1.3 CHANGES:
+ * - FIXED: Step forward/backward buttons now call detectV4() to update wheel display
+ * - FIXED: Comment navigation buttons (<<, >>) now call detectV4() to update display
+ * - FIXED: Transposed chords now auto-adjust octave to fit keyboard range (48-71)
+ * - ISSUE: Before v4 engine, step buttons worked; v4 refactor broke adapter connection
+ * - SOLUTION: Apply same MIDI state + detectV4() pattern used in playback timer
+ * - Result: Step buttons show correct wedge lighting, transposed chords always visible
  *
  * 🔧 v4.1.2 CHANGES:
  * - FIXED: Key selector now shows transposed key (effectiveBaseKey) with orange tint
@@ -133,7 +148,7 @@ import {
   parseSongMetadata
 } from "./lib/songManager";
 
-const HW_VERSION = 'v4.1.2';
+const HW_VERSION = 'v4.1.4';
 
 // v4.0.24: Fallback constants for old code (not used by new engine)
 const EPS_DEG = 0.1;
@@ -1165,7 +1180,7 @@ useEffect(() => {
   };
 
   const parseAndLoadSequence = ()=>{
-    const APP_VERSION = "v4.1.2-transpose-fixes-and-key-selector";
+    const APP_VERSION = "v4.1.4-key-selector-step-buttons-octave";
     // console.log('=== PARSE AND LOAD START ===');
     console.log('ðŸ·ï¸  APP VERSION:', APP_VERSION);
     console.log('Input text:', inputText);
@@ -1670,19 +1685,45 @@ useEffect(() => {
       setStepRecord(false);
       stepRecordRef.current = false;
     }
-    
+
     if (!sequence.length) return;
     let i = seqIndex - 1;
     if (i < 0) i = 0; // Stay at beginning
-    
+
     // Skip backwards over titles only (v3.2.7: Keep comments - they should pause)
     while (i > 0 && sequence[i]?.kind === "title") {
       i--;
     }
-    
+
     setSeqIndex(i);
     setDisplayIndex(i);
-    applySeqItem(sequence[i]);
+
+    // ✅ v4.1.2: Apply item and update display (like stepNext and playback timer)
+    const notesToShow = applySeqItem(sequence[i]);
+
+    // Update MIDI state and display if we have notes
+    if (notesToShow.length > 0) {
+      // Save previous state
+      const savedRightHeld = new Set(rightHeld.current);
+      const savedEvent = lastMidiEventRef.current;
+
+      // Set MIDI state for display
+      rightHeld.current = new Set(notesToShow);
+      lastMidiEventRef.current = "on";
+
+      // Update keyboard highlighting
+      setLatchedAbsNotes(notesToShow);
+      latchedAbsNotesRef.current = notesToShow;
+      lastInputWasPreviewRef.current = true;
+
+      // Update display (wheel, keyboard, etc.)
+      if (USE_NEW_ENGINE) { detectV4(); } else { detect(); }
+
+      // Restore previous state
+      rightHeld.current = savedRightHeld;
+      lastMidiEventRef.current = savedEvent;
+    }
+
     selectCurrentItem(i); // Pass explicit index
     // Don't play - just move backward
   };
@@ -1707,17 +1748,39 @@ useEffect(() => {
     console.log('Calling applySeqItem for:', sequence[currentIdx]?.raw);
     const notesToPlay = applySeqItem(sequence[currentIdx]);
     
-    console.log('ðŸ“‹ Captured notes to play:', notesToPlay);
-    
-    // Play it with the captured notes
-    console.log("DEBUG: willPlay check", { notesLen: notesToPlay.length, audio: audioEnabledRef.current });
-    if (notesToPlay.length > 0 && audioEnabledRef.current) {
-      console.log('ðŸ”Š Playing:', sequence[currentIdx].raw, 'notes:', notesToPlay.length);
-      playChord(notesToPlay, 1.5);
+    console.log('ðŸ"‹ Captured notes to play:', notesToPlay);
+
+    // ✅ v4.1.2: Update display BEFORE playing (sync visual with audio)
+    if (notesToPlay.length > 0) {
+      // Save previous MIDI state
+      const savedRightHeld = new Set(rightHeld.current);
+      const savedEvent = lastMidiEventRef.current;
+
+      // Set MIDI state to match what we're about to play
+      rightHeld.current = new Set(notesToPlay);
+      lastMidiEventRef.current = "on";
+
+      // Update keyboard highlighting
+      setLatchedAbsNotes(notesToPlay);
+      latchedAbsNotesRef.current = notesToPlay;
+      lastInputWasPreviewRef.current = true;
+
+      // Update display (wheel, keyboard, etc.)
+      if (USE_NEW_ENGINE) { detectV4(); } else { detect(); }
+
+      // Restore previous state
+      rightHeld.current = savedRightHeld;
+      lastMidiEventRef.current = savedEvent;
+
+      // Play it with the captured notes
+      if (audioEnabledRef.current) {
+        console.log('ðŸ"Š Playing:', sequence[currentIdx].raw, 'notes:', notesToPlay.length);
+        playChord(notesToPlay, 1.5);
+      }
     } else {
       console.warn("NOT PLAYING - notesLen:", notesToPlay.length, "audio:", audioEnabledRef.current);
     }
-    
+
     // Update displayIndex to show what we just played
     console.log('Setting displayIndex to:', currentIdx);
     setDisplayIndex(currentIdx);
@@ -1916,7 +1979,22 @@ useEffect(() => {
     for (let i = seqIndex + 1; i < sequence.length; i++) {
       if (sequence[i].kind === "comment") {
         setSeqIndex(i);
-        applySeqItem(sequence[i]);
+        const notesToShow = applySeqItem(sequence[i]);
+
+        // ✅ v4.1.2: Update display like stepPrev/stepNext
+        if (notesToShow.length > 0) {
+          const savedRightHeld = new Set(rightHeld.current);
+          const savedEvent = lastMidiEventRef.current;
+          rightHeld.current = new Set(notesToShow);
+          lastMidiEventRef.current = "on";
+          setLatchedAbsNotes(notesToShow);
+          latchedAbsNotesRef.current = notesToShow;
+          lastInputWasPreviewRef.current = true;
+          if (USE_NEW_ENGINE) { detectV4(); } else { detect(); }
+          rightHeld.current = savedRightHeld;
+          lastMidiEventRef.current = savedEvent;
+        }
+
         setTimeout(() => selectCurrentItem(), 0);
         return;
       }
@@ -1924,7 +2002,22 @@ useEffect(() => {
     // No comment found, go to end
     const lastIdx = sequence.length - 1;
     setSeqIndex(lastIdx);
-    applySeqItem(sequence[lastIdx]);
+    const notesToShow = applySeqItem(sequence[lastIdx]);
+
+    // ✅ v4.1.2: Update display
+    if (notesToShow.length > 0) {
+      const savedRightHeld = new Set(rightHeld.current);
+      const savedEvent = lastMidiEventRef.current;
+      rightHeld.current = new Set(notesToShow);
+      lastMidiEventRef.current = "on";
+      setLatchedAbsNotes(notesToShow);
+      latchedAbsNotesRef.current = notesToShow;
+      lastInputWasPreviewRef.current = true;
+      if (USE_NEW_ENGINE) { detectV4(); } else { detect(); }
+      rightHeld.current = savedRightHeld;
+      lastMidiEventRef.current = savedEvent;
+    }
+
     setTimeout(() => selectCurrentItem(), 0);
   };
   
@@ -1934,14 +2027,44 @@ useEffect(() => {
     for (let i = seqIndex - 1; i >= 0; i--) {
       if (sequence[i].kind === "comment") {
         setSeqIndex(i);
-        applySeqItem(sequence[i]);
+        const notesToShow = applySeqItem(sequence[i]);
+
+        // ✅ v4.1.2: Update display like stepPrev/stepNext
+        if (notesToShow.length > 0) {
+          const savedRightHeld = new Set(rightHeld.current);
+          const savedEvent = lastMidiEventRef.current;
+          rightHeld.current = new Set(notesToShow);
+          lastMidiEventRef.current = "on";
+          setLatchedAbsNotes(notesToShow);
+          latchedAbsNotesRef.current = notesToShow;
+          lastInputWasPreviewRef.current = true;
+          if (USE_NEW_ENGINE) { detectV4(); } else { detect(); }
+          rightHeld.current = savedRightHeld;
+          lastMidiEventRef.current = savedEvent;
+        }
+
         setTimeout(() => selectCurrentItem(), 0);
         return;
       }
     }
     // No comment found, go to beginning
     setSeqIndex(0);
-    applySeqItem(sequence[0]);
+    const notesToShow = applySeqItem(sequence[0]);
+
+    // ✅ v4.1.2: Update display
+    if (notesToShow.length > 0) {
+      const savedRightHeld = new Set(rightHeld.current);
+      const savedEvent = lastMidiEventRef.current;
+      rightHeld.current = new Set(notesToShow);
+      lastMidiEventRef.current = "on";
+      setLatchedAbsNotes(notesToShow);
+      latchedAbsNotesRef.current = notesToShow;
+      lastInputWasPreviewRef.current = true;
+      if (USE_NEW_ENGINE) { detectV4(); } else { detect(); }
+      rightHeld.current = savedRightHeld;
+      lastMidiEventRef.current = savedEvent;
+    }
+
     setTimeout(() => selectCurrentItem(), 0);
   };
   
@@ -2175,10 +2298,22 @@ useEffect(() => {
       // v3.5.0: Apply transpose to sequencer chords (like MIDI input)
       midiNotes = midiNotes.map(n => n + effectiveTranspose);
 
+      // ✅ v4.1.2: After transpose, check if notes are out of keyboard range (48-71)
+      // If any notes are outside, shift the entire chord down by octaves until all fit
+      while (midiNotes.some(n => n > 71) && midiNotes.every(n => n - 12 >= 48)) {
+        console.log('📉 Transposed chord out of range - shifting down octave');
+        midiNotes = midiNotes.map(n => n - 12);
+      }
+      // If notes are too low, shift up
+      while (midiNotes.some(n => n < 48) && midiNotes.every(n => n + 12 <= 71)) {
+        console.log('📈 Transposed chord out of range - shifting up octave');
+        midiNotes = midiNotes.map(n => n + 12);
+      }
+
       // ✅ v4.1.1: Remember TRANSPOSED chord for next voice leading
       // CRITICAL: Must save AFTER transpose so voice leading uses correct octave
       lastPlayedMidiNotesRef.current = [...midiNotes];
-      
+
       console.log('🎹 Simulated MIDI notes:', midiNotes, 'for chord:', chordName, 'transpose:', effectiveTranspose);
       
       // ðŸ”‘ KEY INSIGHT: Temporarily set MIDI state, call detect(), then restore
@@ -3450,18 +3585,31 @@ useEffect(() => {
     // EXPERT mode: always detect bonus (pass true). ADVANCED: use toggle
     const shouldDetectBonus = skillLevelRef.current === "EXPERT" ? true : showBonusWedgesRef.current;
 
-    // ✅ v4.1.1: Calculate effectiveKey from effectiveBaseKey (respects transpose!)
-    // When transpose is active, chord NAMING should use transposed key
-    // But space checks use untransposed baseKey
-    const currentSpace = engineStateRef.current.currentSpace;
-    let effectiveKey: KeyName = effectiveBaseKey; // ✅ Use transposed key for naming!
-    if (currentSpace === "SUB") {
-      effectiveKey = getSubKey(effectiveBaseKey);
-    } else if (currentSpace === "PAR") {
-      effectiveKey = getParKey(effectiveBaseKey);
-    }
-    // HOME and REL use effectiveBaseKey
+    // ✅ v4.1.3: Calculate effectiveKey from baseKeyRef (not state!)
+    // CRITICAL: Use ref instead of state to avoid stale closure
+    // When user changes key selector, state updates async but ref updates sync
+    // MIDI input may arrive before re-render, so we must use ref
+    const currentBaseKey = baseKeyRef.current; // ✅ Always fresh!
+    const effectiveKey_ForDetection = effectiveTranspose !== 0 ? transposeKey(currentBaseKey, effectiveTranspose) : currentBaseKey;
 
+    const currentSpace = engineStateRef.current.currentSpace;
+    let effectiveKey: KeyName = effectiveKey_ForDetection; // ✅ Use ref-based key!
+    if (currentSpace === "SUB") {
+      effectiveKey = getSubKey(effectiveKey_ForDetection);
+    } else if (currentSpace === "PAR") {
+      effectiveKey = getParKey(effectiveKey_ForDetection);
+    }
+    // HOME and REL use effectiveKey_ForDetection
+
+    console.log('🔑 KEY DEBUG:', {
+      baseKey: baseKey,
+      baseKeyRef: baseKeyRef.current,
+      effectiveBaseKey: effectiveBaseKey,
+      effectiveKey_ForDetection: effectiveKey_ForDetection,
+      effectiveKey: effectiveKey,
+      transpose: transpose,
+      effectiveTranspose: effectiveTranspose
+    });
     const result: EngineResult = detectAndMap(transposedNotes, effectiveKey, baseKeyRef.current, shouldDetectBonus, engineStateRef.current);
     console.log('⚙️ Engine result:', result);
     console.log('🔍 Base key:', baseKeyRef.current, 'Show bonus:', showBonusWedgesRef.current);
@@ -9080,4 +9228,4 @@ useEffect(() => {
 }
 
 
-// EOF - HarmonyWheel.tsx v4.1.2
+// EOF - HarmonyWheel.tsx v4.1.4
