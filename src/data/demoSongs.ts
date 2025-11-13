@@ -64,10 +64,10 @@ export const demoSongs: DemoSong[] = [
 {
   title: "WELCOME TO BEAT KITCHEN",
   content: `@TITLE From today's Beat Kitchen MUSIC THEORY GYM
-@KEY C, @TEMPO 160, @LOOP
+@KEY C, @TEMPO 160
 
 |Fmaj7 * * / Fmaj7 / Fmaj7 E7 |* / E7 * * * * *|
-|Am7 #passing chord: Abm7 | Gm7 C7 |
+|Am7 (passing chord): Abm7 | Gm7 C7 |
 |Fmaj7 * * * / / / E7 |* / E7 * * * * *|
 |Am |Am7 |
 
@@ -82,17 +82,18 @@ export const demoSongs: DemoSong[] = [
 
 {
   title: "BLACKBIRD",
-  content: `@TITLE Blackbird (Paul McCartney) @KEY G, @TEMPO 180, @LOOP
+  content: `@TITLE Blackbird (Paul McCartney) @KEY G, @TEMPO 180
 
 |G Am7| G | * |
-| C # this is a stand in for A7: C#dim | D D#dim #functions like a B7 |
-|Em |#this chord might show up as EmMaj7 or even Ebaug: Em7|  
-| Em7 | A7 | Cm,| * | 
-| G | A7 | C | G | 
+|C (this is a stand in for A7; C#dim) | D (functions like a B7; D#dim) |
+|Em |(this chord might show up as EmMaj7 or even Ebaug): Em7|  
+| Em7 | A7 | Cm| * | 
+|G | A7 | (topic for another day here. lots of ways to skin this cat; C) | G | 
 
-@RHYTHM1 |x x x x|
+@RHYTHM1 |x / x x / x x x |
 @RHYTHM2 |x / x /|
 @RHYTHM3 |x x / x x x / x|
+
 `,
 
   bannerMessage: "Use [[EXPERT mode|expert]] for sequencer. Join a [[Music Theory Gym|https://beatkitchen.io/classroom]] and we'll use this together!"
@@ -102,37 +103,37 @@ export const demoSongs: DemoSong[] = [
 
   {
     title: "Simple Progression",
-    content: "@TITLE Simple Song, @KEY C, @TEMPO 100, @LOOP, # Verse, C, Am, F, G, C, Am, F, G, # Chorus, F, G, C, Am, F, G, C, C\n\n@RHYTHM1 |x x x x|\n@RHYTHM2 |x / x /|\n@RHYTHM3 |x x / x x x / x|",
+    content: "@TITLE Simple Song, @KEY C, @TEMPO 100, (Verse), C, Am, F, G, C, Am, F, G, (Chorus), F, G, C, Am, F, G, C, C\n\n@RHYTHM1 |x x x x|\n@RHYTHM2 |x / x /|\n@RHYTHM3 |x x / x x x / x|",
     bannerMessage: "Try [[Expert mode|expert]] to unlock the sequencer!"
   },
   {
     title: "Autumn Leaves",
-    content: "@TITLE Autumn Leaves, @KEY Am, @TEMPO 140, @LOOP, # A Section, Dm7, G7, CMaj7, FMaj7, Bm7b5, E7, Am, Am, # B Section, Bm7b5, E7, Am, Am, Dm7, G7, CMaj7, FMaj7, Bm7b5, E7, Am, E7\n\n@RHYTHM1 |x x x x|\n@RHYTHM2 |x / x /|\n@RHYTHM3 |x x / x x x / x|",
+    content: "@TITLE Autumn Leaves, @KEY Am, @TEMPO 140, (A Section), Dm7, G7, CMaj7, FMaj7, Bm7b5, E7, Am, Am, (B Section), Bm7b5, E7, Am, Am, Dm7, G7, CMaj7, FMaj7, Bm7b5, E7, Am, E7\n\n@RHYTHM1 |x x x x|\n@RHYTHM2 |x / x /|\n@RHYTHM3 |x x / x x x / x|",
     bannerMessage: "[[Expert mode|expert]] for sequencer. Join a [[gym|https://beatkitchen.io/classroom]] to learn some music theory!"
   },
   {
     title: "I-V-vi-IV (Pop Progression)",
-    content: "@TITLE Pop Progression, @KEY C, @TEMPO 120, @LOOP, # Verse, C, G, Am, F, C, G, Am, F, # Chorus, C, G, Am, F, C, G, F, F\n\n@RHYTHM1 |x x x x|\n@RHYTHM2 |x / x /|\n@RHYTHM3 |x x / x x x / x|",
+    content: "@TITLE Pop Progression, @KEY C, @TEMPO 120, (Verse), C, G, Am, F, C, G, Am, F, (Chorus), C, G, Am, F, C, G, F, F\n\n@RHYTHM1 |x x x x|\n@RHYTHM2 |x / x /|\n@RHYTHM3 |x x / x x x / x|",
     bannerMessage: "[[Expert mode|expert]] for sequencer. Join a [[gym|https://beatkitchen.io/classroom]] to learn some music theory!"
   },
   {
     title: "12-Bar Blues in C",
-    content: "@TITLE 12-Bar Blues, @KEY C, @TEMPO 120, @LOOP, # Chorus, C7, C7, C7, C7, F7, F7, C7, C7, G7, F7, C7, G7\n\n@RHYTHM1 |x x x x|\n@RHYTHM2 |x / x /|\n@RHYTHM3 |x x / x x x / x|",
+    content: "@TITLE 12-Bar Blues, @KEY C, @TEMPO 120, (Chorus), C7, C7, C7, C7, F7, F7, C7, C7, G7, F7, C7, G7\n\n@RHYTHM1 |x x x x|\n@RHYTHM2 |x / x /|\n@RHYTHM3 |x x / x x x / x|",
     bannerMessage: "[[Expert mode|expert]] for sequencer. Join a [[gym|https://beatkitchen.io/classroom]] to learn some music theory!"
   },
   {
     title: "Giant Steps (First 4 bars)",
-    content: "@TITLE Giant Steps, @KEY B, @TEMPO 180, # First 4 bars, BM7, D7, GM7, Bb7, EbM7, Am7, D7, GM7\n\n@RHYTHM1 |x x x x|\n@RHYTHM2 |x / x /|\n@RHYTHM3 |x x / x x x / x|",
+    content: "@TITLE Giant Steps, @KEY B, @TEMPO 180, (First 4 bars), BM7, D7, GM7, Bb7, EbM7, Am7, D7, GM7\n\n@RHYTHM1 |x x x x|\n@RHYTHM2 |x / x /|\n@RHYTHM3 |x x / x x x / x|",
     bannerMessage: "[[Expert mode|expert]] for sequencer. Join a [[gym|https://beatkitchen.io/classroom]] to learn some music theory!"
   },
   {
     title: "Functional Notation Example",
-    content: "@TITLE Functional Demo, @KEY C, @TEMPO 100, @LOOP, # Using Roman numerals, I, vi, ii, V7, I, IV, V7, I, # With secondary dominants, I, V/vi, vi, V/V, V7, I\n\n@RHYTHM1 |x x x x|\n@RHYTHM2 |x / x /|\n@RHYTHM3 |x x / x x x / x|",
+    content: "@TITLE Functional Demo, @KEY C, @TEMPO 100, (Using Roman numerals), I, vi, ii, V7, I, IV, V7, I, (With secondary dominants), I, V/vi, vi, V/V, V7, I\n\n@RHYTHM1 |x x x x|\n@RHYTHM2 |x / x /|\n@RHYTHM3 |x x / x x x / x|",
     bannerMessage: "[[Expert mode|expert]] for sequencer. Join a [[gym|https://beatkitchen.io/classroom]] to learn some music theory!"
   },
   {
     title: "Forgiving Notation Test",
-    content: "@TITLE Notation Test, @KEY C, @TEMPO 120, # Minus notation, A-, D-, # M7 notation, CM7, FM7, # Extensions, G7b9, G13, D9, # Half-dim, Bm7-5, # Mixed, Am, E7, FM7, G7, C\n\n@RHYTHM1 |x x x x|\n@RHYTHM2 |x / x /|\n@RHYTHM3 |x x / x x x / x|",
+    content: "@TITLE Notation Test, @KEY C, @TEMPO 120, (Minus notation), A-, D-, (M7 notation), CM7, FM7, (Extensions), G7b9, G13, D9, (Half-dim), Bm7-5, (Mixed), Am, E7, FM7, G7, C\n\n@RHYTHM1 |x x x x|\n@RHYTHM2 |x / x /|\n@RHYTHM3 |x x / x x x / x|",
     bannerMessage: "[[Expert mode|expert]] for sequencer. Join a [[gym|https://beatkitchen.io/classroom]] to learn some music theory!"
   }
 ];

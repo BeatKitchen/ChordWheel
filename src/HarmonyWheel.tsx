@@ -840,6 +840,8 @@ useEffect(() => {
   
   // Playback controls
   const [isPlaying, setIsPlaying] = useState(false);
+  const [showSequencerDisplay, setShowSequencerDisplay] = useState(false); // ✅ Keep display visible for 2 min after stop
+  const displayTimerRef = useRef<number | null>(null);
   const [tempo, setTempo] = useState(120); // BPM (beats per minute) - ✅ v3.18.4: Changed default from 60 to 120
   
   // ✅ Rhythm patterns for performance mode
@@ -888,10 +890,11 @@ useEffect(() => {
   // v4 engine needs baseKey to stay untransposed for space transition checks
   useEffect(() => { baseKeyRef.current = baseKey; }, [baseKey]);
   
-  const [loopEnabled, setLoopEnabled] = useState(false);
+  const [loopEnabled, setLoopEnabled] = useState(true); // ✅ Default to ON - use @LOOP OFF to disable
   const playbackTimerRef = useRef<number | null>(null);
   const [songTitle, setSongTitle] = useState(""); // Static song title from @TITLE
   const [bannerMessage, setBannerMessage] = useState(""); // ✅ Configurable banner message from @BANNER
+  const [currentComment, setCurrentComment] = useState(""); // ✅ Current comment to display during playback
   
   // v3.19.55: Calendar events for ticker
   const [calendarEvents, setCalendarEvents] = useState<Array<{
@@ -1216,11 +1219,11 @@ useEffect(() => {
     // Remove bar delimiters and normalize whitespace
     const cleaned = patternText.replace(/\|/g, '').trim().replace(/\s+/g, ' ');
     if (!cleaned) return [];
-    
+
     // Split by space
     const symbols = cleaned.split(' ');
     const durationEach = 1.0 / symbols.length; // Split bar evenly
-    
+
     return symbols.map(sym => {
       if (sym === 'x') return { action: 'play' as const, duration: durationEach };
       if (sym === '*') return { action: 'hold' as const, duration: durationEach };
@@ -1228,6 +1231,18 @@ useEffect(() => {
       // Default to play if unrecognized
       return { action: 'play' as const, duration: durationEach };
     });
+  };
+
+  // ✅ Convert rhythm pattern back to display string
+  const rhythmPatternToDisplay = (pattern: RhythmAction[]): string => {
+    if (pattern.length === 0) return '|x x x x|'; // Default display
+    const symbols = pattern.map(action => {
+      if (action.action === 'play') return 'x';
+      if (action.action === 'hold') return '*';
+      if (action.action === 'rest') return '/';
+      return 'x'; // Fallback
+    });
+    return `|${symbols.join(' ')}|`;
   };
 
   const parseAndLoadSequence = ()=>{
@@ -1332,29 +1347,58 @@ useEffect(() => {
           const normalized = bar.trim().replace(/\s+/g, ' ');
           if (!normalized) continue;
           
-          // ✅ v3.19.55: Parse # comments as single tokens
+          // ✅ Parse (comments) as single tokens
           const tokens: string[] = [];
           let i = 0;
           while (i < normalized.length) {
-            if (normalized[i] === '#') {
-              const commentPart = normalized.substring(i).trim();
-              // Check if comment has chord (colon syntax)
-              if (commentPart.includes(':')) {
-                const colonIdx = commentPart.indexOf(':');
-                const beforeColon = commentPart.substring(0, colonIdx + 1).trim(); // Keep the colon
-                const afterColon = commentPart.substring(colonIdx + 1).trim();
-                // Split into TWO tokens: comment + chord
-                tokens.push(beforeColon); // "#passing chord:"
-                if (afterColon) tokens.push(afterColon); // "Abm7"
-              } else {
-                tokens.push(commentPart);
+            if (normalized[i] === '(') {
+              // Find matching closing parenthesis
+              let depth = 1;
+              let j = i + 1;
+              while (j < normalized.length && depth > 0) {
+                if (normalized[j] === '(') depth++;
+                if (normalized[j] === ')') depth--;
+                j++;
               }
-              break;
+              const commentPart = normalized.substring(i, j).trim(); // "(comment text)" or "(comment; chords)"
+
+              // ✅ NEW: Check for semicolon INSIDE parentheses: "(comment; C G7 Am)"
+              const innerContent = commentPart.slice(1, -1); // Remove parentheses
+              const semicolonIdx = innerContent.indexOf(';');
+
+              if (semicolonIdx !== -1) {
+                // Grouped comment + chords syntax
+                const commentText = innerContent.substring(0, semicolonIdx).trim();
+                const chordsText = innerContent.substring(semicolonIdx + 1).trim();
+
+                // Push comment token
+                tokens.push(`(${commentText})`);
+
+                // Split chords by spaces and push each as separate token
+                const chordTokens = chordsText.split(/\s+/).filter(t => t.length > 0);
+                for (const chordTok of chordTokens) {
+                  tokens.push(chordTok);
+                }
+
+                i = j;
+              } else {
+                // Original logic: Check if colon FOLLOWS the closing paren: "(label): Chord"
+                if (j < normalized.length && normalized[j] === ':') {
+                  // Colon is outside! Push "(comment):" as one token
+                  tokens.push(commentPart + ':');
+                  i = j + 1; // Skip past the colon
+                  // Next token (after space) will be the chord
+                } else {
+                  // No colon, just a standalone comment
+                  tokens.push(commentPart);
+                  i = j;
+                }
+              }
             } else if (normalized[i] === ' ') {
               i++;
             } else {
               let token = '';
-              while (i < normalized.length && normalized[i] !== ' ' && normalized[i] !== '#') {
+              while (i < normalized.length && normalized[i] !== ' ' && normalized[i] !== '(') {
                 token += normalized[i];
                 i++;
               }
@@ -1367,9 +1411,9 @@ useEffect(() => {
           
           for (let j = 0; j < tokens.length; j++) {
             const token = tokens[j];
-            
-            if (token.startsWith('#')) {
-              // Comments are always zero duration (even if they end with colon)
+
+            if (token.startsWith('(') && (token.endsWith(')') || token.endsWith('):'))) {
+              // Comments are always zero duration (whether standalone or with colon)
               groupedItems.push({text: token, count: 0, isComment: true});
             } else if (token === '*') {
               // Tie extends previous item (within bar OR cross-bar)
@@ -1432,30 +1476,17 @@ useEffect(() => {
         return { kind:"comment", raw:tok, comment: "(tie)", duration: dur };
       }
       
-      // Comments start with #
-      if (tok.startsWith("#")) {
-        const commentText = tok.slice(1).trim();
+      // Comments enclosed in parentheses: (comment text) or (label): Chord
+      // Note: Colon is OUTSIDE the closing paren for attached chords
+      if (tok.startsWith("(") && (tok.endsWith(")") || tok.endsWith("):"))) {
+        const hasColon = tok.endsWith("):");
+        const commentText = hasColon ? tok.slice(1, -2).trim() : tok.slice(1, -1).trim();
         console.log('ðŸ“ Parsing comment:', tok, '⏺†’ commentText:', commentText);
-        // NEW v3.2.5: Check if comment includes a chord after colon
-        // Example: "# Verse: Am" or "# Bridge: F#m"
-        if (commentText.includes(":")) {
-          const colonIdx = commentText.indexOf(":");
-          const beforeColon = commentText.substring(0, colonIdx).trim();
-          const afterColon = commentText.substring(colonIdx + 1).trim();
-          console.log('  Found colon! before:', beforeColon, 'after:', afterColon);
-          // If text after colon looks like a chord, it's a combined comment+chord
-          // Updated v3.2.6: Better regex to handle m7b5, dim7, maj7, etc.
-          const chordPattern = /^([A-G][#b]?)(m|maj|min|dim|aug|sus)?(7|9|11|13)?(b5|#5|⏺™­5|#9|b9)?$/;
-          if (afterColon && chordPattern.test(afterColon)) {
-            console.log('  ✅ Chord matched!', afterColon);
-            return { kind:"comment", raw:tok, comment: beforeColon, chord: afterColon };
-          } else {
-            console.log('  ⏺Œ Chord pattern did not match:', afterColon);
-          }
-        }
-        return { kind:"comment", raw:tok, comment: commentText };
+        // Comments always have zero duration
+        // If hasColon, it will label the next chord
+        return { kind:"comment", raw:tok, comment: commentText, duration: dur };
       }
-      
+
       // Modifiers start with @
       if (tok.startsWith("@")) {
         const remainder = tok.slice(1).trim();
@@ -1518,10 +1549,18 @@ useEffect(() => {
         // ✅ @LOOP directive - Enable loop mode
         if (upper === "LOOP" || upper === "LP") {
           console.log('ðŸ” LOOP detected - enabling loop mode');
-          setLoopEnabled(true);
-          return { kind:"modifier", raw:tok, chord: "LOOP" };
+          const argUpper = arg?.toUpperCase();
+          if (argUpper === "OFF" || argUpper === "FALSE" || argUpper === "0") {
+            console.log('🔁 LOOP OFF detected - disabling loop mode');
+            setLoopEnabled(false);
+            return { kind:"modifier", raw:tok, chord: "LOOP:OFF" };
+          } else {
+            console.log('🔁 LOOP detected - enabling loop mode');
+            setLoopEnabled(true);
+            return { kind:"modifier", raw:tok, chord: "LOOP" };
+          }
         }
-        
+
         // Check for TITLE
         if (upper === "TITLE" || upper === "TI") {
           title = arg;
@@ -1661,15 +1700,48 @@ useEffect(() => {
       // Everything else is a literal chord
       return { kind:"chord", raw:tok, chord: tok, duration: dur };
     });
-    
-    // ✅ Filter out RHYTHM, LOOP, and TEMPO directives from playable sequence
+
+    // ✅ Post-process: Attach standalone comments to following chords
+    // Syntax: (comment) C G7 Am - attaches "comment" to all three chords
+    // Note: This is from semicolon expansion: (comment; C G7 Am) → [(comment), C, G7, Am]
+    // The comment item stays with duration=0 and is skipped during playback
+    let pendingComment: string | null = null;
+
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+
+      // If we hit a standalone comment (not a tie/rest), store it
+      if (item.kind === "comment" &&
+          item.comment !== "(tie)" &&
+          item.comment !== "(rest)" &&
+          !item.raw?.endsWith(":") &&  // Not a "(label):" comment
+          item.duration === 0) {
+        pendingComment = item.comment || null;
+        // Keep duration at 0 so it gets skipped during playback
+      }
+      // If we have a pending comment and hit a chord, attach it
+      else if (pendingComment && item.kind === "chord") {
+        items[i] = { ...item, comment: pendingComment };
+      }
+      // If we hit a modifier, title, or "(label):" comment, clear pending
+      else if (item.kind === "modifier" ||
+               item.kind === "title" ||
+               (item.kind === "comment" && item.raw?.endsWith(":"))) {
+        pendingComment = null;
+      }
+    }
+
+    const itemsWithAttachedComments = items; // Keep all items
+
+    // ✅ Filter out RHYTHM, LOOP, TEMPO directives from playable sequence
     // These are configuration, not part of the musical progression
-    const playableItems = items.filter(item => {
+    // Keep standalone comments for highlighting but mark them to skip during playback
+    const playableItems = itemsWithAttachedComments.filter(item => {
       if (item.kind === "modifier" && item.chord) {
         // Keep KEY, HOME, SUB, REL, PAR modifiers (they're part of progression)
-        // Remove RHYTHM1/2/3, LOOP, and TEMPO (they're just config)
-        return !item.chord.startsWith("RHYTHM") && 
-               item.chord !== "LOOP" && 
+        // Remove RHYTHM1/2/3, LOOP/LOOP:OFF, and TEMPO (they're just config)
+        return !item.chord.startsWith("RHYTHM") &&
+               !item.chord.startsWith("LOOP") &&
                !item.chord.startsWith("TEMPO");
       }
       return true; // Keep everything else (chords, comments, titles)
@@ -1690,23 +1762,31 @@ useEffect(() => {
     }
     
     // ✅ v4.0.51b DEBUG: Apply ALL @KEY directives before first playable chord
-    console.log('🔍 Looking for KEY directives before index', initialIdx);
+    console.log('🔍 [KEY DEBUG] Looking for KEY directives before index', initialIdx);
+    console.log('🔍 [KEY DEBUG] Current baseKey BEFORE applying:', baseKey);
     for (let i = 0; i < initialIdx; i++) {
       const item = playableItems[i];
       console.log(`  [${i}] kind=${item.kind} chord=${item.chord}`);
       if (item.kind === "modifier" && item.chord?.startsWith("KEY:")) {
-        console.log('  ✅ Found KEY directive, applying:', item.chord);
+        console.log('  ✅ [KEY DEBUG] Found KEY directive, applying:', item.chord);
+        const keyPart = item.chord.split(":")[1];
+        console.log('  ✅ [KEY DEBUG] Extracted key:', keyPart);
         applySeqItem(item);
+        // Force immediate state update check
+        setTimeout(() => {
+          console.log('  ✅ [KEY DEBUG] baseKey AFTER applying (async):', baseKeyRef.current);
+        }, 50);
       }
     }
     const hadKeyDirective = playableItems.slice(0, initialIdx).some(
       item => item.kind === "modifier" && item.chord?.startsWith("KEY:")
     );
-    console.log('🔍 Had KEY directive?', hadKeyDirective);
+    console.log('🔍 [KEY DEBUG] Had KEY directive?', hadKeyDirective);
     if (!hadKeyDirective) {
-      console.log('  -> No KEY found, going HOME');
+      console.log('  -> [KEY DEBUG] No KEY found, going HOME');
       goHome();
     }
+    console.log('🔍 [KEY DEBUG] Sequence loading complete. Final baseKey:', baseKey);
     
     // Set index to first playable item
     if (initialIdx < playableItems.length) {
@@ -1738,6 +1818,9 @@ useEffect(() => {
     }
 
     if (!sequence.length) return;
+
+    // ✅ Start display timer when using transport controls
+    startDisplayTimer();
     let i = seqIndex - 1;
     if (i < 0) i = 0; // Stay at beginning
 
@@ -1785,8 +1868,11 @@ useEffect(() => {
       setStepRecord(false);
       stepRecordRef.current = false;
     }
-    
+
     if (!sequence.length) return;
+
+    // ✅ Start display timer when using transport controls
+    startDisplayTimer();
     
     console.log('=== STEP NEXT START ===');
     console.log('Before: seqIndex =', seqIndex, 'displayIndex =', displayIndex);
@@ -1888,6 +1974,9 @@ useEffect(() => {
         clearTimeout(playbackTimerRef.current);
         playbackTimerRef.current = null;
       }
+
+      // ✅ Start 2-minute display timer
+      startDisplayTimer();
     } else {
       // Start playing
       if (sequence.length === 0) return;
@@ -1926,7 +2015,14 @@ useEffect(() => {
       
       // ✅ v3.19.55: Mark as preview mode for eraser display
       lastInputWasPreviewRef.current = true;
-      
+
+      // ✅ Clear display timer when starting playback
+      setShowSequencerDisplay(true); // Show while playing
+      if (displayTimerRef.current) {
+        clearTimeout(displayTimerRef.current);
+        displayTimerRef.current = null;
+      }
+
       // NOW start the playback loop
       setIsPlaying(true);
     }
@@ -1938,12 +2034,16 @@ useEffect(() => {
       setStepRecord(false);
       stepRecordRef.current = false;
     }
-    
+
     setIsPlaying(false);
+    setCurrentComment(""); // Clear comment display when stopping
     if (playbackTimerRef.current) {
       clearTimeout(playbackTimerRef.current);
       playbackTimerRef.current = null;
     }
+
+    // ✅ Start 2-minute display timer
+    startDisplayTimer();
     // Reset to beginning
     // v3.5.0: Skip audio when silent=true (for reset button)
     if (sequence.length > 0 && !silent) {
@@ -1952,14 +2052,31 @@ useEffect(() => {
       setTimeout(() => selectCurrentItem(), 0);
     }
   };
-  
+
+  // ✅ Helper function to start/restart the 2-minute display timer
+  const startDisplayTimer = () => {
+    if (sequence.length === 0 || !songTitle) return; // Only if we have a sequence with title
+
+    setShowSequencerDisplay(true);
+    if (displayTimerRef.current) {
+      clearTimeout(displayTimerRef.current);
+    }
+    displayTimerRef.current = setTimeout(() => {
+      console.log('⏰ Display timer expired, reverting to ticker');
+      setShowSequencerDisplay(false);
+    }, 120000); // 2 minutes = 120000 ms
+  };
+
   const goToStart = () => {
     // v3.3.2: Exit step record when using transport controls
     if (stepRecord) {
       setStepRecord(false);
       stepRecordRef.current = false;
     }
-    
+
+    // ✅ Start display timer when using transport controls
+    startDisplayTimer();
+
     console.log('=== GO TO START ===');
     if (sequence.length > 0) {
       // ✅ v4.0.52: ALWAYS re-apply KEY directives when rewinding
@@ -2027,6 +2144,9 @@ useEffect(() => {
   // Skip to next comment
   const skipToNextComment = () => {
     if (!sequence.length) return;
+
+    // ✅ Start display timer when using transport controls
+    startDisplayTimer();
     for (let i = seqIndex + 1; i < sequence.length; i++) {
       if (sequence[i].kind === "comment") {
         setSeqIndex(i);
@@ -2075,6 +2195,9 @@ useEffect(() => {
   // Skip to previous comment
   const skipToPrevComment = () => {
     if (!sequence.length) return;
+
+    // ✅ Start display timer when using transport controls
+    startDisplayTimer();
     for (let i = seqIndex - 1; i >= 0; i--) {
       if (sequence[i].kind === "comment") {
         setSeqIndex(i);
@@ -2157,10 +2280,14 @@ useEffect(() => {
       }
       
       parseAndLoadSequence();
-      // Blur textarea to exit edit mode
-      if (textareaRef.current) {
-        textareaRef.current.blur();
-      }
+      // ✅ Blur textarea to exit edit mode and allow spacebar play
+      // Use setTimeout to ensure blur happens after event processing
+      setTimeout(() => {
+        if (textareaRef.current) {
+          textareaRef.current.blur();
+          console.log('✅ Textarea blurred after Enter - spacebar will now play');
+        }
+      }, 0);
     }
     // Ctrl+I or Cmd+I inserts current chord
     else if ((e.ctrlKey || e.metaKey) && e.key === 'i'){
@@ -2232,11 +2359,14 @@ useEffect(() => {
         const parts = arg?.split(":") || [];
         const newKey = parts[0]?.trim() as KeyName;
         const chordAfterKey = parts.slice(1).join(":").trim();
-        console.log("KEY directive parsed:", { newKey, valid: FLAT_NAMES.includes(newKey) });
-        
-          console.log("Calling setBaseKey with:", newKey);
+        console.log("🔑 [KEY] Directive parsed:", { newKey, valid: FLAT_NAMES.includes(newKey), currentBaseKey: baseKey });
+
         if (newKey && FLAT_NAMES.includes(newKey)) {
+          console.log("🔑 [KEY] Calling setBaseKey from:", baseKey, "to:", newKey);
           setBaseKey(newKey);
+          console.log("🔑 [KEY] setBaseKey called. State will update async.");
+        } else {
+          console.warn("⚠️ [KEY] Invalid key name:", newKey, "- must be one of:", FLAT_NAMES);
         }
         
         if (chordAfterKey) {
@@ -3002,6 +3132,22 @@ useEffect(() => {
                            currentItem.chord &&
                            currentNotes.length > 0;
 
+    // ✅ Update current comment display (from attached comment or clear if none)
+    const isStandaloneComment = currentItem?.kind === "comment" &&
+                                !currentItem.chord &&
+                                currentItem.comment !== "(tie)" &&
+                                currentItem.comment !== "(rest)";
+
+    if (currentItem?.comment && currentItem.kind === "chord") {
+      setCurrentComment(currentItem.comment);
+    } else if (currentItem?.kind === "comment" && currentItem.chord) {
+      // "(label): Chord" format - display the comment
+      setCurrentComment(currentItem.comment || "");
+    } else if (!isStandaloneComment) {
+      // Don't clear comment for standalone comments (they're instant and shouldn't affect display)
+      setCurrentComment("");
+    }
+
     if (isPlayableItem) {
       // ✅ v4.1.1: Debug - what notes are we playing?
       console.log('🎬 [Playback] Playing chord:', currentItem.chord, 'notes:', currentNotes);
@@ -3040,10 +3186,11 @@ useEffect(() => {
     // Duration is in bars (1=whole, 0.5=half, 0.25=quarter)
     const itemDuration = currentItem?.duration || 1.0; // Default to 1 bar if not specified
     
-    // ✅ v3.19.55: Only # comments WITHOUT chords have zero duration
-    const isAnnotationOnly = currentItem?.kind === "comment" && 
-                            currentItem.raw?.startsWith('#') && 
-                            !currentItem.chord;
+    // ✅ Comments without attached chords have zero duration (EXCEPT ties and rests - they need duration!)
+    const isAnnotationOnly = currentItem?.kind === "comment" &&
+                            !currentItem.chord &&
+                            currentItem.comment !== "(tie)" &&
+                            currentItem.comment !== "(rest)"; // Ties and rests must keep their duration
     const isZeroDuration = itemDuration === 0 || isAnnotationOnly;
     const beatsPerBar = 4; // 4/4 time signature
     const interval = isZeroDuration ? 0 : (60 / tempo) * beatsPerBar * itemDuration * 1000; // milliseconds
@@ -3073,12 +3220,15 @@ useEffect(() => {
         // ✅ v3.19.55: For display, show the chord being held, not the tie/annotation
         const nextItem = sequence[nextIndex];
         const isTie = nextItem?.kind === "comment" && nextItem.raw === '*';
-        const isAnnotation = nextItem?.kind === "comment" && nextItem.raw?.startsWith('#') && !nextItem.chord;
-        
-        if (!isTie && !isAnnotation) {
+        const isStandaloneComment = nextItem?.kind === "comment" &&
+                                    !nextItem.chord &&
+                                    nextItem.comment !== "(tie)" &&
+                                    nextItem.comment !== "(rest)";
+
+        if (!isTie && !isStandaloneComment) {
           setDisplayIndex(nextIndex); // Only update display for actual chords/rests
         }
-        // If tie or annotation, displayIndex stays on previous chord
+        // If tie or standalone comment, displayIndex stays on previous chord
         
         applySeqItem(sequence[nextIndex]);
         setTimeout(() => selectCurrentItem(), 0);
@@ -3098,6 +3248,9 @@ useEffect(() => {
           setTimeout(() => selectCurrentItem(), 0);
         } else {
           setIsPlaying(false);
+
+          // ✅ Start 2-minute display timer when sequence ends naturally
+          startDisplayTimer();
         }
       }
     }, interval);
@@ -3109,6 +3262,16 @@ useEffect(() => {
       }
     };
   }, [isPlaying, seqIndex, tempo, sequence, transpose, loopEnabled]); // ✅ v4.1.1: Removed latchedAbsNotes to prevent infinite loop
+
+  // ✅ Cleanup display timer on unmount
+  useEffect(() => {
+    return () => {
+      if (displayTimerRef.current) {
+        clearTimeout(displayTimerRef.current);
+        displayTimerRef.current = null;
+      }
+    };
+  }, []);
 
   /* ---------- layout & bonus geometry ---------- */
   const cx=260, cy=260, r=220;
@@ -7427,10 +7590,17 @@ useEffect(() => {
                   alignItems:'center',
                   borderBottom:'1px solid #374151'
                 }}>
-                  {isPlaying && sequence.length > 0 && songTitle ? (
-                    /* Playing with sequence - show title + key */
+                  {showSequencerDisplay && sequence.length > 0 && songTitle ? (
+                    /* Playing with sequence OR within 2-min display window - show title + key */
                     <>
-                      <span style={{color:'#39FF14', flex:1}}>{songTitle}</span>
+                      <div style={{flex:1, display:'flex', flexDirection:'column', gap:4}}>
+                        <span style={{color:'#39FF14'}}>{songTitle}</span>
+                        {currentComment && (
+                          <span style={{fontSize:12, color:'#FFA500', fontStyle:'italic'}}>
+                            {currentComment}
+                          </span>
+                        )}
+                      </div>
                       <span style={{fontSize:10, color:'#9CA3AF', fontWeight:400}}>
                         {baseKey} major
                       </span>
@@ -7531,8 +7701,8 @@ useEffect(() => {
                   overflow:'hidden',
                   position:'relative'
                 }}>
-                  {isPlaying && sequence.length > 0 ? (
-                    /* Playing - show scrolling chord sequence (not clickable) */
+                  {showSequencerDisplay && sequence.length > 0 ? (
+                    /* Playing OR within 2-min display window - show scrolling chord sequence (not clickable) */
                     <div style={{
                       color:'#e5e7eb',
                       whiteSpace:'nowrap',
@@ -7557,17 +7727,24 @@ useEffect(() => {
                               const isCurrent = globalIdx === displayIndex;
                               const isComment = item.kind === "comment";
                               const isTitle = item.kind === "title";
-                              
-                              const isCommentForNextChord = isComment && 
-                                                           item.raw?.startsWith('#') && 
-                                                           item.raw?.includes(':') &&
+
+                              // ✅ OLD: "(label): Chord" format - comment before next chord
+                              const isCommentForNextChord = isComment &&
+                                                           item.raw?.endsWith(':') &&
                                                            globalIdx + 1 === displayIndex;
-                              
-                              const isTieAfterCurrent = item.raw === '*' && 
+
+                              // ✅ NEW: Check if current playing chord has an attached comment
+                              // This highlights comments in "(comment; C G7)" format
+                              const isAttachedCommentForCurrent = isComment &&
+                                                                  displayIndex >= 0 &&
+                                                                  sequence[displayIndex]?.kind === "chord" &&
+                                                                  sequence[displayIndex]?.comment === item.comment;
+
+                              const isTieAfterCurrent = item.raw === '*' &&
                                                        globalIdx > 0 &&
                                                        sequence[displayIndex]?.kind === "chord" &&
                                                        globalIdx > displayIndex;
-                              
+
                               const isPartOfTiedGroup = (() => {
                                 if (item.raw !== '*') return false;
                                 for (let k = globalIdx - 1; k >= 0; k--) {
@@ -7579,8 +7756,8 @@ useEffect(() => {
                                 }
                                 return false;
                               })();
-                              
-                              const shouldHighlight = isCurrent || isCommentForNextChord || isPartOfTiedGroup;
+
+                              const shouldHighlight = isCurrent || isCommentForNextChord || isAttachedCommentForCurrent || isPartOfTiedGroup;
                               
                               const isConfig = item.kind === "modifier" && item.chord && 
                                 (item.chord.startsWith("RHYTHM") || 
@@ -8505,7 +8682,7 @@ useEffect(() => {
                 }}>
                   <textarea
                     ref={textareaRef}
-                    placeholder={'Type chords, modifiers, and comments...\nExamples:\n@TITLE Sequence Name, @KEY C\nC, Am7, F, G7\n@SUB F, Bb, C7, @HOME\n@REL Em, Am, @PAR Cm, Fm\n@KEY G, D, G, C\n# Verse: lyrics or theory note'}
+                    placeholder={'Type chords, modifiers, and comments...\nExamples:\n@TITLE Sequence Name, @KEY C\nC, Am7, F, G7\n@SUB F, Bb, C7, @HOME\n@REL Em, Am, @PAR Cm, Fm\n@KEY G, D, G, C\n(Verse: lyrics or theory note)'}
                     rows={3}
                     value={inputText}
                     onChange={(e)=>setInputText(e.target.value)}
@@ -9070,10 +9247,11 @@ useEffect(() => {
                         
                         {/* Pattern buttons with previews */}
                         {[
-                          { num: 1, pattern: rhythmPattern1, display: '|x x x x|' },
-                          { num: 2, pattern: rhythmPattern2, display: '|x / x /|' },
-                          { num: 3, pattern: rhythmPattern3, display: '|x x / x x x / x|' }
-                        ].map(({ num, pattern, display }) => {
+                          { num: 1, pattern: rhythmPattern1 },
+                          { num: 2, pattern: rhythmPattern2 },
+                          { num: 3, pattern: rhythmPattern3 }
+                        ].map(({ num, pattern }) => {
+                          const display = rhythmPatternToDisplay(pattern);
                           const isActive = activeRhythmPattern === num;
                           const hasPattern = pattern.length > 0;
                           return (
