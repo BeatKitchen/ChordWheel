@@ -1055,9 +1055,9 @@ useEffect(() => {
         if (tickerEvents.length > 0) {
           const finalText = `Next: ${tickerEvents.map(e => e.text).join(' • ')}`; // Keep for fallback
           console.log('🗓️ ✅ Setting ticker text:', finalText);
-          console.log('🗓️ ðŸ“Š Ticker events array:', tickerEvents.map((e, i) => `[${i}] ${e.isLive ? 'ðŸ”´ LIVE' : '⏺°'} "${e.text}"`));
+          console.log('🗓️ 📊 Ticker events array:', tickerEvents.map((e, i) => `[${i}] ${e.isLive ? '🔴 LIVE' : '⏺'} "${e.text}"`));
           console.log('🗓️ 🎬 What will display:', tickerEvents.map((e, i) => 
-            `${e.isLive ? 'ðŸ”´ Now in session:' : (i === 0 ? 'Next' : 'Coming up:')} ${e.text.replace(/@/g, 'with ')}`
+            `${e.isLive ? '🔴 Now in session:' : (i === 0 ? 'Next' : 'Coming up:')} ${e.text.replace(/@/g, 'with ')}` 
           ).join(' • • • '));
           setTickerEvents(tickerEvents);  // v3.19.55: Store event objects
           setTickerText(finalText);
@@ -7630,7 +7630,7 @@ useEffect(() => {
                                       e.currentTarget.style.opacity = '1';
                                     }}
                                   >
-                                    {eventObj.isLive ? 'ðŸ”´ Now in session: ' : (idx === 0 ? 'Next ' : 'Coming up: ')}
+                                    {eventObj.isLive ? '🔴 Now in session: ' : (idx === 0 ? 'Next ' : 'Coming up: ')}
                                     {eventObj.text.replace(/@/g, 'with ')}
                                   </a>
                                 ))}
