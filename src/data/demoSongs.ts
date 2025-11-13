@@ -5,6 +5,84 @@
 
 // ✅ v3.18.78: Added DEFAULT_BANNER constant for empty state message
 // ✅ v3.18.43: Added bannerMessage support for promotional messages
+// ✅ v3.19.60: Added comment grouping syntax with semicolon separator
+
+/*
+ * SEQUENCER COMMENT SYNTAX GUIDE
+ * ===============================
+ *
+ * Comments can be added to sequences in THREE ways:
+ *
+ * 1. SECTION LABELS (Standalone)
+ * --------------------------------
+ * Use parentheses with no attached chords for section markers:
+ *
+ *   (Verse)
+ *   |C| Am| F| G|
+ *
+ *   (Chorus)
+ *   |F| G| C| Am|
+ *
+ * - Section labels appear in the sequence display
+ * - They do not play or take any time
+ * - Perfect for marking song structure
+ *
+ *
+ * 2. OLD SYNTAX: Colon Outside Parentheses
+ * ------------------------------------------
+ * Format: (comment): Chord
+ *
+ * The comment applies to the chord AFTER the colon:
+ *
+ *   |(this chord might show up as EmMaj7 or even Ebaug): Em7|
+ *
+ * - Comment is displayed in orange below title when Em7 plays
+ * - Comment is highlighted in green in the sequence display
+ * - Works for single chords only
+ *
+ *
+ * 3. NEW SYNTAX: Semicolon Inside Parentheses (RECOMMENDED)
+ * -----------------------------------------------------------
+ * Format: ChordBefore (comment; Chord1 Chord2 Chord3)
+ *
+ * The comment applies to ALL chords AFTER the semicolon:
+ *
+ *   |C (this is a stand in for A7; C#dim)| D (functions like a B7; D#dim)|
+ *
+ * - ChordBefore (C) plays with NO comment
+ * - C#dim plays with "this is a stand in for A7" comment displayed
+ * - D plays with NO comment
+ * - D#dim plays with "functions like a B7" comment displayed
+ *
+ * - Can apply comment to multiple chords in one group:
+ *   |(lots of ways to skin this cat; C G7 Am)|
+ *   All three chords (C, G7, Am) display the comment when they play
+ *
+ * - Comment appears in orange below title during playback
+ * - Comment is highlighted in green in sequence display
+ * - Chords BEFORE the comment group are NOT affected
+ *
+ *
+ * IMPORTANT LIMITATIONS:
+ * -----------------------
+ * - Comments CANNOT span multiple bars (the | delimiter breaks them)
+ * - Each bar must have its own comment if needed
+ * - Comments do not work across bar lines
+ *
+ * Example that WON'T work:
+ *   |(comment; | C | G | Am | )|  ❌ Broken by bar delimiters
+ *
+ * Example that WILL work:
+ *   |(comment; C G Am)|           ✅ All in one bar
+ *
+ *
+ * SYNTAX SUMMARY:
+ * ----------------
+ * (Section Label)              → Standalone label, no chords
+ * (comment): Chord             → Comment on Chord (old syntax)
+ * Chord (comment; NextChord)   → Comment on NextChord (new syntax)
+ * (comment; Chord1 Chord2)     → Comment on both Chord1 and Chord2
+ */
 
 /*
  * DEFAULT BANNER MESSAGE
@@ -64,16 +142,17 @@ export const demoSongs: DemoSong[] = [
 {
   title: "WELCOME TO BEAT KITCHEN",
   content: `@TITLE From today's Beat Kitchen MUSIC THEORY GYM
-@KEY C, @TEMPO 160
+@KEY C
+@TEMPO 160
 
 |Fmaj7 * * / Fmaj7 / Fmaj7 E7 |* / E7 * * * * *|
-|Am7 (passing chord): Abm7 | Gm7 C7 |
+|Am7 (passing chord; Abm7) | Gm7 C7 |
 |Fmaj7 * * * / / / E7 |* / E7 * * * * *|
 |Am |Am7 |
 
 @RHYTHM1 |x x x x|
 @RHYTHM2 |x / x /|
-@RHYTHM3 |x x / x x x / x|`,  // ← backtick HERE, before comma
+@RHYTHM3 |x x / x x x / x|`,
   bannerMessage: "Use [[EXPERT mode|expert]] for sequencer. Join a [[Music Theory Gym|https://beatkitchen.io/classroom]] and we'll use this together!"
 },
 
@@ -103,37 +182,37 @@ export const demoSongs: DemoSong[] = [
 
   {
     title: "Simple Progression",
-    content: "@TITLE Simple Song, @KEY C, @TEMPO 100, (Verse), C, Am, F, G, C, Am, F, G, (Chorus), F, G, C, Am, F, G, C, C\n\n@RHYTHM1 |x x x x|\n@RHYTHM2 |x / x /|\n@RHYTHM3 |x x / x x x / x|",
+    content: "@TITLE Simple Song\n@KEY C\n@TEMPO 100\n\n(Verse)\n|C| Am| F| G| C| Am| F| G|\n\n(Chorus)\n|F| G| C| Am| F| G| C| C|\n\n@RHYTHM1 |x x x x|\n@RHYTHM2 |x / x /|\n@RHYTHM3 |x x / x x x / x|",
     bannerMessage: "Try [[Expert mode|expert]] to unlock the sequencer!"
   },
   {
     title: "Autumn Leaves",
-    content: "@TITLE Autumn Leaves, @KEY Am, @TEMPO 140, (A Section), Dm7, G7, CMaj7, FMaj7, Bm7b5, E7, Am, Am, (B Section), Bm7b5, E7, Am, Am, Dm7, G7, CMaj7, FMaj7, Bm7b5, E7, Am, E7\n\n@RHYTHM1 |x x x x|\n@RHYTHM2 |x / x /|\n@RHYTHM3 |x x / x x x / x|",
+    content: "@TITLE Autumn Leaves\n@KEY Am\n@TEMPO 140\n\n(A Section)\n|Dm7| G7| CMaj7| FMaj7| Bm7b5| E7| Am| Am|\n\n(B Section)\n|Bm7b5| E7| Am| Am| Dm7| G7| CMaj7| FMaj7| Bm7b5| E7| Am| E7|\n\n@RHYTHM1 |x x x x|\n@RHYTHM2 |x / x /|\n@RHYTHM3 |x x / x x x / x|",
     bannerMessage: "[[Expert mode|expert]] for sequencer. Join a [[gym|https://beatkitchen.io/classroom]] to learn some music theory!"
   },
   {
     title: "I-V-vi-IV (Pop Progression)",
-    content: "@TITLE Pop Progression, @KEY C, @TEMPO 120, (Verse), C, G, Am, F, C, G, Am, F, (Chorus), C, G, Am, F, C, G, F, F\n\n@RHYTHM1 |x x x x|\n@RHYTHM2 |x / x /|\n@RHYTHM3 |x x / x x x / x|",
+    content: "@TITLE Pop Progression\n@KEY C\n@TEMPO 120\n\n(Verse)\n|C| G| Am| F| C| G| Am| F|\n\n(Chorus)\n|C| G| Am| F| C| G| F| F|\n\n@RHYTHM1 |x x x x|\n@RHYTHM2 |x / x /|\n@RHYTHM3 |x x / x x x / x|",
     bannerMessage: "[[Expert mode|expert]] for sequencer. Join a [[gym|https://beatkitchen.io/classroom]] to learn some music theory!"
   },
   {
     title: "12-Bar Blues in C",
-    content: "@TITLE 12-Bar Blues, @KEY C, @TEMPO 120, (Chorus), C7, C7, C7, C7, F7, F7, C7, C7, G7, F7, C7, G7\n\n@RHYTHM1 |x x x x|\n@RHYTHM2 |x / x /|\n@RHYTHM3 |x x / x x x / x|",
+    content: "@TITLE 12-Bar Blues\n@KEY C\n@TEMPO 120\n\n|C7| C7| C7| C7|\n|F7| F7| C7| C7|\n|G7| F7| C7| G7|\n\n@RHYTHM1 |x x x x|\n@RHYTHM2 |x / x /|\n@RHYTHM3 |x x / x x x / x|",
     bannerMessage: "[[Expert mode|expert]] for sequencer. Join a [[gym|https://beatkitchen.io/classroom]] to learn some music theory!"
   },
   {
     title: "Giant Steps (First 4 bars)",
-    content: "@TITLE Giant Steps, @KEY B, @TEMPO 180, (First 4 bars), BM7, D7, GM7, Bb7, EbM7, Am7, D7, GM7\n\n@RHYTHM1 |x x x x|\n@RHYTHM2 |x / x /|\n@RHYTHM3 |x x / x x x / x|",
+    content: "@TITLE Giant Steps\n@KEY B\n@TEMPO 180\n\n(First 4 bars)\n|BM7| D7| GM7| Bb7| EbM7| Am7| D7| GM7|\n\n@RHYTHM1 |x x x x|\n@RHYTHM2 |x / x /|\n@RHYTHM3 |x x / x x x / x|",
     bannerMessage: "[[Expert mode|expert]] for sequencer. Join a [[gym|https://beatkitchen.io/classroom]] to learn some music theory!"
   },
   {
     title: "Functional Notation Example",
-    content: "@TITLE Functional Demo, @KEY C, @TEMPO 100, (Using Roman numerals), I, vi, ii, V7, I, IV, V7, I, (With secondary dominants), I, V/vi, vi, V/V, V7, I\n\n@RHYTHM1 |x x x x|\n@RHYTHM2 |x / x /|\n@RHYTHM3 |x x / x x x / x|",
+    content: "@TITLE Functional Demo\n@KEY C\n@TEMPO 100\n\n(Using Roman numerals)\n|I| vi| ii| V7| I| IV| V7| I|\n\n(With secondary dominants)\n|I| V/vi| vi| V/V| V7| I|\n\n@RHYTHM1 |x x x x|\n@RHYTHM2 |x / x /|\n@RHYTHM3 |x x / x x x / x|",
     bannerMessage: "[[Expert mode|expert]] for sequencer. Join a [[gym|https://beatkitchen.io/classroom]] to learn some music theory!"
   },
   {
     title: "Forgiving Notation Test",
-    content: "@TITLE Notation Test, @KEY C, @TEMPO 120, (Minus notation), A-, D-, (M7 notation), CM7, FM7, (Extensions), G7b9, G13, D9, (Half-dim), Bm7-5, (Mixed), Am, E7, FM7, G7, C\n\n@RHYTHM1 |x x x x|\n@RHYTHM2 |x / x /|\n@RHYTHM3 |x x / x x x / x|",
+    content: "@TITLE Notation Test\n@KEY C\n@TEMPO 120\n\n(Minus notation)\n|A-| D-|\n\n(M7 notation)\n|CM7| FM7|\n\n(Extensions)\n|G7b9| G13| D9|\n\n(Half-dim)\n|Bm7-5|\n\n(Mixed)\n|Am| E7| FM7| G7| C|\n\n@RHYTHM1 |x x x x|\n@RHYTHM2 |x / x /|\n@RHYTHM3 |x x / x x x / x|",
     bannerMessage: "[[Expert mode|expert]] for sequencer. Join a [[gym|https://beatkitchen.io/classroom]] to learn some music theory!"
   }
 ];

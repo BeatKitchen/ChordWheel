@@ -231,6 +231,44 @@ If working on branch, use format: `engine-v4.0.XX-feature-name`
 4. For transitions, look for `🔄 Re-mapping` and `✅ Space transition chord mapped`
 5. Verify wedge ID: `getFunctionWedgeId(function)` returns 0-11
 
+### Sequencer Comment Syntax
+The sequencer supports three types of comments for annotating chord progressions:
+
+**1. Section Labels (Standalone)**
+```
+(Verse)
+|C| Am| F| G|
+
+(Chorus)
+|F| G| C| Am|
+```
+- No chords attached
+- Used for marking song structure
+
+**2. Old Syntax - Colon Outside Parentheses**
+```
+|(comment): Chord|
+```
+- Example: `|(this chord might show up as EmMaj7): Em7|`
+- Comment applies to chord AFTER the colon
+- Works for single chords only
+
+**3. NEW Syntax - Semicolon Inside Parentheses (RECOMMENDED)**
+```
+ChordBefore (comment; Chord1 Chord2 Chord3)
+```
+- Example: `|C (this is a stand in for A7; C#dim)|`
+- Chords BEFORE the parentheses have NO comment
+- Chords AFTER the semicolon ALL get the comment
+- Can apply one comment to multiple chords
+
+**Important Limitation**: Comments CANNOT span bar lines. The `|` delimiter breaks comment groups.
+
+❌ Won't work: `|(comment; | C | G | Am | )|`
+✅ Will work: `|(comment; C G Am)|`
+
+**See full documentation**: `src/data/demoSongs.ts` lines 10-85
+
 ---
 
 ## 6. Known Issues & Solutions
