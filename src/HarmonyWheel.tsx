@@ -901,7 +901,7 @@ useEffect(() => {
     isLive: boolean;
   }>>([]);
   const [tickerText, setTickerText] = useState("Loading schedule...");
-  const [tickerEvents, setTickerEvents] = useState<Array<{text: string; isLive: boolean; isSoon: boolean}>>([]);  // v3.19.55: Added isSoon for orange color
+  const [tickerEvents, setTickerEvents] = useState<Array<{text: string; isLive: boolean; isSoon: boolean; start: Date}>>([]);  // v3.19.55: Added isSoon for orange color, v4.2.0: Added start for chronological sorting
   
   // Autoload preloaded playlist on mount
   useEffect(() => {
@@ -1001,49 +1001,54 @@ useEffect(() => {
         console.log('🗓️ Gyms (from calendar 13985904):', gyms.length);
         console.log('🗓️ Office hours (from calendar 13985917):', officeHours.length);
         
-        // Build ticker: 1 gym event, 1 office hours event
-        const tickerEvents: Array<{text: string; isLive: boolean; isSoon: boolean}> = [];
-        
+        // v4.2.0: Build ticker: 1st = mandatory first Theory Gym, then next 2 from combined remaining events
+        const tickerEvents: Array<{text: string; isLive: boolean; isSoon: boolean; start: Date}> = [];
+
+        // Step 1: ALWAYS pull the first Theory Gym event
         if (gyms.length > 0) {
           const event = gyms[0];
           const isLive = now >= event.start && now <= event.end;
-          const hoursUntil = (event.start.getTime() - now.getTime()) / (1000 * 60 * 60);
           const isSoon = false;  // v4.1.5: Will be set to true for soonest event only
           const timeStr = formatEventTime(event.start, now);
           const cleanTitle = event.title.replace(/Live\s+/i, '').trim();
-          console.log('🗓️ Next gym:', cleanTitle, '⏺†’', timeStr, isLive ? 'ðŸ”´ LIVE' : isSoon ? 'ðŸŸ  SOON' : '');
-          tickerEvents.push({ text: `${cleanTitle} ${timeStr}`, isLive, isSoon });
+          console.log('🗓️ Next gym (mandatory):', cleanTitle, '⏺️', timeStr, isLive ? '🔴 LIVE' : isSoon ? '🟠 SOON' : '');
+          tickerEvents.push({ text: `${cleanTitle} ${timeStr}`, isLive, isSoon, start: event.start });
         }
-        
-        if (officeHours.length > 0) {
-          const event = officeHours[0];
+
+        // Step 2: Combine remaining gyms with ALL office hours
+        const remainingGyms = gyms.slice(1);
+        const combinedEvents = [...remainingGyms, ...officeHours];
+
+        // Step 3: Sort chronologically
+        combinedEvents.sort((a, b) => a.start.getTime() - b.start.getTime());
+
+        // Step 4: Take next 2 events from combined list
+        const nextTwoEvents = combinedEvents.slice(0, 2);
+
+        for (const event of nextTwoEvents) {
           const isLive = now >= event.start && now <= event.end;
-          const hoursUntil = (event.start.getTime() - now.getTime()) / (1000 * 60 * 60);
           const isSoon = false;  // v4.1.5: Will be set to true for soonest event only
           const timeStr = formatEventTime(event.start, now);
           const cleanTitle = event.title.replace(/Live\s+/i, '').trim();
-          console.log('🗓️ Next office hours:', cleanTitle, '⏺†’', timeStr, isLive ? 'ðŸ”´ LIVE' : isSoon ? 'ðŸŸ  SOON' : '');
-          tickerEvents.push({ text: `${cleanTitle} ${timeStr}`, isLive, isSoon });
+          console.log('🗓️ Combined event:', cleanTitle, '⏺️', timeStr, isLive ? '🔴 LIVE' : isSoon ? '🟠 SOON' : '');
+          tickerEvents.push({ text: `${cleanTitle} ${timeStr}`, isLive, isSoon, start: event.start });
         }
 
-        // ✅ v4.1.5: Find and mark ONLY the soonest upcoming event as orange
+        // ✅ v4.2.0: Find and mark ONLY the soonest upcoming event as orange (updated for new structure)
         if (tickerEvents.length > 0) {
-          // Collect both event sources with their times
-          const allEvents = [];
-          if (gyms.length > 0) allEvents.push({ event: tickerEvents[0], start: gyms[0].start, index: 0 });
-          if (officeHours.length > 0) allEvents.push({ event: tickerEvents[gyms.length > 0 ? 1 : 0], start: officeHours[0].start, index: gyms.length > 0 ? 1 : 0 });
-
           // Filter to upcoming (not live) events within 12 hours
-          const upcomingEvents = allEvents.filter(item => {
-            const hoursUntil = (item.start.getTime() - now.getTime()) / (1000 * 60 * 60);
-            return !item.event.isLive && hoursUntil > 0 && hoursUntil <= 12;
-          });
+          const upcomingEventsWithIndex = tickerEvents
+            .map((event, index) => ({ event, index }))
+            .filter(item => {
+              const hoursUntil = (item.event.start.getTime() - now.getTime()) / (1000 * 60 * 60);
+              return !item.event.isLive && hoursUntil > 0 && hoursUntil <= 12;
+            });
 
           // Sort by time and mark the soonest
-          if (upcomingEvents.length > 0) {
-            upcomingEvents.sort((a, b) => a.start.getTime() - b.start.getTime());
-            tickerEvents[upcomingEvents[0].index].isSoon = true;
-            console.log('🟠 Marked soonest event as orange:', tickerEvents[upcomingEvents[0].index].text);
+          if (upcomingEventsWithIndex.length > 0) {
+            upcomingEventsWithIndex.sort((a, b) => a.event.start.getTime() - b.event.start.getTime());
+            tickerEvents[upcomingEventsWithIndex[0].index].isSoon = true;
+            console.log('🟠 Marked soonest event as orange:', tickerEvents[upcomingEventsWithIndex[0].index].text);
           }
         }
 
@@ -1067,13 +1072,13 @@ useEffect(() => {
         
         // Use fallback events and format them
         const now = new Date();
-        const tickerEvents: Array<{text: string; isLive: boolean; isSoon: boolean}> = [];
-        
+        const tickerEvents: Array<{text: string; isLive: boolean; isSoon: boolean; start: Date}> = [];
+
         for (const event of FALLBACK_EVENTS) {
           const eventDate = new Date(event.date);
           if (eventDate > now) {
             const timeStr = formatEventTime(eventDate, now);
-            tickerEvents.push({ text: `${event.title} ${timeStr}`, isLive: false, isSoon: false });
+            tickerEvents.push({ text: `${event.title} ${timeStr}`, isLive: false, isSoon: false, start: eventDate });
           }
         }
         
