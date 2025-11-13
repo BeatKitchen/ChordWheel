@@ -5481,11 +5481,11 @@ useEffect(() => {
                previewFn(fn, playWith7th);
              }
            }}
-           onMouseMove={(e)=>{
+           onPointerMove={(e)=>{
              e.preventDefault(); // Prevent text selection
-             
-             // Only process if wedge is being held
-             if (!wedgeHeldRef.current || currentHeldFnRef.current !== fn) return;
+
+             // Only process if wedge is being held AND pointer button is down
+             if (!wedgeHeldRef.current || currentHeldFnRef.current !== fn || e.buttons !== 1) return;
              
              const svg = e.currentTarget.ownerSVGElement;
              if (!svg) return;
@@ -5504,9 +5504,11 @@ useEffect(() => {
              const dy = svgP.y - cy;
              const clickRadius = Math.sqrt(dx*dx + dy*dy);
              const normalizedRadius = clickRadius / r;
-             
+
              const shouldHave7th = normalizedRadius < SEVENTH_RADIUS_THRESHOLD;
-             
+
+             console.log('🖱️ onPointerMove:', {fn, normalizedRadius, shouldHave7th, lastPlayedWith7th: lastPlayedWith7thRef.current});
+
              // If 7th state changed, update hub label and audio
              if (shouldHave7th !== lastPlayedWith7thRef.current) {
                console.log('🎵 Drag changed 7th (hub update):', shouldHave7th);
@@ -5555,10 +5557,12 @@ useEffect(() => {
                
                // ✅ Update keyboard display to match triad/7th
                const chordDef = CHORD_DEFINITIONS[fn];
+               let fitted: number[] | undefined;
+
                if (chordDef) {
                  const keyPc = NAME_TO_PC[renderKey];
                  const transposedTriad = chordDef.triad.map(pc => (pc + keyPc) % 12);
-                 
+
                  let pcs: number[];
                  if (shouldHave7th && chordDef.seventh !== undefined) {
                    const transposedSeventh = (chordDef.seventh + keyPc) % 12;
@@ -5566,76 +5570,87 @@ useEffect(() => {
                  } else {
                    pcs = transposedTriad;
                  }
-                 
+
                  const rootPc = pcs[0];
                  const absRootPos = preview.absChordRootPositionFromPcs(pcs, rootPc);
-                 const fitted = preview.fitNotesToWindowPreserveInversion(absRootPos, KBD_LOW, KBD_HIGH);
+                 fitted = preview.fitNotesToWindowPreserveInversion(absRootPos, KBD_LOW, KBD_HIGH);
                  setLatchedAbsNotes(fitted);
                }
-               
-               // Get the 7th note for this function
+
+               // ✅ Update rightHeld and re-run detection when 7th state changes
+               // This ensures the engine sees the updated chord (triad ↔ 7th)
                const chordDef2 = CHORD_DEFINITIONS[fn];
-               
-               if (chordDef2 && chordDef2.seventh !== undefined && audioEnabledRef.current) {
+
+               if (chordDef2 && chordDef2.seventh !== undefined && fitted) {
                  const keyPc = NAME_TO_PC[renderKey];
                  const seventhPc = (chordDef2.seventh + keyPc) % 12;
-                 
-                 // Special case: For minor tonic chords (vi, iv in minor contexts),
-                 // use root doubling instead of 7th for better harmonic minor sound
-                 const isMinorTonic = (relMinorActiveRef.current && fn === "vi") || 
-                                      (relMinorActiveRef.current && fn === "iv");
-                 
-                 if (shouldHave7th) {
-                   // Add the 4th note
-                   let fourthNoteMidi;
-                   
-                   if (isMinorTonic) {
-                     // Use root note an octave down
-                     const rootPc = chordDef2.triad[0];
-                     const transposedRootPc = (rootPc + keyPc) % 12;
-                     fourthNoteMidi = 48; // Start at C3
-                     while ((fourthNoteMidi % 12) !== transposedRootPc) fourthNoteMidi++;
-                     console.log('🎵 Using root doubling for minor tonic:', fourthNoteMidi);
+
+                 // Update rightHeld to match current chord state (from fitted notes calculated above)
+                 console.log('🎵 Drag 7th change: updating rightHeld with', fitted);
+                 rightHeld.current = new Set(fitted);
+
+                 // Re-run detection with updated notes
+                 detectV4();
+
+                 // Handle audio playback
+                 if (audioEnabledRef.current) {
+                   // Special case: For minor tonic chords (vi, iv in minor contexts),
+                   // use root doubling instead of 7th for better harmonic minor sound
+                   const isMinorTonic = (relMinorActiveRef.current && fn === "vi") ||
+                                        (relMinorActiveRef.current && fn === "iv");
+
+                   if (shouldHave7th) {
+                     // Add the 4th note
+                     let fourthNoteMidi;
+
+                     if (isMinorTonic) {
+                       // Use root note an octave down
+                       const rootPc = chordDef2.triad[0];
+                       const transposedRootPc = (rootPc + keyPc) % 12;
+                       fourthNoteMidi = 48; // Start at C3
+                       while ((fourthNoteMidi % 12) !== transposedRootPc) fourthNoteMidi++;
+                       console.log('🎵 Using root doubling for minor tonic:', fourthNoteMidi);
+                     } else {
+                       // Normal 7th
+                       fourthNoteMidi = 60;
+                       while ((fourthNoteMidi % 12) !== seventhPc) fourthNoteMidi++;
+                       while (fourthNoteMidi < 60) fourthNoteMidi += 12;
+                       while (fourthNoteMidi > 72) fourthNoteMidi -= 12;
+                     }
+
+                     console.log('⏺ž• Adding 4th note:', fourthNoteMidi);
+                     const noteId = playNote(fourthNoteMidi, 0.6, true);
+                     if (noteId) {
+                       activeChordNoteIdsRef.current.add(noteId);
+                     }
                    } else {
-                     // Normal 7th
-                     fourthNoteMidi = 60;
-                     while ((fourthNoteMidi % 12) !== seventhPc) fourthNoteMidi++;
-                     while (fourthNoteMidi < 60) fourthNoteMidi += 12;
-                     while (fourthNoteMidi > 72) fourthNoteMidi -= 12;
-                   }
-                   
-                   console.log('⏺ž• Adding 4th note:', fourthNoteMidi);
-                   const noteId = playNote(fourthNoteMidi, 0.6, true);
-                   if (noteId) {
-                     activeChordNoteIdsRef.current.add(noteId);
-                   }
-                 } else {
-                   // Remove the 4th note without re-triggering the triad
-                   console.log('🎵 Removing 4th note (stopping 7th only)');
-                   
-                   // Find the 7th note in active chord notes and stop it
-                   const ctx = audioContextRef.current;
-                   if (ctx) {
-                     const now = ctx.currentTime;
-                     
-                     // Find and stop the 7th note
-                     activeChordNoteIdsRef.current.forEach(noteId => {
-                       const nodes = activeNotesRef.current.get(noteId);
-                       if (nodes) {
-                         // Check if this note is the 7th
-                         const noteMidi = parseInt(noteId.split('-')[0]);
-                         if ((noteMidi % 12) === seventhPc) {
-                           console.log('🎵 Stopping 7th note:', noteMidi, 'PC:', seventhPc);
-                           nodes.gain.gain.cancelScheduledValues(now);
-                           nodes.gain.gain.setValueAtTime(nodes.gain.gain.value, now);
-                           nodes.gain.gain.linearRampToValueAtTime(0, now + 0.05); // Quick 50ms fade
-                           setTimeout(() => {
-                             stopNoteById(noteId);
-                             activeChordNoteIdsRef.current.delete(noteId);
-                           }, 100);
+                     // Remove the 4th note without re-triggering the triad
+                     console.log('🎵 Removing 4th note (stopping 7th only)');
+
+                     // Find the 7th note in active chord notes and stop it
+                     const ctx = audioContextRef.current;
+                     if (ctx) {
+                       const now = ctx.currentTime;
+
+                       // Find and stop the 7th note
+                       activeChordNoteIdsRef.current.forEach(noteId => {
+                         const nodes = activeNotesRef.current.get(noteId);
+                         if (nodes) {
+                           // Check if this note is the 7th
+                           const noteMidi = parseInt(noteId.split('-')[0]);
+                           if ((noteMidi % 12) === seventhPc) {
+                             console.log('🎵 Stopping 7th note:', noteMidi, 'PC:', seventhPc);
+                             nodes.gain.gain.cancelScheduledValues(now);
+                             nodes.gain.gain.setValueAtTime(nodes.gain.gain.value, now);
+                             nodes.gain.gain.linearRampToValueAtTime(0, now + 0.05); // Quick 50ms fade
+                             setTimeout(() => {
+                               stopNoteById(noteId);
+                               activeChordNoteIdsRef.current.delete(noteId);
+                             }, 100);
+                           }
                          }
-                       }
-                     });
+                       });
+                     }
                    }
                  }
                }
@@ -5784,10 +5799,15 @@ useEffect(() => {
     const fitted = preview.fitNotesToWindowPreserveInversion(absRootPos, KBD_LOW, KBD_HIGH);
     setLatchedAbsNotes(fitted);
     latchedAbsNotesRef.current = fitted; // ✅ v4.1.0: Update ref synchronously for performance pad keys
-    
+
+    // ✅ Feed wedge notes to engine for detection
+    console.log('🎵 previewFn: updating rightHeld and calling detectV4 with notes:', fitted);
+    rightHeld.current = new Set(fitted);
+    detectV4(); // Re-run detection with wedge notes
+
     // ✅ Update label based on ACTUAL notes played
     let chordLabel = realizeFunction(fn, renderKey);
-    
+
     // Only add 7th suffix if we're actually playing with 7th
     if (with7th && chordDef && chordDef.seventh !== undefined) {
       // Add 7th suffix based on chord quality
@@ -5809,9 +5829,9 @@ useEffect(() => {
       // Special case: V7 played as triad should show as "G" not "G7"
       chordLabel = chordLabel.replace("7", "");
     }
-    
+
     setActiveWithTrail(fn, chordLabel);
-    
+
     if (audioEnabledRef.current) {
       playChordWithVoiceLeading(pcs);
     }
