@@ -1,12 +1,30 @@
 /*
- * HarmonyWheel.tsx — v4.1.5 🎯 FIXED: PAR G MAJOR + ORANGE TICKER
+ * HarmonyWheel.tsx — v4.1.9 🎯 FIXED: FUNCTIONAL DIMS ALWAYS USE SHARP NAMES
  *
  *
- * 🔧 v4.1.5 CHANGES:
- * - FIXED: G major now allowed in PAR space (was incorrectly exiting to HOME)
- * - FIXED: Only soonest event shows orange in ticker (was showing both if within 12h)
- * - Engine v4.0.66: G major triad (3 notes) now stays in PAR alongside G7 (4 notes)
- * - Result: Playing G or G7 in Cm (PAR) stays in space as per Bible line 114
+ * 🔧 v4.1.9 CHANGES (CRITICAL):
+ * - FIXED: Functional diminished chords now ALWAYS use sharp names (C#, F#, G#)
+ * - Theory.ts v4.1.9: Relative PC 1/6/8 → SHARP_NAMES[pc] (not pcNameForKey)
+ * - Reason: Named after THIRD of dominant - major thirds are always sharp
+ * - Result: Key F + C#dim7 → "C#dim7" (not "Dbdim7") ✓
+ * - Examples: A7 third=C#, D7 third=F#, E7 third=G# (in ALL keys)
+ *
+ * 🔧 v4.1.8 CHANGES:
+ * - Diminished chord naming now FULLY functional (transposes correctly to all keys)
+ * - Theory.ts v4.1.8: dimRootName() uses RELATIVE PC to determine functional dims
+ * - System is now 100% function-centric
+ *
+ * 🔧 v4.1.7b CHANGES:
+ * - FIXED: Keyboard erasers now display for single notes and intervals (not just chords)
+ * - Theory.ts v4.1.7b: internalAbsoluteName() returns note names for 1-2 note inputs
+ * - Single note shows note name (e.g., "C") with blue eraser (treated as root)
+ * - Dyad shows lowest note name with blue eraser
+ * - Result: Playing any notes (1, 2, or 3+) shows erasers on keyboard ✓
+ *
+ * 🔧 v4.1.7 CHANGES (CRITICAL):
+ * - FIXED: Diminished chord false positives (Bbdim7 in key G no longer lights V/V wedge)
+ * - Mapping.ts v4.1.7: Root-based dim chord detection using RELATIVE PC (not set-based)
+ * - Detection uses RELATIVE PC (function-centric) across all keys ✓
  *
  * 🔧 v4.1.4 CHANGES:
  * - FIXED: Key selector now works for MIDI detection (was using stale state in detectV4)
@@ -154,7 +172,7 @@ import {
   parseSongMetadata
 } from "./lib/songManager";
 
-const HW_VERSION = 'v4.1.5';
+const HW_VERSION = 'v4.1.9';
 
 // v4.0.24: Fallback constants for old code (not used by new engine)
 const EPS_DEG = 0.1;
@@ -1208,7 +1226,7 @@ useEffect(() => {
   };
 
   const parseAndLoadSequence = ()=>{
-    const APP_VERSION = "v4.1.5-par-g-major-orange-ticker";
+    const APP_VERSION = "v4.1.9-functional-dims-always-sharp";
     // console.log('=== PARSE AND LOAD START ===');
     console.log('ðŸ·ï¸  APP VERSION:', APP_VERSION);
     console.log('Input text:', inputText);
@@ -9269,4 +9287,4 @@ useEffect(() => {
 }
 
 
-// EOF - HarmonyWheel.tsx v4.1.5
+// EOF - HarmonyWheel.tsx v4.1.9

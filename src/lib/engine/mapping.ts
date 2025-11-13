@@ -1,30 +1,33 @@
 /**
- * mapping.ts — v4.0.45
- * 
+ * mapping.ts — v4.1.7
+ *
  * 📁 INSTALL TO: src/lib/engine/mapping.ts
- * 🔄 VERSION: 4.0.45 (CRITICAL FIX: F#dim and G#dim ALWAYS map to V/V and V/vi - NOT gated by showBonusWedges)
- * 
+ * 🔄 VERSION: 4.1.7 (CRITICAL FIX: Diminished chords now check ROOT, not just pitch class sets)
+ *
  * Maps detected chords to harmonic functions
- * 
- * CRITICAL CHANGES:
- * - Check 7th chords (size === 4) BEFORE triads (size === 3)
- * - Validate exact 4th note for 7ths (e.g., Imaj7 needs [11], not just any 4th note)
- * - Added detailed logging for Am7 and Bbmaj7 debugging
- * 
- * Fixed bugs:
- * - Am7 [9,0,4,7] was matching I (wrong!) → now matches vi7 ✅
- * - Bbmaj7 [10,2,5,9] was matching ii (wrong!) → now matches ♭VII7 ✅
- * 
- * BONUS WEDGES:
- * - V/ii function: A7 in C, D7 in F, E7 in G
- * - ii/vi function: Bm7♭5 in C, F#m7♭5 in F, C#m7♭5 in G
- * Pattern [9,1,4,7] for V/ii is RELATIVE to current key.
- * 
- * INCLUDES: Quality and size checks from v3.5.8
+ *
+ * CHANGES v4.1.7:
+ * - CRITICAL: Diminished chords now check the ROOT note (from bass/chord name)
+ * - Fixed: Bbdim7 in key G no longer triggers V/V (was matching set {0,3,6,9})
+ * - Bible compliance: "Bass determines function" for all diminished chords
+ * - Added getRootPCFromChordName() helper to extract root from theory.ts naming
+ * - Detection uses RELATIVE PC (function-centric), naming uses absolute for C#/F#/G#
+ *
+ * DIMINISHED RULES (Bible Section C):
+ * - F#° family (relative PC 6) → V/V wedge (F#° in C, C#° in G, G#° in D)
+ * - C#° family (relative PC 1) → V/ii BONUS wedge (C#° in C, G#° in G, D#° in D)
+ * - G#° family (relative PC 8) → V/vi wedge (G#° in C, D#° in G, A#° in D)
+ * - B° family (relative PC 11) → ii/vi BONUS wedge (B° in C, F#° in G, C#° in D)
+ * - Bdim7 with B bass → V7 (G7♭9 substitute)
+ * - All others → ILLEGAL (no wedge, display name only)
+ *
+ * NAMING vs DETECTION:
+ * - Naming: Absolute PCs 1, 6, 8 ALWAYS sharp (C#, F#, G#) - see theory.ts
+ * - Detection: Uses relative PC to determine function in current key
  */
 
 import type { DetectionResult, ChordQuality } from './detection';
-import type { Fn } from '../types';
+import type { Fn, KeyName } from '../types';
 
 export interface FunctionResult {
   function: Fn;          // Proper Fn type instead of string
@@ -33,68 +36,118 @@ export interface FunctionResult {
 }
 
 /**
+ * Extract root pitch class from chord name
+ * Theory.ts generates names like "Bbdim7", "F#dim", "C#m7♭5"
+ * We need to parse the root note name and convert to PC
+ *
+ * @param chordName - Chord name from theory.ts (e.g., "Bbdim7", "F#dim")
+ * @returns Absolute pitch class 0-11, or null if unable to parse
+ */
+function getRootPCFromChordName(chordName: string): number | null {
+  if (!chordName) return null;
+
+  // Match root at start: one letter + optional accidental
+  const match = chordName.match(/^([A-G])([#♯b♭]*)/);
+  if (!match) return null;
+
+  const letter = match[1];
+  const accidental = match[2] || '';
+
+  // Base pitch classes (natural notes)
+  const basePCs: Record<string, number> = {
+    'C': 0, 'D': 2, 'E': 4, 'F': 5, 'G': 7, 'A': 9, 'B': 11
+  };
+
+  let pc = basePCs[letter];
+  if (pc === undefined) return null;
+
+  // Apply accidentals
+  for (const char of accidental) {
+    if (char === '#' || char === '♯') pc += 1;
+    if (char === 'b' || char === '♭') pc -= 1;
+  }
+
+  return ((pc % 12) + 12) % 12;
+}
+
+/**
  * Maps a chord to its function in the current key/space
- * 
+ *
  * @param detected - Detection result with chord name, quality, PCs
  * @param pcsRelative - Pitch classes relative to baseKey
  * @param showBonusWedges - Whether bonus wedges are enabled
+ * @param effectiveKey - Current key for calculating relative root PC
  * @returns Function result or null if illegal chord
  */
 export function mapChordToFunction(
   detected: DetectionResult,
   pcsRelative: Set<number>,
-  showBonusWedges: boolean
+  showBonusWedges: boolean,
+  effectiveKey?: KeyName
 ): FunctionResult | null {
-  
+
+  // Get key tonic PC for calculating relative root
+  const NAME_TO_PC: Record<KeyName, number> = {
+    "C": 0, "Db": 1, "D": 2, "Eb": 3, "E": 4, "F": 5,
+    "Gb": 6, "G": 7, "Ab": 8, "A": 9, "Bb": 10, "B": 11
+  };
+  const keyTonicPC = effectiveKey ? NAME_TO_PC[effectiveKey] : 0;
+
+  // ✅ v4.1.7: Extract root from chord name (set by theory.ts based on bass note)
+  const rootAbsolute = getRootPCFromChordName(detected.chordName);
+  const rootRelative = rootAbsolute !== null
+    ? (rootAbsolute - keyTonicPC + 12) % 12
+    : null;
+
   // CRITICAL: Check bonus wedges FIRST
   // (They contain subsets of diatonic chords, so must have priority)
-  
-  // ✅ F#dim and G#dim should ALWAYS map to V/V and V/vi (not gated by bonus mode)
-  // F#dim family (maps to V/V - same as D7)
-  const hasFSharpDim_triad = 
-    pcsRelative.has(6) && pcsRelative.has(9) && pcsRelative.has(0) &&
-    pcsRelative.size === 3 &&
-    detected.quality === "dim";
-  
-  const hasFSharpDim7 = 
-    pcsRelative.has(6) && pcsRelative.has(9) && pcsRelative.has(0) && pcsRelative.has(3) &&
-    pcsRelative.size === 4 &&
-    detected.quality === "dim7";
-  
-  if (hasFSharpDim_triad || hasFSharpDim7) {
+
+  // ✅ v4.1.7: F#dim family - check ROOT at PC 6 RELATIVE (Bible line 53-55)
+  // F#° in C, C#° in G, G#° in D, etc. - third of V/V in each key
+  const isFSharpDimFamily =
+    rootRelative === 6 &&
+    (detected.quality === "dim" || detected.quality === "dim7" || detected.quality === "halfdim7") &&
+    (pcsRelative.size === 3 || pcsRelative.size === 4);
+
+  if (isFSharpDimFamily) {
     return {
       function: "V/V",
       displayName: detected.chordName,
       isBonus: false
     };
   }
-  
-  // G#dim family (maps to V/vi - same as E7)
-  const hasGSharpDim_triad = 
-    pcsRelative.has(8) && pcsRelative.has(11) && pcsRelative.has(2) &&
-    pcsRelative.size === 3 &&
-    detected.quality === "dim";
-  
-  const hasGSharpDim7 = 
-    pcsRelative.has(8) && pcsRelative.has(11) && pcsRelative.has(2) && pcsRelative.has(5) &&
-    pcsRelative.size === 4 &&
-    detected.quality === "dim7";
-  
-  if (hasGSharpDim_triad || hasGSharpDim7) {
+
+  // ✅ v4.1.7: G#dim family - check ROOT at PC 8 RELATIVE (Bible line 62-64)
+  // G#° in C, D#° in G, A#° in D, etc. - third of V/vi in each key
+  // SPECIAL: G#ø7 (halfdim7) → display only, no lighting
+  const isGSharpDimFamily =
+    rootRelative === 8 &&
+    (detected.quality === "dim" || detected.quality === "dim7");
+
+  if (isGSharpDimFamily) {
     return {
       function: "V/vi",
       displayName: detected.chordName,
       isBonus: false
     };
   }
-  
+
+  // G#ø7 → display only (Bible line 64)
+  const isGSharpHalfdim7 =
+    rootRelative === 8 &&
+    detected.quality === "halfdim7";
+
+  if (isGSharpHalfdim7) {
+    return null; // Display only, no wedge lighting
+  }
+
   if (showBonusWedges) {
     // V/ii - Secondary dominant of ii (A7 in C, D7 in F, E7 in G)
     // Pattern: [9, 1, 4] triad or [9, 1, 4, 7] seventh
     // NOTE: A major triad CAN function as V/ii (common substitution)
     const hasV_ii_triad = pcsRelative.has(9) && pcsRelative.has(1) && pcsRelative.has(4);
     const hasV_ii_7th = hasV_ii_triad && pcsRelative.has(7);
-    
+
     if (hasV_ii_7th || (hasV_ii_triad && pcsRelative.size === 3)) {
       return {
         function: "V/ii",
@@ -102,103 +155,52 @@ export function mapChordToFunction(
         isBonus: true
       };
     }
-    
-    // C#dim family (also maps to V/ii - upper structure of A7)
-    // Pattern: [1,4,7] triad or [1,4,7,10] dim7
-    // ✅ QUALITY CHECK: Must be detected as dim quality
-    const hasCSharpDim_triad = 
-      pcsRelative.has(1) && pcsRelative.has(4) && pcsRelative.has(7) &&
-      pcsRelative.size === 3 &&
-      detected.quality === "dim";
-    
-    const hasCSharpDim7 = 
-      pcsRelative.has(1) && pcsRelative.has(4) && pcsRelative.has(7) && pcsRelative.has(10) &&
-      pcsRelative.size === 4 &&
-      detected.quality === "dim7";
-    
-    if (hasCSharpDim_triad || hasCSharpDim7) {
+
+    // ✅ v4.1.7: C#dim family - check ROOT at PC 1 RELATIVE (Bible line 57-60)
+    // C#° in C, G#° in G, D#° in D, etc. - third of V/ii in each key → V/ii BONUS
+    const isCSharpDimFamily =
+      rootRelative === 1 &&
+      (detected.quality === "dim" || detected.quality === "dim7" || detected.quality === "halfdim7") &&
+      (pcsRelative.size === 3 || pcsRelative.size === 4);
+
+    if (isCSharpDimFamily) {
       return {
         function: "V/ii",
         displayName: detected.chordName,
         isBonus: true
       };
     }
-    
-    // C#m7♭5 (also maps to V/ii - half-diminished vii of ii)
-    // Pattern: [1,4,7,11] (RELATIVE to key)
-    // ✅ QUALITY CHECK: Must be halfdim7
-    const hasCSharpM7b5 = 
-      pcsRelative.has(1) && pcsRelative.has(4) && pcsRelative.has(7) && pcsRelative.has(11) &&
-      pcsRelative.size === 4 &&
-      detected.quality === "halfdim7";
-    
-    if (hasCSharpM7b5) {
+
+    // ✅ v4.1.7: B° family - check ROOT at PC 11 relative (Bible line 66-71)
+    // B° in C, F#° in G, C#° in D, etc. → ii/vi BONUS
+    // SPECIAL CASE: Bdim7 with B bass → V7 (G7♭9), not ii/vi
+    const isBdimTriad =
+      rootRelative === 11 &&
+      detected.quality === "dim" &&
+      pcsRelative.size === 3;
+
+    const isBm7b5 =
+      rootRelative === 11 &&
+      detected.quality === "halfdim7" &&
+      pcsRelative.size === 4;
+
+    // ✅ v4.1.7: SPECIAL CASE - Bdim7 with B bass → V7 (Bible line 70)
+    // Bdim7 = G7♭9 substitute when B is in bass
+    const isBdim7WithBBass =
+      rootRelative === 11 &&
+      detected.quality === "dim7" &&
+      pcsRelative.size === 4;
+
+    if (isBdim7WithBBass) {
       return {
-        function: "V/ii",
+        function: "V7",
         displayName: detected.chordName,
-        isBonus: true
+        isBonus: false
       };
     }
-    
-    // F#m7♭5 (also maps to V/V - half-diminished vii of V)
-    // Pattern: [6,9,0,4] (RELATIVE to key)
-    // ✅ QUALITY CHECK: Must be halfdim7
-    const hasFSharpM7b5 = 
-      pcsRelative.has(6) && pcsRelative.has(9) && pcsRelative.has(0) && pcsRelative.has(4) &&
-      pcsRelative.size === 4 &&
-      detected.quality === "halfdim7";
-    
-    if (hasFSharpM7b5) {
-      return {
-        function: "V/V",
-        displayName: detected.chordName,
-        isBonus: true
-      };
-    }
-    
-    // ii/vi - Half-diminished vii of vi (Bm7♭5 in C, F#m7♭5 in F)
-    // Pattern: [11, 2, 5] dim triad or [11, 2, 5, 9] half-dim 7th
-    // ✅ QUALITY CHECK: Must be dim or halfdim7
-    // ✅ SIZE CHECK: Prevents Dm [2,5,9] from matching
-    const hasBdim_triad = 
-      pcsRelative.has(11) && pcsRelative.has(2) && pcsRelative.has(5) &&
-      pcsRelative.size === 3 &&
-      detected.quality === "dim";
-    
-    const hasBm7b5 = 
-      pcsRelative.has(11) && pcsRelative.has(2) && pcsRelative.has(5) && pcsRelative.has(9) &&
-      pcsRelative.size === 4 &&
-      detected.quality === "halfdim7";
-    
-    // DEBUG: Log Bm7b5 detection
-    if (pcsRelative.has(11) && pcsRelative.has(2) && pcsRelative.has(5)) {
-      console.log('🔍 Bm7b5 CHECK:', {
-        has11: pcsRelative.has(11),
-        has2: pcsRelative.has(2),
-        has5: pcsRelative.has(5),
-        has9: pcsRelative.has(9),
-        size: pcsRelative.size,
-        quality: detected.quality,
-        showBonus: showBonusWedges,
-        matched: hasBm7b5
-      });
-    }
-    
-    // SPECIAL CASE: Bdim7 with B in bass → maps to V (G7), not ii/vi
-    // Check if we have dim7 quality AND bass note is "11" relative PC
-    if (detected.quality === "dim7") {
-      const bassPcRel = (detected.bassNote % 12 - getTonicPC(detected.pcsAbsolute) + 12) % 12;
-      if (bassPcRel === 11) {
-        // Bdim7 with B bass in key of C → map to V7, not ii/vi
-        return {
-          function: "V7",
-          displayName: detected.chordName,
-          isBonus: false
-        };
-      }
-    }
-    
-    if (hasBm7b5 || hasBdim_triad) {
+
+    // B° and Bm7♭5 → ii/vi BONUS
+    if (isBdimTriad || isBm7b5) {
       return {
         function: "ii/vi",
         displayName: detected.chordName,
@@ -415,4 +417,4 @@ function getTonicPC(pcsAbsolute: Set<number>): number {
   return 0;
 }
 
-// EOF - mapping.ts v4.0.45
+// EOF - mapping.ts v4.1.7

@@ -1,12 +1,21 @@
 /*
- * theory.ts - v3.10.3
- * 
- * CHANGES FROM v3.10.2:
- * - Made dimRootName() key-aware to respect flat/sharp key centers
- * - Now uses FLAT_NAMES in flat keys (C, F, Bb, Eb, Ab, Db, Gb)
- * - Uses SHARP_NAMES in sharp keys (G, D, A, E, B)
- * - Fixes: Gbdim now shows in Eb (not F#dim), consistent across all keys
- * - Affects: dim, dim7, and m7♭5 chord spellings
+ * theory.ts - v4.1.9
+ *
+ * CHANGES FROM v4.1.8:
+ * - CRITICAL FIX: Functional dims now ALWAYS use sharp names (C#, F#, G#)
+ * - Reason: Named after THIRD of dominant - major thirds are always sharp
+ * - Relative PC 1 → SHARP_NAMES[pc] (third of A7 = C#, never Db)
+ * - Relative PC 6 → SHARP_NAMES[pc] (third of D7 = F#, never Gb)
+ * - Relative PC 8 → SHARP_NAMES[pc] (third of E7 = G#, never Ab)
+ * - Result: Key F + C#dim7 → "C#dim7" (not "Dbdim7") ✓
+ *
+ * CHANGES FROM v4.1.7b:
+ * - Diminished naming now FUNCTIONAL (works in all keys)
+ * - Uses RELATIVE PC (not absolute) to determine functional dims
+ *
+ * CHANGES FROM v4.1.7:
+ * - Fixed keyboard eraser display for single notes and intervals
+ * - internalAbsoluteName() now returns note names for 1-2 note inputs
  * 
  * CHANGES FROM v3.10.1:
  * - Added "V/ii" case to realizeFunction() (A7 in key of C)
@@ -67,10 +76,53 @@ const TPL_7THS_REAL = [
 
 const rot=(pc:number,r:number)=>((pc-r)%12+12)%12;
 const better=(a:AbsMatch|null,b:AbsMatch)=>!a?b:(b.rank!==a.rank? (b.rank>a.rank?b:a) : (b.matched!==a.matched? (b.matched>a.matched?b:a):a));
-// v3.10.3: Made dimRootName key-aware to respect flat/sharp key centers
-// In flat keys (C, F, Bb, Eb, Ab, Db, Gb), use flat names (Db, Eb, Gb, Ab, Bb)
-// In sharp keys (G, D, A, E, B), use sharp names (C#, F#, G#, A#)
-const dimRootName=(pc:number, baseKey: KeyName)=> (SHARP_KEY_CENTERS.has(baseKey) ? SHARP_NAMES : FLAT_NAMES)[pc];
+
+/**
+ * v4.1.9: Diminished chord naming - FUNCTIONAL (works in all keys)
+ *
+ * RULE: Diminished chords are named after the THIRD of the dominant they substitute
+ * - The third of a dominant 7th chord is ALWAYS a major third
+ * - Major thirds are ALWAYS spelled with sharps (C#, D#, F#, G#, A#)
+ *
+ * Functional diminished chords (relative PC):
+ * - Relative PC 1 → third of A7 (V/ii) → ALWAYS C# (never Db)
+ * - Relative PC 6 → third of D7 (V/V) → ALWAYS F# (never Gb)
+ * - Relative PC 8 → third of E7 (V/vi) → ALWAYS G# (never Ab)
+ * - Relative PC 11 → 7th degree (ii/vi function) → B natural
+ *
+ * Illegal diminished chords:
+ * - Relative PC 3 → ♭3 (use key's preference)
+ * - Relative PC 10 → ♭7 (use key's preference)
+ *
+ * Examples across keys:
+ * - Key C: relative PC 1 = absolute PC 1 → C#dim (third of A7)
+ * - Key F: relative PC 8 = absolute PC 1 → C#dim (third of A7, V/vi in F)
+ * - Key G: relative PC 1 = absolute PC 8 → G#dim (third of E7, V/ii in G)
+ */
+const dimRootName = (pc: number, baseKey: KeyName) => {
+  const NAME_TO_PC: Record<KeyName, number> = {
+    "C": 0, "Db": 1, "D": 2, "Eb": 3, "E": 4, "F": 5,
+    "Gb": 6, "G": 7, "Ab": 8, "A": 9, "Bb": 10, "B": 11
+  };
+
+  const keyTonicPC = NAME_TO_PC[baseKey];
+  const relativePc = (pc - keyTonicPC + 12) % 12;
+
+  // Functional diminished chords - name after the third of their target dominant
+  // These are ALWAYS the major third of a dominant 7th chord, so ALWAYS sharp
+  if (relativePc === 1) return SHARP_NAMES[pc];  // Third of A7 (V/ii)
+  if (relativePc === 6) return SHARP_NAMES[pc];  // Third of D7 (V/V)
+  if (relativePc === 8) return SHARP_NAMES[pc];  // Third of E7 (V/vi)
+  if (relativePc === 11) return "B";             // 7th degree (ii/vi function)
+
+  // Illegal diminished chords (♭3, ♭7) - use key's flat/natural preference
+  if (relativePc === 3 || relativePc === 10) {
+    return pcNameForKey(pc, baseKey);
+  }
+
+  // All other diminished chords - use key's sharp/flat preference
+  return (SHARP_KEY_CENTERS.has(baseKey) ? SHARP_NAMES : FLAT_NAMES)[pc];
+};
 
 function findDim7RootFromLowest(pcs: Set<number>, lowestPC: number): number | null {
   if (pcs.has(lowestPC) && 
@@ -83,6 +135,16 @@ function findDim7RootFromLowest(pcs: Set<number>, lowestPC: number): number | nu
 }
 
 export function internalAbsoluteName(pcsAbs:Set<number>, baseKey:KeyName, midiNotes?: number[]){
+  // ✅ v4.1.7b: Return note names for single notes and intervals (for keyboard eraser display)
+  if(pcsAbs.size === 1) {
+    const pc = Array.from(pcsAbs)[0];
+    return pcNameForKey(pc, baseKey);
+  }
+  if(pcsAbs.size === 2) {
+    // Return lowest note name for dyads
+    const sorted = Array.from(pcsAbs).sort((a,b) => a - b);
+    return pcNameForKey(sorted[0], baseKey);
+  }
   if(pcsAbs.size<3) return "";
   const list=[...pcsAbs];
   let best:AbsMatch|null=null;
@@ -186,4 +248,4 @@ export function getParKey(metaKey: KeyName): KeyName {
   return FLAT_NAMES[parPc];
 }
 
-// EOF - theory.ts v3.10.3
+// EOF - theory.ts v4.1.9

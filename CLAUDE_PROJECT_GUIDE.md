@@ -45,6 +45,28 @@ The Harmony Wheel is **function-centric**, not pitch-centric:
 - **Transposition = relabel chords, keep functions fixed**
 - **Spaces = lenses that re-anchor the tonic** (C in HOME, A in REL, F in SUB, Cm/E♭ in PAR)
 
+### Diminished Chord Naming (CRITICAL)
+
+**Diminished chords are named after the THIRD of the dominant they substitute:**
+- The third of a dominant 7th chord is ALWAYS a major third
+- Major thirds are ALWAYS spelled with sharps (never flats)
+- This is true in ALL keys, regardless of key signature
+
+**The Three Functional Diminished Chords:**
+- **Relative PC 1** → third of A7 (V/ii) → ALWAYS C# (never Db)
+- **Relative PC 6** → third of D7 (V/V) → ALWAYS F# (never Gb)
+- **Relative PC 8** → third of E7 (V/vi) → ALWAYS G# (never Ab)
+- **Relative PC 11** → 7th degree (ii/vi) → B natural
+
+**Examples:**
+- Key C: relative PC 1 = absolute PC 1 → C#dim (third of A7)
+- Key F: relative PC 8 = absolute PC 1 → C#dim (third of A7, which is V/vi in F)
+- Key G: relative PC 1 = absolute PC 8 → G#dim (third of E7, which is V/ii in G)
+
+**Implementation**: Uses RELATIVE PC position, always returns SHARP_NAMES for functional dims.
+
+**Location**: `lib/theory.ts` `dimRootName()` function (lines 102-114)
+
 ### The 4 Spaces (Key of C Example)
 
 **HOME** (Base major key)

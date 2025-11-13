@@ -1,11 +1,19 @@
 /**
- * index.ts — v4.0.70
+ * index.ts — v4.1.7
  *
  * 📁 INSTALL TO: src/lib/engine/index.ts
- * 🔄 VERSION: 4.0.70 (CRITICAL: Always re-map space transitions)
+ * 🔄 VERSION: 4.1.7 (CRITICAL: Diminished chords check root, not just pitch class sets)
  *
  * Main engine orchestrator - PURE, no React deps
  * Orchestrates: detection → mapping → spaces → stability
+ *
+ * CHANGES v4.1.7:
+ * - CRITICAL: Diminished chords now check ROOT note (from bass/chord name), not just pitch class sets
+ * - Bug: Bbdim7 in key G triggered V/V (matched set {0,3,6,9} any dim7 chord)
+ * - Solution: Extract root from chord name, check relative PC (F#° = PC 6 relative in ALL keys)
+ * - Bible compliance: "Bass determines function" for all diminished chords
+ * - Result: Bbdim7 in key G is now ILLEGAL (no wedge), C#dim7 correctly lights V/V
+ * - Added effectiveKey parameter to mapChordToFunction for root calculation
  *
  * CHANGES v4.0.70:
  * - CRITICAL: Always re-map ALL space transitions (enter/exit), not just unmapped ones
@@ -167,7 +175,8 @@ export function detectAndMap(
   const mapped = mapChordToFunction(
     detected,           // Pass full detection result (has quality!)
     pcsRelative,
-    showBonusWedges
+    showBonusWedges,
+    effectiveKey        // ✅ v4.1.7: Pass key for diminished root calculation
   );
 
   // Step 3b: TENTATIVE tap history update (may be overridden after re-mapping)
@@ -235,7 +244,7 @@ export function detectAndMap(
       pcsInDestination: Array.from(pcsInDestination)
     });
 
-    finalMapped = mapChordToFunction(detected, pcsInDestination, showBonusWedges);
+    finalMapped = mapChordToFunction(detected, pcsInDestination, showBonusWedges, destinationKey);
 
     if (finalMapped) {
       console.log('✅ Space transition chord mapped in destination:', finalMapped.function);
@@ -295,4 +304,4 @@ export function updateEngineState(
   };
 }
 
-// EOF - index.ts v4.0.70
+// EOF - index.ts v4.1.7

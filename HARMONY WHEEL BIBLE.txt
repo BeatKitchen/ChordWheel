@@ -71,9 +71,14 @@ All logic transposes automatically by function.
      – Other bass → no light; just label by inversion.
 
 5. **General dim rules**
-   • Enharmonic preference: flats over sharps except for C#, F#, G#.  
-   • Bass determines function; no bass = hold previous dominant (anti-steal).  
-   • Diminished mapping is suppressed if within “dominant-guard window” (L1 in Addendum).
+   • Enharmonic naming: C#, F#, G# are ALWAYS sharp (never Db, Gb, Ab).
+   • Reason: These name the THIRD of the dominant they substitute:
+     – F# = third of D7 (V/V)
+     – C# = third of A7 (V/ii)
+     – G# = third of E7 (V/vi)
+   • All other diminished chords follow key's sharp/flat preference.
+   • Bass determines function; no bass = hold previous dominant (anti-steal).
+   • Diminished mapping is suppressed if within "dominant-guard window" (L1 in Addendum).
 
 ────────────────────────
 D) SPACES — DEFINITIONS & LOGIC
