@@ -1,11 +1,16 @@
 /**
- * index.ts — v4.1.7
+ * index.ts — v4.2.1
  *
  * 📁 INSTALL TO: src/lib/engine/index.ts
- * 🔄 VERSION: 4.1.7 (CRITICAL: Diminished chords check root, not just pitch class sets)
+ * 🔄 VERSION: 4.2.1 (CRITICAL: Bonus wedges now only appear in HOME space)
  *
  * Main engine orchestrator - PURE, no React deps
  * Orchestrates: detection → mapping → spaces → stability
+ *
+ * CHANGES v4.2.1:
+ * - CRITICAL: Bonus wedges (V/ii, ii/vi) now ONLY appear in HOME space
+ * - Pass currentSpace parameter to mapChordToFunction() at both call sites
+ * - Prevents bonus wedges from blocking space exits (e.g., C in PAR → HOME)
  *
  * CHANGES v4.1.7:
  * - CRITICAL: Diminished chords now check ROOT note (from bass/chord name), not just pitch class sets
@@ -176,7 +181,8 @@ export function detectAndMap(
     detected,           // Pass full detection result (has quality!)
     pcsRelative,
     showBonusWedges,
-    effectiveKey        // ✅ v4.1.7: Pass key for diminished root calculation
+    effectiveKey,       // ✅ v4.1.7: Pass key for diminished root calculation
+    state.currentSpace  // ✅ v4.2.1: Pass space - bonus wedges only in HOME
   );
 
   // Step 3b: TENTATIVE tap history update (may be overridden after re-mapping)
@@ -244,7 +250,13 @@ export function detectAndMap(
       pcsInDestination: Array.from(pcsInDestination)
     });
 
-    finalMapped = mapChordToFunction(detected, pcsInDestination, showBonusWedges, destinationKey);
+    finalMapped = mapChordToFunction(
+      detected,
+      pcsInDestination,
+      showBonusWedges,
+      destinationKey,
+      spaceAction.action === "enter" ? spaceAction.newSpace : "HOME"  // ✅ v4.2.1: Destination space
+    );
 
     if (finalMapped) {
       console.log('✅ Space transition chord mapped in destination:', finalMapped.function);

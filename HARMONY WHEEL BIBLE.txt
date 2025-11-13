@@ -114,10 +114,11 @@ PARALLEL (PAR)
 • Entry: Cm, E♭, A♭, D♭.
 • While in PAR:
   – Cm, D♭, E♭, A♭, Fm/Fm7 = stay.
+  – C major = exit HOME (relative major of Cm/E♭).
   – F or F7 = exit HOME.
   – Gm = jump to SUB.
   – G7 = allowed (no exit).
-• Exit: F/F7 or Gm.
+• Exit: C major, F/F7, or Gm.
 • Tonic minor omits 7th (no harmonic/minor ambiguity).
 
 ────────────────────────

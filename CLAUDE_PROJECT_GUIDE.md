@@ -96,7 +96,7 @@ The Harmony Wheel is **function-centric**, not pitch-centric:
 - Tonic: Cm or relative E♭
 - Entry: Cm, E♭, A♭, D♭
 - Stay: Cm, D♭, E♭, A♭, Fm/Fm7, G7
-- Exit: F/F7 → HOME, Gm → SUB
+- Exit: **C major** → HOME (relative major of Cm/E♭), F/F7 → HOME, Gm → SUB
 
 ### Dual-Key Architecture
 The engine uses TWO keys simultaneously:
@@ -340,7 +340,7 @@ Before marking ANY task complete:
 
 ---
 
-## 9. Current State (v4.0.70)
+## 9. Current State (v4.2.1)
 
 ### Working Features
 - ✅ All 12 major keys with MIDI transpose
@@ -354,7 +354,10 @@ Before marking ANY task complete:
 - ✅ Performance pad ref/state synchronization (v4.0.70)
 - ✅ Sequencer handles zero-duration items without crashing (v4.0.70)
 - ✅ Dual-key architecture (effective + base)
-- ✅ Bonus wedges (V/ii, ii/vi)
+- ✅ Bonus wedges (V/ii, ii/vi) - **ONLY in HOME space** (v4.2.1)
+- ✅ Suspended chords (sus2, sus4) - bass-dependent detection (v4.2.0)
+- ✅ Augmented chords - bass-dependent, enharmonic naming (v4.2.0)
+- ✅ C major exits PAR to HOME - relative major of Cm/Eb (v4.2.1)
 - ✅ Stability debouncing
 
 ### Keyboard Shortcuts (Performance Mode)

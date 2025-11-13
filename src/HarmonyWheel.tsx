@@ -3705,9 +3705,10 @@ useEffect(() => {
     
     setCenterLabel(result.chordName);
     if (result.shouldUpdate) { setActiveFn(result.function); }
-    
+
     // Handle bonus wedges (only for complete chords - 3+ notes)
-    if (result.isBonus && notes.length >= 3) {
+    // ✅ v4.2.1: Bonus wedges ONLY appear in HOME space (defensive check)
+    if (result.isBonus && notes.length >= 3 && currentSpace === "HOME") {
       setBonusFunction(result.function); // Set function FIRST for positioning
       setBonusLabel(result.chordName);
       setBonusActive(true); // Set active LAST to ensure geometry is ready

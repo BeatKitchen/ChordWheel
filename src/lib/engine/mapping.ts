@@ -1,10 +1,16 @@
 /**
- * mapping.ts — v4.1.7
+ * mapping.ts — v4.2.1
  *
  * 📁 INSTALL TO: src/lib/engine/mapping.ts
- * 🔄 VERSION: 4.1.7 (CRITICAL FIX: Diminished chords now check ROOT, not just pitch class sets)
+ * 🔄 VERSION: 4.2.1 (CRITICAL FIX: Bonus wedges now only appear in HOME space)
  *
  * Maps detected chords to harmonic functions
+ *
+ * CHANGES v4.2.1:
+ * - CRITICAL: Bonus wedges (V/ii, ii/vi) now ONLY appear in HOME space
+ * - Fixed: Bonus wedges were appearing in PAR/SUB/REL spaces
+ * - Added currentSpace parameter to mapChordToFunction()
+ * - Bonus check now requires: showBonusWedges && currentSpace === "HOME"
  *
  * CHANGES v4.1.7:
  * - CRITICAL: Diminished chords now check the ROOT note (from bass/chord name)
@@ -28,6 +34,7 @@
 
 import type { DetectionResult, ChordQuality } from './detection';
 import type { Fn, KeyName } from '../types';
+import type { Space } from './spaces';
 
 export interface FunctionResult {
   function: Fn;          // Proper Fn type instead of string
@@ -77,13 +84,15 @@ function getRootPCFromChordName(chordName: string): number | null {
  * @param pcsRelative - Pitch classes relative to baseKey
  * @param showBonusWedges - Whether bonus wedges are enabled
  * @param effectiveKey - Current key for calculating relative root PC
+ * @param currentSpace - Current space (HOME/SUB/PAR/REL) - bonus wedges only in HOME
  * @returns Function result or null if illegal chord
  */
 export function mapChordToFunction(
   detected: DetectionResult,
   pcsRelative: Set<number>,
   showBonusWedges: boolean,
-  effectiveKey?: KeyName
+  effectiveKey?: KeyName,
+  currentSpace?: Space
 ): FunctionResult | null {
 
   // Get key tonic PC for calculating relative root
@@ -141,7 +150,8 @@ export function mapChordToFunction(
     return null; // Display only, no wedge lighting
   }
 
-  if (showBonusWedges) {
+  // ✅ v4.2.1: Bonus wedges ONLY appear in HOME space
+  if (showBonusWedges && currentSpace === "HOME") {
     // V/ii - Secondary dominant of ii (A7 in C, D7 in F, E7 in G)
     // Pattern: [9, 1, 4] triad or [9, 1, 4, 7] seventh
     // NOTE: A major triad CAN function as V/ii (common substitution)

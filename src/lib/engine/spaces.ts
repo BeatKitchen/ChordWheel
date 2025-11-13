@@ -1,10 +1,14 @@
 /**
- * spaces.ts — v4.1.6
+ * spaces.ts — v4.2.1
  *
  * 📁 INSTALL TO: src/lib/engine/spaces.ts
- * 🔄 VERSION: 4.1.6 (FIXES: Illegal chords + SUB→PAR transitions)
+ * 🔄 VERSION: 4.2.1 (Added C major as PAR exit chord)
  *
  * Space transition logic for HOME/SUB/PAR/REL
+ *
+ * CHANGES v4.2.1:
+ * - Added C major as PAR exit chord (relative major of Cm/Eb)
+ * - C major [0,4,7] in PAR now exits to HOME
  *
  * CHANGES v4.1.6:
  * - CRITICAL: Illegal chords now STAY in current space (don't exit)
@@ -251,13 +255,20 @@ function evaluateParTransitions(
     return { action: "stay" };
   }
   
+  // EXIT TO HOME: C major (relative major of Cm/Eb)
+  // C: [0,4,7] or Cmaj7: [0,4,7,11]
+  const hasC = (pcsRel.has(0) && pcsRel.has(4) && pcsRel.has(7));
+  if (hasC) {
+    return { action: "exit", newSpace: "HOME" };
+  }
+
   // EXIT TO HOME: F/F7
   // F: [5,9,0] or F7: [5,9,0,3]
   const hasF = (pcsRel.has(5) && pcsRel.has(9) && pcsRel.has(0));
   if (hasF) {
     return { action: "exit", newSpace: "HOME" };
   }
-  
+
   // EXIT TO SUB: Gm
   // Gm: [7,10,2] or [7,10,2,5]
   const hasGm = (pcsRel.has(7) && pcsRel.has(10) && pcsRel.has(2));
