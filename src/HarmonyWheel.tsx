@@ -6469,14 +6469,29 @@ useEffect(() => {
     const songData = {
       text: inputText,
       key: baseKey,
-      title: "Shared Song"
+      title: songTitle || "Shared Song"
     };
     const json = JSON.stringify(songData);
     const base64 = btoa(unescape(encodeURIComponent(json)));
-    // ✅ Use current domain so sharing works on Vercel AND beatkitchen
-    const currentOrigin = window.location.origin;
-    const currentPath = window.location.pathname.replace(/\/$/, ''); // Remove trailing slash
-    const url = `${currentOrigin}${currentPath}?song=${base64}`;
+
+    // ✅ Check if running in iframe - if so, use parent URL (beatkitchen.io)
+    let targetOrigin = window.location.origin;
+    let targetPath = window.location.pathname.replace(/\/$/, '');
+
+    try {
+      // If in iframe and we can access parent, use parent's location
+      if (window.parent && window.parent !== window && window.parent.location.href) {
+        targetOrigin = window.parent.location.origin;
+        targetPath = window.parent.location.pathname.replace(/\/$/, '');
+        console.log('📤 Detected iframe - using parent URL:', targetOrigin + targetPath);
+      }
+    } catch (e) {
+      // Cross-origin iframe - can't access parent, use current location
+      console.log('📤 Cross-origin iframe or not in iframe - using current URL');
+    }
+
+    const url = `${targetOrigin}${targetPath}?song=${base64}`;
+    console.log('📤 Generated share URL:', url.substring(0, 100) + '...');
     return url;
   };
 
@@ -6739,7 +6754,7 @@ useEffect(() => {
             boxShadow: '0 4px 20px rgba(0,0,0,0.8)'
           }}
         >
-          <div style={{ fontSize: 48, marginBottom: 10 }}>ðŸ”Š</div>
+          <div style={{ fontSize: 48, marginBottom: 10 }}>📊</div>
           <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 8 }}>Tap to Enable Sound</div>
           <div style={{ fontSize: 12, color: '#9CA3AF' }}>iOS requires user interaction to play audio</div>
         </div>
@@ -6801,7 +6816,7 @@ useEffect(() => {
                 marginBottom: 12
               }}
             >
-              ðŸ“‹ Copy Link to Clipboard
+              📋 Copy Link to Clipboard
             </button>
             
             <button
@@ -8023,9 +8038,13 @@ useEffect(() => {
                                   }
                                 }}
                                 onMouseLeave={()=>{
-                                  rightHeld.current.delete(m); 
-                                  rightSus.current.delete(m); 
-                                  detect();
+                                  const wasHeld = rightHeld.current.has(m);
+                                  rightHeld.current.delete(m);
+                                  rightSus.current.delete(m);
+                                  // Only call detect() if this note was actually being played
+                                  if (wasHeld) {
+                                    detect();
+                                  }
                                   // Stop audio
                                   if (audioEnabledRef.current) {
                                     stopNote(m);
@@ -8079,9 +8098,13 @@ useEffect(() => {
                                   }
                                 }}
                                 onMouseLeave={()=>{
-                                  rightHeld.current.delete(m); 
-                                  rightSus.current.delete(m); 
-                                  detect();
+                                  const wasHeld = rightHeld.current.has(m);
+                                  rightHeld.current.delete(m);
+                                  rightSus.current.delete(m);
+                                  // Only call detect() if this note was actually being played
+                                  if (wasHeld) {
+                                    detect();
+                                  }
                                   // Stop audio
                                   if (audioEnabledRef.current) {
                                     stopNote(m);
