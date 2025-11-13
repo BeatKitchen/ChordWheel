@@ -524,7 +524,44 @@ useEffect(() => {
       setHasLoadedFromURL(false); // Reset flag when URL changes
     }
   }, [urlSearchParam]);
-  
+
+  // ✅ Listen for song parameter from parent page (iframe communication)
+  useEffect(() => {
+    const isInIframe = window.parent && window.parent !== window;
+
+    if (!isInIframe) return; // Not in iframe, skip
+
+    console.log('🔗 In iframe - setting up postMessage listener for parent URL params');
+
+    // Listen for messages from parent
+    const handleMessage = (event: MessageEvent) => {
+      // Security: only accept messages from beatkitchen.io
+      if (event.origin !== 'https://beatkitchen.io') {
+        console.log('⚠️ Rejected message from:', event.origin);
+        return;
+      }
+
+      console.log('📨 Received message from parent:', event.data);
+
+      if (event.data && event.data.type === 'PARENT_URL_PARAMS' && event.data.song) {
+        console.log('🎵 Parent has song parameter:', event.data.song.substring(0, 50) + '...');
+        // Set the URL search param as if it came from our own URL
+        setUrlSearchParam(`?song=${event.data.song}`);
+        setHasLoadedFromURL(false);
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+
+    // Ask parent for URL parameters
+    console.log('📤 Asking parent for URL parameters...');
+    window.parent.postMessage({ type: 'REQUEST_URL_PARAMS' }, 'https://beatkitchen.io');
+
+    return () => {
+      window.removeEventListener('message', handleMessage);
+    };
+  }, []);
+
   // Load from URL when params change
   useEffect(() => {
     if (hasLoadedFromURL) return; // Already loaded this URL
