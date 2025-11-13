@@ -6476,20 +6476,20 @@ useEffect(() => {
     const json = JSON.stringify(songData);
     const base64 = btoa(unescape(encodeURIComponent(json)));
 
-    // ✅ Check if running in iframe - if so, use parent URL (beatkitchen.io)
+    // ✅ Check if running in iframe - if so, use beatkitchen.io
     let targetOrigin = window.location.origin;
     let targetPath = window.location.pathname.replace(/\/$/, '');
 
-    try {
-      // If in iframe and we can access parent, use parent's location
-      if (window.parent && window.parent !== window && window.parent.location.href) {
-        targetOrigin = window.parent.location.origin;
-        targetPath = window.parent.location.pathname.replace(/\/$/, '');
-        console.log('📤 Detected iframe - using parent URL:', targetOrigin + targetPath);
-      }
-    } catch (e) {
-      // Cross-origin iframe - can't access parent, use current location
-      console.log('📤 Cross-origin iframe or not in iframe - using current URL');
+    // Detect if we're in an iframe
+    const isInIframe = window.parent && window.parent !== window;
+
+    if (isInIframe) {
+      // We're in an iframe - use beatkitchen.io URL
+      targetOrigin = 'https://beatkitchen.io';
+      targetPath = '/harmony';
+      console.log('📤 Detected iframe - using beatkitchen.io URL');
+    } else {
+      console.log('📤 Not in iframe - using current URL:', targetOrigin + targetPath);
     }
 
     const url = `${targetOrigin}${targetPath}?song=${base64}`;
