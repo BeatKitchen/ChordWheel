@@ -76,6 +76,30 @@ export const demoSongs: DemoSong[] = [
 @RHYTHM3 |x x / x x x / x|`,  // ← backtick HERE, before comma
   bannerMessage: "Use [[EXPERT mode|expert]] for sequencer. Join a [[Music Theory Gym|https://beatkitchen.io/classroom]] and we'll use this together!"
 },
+
+
+// NEW SONG FORMAT
+
+{
+  title: "BLACKBIRD",
+  content: `@TITLE Blackbird (Paul McCartney) @KEY G, @TEMPO 180, @LOOP
+
+|G Am7| G | * |
+| C # this is a stand in for A7: C#dim | D D#dim #functions like a B7 |
+|Em |#this chord might show up as EmMaj7 or even Ebaug: Em7|  
+| Em7 | A7 | Cm,| * | 
+| G | A7 | C | G | 
+
+@RHYTHM1 |x x x x|
+@RHYTHM2 |x / x /|
+@RHYTHM3 |x x / x x x / x|
+`,
+
+  bannerMessage: "Use [[EXPERT mode|expert]] for sequencer. Join a [[Music Theory Gym|https://beatkitchen.io/classroom]] and we'll use this together!"
+},
+
+// END NEW SONG FORMAT
+
   {
     title: "Simple Progression",
     content: "@TITLE Simple Song, @KEY C, @TEMPO 100, @LOOP, # Verse, C, Am, F, G, C, Am, F, G, # Chorus, F, G, C, Am, F, G, C, C\n\n@RHYTHM1 |x x x x|\n@RHYTHM2 |x / x /|\n@RHYTHM3 |x x / x x x / x|",

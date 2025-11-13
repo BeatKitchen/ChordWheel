@@ -1,5 +1,12 @@
 /*
- * theory.ts - v4.2.0
+ * theory.ts - v4.2.2
+ *
+ * CHANGES FROM v4.2.1:
+ * - CRITICAL FIX: ii/vi chord (m7♭5/dim on 7th degree) now names correctly in all keys
+ * - Bug: Em7♭5 in key F was named as "Bm7♭5" (hardcoded "B" for relative PC 11)
+ * - Fix: Use pcNameForKey() for 7th degree instead of hardcoded "B"
+ * - Result: Key F → Em7♭5 (not Bm7♭5), Key C → Bm7♭5 (correct)
+ * - m7♭5 chords are NOT symmetrical - rotation loop handles them correctly
  *
  * CHANGES FROM v4.1.9:
  * - Added bass-dependent detection for suspended chords (sus2, sus4)
@@ -121,7 +128,7 @@ const dimRootName = (pc: number, baseKey: KeyName) => {
   if (relativePc === 1) return SHARP_NAMES[pc];  // Third of A7 (V/ii)
   if (relativePc === 6) return SHARP_NAMES[pc];  // Third of D7 (V/V)
   if (relativePc === 8) return SHARP_NAMES[pc];  // Third of E7 (V/vi)
-  if (relativePc === 11) return "B";             // 7th degree (ii/vi function)
+  if (relativePc === 11) return pcNameForKey(pc, baseKey);  // 7th degree (ii/vi function) - use key's preference
 
   // Illegal diminished chords (♭3, ♭7) - use key's flat/natural preference
   if (relativePc === 3 || relativePc === 10) {
@@ -318,4 +325,4 @@ export function getParKey(metaKey: KeyName): KeyName {
   return FLAT_NAMES[parPc];
 }
 
-// EOF - theory.ts v4.2.0
+// EOF - theory.ts v4.2.2

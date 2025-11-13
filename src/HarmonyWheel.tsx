@@ -5191,7 +5191,13 @@ useEffect(() => {
     if(on && subdomActiveRef.current){ subSpinExit(); setSubdomActive(false); subdomLatchedRef.current=false; subHasSpunRef.current=false; }
     if(on && visitorActiveRef.current) setVisitorActive(false);
     setRelMinorActive(on);
-    if(on){ setActiveFn("vi"); setCenterLabel("Am"); stopDimFade(); }
+    if(on){ 
+      setActiveFn("vi"); 
+      // ✅ Use realizeFunction to get correct relative minor for current key
+      const relMinorChord = realizeFunction("vi", baseKeyRef.current);
+      setCenterLabel(relMinorChord); 
+      stopDimFade(); 
+    }
   };
   const toggleSubdom = ()=>{
     if (spaceLocked) return; // ✅ Locked
@@ -5604,10 +5610,33 @@ useEffect(() => {
                      activeChordNoteIdsRef.current.add(noteId);
                    }
                  } else {
-                   // Remove the 4th note - replay triad
-                   console.log('⏺ž– Removing 4th note');
-                   const triadPcs = chordDef2.triad.map(pc => (pc + keyPc) % 12);
-                   playChordWithVoiceLeading(triadPcs);
+                   // Remove the 4th note without re-triggering the triad
+                   console.log('🎵 Removing 4th note (stopping 7th only)');
+                   
+                   // Find the 7th note in active chord notes and stop it
+                   const ctx = audioContextRef.current;
+                   if (ctx) {
+                     const now = ctx.currentTime;
+                     
+                     // Find and stop the 7th note
+                     activeChordNoteIdsRef.current.forEach(noteId => {
+                       const nodes = activeNotesRef.current.get(noteId);
+                       if (nodes) {
+                         // Check if this note is the 7th
+                         const noteMidi = parseInt(noteId.split('-')[0]);
+                         if ((noteMidi % 12) === seventhPc) {
+                           console.log('🎵 Stopping 7th note:', noteMidi, 'PC:', seventhPc);
+                           nodes.gain.gain.cancelScheduledValues(now);
+                           nodes.gain.gain.setValueAtTime(nodes.gain.gain.value, now);
+                           nodes.gain.gain.linearRampToValueAtTime(0, now + 0.05); // Quick 50ms fade
+                           setTimeout(() => {
+                             stopNoteById(noteId);
+                             activeChordNoteIdsRef.current.delete(noteId);
+                           }, 100);
+                         }
+                       }
+                     });
+                   }
                  }
                }
              }
@@ -7494,8 +7523,10 @@ useEffect(() => {
                     }}>
                       {(() => {
                         const WINDOW_SIZE = 3;
-                        const start = Math.max(0, seqIndex - WINDOW_SIZE);
-                        const end = Math.min(sequence.length, seqIndex + WINDOW_SIZE + 1);
+                        // Center window on displayIndex (what's currently playing/highlighted) instead of seqIndex (next to play)
+                        const centerIdx = displayIndex >= 0 ? displayIndex : seqIndex;
+                        const start = Math.max(0, centerIdx - WINDOW_SIZE);
+                        const end = Math.min(sequence.length, centerIdx + WINDOW_SIZE + 1);
                         const visibleItems = sequence.slice(start, end);
                         
                         return (
@@ -8242,7 +8273,7 @@ useEffect(() => {
               
               
               {/* Row: Transport Controls + Step Record - v3.19.55: Play button first, fixed size */}
-              {skillLevel === "EXPERT" && sequence.length > 0 && (
+              {skillLevel === "EXPERT" &&  (
                 <div style={{display:'flex', gap:8, alignItems:'center', marginTop:6, marginBottom:8, flexWrap:'wrap'}}>
                   
                   {/* 1. Play/Stop - GREEN for ▷, RED for ⏺–  - FIRST BUTTON */}
