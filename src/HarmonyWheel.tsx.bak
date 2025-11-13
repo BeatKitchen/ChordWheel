@@ -570,7 +570,7 @@ useEffect(() => {
       // Auto-parse after states settle
       setTimeout(() => {
         console.log('🎵 Auto-parsing shared song');
-        parseAndLoadSequence(cleanText); // ✅ Pass cleanText directly to avoid state race condition
+        parseAndLoadSequence();
       }, 200);
       
       console.log('✅ Shared song loaded - will auto-parse');
@@ -1251,11 +1251,11 @@ useEffect(() => {
     const textToParse = textOverride !== undefined ? textOverride : inputText;
     // console.log('=== PARSE AND LOAD START ===');
     console.log('ðŸ·ï¸  APP VERSION:', APP_VERSION);
-    console.log('Input text:', textToParse);
-    setLoadedSongText(textToParse); // Save what we're loading
+    console.log('Input text:', inputText);
+    setLoadedSongText(inputText); // Save what we're loading
     
     // Handle empty input gracefully
-    if (!textToParse.trim()) {
+    if (!inputText.trim()) {
       setSequence([]);
       setSeqIndex(-1);
       setDisplayIndex(-1);
@@ -1272,7 +1272,7 @@ useEffect(() => {
 
     // ✅ v4.1.0: Parse @RHYTHM directives from FULL input (not just chord section)
     // Rhythm patterns come AFTER @RHYTHM marker, so we need to search entire text
-    const rhythmMatches1 = Array.from(textToParse.matchAll(/@RHYTHM1\s+([^\n]+)|@R1\s+([^\n]+)/gi));
+    const rhythmMatches1 = Array.from(inputText.matchAll(/@RHYTHM1\s+([^\n]+)|@R1\s+([^\n]+)/gi));
     for (const match of rhythmMatches1) {
       const arg = (match[1] || match[2] || '').trim();
       if (arg) {
@@ -1283,7 +1283,7 @@ useEffect(() => {
       }
     }
 
-    const rhythmMatches2 = Array.from(textToParse.matchAll(/@RHYTHM2\s+([^\n]+)|@R2\s+([^\n]+)/gi));
+    const rhythmMatches2 = Array.from(inputText.matchAll(/@RHYTHM2\s+([^\n]+)|@R2\s+([^\n]+)/gi));
     for (const match of rhythmMatches2) {
       const arg = (match[1] || match[2] || '').trim();
       if (arg) {
@@ -1294,7 +1294,7 @@ useEffect(() => {
       }
     }
 
-    const rhythmMatches3 = Array.from(textToParse.matchAll(/@RHYTHM3\s+([^\n]+)|@R3\s+([^\n]+)/gi));
+    const rhythmMatches3 = Array.from(inputText.matchAll(/@RHYTHM3\s+([^\n]+)|@R3\s+([^\n]+)/gi));
     for (const match of rhythmMatches3) {
       const arg = (match[1] || match[2] || '').trim();
       if (arg) {
@@ -1306,8 +1306,8 @@ useEffect(() => {
     }
 
     // ✅ STOP at @RHYTHM marker - don't parse rhythm patterns as chords
-    const rhythmIndex = textToParse.indexOf('@RHYTHM');
-    const chordSection = rhythmIndex !== -1 ? textToParse.substring(0, rhythmIndex) : textToParse;
+    const rhythmIndex = inputText.indexOf('@RHYTHM');
+    const chordSection = rhythmIndex !== -1 ? inputText.substring(0, rhythmIndex) : inputText;
     
     // ✅ Replace newlines with commas (each line = token)
     // This allows @RHYTHM directives on separate lines without manual commas
@@ -8012,9 +8012,9 @@ useEffect(() => {
                           <rect x={x} y={0} width={WW} height={HW}
                                 fill={fillColor} stroke="#1f2937"
                                 onMouseDown={()=>{
-                                  lastInputWasPreviewRef.current = false;
-                                  rightHeld.current.add(m);
-                                  if (USE_NEW_ENGINE) { detectV4(); } else { detect(); }
+                                  lastInputWasPreviewRef.current = false; 
+                                  rightHeld.current.add(m); 
+                                  detect();
                                   // Play audio
                                   if (audioEnabledRef.current) {
                                     playNote(m, 0.6, false);
@@ -8024,16 +8024,16 @@ useEffect(() => {
                                   // Support drag - if mouse is down, play note
                                   if (e.buttons === 1) { // Left button held
                                     rightHeld.current.add(m);
-                                    if (USE_NEW_ENGINE) { detectV4(); } else { detect(); }
+                                    detect();
                                     if (audioEnabledRef.current) {
                                       playNote(m, 0.6, false);
                                     }
                                   }
                                 }}
                                 onMouseUp={()=>{
-                                  rightHeld.current.delete(m);
-                                  rightSus.current.delete(m);
-                                  if (USE_NEW_ENGINE) { detectV4(); } else { detect(); }
+                                  rightHeld.current.delete(m); 
+                                  rightSus.current.delete(m); 
+                                  detect();
                                   // Stop audio
                                   if (audioEnabledRef.current) {
                                     stopNote(m);
@@ -8045,7 +8045,7 @@ useEffect(() => {
                                   rightSus.current.delete(m);
                                   // Only call detect() if this note was actually being played
                                   if (wasHeld) {
-                                    if (USE_NEW_ENGINE) { detectV4(); } else { detect(); }
+                                    detect();
                                   }
                                   // Stop audio
                                   if (audioEnabledRef.current) {
@@ -8072,9 +8072,9 @@ useEffect(() => {
                           <rect x={x} y={0} width={WB} height={HB}
                                 fill={fillColor} stroke={strokeColor}
                                 onMouseDown={()=>{
-                                  lastInputWasPreviewRef.current = false;
-                                  rightHeld.current.add(m);
-                                  if (USE_NEW_ENGINE) { detectV4(); } else { detect(); }
+                                  lastInputWasPreviewRef.current = false; 
+                                  rightHeld.current.add(m); 
+                                  detect();
                                   // Play audio
                                   if (audioEnabledRef.current) {
                                     playNote(m, 0.6, false);
@@ -8084,16 +8084,16 @@ useEffect(() => {
                                   // Support drag
                                   if (e.buttons === 1) {
                                     rightHeld.current.add(m);
-                                    if (USE_NEW_ENGINE) { detectV4(); } else { detect(); }
+                                    detect();
                                     if (audioEnabledRef.current) {
                                       playNote(m, 0.6, false);
                                     }
                                   }
                                 }}
                                 onMouseUp={()=>{
-                                  rightHeld.current.delete(m);
-                                  rightSus.current.delete(m);
-                                  if (USE_NEW_ENGINE) { detectV4(); } else { detect(); }
+                                  rightHeld.current.delete(m); 
+                                  rightSus.current.delete(m); 
+                                  detect();
                                   // Stop audio
                                   if (audioEnabledRef.current) {
                                     stopNote(m);
@@ -8105,7 +8105,7 @@ useEffect(() => {
                                   rightSus.current.delete(m);
                                   // Only call detect() if this note was actually being played
                                   if (wasHeld) {
-                                    if (USE_NEW_ENGINE) { detectV4(); } else { detect(); }
+                                    detect();
                                   }
                                   // Stop audio
                                   if (audioEnabledRef.current) {
@@ -8741,8 +8741,8 @@ useEffect(() => {
                     zIndex: 100000
                   }}>
                     {/* Top Left: Enter Button */}
-                    <button
-                      onClick={() => parseAndLoadSequence()}
+                    <button 
+                      onClick={parseAndLoadSequence}
                       style={{
                         padding:'8px 12px',
                         border: inputText !== loadedSongText ? '2px solid #EF4444' : '2px solid #39FF14',
