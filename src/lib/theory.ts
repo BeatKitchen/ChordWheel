@@ -1,5 +1,13 @@
 /*
- * theory.ts - v4.1.9
+ * theory.ts - v4.2.0
+ *
+ * CHANGES FROM v4.1.9:
+ * - Added bass-dependent detection for suspended chords (sus2, sus4)
+ * - Added bass-dependent detection for augmented chords (aug)
+ * - Augmented chords use enharmonic naming: C#, F#, G# ALWAYS sharp (never Db, Gb, Ab)
+ * - Reason: Aug chords built of major thirds, same rule as diminished thirds
+ * - Examples: Csus2 = Gsus4 rotated, Caug = Eaug = G#aug (same pitch classes)
+ * - All symmetrical chords display in hub with correct root, but do NOT map to wedges
  *
  * CHANGES FROM v4.1.8:
  * - CRITICAL FIX: Functional dims now ALWAYS use sharp names (C#, F#, G#)
@@ -64,7 +72,7 @@ export const subsetOf=(need:Set<number>,pool:Set<number>)=>{ for(const n of need
 const includesAll = (s:Set<number>, tpl: ReadonlyArray<number>) => tpl.every(p => s.has(p));
 
 /* absolute chord namer (trimmed) */
-type AbsMatch={root:number;qual:"maj7"|""|"m"|"7"|"m7"|"mMaj7"|"m7b5"|"dim"|"dim7";matched:number;rank:number};
+type AbsMatch={root:number;qual:"maj7"|""|"m"|"7"|"m7"|"mMaj7"|"m7b5"|"dim"|"dim7"|"sus2"|"sus4"|"aug";matched:number;rank:number};
 const TPL_7THS_REAL = [
   {q:"maj7", pcs:[0,4,7,11] as const, rank:3 as const},
   {q:"7",    pcs:[0,4,7,10] as const, rank:3 as const},
@@ -121,6 +129,32 @@ const dimRootName = (pc: number, baseKey: KeyName) => {
   }
 
   // All other diminished chords - use key's sharp/flat preference
+  return (SHARP_KEY_CENTERS.has(baseKey) ? SHARP_NAMES : FLAT_NAMES)[pc];
+};
+
+/**
+ * v4.2.0: Augmented chord naming - uses sharp names for major thirds
+ *
+ * RULE: Augmented chords are built entirely of major thirds
+ * - Major thirds at relative PC 1, 6, 8 are ALWAYS sharp (C#, F#, G#)
+ * - This matches the diminished chord naming system
+ * - Examples: Caug, G#aug (never Abaug in key of C)
+ */
+const augRootName = (pc: number, baseKey: KeyName) => {
+  const NAME_TO_PC: Record<KeyName, number> = {
+    "C": 0, "Db": 1, "D": 2, "Eb": 3, "E": 4, "F": 5,
+    "Gb": 6, "G": 7, "Ab": 8, "A": 9, "Bb": 10, "B": 11
+  };
+
+  const keyTonicPC = NAME_TO_PC[baseKey];
+  const relativePc = (pc - keyTonicPC + 12) % 12;
+
+  // Major thirds are ALWAYS sharp (same as diminished third rule)
+  if (relativePc === 1) return SHARP_NAMES[pc];  // C# in key of C
+  if (relativePc === 6) return SHARP_NAMES[pc];  // F# in key of C
+  if (relativePc === 8) return SHARP_NAMES[pc];  // G# in key of C
+
+  // All other augmented roots - use key's sharp/flat preference
   return (SHARP_KEY_CENTERS.has(baseKey) ? SHARP_NAMES : FLAT_NAMES)[pc];
 };
 
@@ -190,7 +224,43 @@ export function internalAbsoluteName(pcsAbs:Set<number>, baseKey:KeyName, midiNo
     const rootName = dimRootName(dim7Root, baseKey);
     return `${rootName}dim7`;
   }
-  
+
+  // ✅ Suspended chord detection (bass-dependent like dim7)
+  // sus2 and sus4 share same pitch classes when rotated, so we need bass note
+  // sus2: [0,2,7] - root + maj2 + P5
+  // sus4: [0,5,7] - root + P4 + P5
+  // Example: Csus2 [0,2,7] = Gsus4 [7,0,2] rotated
+  if (pcsAbs.size === 3 && midiNotes && midiNotes.length > 0) {
+    const lowestNote = Math.min(...midiNotes);
+    const lowestPC = pcFromMidi(lowestNote);
+
+    // Check if bass note forms augmented pattern first (symmetrical chord)
+    // aug: [0,4,8] - root + M3 + aug5
+    // Example: Caug [0,4,8] = Eaug [4,8,0] = G#aug [8,0,4] (all same PCs!)
+    if (pcsAbs.has(lowestPC) &&
+        pcsAbs.has((lowestPC + 4) % 12) &&
+        pcsAbs.has((lowestPC + 8) % 12)) {
+      const rootName = augRootName(lowestPC, baseKey);
+      return `${rootName}aug`;
+    }
+
+    // Check if bass note forms sus2 pattern
+    if (pcsAbs.has(lowestPC) &&
+        pcsAbs.has((lowestPC + 2) % 12) &&
+        pcsAbs.has((lowestPC + 7) % 12)) {
+      const rootName = pcNameForKey(lowestPC, baseKey);
+      return `${rootName}sus2`;
+    }
+
+    // Check if bass note forms sus4 pattern
+    if (pcsAbs.has(lowestPC) &&
+        pcsAbs.has((lowestPC + 5) % 12) &&
+        pcsAbs.has((lowestPC + 7) % 12)) {
+      const rootName = pcNameForKey(lowestPC, baseKey);
+      return `${rootName}sus4`;
+    }
+  }
+
   for(let r=0;r<12;r++){
     const rel=new Set(list.map(p=>rot(p,r)));
     for(const t of TPL_7THS_REAL) if(includesAll(rel,t.pcs)) best=better(best,{root:r,qual:t.q as any,matched:t.pcs.length,rank:t.rank});
@@ -248,4 +318,4 @@ export function getParKey(metaKey: KeyName): KeyName {
   return FLAT_NAMES[parPc];
 }
 
-// EOF - theory.ts v4.1.9
+// EOF - theory.ts v4.2.0
