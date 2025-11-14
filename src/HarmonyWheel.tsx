@@ -3740,10 +3740,16 @@ useEffect(() => {
           
           const rootPc = NAME_TO_PC[root as KeyName];
           let intervals: number[] = [0, 4, 7]; // Default: major triad
-          console.log('ðŸ”§ Root PC:', rootPc, 'intervals:', intervals);
-          
+          console.log('🔧 Root PC:', rootPc, 'intervals:', intervals);
+
+          // ✅ v4.5.2: Check for diminished first (dim, °, o)
+          const isDim = quality.includes('dim') || quality.includes('°') || quality.match(/^o(?!ut)/); // "o" but not "out"
+          if (isDim) {
+            intervals = [0, 3, 6]; // Diminished triad (root, m3, b5)
+          }
+
           // Check for minor (m or -)
-          const isMinor = quality.includes('m') && !quality.includes('maj') && !quality.includes('Maj') && !quality.includes('M');
+          const isMinor = !isDim && quality.includes('m') && !quality.includes('maj') && !quality.includes('Maj') && !quality.includes('M');
           if (isMinor) {
             intervals = [0, 3, 7]; // Minor triad
           }
@@ -3752,7 +3758,10 @@ useEffect(() => {
           if (quality.match(/\d+/)) {
             const hasExtension = quality.match(/7|9|11|13/);
             if (hasExtension) {
-              if (quality.includes('maj') || quality.includes('Maj') || quality.includes('M7')) {
+              if (isDim && quality.includes('7')) {
+                // ✅ v4.5.2: Diminished 7th (dim7, °7) gets bb7 (9 semitones)
+                intervals.push(9);
+              } else if (quality.includes('maj') || quality.includes('Maj') || quality.includes('M7')) {
                 intervals.push(11); // Major 7th
               } else if (isMinor) {
                 intervals.push(10); // Minor 7th
