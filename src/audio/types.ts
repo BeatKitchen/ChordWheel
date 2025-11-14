@@ -1,5 +1,5 @@
 /**
- * types.ts - v4.4.0
+ * types.ts - v4.5.0
  *
  * Audio synthesizer type definitions
  * Extracted from HarmonyWheel.tsx for clean architecture
@@ -24,21 +24,61 @@ export interface SynthParams {
   osc3Tune: number;
   osc3Pan: number;
 
-  // VCA Envelope
-  vcaA: number;                   // ms
-  vcaD: number;                   // ms
-  vcaS: number;                   // 0-1
-  vcaR: number;                   // ms
+  // Per-Oscillator VCA Envelopes
+  osc1VcaA: number;               // ms
+  osc1VcaD: number;               // ms
+  osc1VcaS: number;               // 0-1
+  osc1VcaR: number;               // ms
+  osc2VcaA?: number;              // Optional - fallback to osc1
+  osc2VcaD?: number;
+  osc2VcaS?: number;
+  osc2VcaR?: number;
+  osc3VcaA?: number;              // Optional - fallback to osc1
+  osc3VcaD?: number;
+  osc3VcaS?: number;
+  osc3VcaR?: number;
 
-  // VCF (Filter)
-  vcfType: BiquadFilterType;      // lowpass, highpass, bandpass
-  vcfFreq: number;                // Hz (20-20000)
-  vcfRes: number;                 // Q value (0.1-30)
-  vcfA: number;                   // ms
-  vcfD: number;                   // ms
-  vcfS: number;                   // 0-1
-  vcfR: number;                   // ms
-  vcfAmount: number;              // 0-1 (envelope depth)
+  // Per-Oscillator Filters
+  osc1FilterType: BiquadFilterType;
+  osc1FilterFreq: number;         // Hz (20-20000)
+  osc1FilterRes: number;          // Q value (0.1-30)
+  osc1FilterKeyTrack: number;     // 0-1 (0=fixed, 1=full tracking)
+  osc1FilterA: number;            // ms
+  osc1FilterD: number;            // ms
+  osc1FilterS: number;            // 0-1
+  osc1FilterR: number;            // ms
+  osc1FilterAmount: number;       // 0-1 (envelope depth)
+
+  osc2FilterType?: BiquadFilterType;  // Optional - fallback to osc1
+  osc2FilterFreq?: number;
+  osc2FilterRes?: number;
+  osc2FilterKeyTrack?: number;
+  osc2FilterA?: number;
+  osc2FilterD?: number;
+  osc2FilterS?: number;
+  osc2FilterR?: number;
+  osc2FilterAmount?: number;
+
+  osc3FilterType?: BiquadFilterType;  // Optional - fallback to osc1
+  osc3FilterFreq?: number;
+  osc3FilterRes?: number;
+  osc3FilterKeyTrack?: number;
+  osc3FilterA?: number;
+  osc3FilterD?: number;
+  osc3FilterS?: number;
+  osc3FilterR?: number;
+  osc3FilterAmount?: number;
+
+  // Output Filter (final stage)
+  outputFilterType: BiquadFilterType;
+  outputFilterFreq: number;       // Hz (20-20000)
+  outputFilterRes: number;        // Q value (0.1-30)
+  outputFilterKeyTrack: number;   // 0-1 (0=fixed, 1=full tracking)
+  outputFilterA: number;          // ms
+  outputFilterD: number;          // ms
+  outputFilterS: number;          // 0-1
+  outputFilterR: number;          // ms
+  outputFilterAmount: number;     // 0-1 (envelope depth)
 
   // LFO
   lfoSpeed: number;               // Hz (0.01-20) or tempo factor
@@ -56,32 +96,34 @@ export interface SynthParams {
   lfoTargetOsc2Phase: boolean;    // Modulate osc2 phase (FM)
   lfoTargetOsc3Phase: boolean;    // Modulate osc3 phase (FM)
 
-  // Master
-  masterGain: number;             // 0-1
+  // Output (final gain stage)
+  outputGain: number;             // 0-1
 }
 
 export interface ActiveNote {
   oscs: OscillatorNode[];
   oscGains: GainNode[];
+  oscFilters: BiquadFilterNode[];
+  oscVcas: GainNode[];
   panners: StereoPannerNode[];
-  filter: BiquadFilterNode;
-  vca: GainNode;
+  outputFilter: BiquadFilterNode;
   lfo?: OscillatorNode;
   lfoGain?: GainNode;
   synthParams: SynthParams;
+  midiNote: number;
 }
 
 export const DEFAULT_SYNTH_PARAMS: SynthParams = {
-  // Oscillator 1 (active by default - matches v4.3.1)
+  // Oscillator 1 (active by default)
   osc1Wave: 'sine',
   osc1Gain: 0.25,
   osc1Tune: 0,
   osc1Pan: 0,
 
-  // Oscillator 2 (off by default)
-  osc2Wave: 'sine',
-  osc2Gain: 0,
-  osc2Tune: 0,
+  // Oscillator 2 (subtle triangle layer, slightly detuned)
+  osc2Wave: 'triangle',
+  osc2Gain: 0.05,
+  osc2Tune: 10,
   osc2Pan: 0,
 
   // Oscillator 3 (off by default)
@@ -90,21 +132,40 @@ export const DEFAULT_SYNTH_PARAMS: SynthParams = {
   osc3Tune: 0,
   osc3Pan: 0,
 
-  // VCA (matches v4.3.1)
-  vcaA: 10,
-  vcaD: 90,
-  vcaS: 0.15,
-  vcaR: 50,
+  // Per-Oscillator VCA Envelopes (slower attack, longer release for warmth)
+  osc1VcaA: 30,
+  osc1VcaD: 90,
+  osc1VcaS: 0.6,
+  osc1VcaR: 1000,
+  // osc2/osc3 VCA optional (fallback to osc1)
 
-  // VCF (wide open by default)
-  vcfType: 'lowpass',
-  vcfFreq: 20000,
-  vcfRes: 1,
-  vcfA: 10,
-  vcfD: 90,
-  vcfS: 0.5,
-  vcfR: 50,
-  vcfAmount: 0,
+  // Per-Oscillator Filters (osc1 wide open, osc2 with key tracking)
+  osc1FilterType: 'lowpass',
+  osc1FilterFreq: 20000,
+  osc1FilterRes: 1,
+  osc1FilterKeyTrack: 0,
+  osc1FilterA: 10,
+  osc1FilterD: 90,
+  osc1FilterS: 0.5,
+  osc1FilterR: 50,
+  osc1FilterAmount: 0,
+
+  // osc2 filter with key tracking (prevents high notes from being cut)
+  osc2FilterFreq: 800,
+  osc2FilterRes: 1,
+  osc2FilterKeyTrack: 1,
+  // osc3 filters optional (fallback to osc1)
+
+  // Output Filter (wide open by default)
+  outputFilterType: 'lowpass',
+  outputFilterFreq: 20000,
+  outputFilterRes: 1,
+  outputFilterKeyTrack: 0,
+  outputFilterA: 10,
+  outputFilterD: 90,
+  outputFilterS: 0.5,
+  outputFilterR: 50,
+  outputFilterAmount: 0,
 
   // LFO (off by default)
   lfoSpeed: 4,
@@ -122,8 +183,8 @@ export const DEFAULT_SYNTH_PARAMS: SynthParams = {
   lfoTargetOsc2Phase: false,
   lfoTargetOsc3Phase: false,
 
-  // Master
-  masterGain: 0.8
+  // Output (final gain stage)
+  outputGain: 0.6
 };
 
-// EOF - types.ts v4.4.0
+// EOF - types.ts v4.5.0

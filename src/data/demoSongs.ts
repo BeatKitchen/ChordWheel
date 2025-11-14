@@ -216,8 +216,8 @@ export const demoSongs: DemoSong[] = [
     bannerMessage: "[[Expert mode|expert]] for sequencer. Join a [[gym|https://beatkitchen.io/classroom]] to learn some music theory!"
   },
   {
-    title: "Synth Defaults (v4.4.0)",
-    content: `@TITLE Synth Defaults - All Parameters Shown
+    title: "Synth Defaults (v4.5.0)",
+    content: `@TITLE Synth Defaults - Per-Oscillator Architecture
 @KEY C
 @TEMPO 120
 
@@ -237,21 +237,33 @@ export const demoSongs: DemoSong[] = [
 @osc3Tune 0
 @osc3Pan 0
 
-(VCA Envelope)
-@vcaA 10
-@vcaD 90
-@vcaS 0.15
-@vcaR 50
+(Per-Osc VCA Envelopes - osc2/3 optional, fallback to osc1)
+@osc1VcaA 10
+@osc1VcaD 90
+@osc1VcaS 0.15
+@osc1VcaR 50
 
-(VCF Filter - wide open by default)
-@vcfType lowpass
-@vcfFreq 20000
-@vcfRes 1
-@vcfA 10
-@vcfD 90
-@vcfS 0.5
-@vcfR 50
-@vcfAmount 0
+(Per-Osc Filters with Key Tracking - osc2/3 optional)
+@osc1FilterType lowpass
+@osc1FilterFreq 20000
+@osc1FilterRes 1
+@osc1FilterKeyTrack 0
+@osc1FilterA 10
+@osc1FilterD 90
+@osc1FilterS 0.5
+@osc1FilterR 50
+@osc1FilterAmount 0
+
+(Output Filter - final stage with key tracking)
+@outputFilterType lowpass
+@outputFilterFreq 20000
+@outputFilterRes 1
+@outputFilterKeyTrack 0
+@outputFilterA 10
+@outputFilterD 90
+@outputFilterS 0.5
+@outputFilterR 50
+@outputFilterAmount 0
 
 (LFO - off by default)
 @lfoSpeed 4
@@ -269,8 +281,8 @@ export const demoSongs: DemoSong[] = [
 @lfoTargetOsc2Phase off
 @lfoTargetOsc3Phase off
 
-(Master)
-@masterGain 0.8
+(Output Gain - final stage)
+@outputGain 0.8
 
 (Simple progression to test)
 |I| vi| IV| V7|
@@ -280,7 +292,90 @@ export const demoSongs: DemoSong[] = [
 @RHYTHM1 |x x x x|
 @RHYTHM2 |x / x /|
 @RHYTHM3 |x x / x x x / x|`,
-    bannerMessage: "🎹 v4.4.0 Synth defaults. Edit parameters to customize your sound!"
+    bannerMessage: "🎹 v4.5.0 Per-oscillator filters & envelopes with key tracking!"
+  },
+  {
+    title: "Default Patch",
+    content: `@TITLE Default Patch - v4.5.0 Sound
+@KEY C
+@TEMPO 120
+
+(Oscillators - osc1 + subtle osc2 detuned layer)
+@osc1Wave sine
+@osc1Gain 0.25
+@osc1Tune 0
+@osc1Pan 0
+
+@osc2Wave triangle
+@osc2Gain 0.05
+@osc2Tune 10
+@osc2Pan 0
+
+@osc3Wave sine
+@osc3Gain 0
+@osc3Tune 0
+@osc3Pan 0
+
+(Per-Osc VCA Envelopes - slower attack, longer release)
+@osc1VcaA 30
+@osc1VcaD 90
+@osc1VcaS 0.6
+@osc1VcaR 1000
+
+(Per-Osc Filters with Key Tracking)
+@osc1FilterType lowpass
+@osc1FilterFreq 20000
+@osc1FilterRes 1
+@osc1FilterKeyTrack 0
+@osc1FilterA 10
+@osc1FilterD 90
+@osc1FilterS 0.5
+@osc1FilterR 50
+@osc1FilterAmount 0
+
+@osc2FilterFreq 800
+@osc2FilterRes 1
+@osc2FilterKeyTrack 1
+
+(Output Filter - final stage with key tracking)
+@outputFilterType lowpass
+@outputFilterFreq 20000
+@outputFilterRes 1
+@outputFilterKeyTrack 0
+@outputFilterA 10
+@outputFilterD 90
+@outputFilterS 0.5
+@outputFilterR 50
+@outputFilterAmount 0
+
+(LFO - off by default)
+@lfoSpeed 4
+@lfoSpeedSync on
+@lfoDepth 0
+@lfoTargetVCA off
+@lfoTargetVCF off
+@lfoTargetOsc1Pitch off
+@lfoTargetOsc2Pitch off
+@lfoTargetOsc3Pitch off
+@lfoTargetOsc1Pan off
+@lfoTargetOsc2Pan off
+@lfoTargetOsc3Pan off
+@lfoTargetOsc1Phase off
+@lfoTargetOsc2Phase off
+@lfoTargetOsc3Phase off
+
+(Output Gain - final stage)
+@outputGain 0.6
+
+(Simple progression to test)
+|I| vi| IV| V7|
+|I| IV| ii| V7|
+|I| I|
+
+@RHYTHM1 |x x x x|
+@RHYTHM2 |x / x /|
+@RHYTHM3 |x x / x x x / x|`,
+    bannerMessage: "🎹 Default sound patch - warm and musical!"
   }
 ];
 

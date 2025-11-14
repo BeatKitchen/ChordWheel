@@ -1,5 +1,5 @@
 /*
- * HarmonyWheel.tsx — v4.4.0 🎹 SYNTHESIZER MODULE EXTRACTION
+ * HarmonyWheel.tsx — v4.5.0 🎹 SYNTHESIZER MODULE EXTRACTION
  *
  *
  * 🔧 v4.4.0 CHANGES:
@@ -237,7 +237,7 @@ import {
 } from "./audio/Synthesizer";
 import { SynthParams, DEFAULT_SYNTH_PARAMS } from "./audio/types";
 
-const HW_VERSION = 'v4.4.0';
+const HW_VERSION = 'v4.5.0';
 
 // v4.0.24: Fallback constants for old code (not used by new engine)
 const EPS_DEG = 0.1;
@@ -345,7 +345,7 @@ useEffect(() => {
   // ✅ v3.6.0 FIX: Ensure baseKeyRef always syncs with baseKey state
   // Critical for sequencer to use correct key context
   useEffect(() => {
-    console.log('ðŸ”‘ [v3.6.0] baseKey synced to ref:', baseKey);
+    console.log('🔑 [v3.6.0] baseKey synced to ref:', baseKey);
     baseKeyRef.current = baseKey;
   }, [baseKey]);
   const parDiatonic = useMemo(() => getDiatonicTablesFor(parKey), [parKey]);
@@ -488,7 +488,7 @@ useEffect(() => {
     // Global pointerup/mouseup to catch releases outside wedges (for drag)
     const handleGlobalMouseUp = () => {
       if (wedgeHeldRef.current) {
-        console.log('ðŸ›‘ Global mouseup - releasing wedge');
+        console.log('🛑 Global mouseup - releasing wedge');
         wedgeHeldRef.current = false;
         currentHeldFnRef.current = null;
         lastPlayedWith7thRef.current = null;
@@ -661,7 +661,7 @@ useEffect(() => {
     
     if (!songParam) return; // No song to load
     
-    console.log('ðŸ“¨ Received song param:', songParam.substring(0, 50) + '...');
+    console.log('📨 Received song param:', songParam.substring(0, 50) + '...');
     
     const songData = decodeSongFromURL(songParam);
     
@@ -836,7 +836,7 @@ useEffect(() => {
             originalNote: d1,
             transpose: effectiveTranspose,
             transposedNote,
-            noteName: `${['C','C#','D','Eb','E','F','F#','G','Ab','A','Bb','B'][d1 % 12]} ⏺†’ ${['C','C#','D','Eb','E','F','F#','G','Ab','A','Bb','B'][transposedNote % 12]}`
+            noteName: `${['C','C#','D','Eb','E','F','F#','G','Ab','A','Bb','B'][d1 % 12]} →’ ${['C','C#','D','Eb','E','F','F#','G','Ab','A','Bb','B'][transposedNote % 12]}`
           });
           rightHeld.current.add(transposedNote);
           if (sustainOn.current) rightSus.current.add(transposedNote);
@@ -1013,7 +1013,7 @@ useEffect(() => {
   
   // Debug: Log effective base key
   useEffect(() => {
-    console.log('ðŸŽ¯ EFFECTIVE BASE KEY:', effectiveBaseKey, '(original:', baseKey, ')');
+    console.log('🍎¯ EFFECTIVE BASE KEY:', effectiveBaseKey, '(original:', baseKey, ')');
   }, [effectiveBaseKey, baseKey]);
   
   // Ref for baseKey - uses effectiveBaseKey for transpose
@@ -1380,7 +1380,7 @@ useEffect(() => {
   };
 
   const parseAndLoadSequence = (textOverride?: string)=>{
-    const APP_VERSION = "v4.4.0-synth";
+    const APP_VERSION = "v4.5.0";
     // ✅ Use textOverride if provided (for URL loading), otherwise use inputText state
     const textToParse = textOverride !== undefined ? textOverride : inputText;
     // console.log('=== PARSE AND LOAD START ===');
@@ -1404,7 +1404,7 @@ useEffect(() => {
       return;
     }
 
-    // ✅ v4.4.0: Parse synth parameters from song text
+    // ✅ v4.5.0: Parse synth parameters from song text
     const parsedSynthParams = parseSynthParams(textToParse);
     setSynthParams(parsedSynthParams);
     synthParamsRef.current = parsedSynthParams;
@@ -1485,7 +1485,7 @@ useEffect(() => {
         let lastChordOrRest: string | null = null;
         
         for (const bar of bars) {
-          // Normalize whitespace: multiple spaces ⏺†’ single space
+          // Normalize whitespace: multiple spaces →’ single space
           const normalized = bar.trim().replace(/\s+/g, ' ');
           if (!normalized) continue;
           
@@ -1577,10 +1577,10 @@ useEffect(() => {
           const totalCount = groupedItems.filter(g => !g.isComment).reduce((sum, g) => sum + g.count, 0);
           const unitDuration = totalCount > 0 ? 1.0 / totalCount : 1.0;
           
-          console.log(`ðŸ“Š Bar: "${normalized}" ⏺†’ ${groupedItems.length} items, totalCount: ${totalCount}, unitDuration: ${unitDuration}`);
+          console.log(`ðŸ“Š Bar: "${normalized}" →’ ${groupedItems.length} items, totalCount: ${totalCount}, unitDuration: ${unitDuration}`);
           groupedItems.forEach((item, idx) => {
             const dur = item.isComment ? 0 : item.count * unitDuration;
-            // console.log(`  ${idx}: "${item.text}" count:${item.count} isComment:${item.isComment} ⏺†’ duration:${dur}`);
+            // console.log(`  ${idx}: "${item.text}" count:${item.count} isComment:${item.isComment} →’ duration:${dur}`);
           });
           
           // Add to rawTokens and track last chord
@@ -1623,7 +1623,7 @@ useEffect(() => {
       if (tok.startsWith("(") && (tok.endsWith(")") || tok.endsWith("):"))) {
         const hasColon = tok.endsWith("):");
         const commentText = hasColon ? tok.slice(1, -2).trim() : tok.slice(1, -1).trim();
-        console.log('ðŸ“ Parsing comment:', tok, '⏺†’ commentText:', commentText);
+        console.log('ðŸ“ Parsing comment:', tok, '→’ commentText:', commentText);
         // Comments always have zero duration
         // If hasColon, it will label the next chord
         return { kind:"comment", raw:tok, comment: commentText, duration: dur };
@@ -1670,21 +1670,21 @@ useEffect(() => {
           console.log('🎵 RHYTHM1 detected. cmd:', cmd, 'arg:', arg, 'length:', arg.length);
           const pattern = parseRhythmPattern(arg);
           setRhythmPattern1(pattern);
-          console.log('🎵 Rhythm Pattern 1:', arg, '⏺†’', pattern);
+          console.log('🎵 Rhythm Pattern 1:', arg, '→’', pattern);
           return { kind:"modifier", raw:tok, chord: `RHYTHM1:${arg}` };
         }
         if (upper === "RHYTHM2" || upper === "R2") {
           console.log('🎵 RHYTHM2 detected. cmd:', cmd, 'arg:', arg, 'length:', arg.length);
           const pattern = parseRhythmPattern(arg);
           setRhythmPattern2(pattern);
-          console.log('🎵 Rhythm Pattern 2:', arg, '⏺†’', pattern);
+          console.log('🎵 Rhythm Pattern 2:', arg, '→’', pattern);
           return { kind:"modifier", raw:tok, chord: `RHYTHM2:${arg}` };
         }
         if (upper === "RHYTHM3" || upper === "R3") {
           console.log('🎵 RHYTHM3 detected. cmd:', cmd, 'arg:', arg, 'length:', arg.length);
           const pattern = parseRhythmPattern(arg);
           setRhythmPattern3(pattern);
-          console.log('🎵 Rhythm Pattern 3:', arg, '⏺†’', pattern);
+          console.log('🎵 Rhythm Pattern 3:', arg, '→’', pattern);
           return { kind:"modifier", raw:tok, chord: `RHYTHM3:${arg}` };
         }
         
@@ -1713,7 +1713,7 @@ useEffect(() => {
         if (upper === "KEY" || upper === "K") {
           const keyArg = arg.trim();
           // NEW v3.2.5: Check if there's a chord after the key
-          // "@KEY Eb: Ebmaj7" ⏺†’ arg="Eb: Ebmaj7", split to get key and chord
+          // "@KEY Eb: Ebmaj7" →’ arg="Eb: Ebmaj7", split to get key and chord
           // Check for colon first (combined), then comma, then space
           let newKey: KeyName;
           let chordAfterKey = "";
@@ -1830,7 +1830,7 @@ useEffect(() => {
           if (isLower) chordName += 'm'; // Lowercase = minor
           if (quality) chordName += quality;
           
-          console.log('[PARSER] ✅ Converted roman numeral:', tok, '⏺†’', chordName, 'in key', currentKey);
+          console.log('[PARSER] ✅ Converted roman numeral:', tok, '→’', chordName, 'in key', currentKey);
           
           // Return as chord with original functional notation as raw
           return { kind:"chord", raw:tok, chord: chordName, duration: dur };
@@ -2027,7 +2027,7 @@ useEffect(() => {
     console.log('Calling applySeqItem for:', sequence[currentIdx]?.raw);
     const notesToPlay = applySeqItem(sequence[currentIdx]);
     
-    console.log('ðŸ"‹ Captured notes to play:', notesToPlay);
+    console.log('🔑‹ Captured notes to play:', notesToPlay);
 
     // ✅ v4.1.2: Update display BEFORE playing (sync visual with audio)
     if (notesToPlay.length > 0) {
@@ -2053,7 +2053,7 @@ useEffect(() => {
 
       // Play it with the captured notes
       if (audioEnabledRef.current) {
-        console.log('ðŸ"Š Playing:', sequence[currentIdx].raw, 'notes:', notesToPlay.length);
+        console.log('🔑Š Playing:', sequence[currentIdx].raw, 'notes:', notesToPlay.length);
         playChord(notesToPlay, 1.5);
       }
     } else {
@@ -2453,7 +2453,7 @@ useEffect(() => {
     if (it.kind==="title") return []; // Skip titles
     if (it.kind==="modifier" && it.chord){
       // ✅ Split modifier properly - get ALL parts after first colon
-      // "KEY:Eb:Ebmaj7" ⏺†’ m="KEY", arg="Eb:Ebmaj7"
+      // "KEY:Eb:Ebmaj7" →’ m="KEY", arg="Eb:Ebmaj7"
       const [m, ...restParts] = it.chord.split(":");
       const arg = restParts.join(":");
       
@@ -2520,7 +2520,7 @@ useEffect(() => {
       return [];
     }
     if (it.kind==="chord" && it.chord){
-      // ðŸŽ¯ CRITICAL: Simulate MIDI input to use IDENTICAL detection logic!
+      // 🍎¯ CRITICAL: Simulate MIDI input to use IDENTICAL detection logic!
       // This makes sequencer behavior match keyboard playing exactly.
       
       const chordName = it.chord.trim();
@@ -2545,7 +2545,7 @@ useEffect(() => {
         'A#': 'Bb'
       };
       if (sharpToFlat[root]) {
-        console.log(`ðŸ”„ Converting ${root} ⏺†’ ${sharpToFlat[root]}`);
+        console.log(`ðŸ”„ Converting ${root} →’ ${sharpToFlat[root]}`);
         root = sharpToFlat[root];
       }
       
@@ -2646,7 +2646,7 @@ useEffect(() => {
       // ✅ v3.6.0 CRITICAL FIX: Force baseKeyRef sync before detection
       // ✅ v3.8.0 CRITICAL FIX: Sync to effectiveBaseKey (respects transpose!)
       // Bug: Was syncing to baseKey, so transpose didn't affect detection
-      // Example: In Eb with transpose to C, Ab⏺†’F transposed but detected in Eb patterns
+      // Example: In Eb with transpose to C, Ab→’F transposed but detected in Eb patterns
       // Ensures sequencer chords are detected in correct key context
       // ✅ v4.1.1: DON'T change baseKeyRef - v4 engine needs untransposed baseKey
       // baseKeyRef.current = effectiveBaseKey; // OLD v3.8.0 code - WRONG for v4!
@@ -3500,7 +3500,7 @@ useEffect(() => {
 
   const setActiveWithTrail=(fn:Fn,label:string)=>{ 
     const fullStack = new Error().stack?.split('\n').slice(1, 8).join('\n');
-    console.log('ðŸŽ¯ setActiveWithTrail called:', { fn, label, stepRecord: stepRecordRef.current });
+    console.log('🍎¯ setActiveWithTrail called:', { fn, label, stepRecord: stepRecordRef.current });
     console.log('ðŸ“ Stack trace:', fullStack);
     
     // ✅ Save for MIDI latch and cancel any pending clear timer
@@ -3573,7 +3573,7 @@ useEffect(() => {
       return false;
     })();
     
-    console.log('ðŸŽ­ shouldShowBonusOverlay:', {
+    console.log('🍎­ shouldShowBonusOverlay:', {
       skillLevel: skillLevelRef.current,
       showBonusWedges: showBonusWedgesRef.current,
       result
@@ -3583,7 +3583,7 @@ useEffect(() => {
   };
   
   const centerOnly=(t:string)=>{ 
-    console.log('ðŸŽ¯ centerOnly called:', { t, stepRecord: stepRecordRef.current });
+    console.log('🍎¯ centerOnly called:', { t, stepRecord: stepRecordRef.current });
     
     // ✅ Save for MIDI latch and cancel any pending clear timer
     const cleaned = t.replace(/^[#@]\s*/, '').trim();
@@ -3729,13 +3729,13 @@ useEffect(() => {
           console.log('ðŸ”§ Parsed root:', root, 'quality:', quality);
           
           // Normalize quality string for better parsing
-          // Handle alternate notations: A- ⏺†’ Am, AM7 ⏺†’ AMaj7, Bm7-5 ⏺†’ Bm7b5
+          // Handle alternate notations: A- →’ Am, AM7 →’ AMaj7, Bm7-5 →’ Bm7b5
           quality = quality
-            .replace(/^-(?!5)/, 'm')      // A- ⏺†’ Am (but not -5)
-            .replace(/^M7/, 'Maj7')       // AM7 ⏺†’ AMaj7, FM7 ⏺†’ FMaj7
-            .replace(/m-5/, 'm7b5')       // Bm-5 ⏺†’ Bm7b5
-            .replace(/-5/, '7b5')         // A-5 ⏺†’ A7b5
-            .replace(/Ã¸/, 'm7b5');        // AÃ¸ ⏺†’ Am7b5
+            .replace(/^-(?!5)/, 'm')      // A- →’ Am (but not -5)
+            .replace(/^M7/, 'Maj7')       // AM7 →’ AMaj7, FM7 →’ FMaj7
+            .replace(/m-5/, 'm7b5')       // Bm-5 →’ Bm7b5
+            .replace(/-5/, '7b5')         // A-5 →’ A7b5
+            .replace(/Ã¸/, 'm7b5');        // AÃ¸ →’ Am7b5
           
           const rootPc = NAME_TO_PC[root as KeyName];
           let intervals: number[] = [0, 4, 7]; // Default: major triad
@@ -4136,7 +4136,7 @@ useEffect(() => {
     const quality = match[2] || "";
     const isMinor = quality.startsWith("m") && !quality.startsWith("maj");
     
-    console.log('ðŸ”‘ Make My Key:', chordToUse, '(from theory.ts) ⏺†’ root:', rootName, 'isMinor:', isMinor, 'currentLabel:', centerLabel);
+    console.log('ðŸ”‘ Make My Key:', chordToUse, '(from theory.ts) →’ root:', rootName, 'isMinor:', isMinor, 'currentLabel:', centerLabel);
     
     if (isMinor) {
       // Minor chord - go to relative major and activate REL
@@ -4149,7 +4149,7 @@ useEffect(() => {
       // Get the key name directly from FLAT_NAMES (prefer flats for key centers)
       const relativeMajorKey = FLAT_NAMES[relativeMajorPc] as KeyName;
       
-      console.log('ðŸ”‘ Minor:', rootName, '(pc:', rootPc, ') ⏺†’ relative major:', relativeMajorKey, '(pc:', relativeMajorPc, '), current baseKey:', baseKeyRef.current);
+      console.log('ðŸ”‘ Minor:', rootName, '(pc:', rootPc, ') →’ relative major:', relativeMajorKey, '(pc:', relativeMajorPc, '), current baseKey:', baseKeyRef.current);
       
       // Check if we're already in the correct relative major
       if (baseKeyRef.current === relativeMajorKey) {
@@ -4173,7 +4173,7 @@ useEffect(() => {
       }
     } else {
       // Major chord (including 7ths, maj7s, etc.) - use root as new key
-      console.log('ðŸ”‘ Major ⏺†’ new key:', rootName);
+      console.log('ðŸ”‘ Major →’ new key:', rootName);
       if (FLAT_NAMES.includes(rootName)) {
         setBaseKey(rootName);
         // Force immediate state update
@@ -4320,9 +4320,9 @@ useEffect(() => {
   const wedgeNodes = useMemo(()=>{
     // v3.5.0: Use effectiveBaseKey for transpose support
     const renderKey:KeyName = visitorActive ? parKey : effectiveBaseKey;
-    // console.log('ðŸŽ¨ RENDERING WEDGES with key:', renderKey);
+    // console.log('🍎¨ RENDERING WEDGES with key:', renderKey);
     const dimK = Math.min(1, Math.max(0, dimFadeTick / DIM_FADE_MS));
-    const fadedBase = 0.5 + 0.5 * dimK; // 0.5⏺†’1.0
+    const fadedBase = 0.5 + 0.5 * dimK; // 0.5→’1.0
     return layout
       .filter(({fn}) => isFunctionVisible(fn)) // Filter by skill level
       .map(({fn,path,labelPos})=>{
@@ -4434,7 +4434,7 @@ useEffect(() => {
              console.log('ðŸ” onPointerEnter:', fn, 'buttons:', e.buttons, 'wedgeHeld:', wedgeHeldRef.current, 'currentFn:', currentHeldFnRef.current);
              
              if (e.buttons === 1 && wedgeHeldRef.current && currentHeldFnRef.current !== fn) {
-               console.log('ðŸŽ¯ Dragged to new wedge:', fn, 'from:', currentHeldFnRef.current);
+               console.log('🍎¯ Dragged to new wedge:', fn, 'from:', currentHeldFnRef.current);
                
                // Stop previous chord with quick fade
                const ctx = audioContextRef.current;
@@ -4824,9 +4824,9 @@ useEffect(() => {
       
       // === SUB SPACE EXITS ===
       if (subdomActiveRef.current) {
-        // iii (Am in F) ⏺†’ HOME (vi in C)
+        // iii (Am in F) →’ HOME (vi in C)
         if (fn === "iii") {
-          console.log('ðŸ”„ iii wedge in SUB ⏺†’ returning to HOME');
+          console.log('ðŸ”„ iii wedge in SUB →’ returning to HOME');
           setSubdomActive(false);
           subdomLatchedRef.current = false;
           subExitCandidateSinceRef.current = null;
@@ -4836,9 +4836,9 @@ useEffect(() => {
             console.log('✨ Highlighted vi wedge');
           }, 400);
         }
-        // I in SUB (F) ⏺†’ HOME (IV in C)
+        // I in SUB (F) →’ HOME (IV in C)
         else if (fn === "I") {
-          console.log('ðŸ”„ I wedge in SUB ⏺†’ returning to HOME');
+          console.log('ðŸ”„ I wedge in SUB →’ returning to HOME');
           setSubdomActive(false);
           subdomLatchedRef.current = false;
           subExitCandidateSinceRef.current = null;
@@ -4848,9 +4848,9 @@ useEffect(() => {
             console.log('✨ Highlighted IV wedge');
           }, 400);
         }
-        // V7 in SUB (C) ⏺†’ HOME (I in C)
+        // V7 in SUB (C) →’ HOME (I in C)
         else if (fn === "V7") {
-          console.log('ðŸ”„ V7 wedge in SUB ⏺†’ returning to HOME');
+          console.log('ðŸ”„ V7 wedge in SUB →’ returning to HOME');
           setSubdomActive(false);
           subdomLatchedRef.current = false;
           subExitCandidateSinceRef.current = null;
@@ -4864,27 +4864,27 @@ useEffect(() => {
       
       // === REL SPACE EXITS ===
       else if (relMinorActiveRef.current) {
-        // I in REL (Am) ⏺†’ HOME (vi in C)
+        // I in REL (Am) →’ HOME (vi in C)
         if (fn === "I") {
-          console.log('ðŸ”„ I wedge in REL ⏺†’ returning to HOME');
+          console.log('ðŸ”„ I wedge in REL →’ returning to HOME');
           setRelMinorActive(false);
           setTimeout(() => {
             setActiveFn("vi");
             console.log('✨ Highlighted vi wedge');
           }, 200);
         }
-        // ♭VII in REL (G) ⏺†’ HOME (V7 in C)  
+        // ♭VII in REL (G) →’ HOME (V7 in C)  
         else if (fn === "♭VII") {
-          console.log('ðŸ”„ ♭VII wedge in REL ⏺†’ returning to HOME');
+          console.log('ðŸ”„ ♭VII wedge in REL →’ returning to HOME');
           setRelMinorActive(false);
           setTimeout(() => {
             setActiveFn("V7");
             console.log('✨ Highlighted V7 wedge');
           }, 200);
         }
-        // iv in REL (Dm) ⏺†’ HOME (ii in C)
+        // iv in REL (Dm) →’ HOME (ii in C)
         else if (fn === "iv") {
-          console.log('ðŸ”„ iv wedge in REL ⏺†’ returning to HOME');
+          console.log('ðŸ”„ iv wedge in REL →’ returning to HOME');
           setRelMinorActive(false);
           setTimeout(() => {
             setActiveFn("ii");
@@ -5266,7 +5266,7 @@ useEffect(() => {
   const playChordWithVoiceLeading = (chordPitchClasses: number[]) => {
     if (!audioEnabledRef.current && !midiOutputEnabled) return;  // Skip if both disabled
     
-    console.log('ðŸŽ¼ Playing chord. PCs:', chordPitchClasses);
+    console.log('🍎¼ Playing chord. PCs:', chordPitchClasses);
     
     // Simple approach: play each pitch class in a reasonable octave range
     const BASE_OCTAVE = 60; // C4
@@ -6158,7 +6158,7 @@ useEffect(() => {
               style={{
                 position: 'absolute',
                 right: 40,
-                bottom: isDesktop ? 120 : 60,  // ⏺† v3.17.85: LOWER on mobile (was backwards!)
+                bottom: isDesktop ? 120 : 60,  // → v3.17.85: LOWER on mobile (was backwards!)
                 width: 32,
                 height: 32,
                 padding: 0,
@@ -6825,7 +6825,7 @@ useEffect(() => {
                       const chordToUse = lastDetectedChordRef.current || centerLabel;
                       
                       if (chordToUse) {
-                        // Extract root from chord label (e.g. "Gmaj7" ⏺†’ "G", "C#m" ⏺†’ "C#")
+                        // Extract root from chord label (e.g. "Gmaj7" →’ "G", "C#m" →’ "C#")
                         const rootMatch = chordToUse.match(/^([A-G][b#]?)/);
                         if (rootMatch) {
                           let chordRoot = rootMatch[1];
@@ -6911,7 +6911,7 @@ useEffect(() => {
                       const chordToUse = lastDetectedChordRef.current || centerLabel;
                       
                       if (chordToUse) {
-                        // Extract root from chord label (e.g. "Gmaj7" ⏺†’ "G", "C#m" ⏺†’ "C#")
+                        // Extract root from chord label (e.g. "Gmaj7" →’ "G", "C#m" →’ "C#")
                         const rootMatch = chordToUse.match(/^([A-G][b#]?)/);
                         if (rootMatch) {
                           let chordRoot = rootMatch[1];
@@ -7008,7 +7008,7 @@ useEffect(() => {
               
               {/* Row: Reset + MMK + Show Bonus + Transpose - v3.5.0: Reordered */}
               <div style={{marginTop: 6, display:'flex', gap:8, alignItems:'center', flexWrap:'wrap'}}>
-                {/* Reset - v3.5.0: Moved left, renamed "Key ⏺†»" */}
+                {/* Reset - v3.5.0: Moved left, renamed "Key →»" */}
                 {skillLevel === "EXPERT" && (
                   <button 
                     onClick={resetAll}
@@ -7303,7 +7303,7 @@ useEffect(() => {
                       cursor:'pointer', 
                       fontSize:12
                     }} 
-                    title="Previous comment (Ctrl+⏺†)"
+                    title="Previous comment (Ctrl+→)"
                   >
                     {"<<"}
                   </button>
@@ -7320,7 +7320,7 @@ useEffect(() => {
                       cursor:'pointer', 
                       fontSize:12
                     }} 
-                    title="Next comment (Ctrl+⏺†’)"
+                    title="Next comment (Ctrl+→’)"
                   >
                     {">>"}
                   </button>
@@ -8254,4 +8254,4 @@ useEffect(() => {
 }
 
 
-// EOF - HarmonyWheel.tsx v4.3.1
+// EOF - HarmonyWheel.tsx v4.5.0

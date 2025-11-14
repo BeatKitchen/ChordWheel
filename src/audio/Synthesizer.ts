@@ -1,10 +1,11 @@
 /**
- * Synthesizer.ts - v4.4.0
+ * Synthesizer.ts - v4.5.0
  *
  * 🎹 Web Audio synthesizer with:
  * - 3 oscillators (wave, gain, tune, pan)
- * - VCA ADSR envelope
- * - VCF with ADSR + amount
+ * - Per-oscillator VCA ADSR envelopes
+ * - Per-oscillator filters with key tracking
+ * - Output filter (final stage) with key tracking
  * - LFO with 13 modulation targets
  * - Anti-click envelope curves
  *
@@ -16,6 +17,32 @@ import { SynthParams, ActiveNote, DEFAULT_SYNTH_PARAMS } from './types';
 
 // Active notes storage (keyed by noteId)
 const activeNotes = new Map<string, ActiveNote>();
+
+/**
+ * Calculate filter frequency with key tracking
+ * @param baseFreq - Base filter frequency (Hz)
+ * @param midiNote - MIDI note number (0-127)
+ * @param keyTrack - Key tracking amount (0-1, where 1=full tracking)
+ * @returns Actual filter frequency in Hz
+ */
+function calculateFilterFreq(baseFreq: number, midiNote: number, keyTrack: number): number {
+  if (keyTrack === 0) return baseFreq;
+
+  // Convert MIDI note to frequency
+  const noteFreq = 440 * Math.pow(2, (midiNote - 69) / 12);
+
+  // Reference frequency (A4 = 440 Hz, MIDI 69)
+  const referenceFreq = 440;
+
+  // Calculate scaling factor based on key tracking amount
+  const ratio = Math.pow(noteFreq / referenceFreq, keyTrack);
+
+  // Apply to base frequency
+  const result = baseFreq * ratio;
+
+  // Clamp to valid range (20-20000 Hz)
+  return Math.max(20, Math.min(20000, result));
+}
 
 /**
  * Parse synth parameters from song text
@@ -43,15 +70,23 @@ export function parseSynthParams(songText: string): SynthParams {
         }
         break;
 
-      // Oscillator gains (0-1)
+      // Gains (0-1)
       case 'osc1Gain':
       case 'osc2Gain':
       case 'osc3Gain':
-      case 'vcaS':
-      case 'vcfS':
-      case 'vcfAmount':
+      case 'osc1VcaS':
+      case 'osc2VcaS':
+      case 'osc3VcaS':
+      case 'osc1FilterS':
+      case 'osc2FilterS':
+      case 'osc3FilterS':
+      case 'osc1FilterAmount':
+      case 'osc2FilterAmount':
+      case 'osc3FilterAmount':
+      case 'outputFilterS':
+      case 'outputFilterAmount':
       case 'lfoDepth':
-      case 'masterGain':
+      case 'outputGain':
         (params as any)[key] = Math.max(0, Math.min(1, parseFloat(trimmedValue)));
         break;
 
@@ -70,30 +105,62 @@ export function parseSynthParams(songText: string): SynthParams {
         break;
 
       // Envelope times (ms)
-      case 'vcaA':
-      case 'vcaD':
-      case 'vcaR':
-      case 'vcfA':
-      case 'vcfD':
-      case 'vcfR':
+      case 'osc1VcaA':
+      case 'osc1VcaD':
+      case 'osc1VcaR':
+      case 'osc2VcaA':
+      case 'osc2VcaD':
+      case 'osc2VcaR':
+      case 'osc3VcaA':
+      case 'osc3VcaD':
+      case 'osc3VcaR':
+      case 'osc1FilterA':
+      case 'osc1FilterD':
+      case 'osc1FilterR':
+      case 'osc2FilterA':
+      case 'osc2FilterD':
+      case 'osc2FilterR':
+      case 'osc3FilterA':
+      case 'osc3FilterD':
+      case 'osc3FilterR':
+      case 'outputFilterA':
+      case 'outputFilterD':
+      case 'outputFilterR':
         (params as any)[key] = Math.max(0, parseFloat(trimmedValue));
         break;
 
-      // Filter type
-      case 'vcfType':
+      // Filter types
+      case 'osc1FilterType':
+      case 'osc2FilterType':
+      case 'osc3FilterType':
+      case 'outputFilterType':
         if (['lowpass', 'highpass', 'bandpass', 'notch'].includes(trimmedValue)) {
-          params.vcfType = trimmedValue as BiquadFilterType;
+          (params as any)[key] = trimmedValue as BiquadFilterType;
         }
         break;
 
       // Filter frequency (Hz)
-      case 'vcfFreq':
-        params.vcfFreq = Math.max(20, Math.min(20000, parseFloat(trimmedValue)));
+      case 'osc1FilterFreq':
+      case 'osc2FilterFreq':
+      case 'osc3FilterFreq':
+      case 'outputFilterFreq':
+        (params as any)[key] = Math.max(20, Math.min(20000, parseFloat(trimmedValue)));
         break;
 
       // Filter resonance (Q)
-      case 'vcfRes':
-        params.vcfRes = Math.max(0.1, Math.min(30, parseFloat(trimmedValue)));
+      case 'osc1FilterRes':
+      case 'osc2FilterRes':
+      case 'osc3FilterRes':
+      case 'outputFilterRes':
+        (params as any)[key] = Math.max(0.1, Math.min(30, parseFloat(trimmedValue)));
+        break;
+
+      // Key tracking (0-1)
+      case 'osc1FilterKeyTrack':
+      case 'osc2FilterKeyTrack':
+      case 'osc3FilterKeyTrack':
+      case 'outputFilterKeyTrack':
+        (params as any)[key] = Math.max(0, Math.min(1, parseFloat(trimmedValue)));
         break;
 
       // LFO speed
@@ -167,31 +234,127 @@ export function playNoteWithSynth(
   // Create oscillators (only if gain > 0)
   const oscs: OscillatorNode[] = [];
   const oscGains: GainNode[] = [];
+  const oscFilters: BiquadFilterNode[] = [];
+  const oscVcas: GainNode[] = [];
   const panners: StereoPannerNode[] = [];
 
   const oscConfigs = [
-    { wave: synthParams.osc1Wave, gain: synthParams.osc1Gain, tune: synthParams.osc1Tune, pan: synthParams.osc1Pan },
-    { wave: synthParams.osc2Wave, gain: synthParams.osc2Gain, tune: synthParams.osc2Tune, pan: synthParams.osc2Pan },
-    { wave: synthParams.osc3Wave, gain: synthParams.osc3Gain, tune: synthParams.osc3Tune, pan: synthParams.osc3Pan }
+    {
+      wave: synthParams.osc1Wave,
+      gain: synthParams.osc1Gain,
+      tune: synthParams.osc1Tune,
+      pan: synthParams.osc1Pan,
+      vcaA: synthParams.osc1VcaA,
+      vcaD: synthParams.osc1VcaD,
+      vcaS: synthParams.osc1VcaS,
+      vcaR: synthParams.osc1VcaR,
+      filterType: synthParams.osc1FilterType,
+      filterFreq: synthParams.osc1FilterFreq,
+      filterRes: synthParams.osc1FilterRes,
+      filterKeyTrack: synthParams.osc1FilterKeyTrack,
+      filterA: synthParams.osc1FilterA,
+      filterD: synthParams.osc1FilterD,
+      filterS: synthParams.osc1FilterS,
+      filterR: synthParams.osc1FilterR,
+      filterAmount: synthParams.osc1FilterAmount,
+    },
+    {
+      wave: synthParams.osc2Wave,
+      gain: synthParams.osc2Gain,
+      tune: synthParams.osc2Tune,
+      pan: synthParams.osc2Pan,
+      vcaA: synthParams.osc2VcaA ?? synthParams.osc1VcaA,
+      vcaD: synthParams.osc2VcaD ?? synthParams.osc1VcaD,
+      vcaS: synthParams.osc2VcaS ?? synthParams.osc1VcaS,
+      vcaR: synthParams.osc2VcaR ?? synthParams.osc1VcaR,
+      filterType: synthParams.osc2FilterType ?? synthParams.osc1FilterType,
+      filterFreq: synthParams.osc2FilterFreq ?? synthParams.osc1FilterFreq,
+      filterRes: synthParams.osc2FilterRes ?? synthParams.osc1FilterRes,
+      filterKeyTrack: synthParams.osc2FilterKeyTrack ?? synthParams.osc1FilterKeyTrack,
+      filterA: synthParams.osc2FilterA ?? synthParams.osc1FilterA,
+      filterD: synthParams.osc2FilterD ?? synthParams.osc1FilterD,
+      filterS: synthParams.osc2FilterS ?? synthParams.osc1FilterS,
+      filterR: synthParams.osc2FilterR ?? synthParams.osc1FilterR,
+      filterAmount: synthParams.osc2FilterAmount ?? synthParams.osc1FilterAmount,
+    },
+    {
+      wave: synthParams.osc3Wave,
+      gain: synthParams.osc3Gain,
+      tune: synthParams.osc3Tune,
+      pan: synthParams.osc3Pan,
+      vcaA: synthParams.osc3VcaA ?? synthParams.osc1VcaA,
+      vcaD: synthParams.osc3VcaD ?? synthParams.osc1VcaD,
+      vcaS: synthParams.osc3VcaS ?? synthParams.osc1VcaS,
+      vcaR: synthParams.osc3VcaR ?? synthParams.osc1VcaR,
+      filterType: synthParams.osc3FilterType ?? synthParams.osc1FilterType,
+      filterFreq: synthParams.osc3FilterFreq ?? synthParams.osc1FilterFreq,
+      filterRes: synthParams.osc3FilterRes ?? synthParams.osc1FilterRes,
+      filterKeyTrack: synthParams.osc3FilterKeyTrack ?? synthParams.osc1FilterKeyTrack,
+      filterA: synthParams.osc3FilterA ?? synthParams.osc1FilterA,
+      filterD: synthParams.osc3FilterD ?? synthParams.osc1FilterD,
+      filterS: synthParams.osc3FilterS ?? synthParams.osc1FilterS,
+      filterR: synthParams.osc3FilterR ?? synthParams.osc1FilterR,
+      filterAmount: synthParams.osc3FilterAmount ?? synthParams.osc1FilterAmount,
+    }
   ];
 
-  oscConfigs.forEach((config, i) => {
+  oscConfigs.forEach((config) => {
     if (config.gain > 0) {
+      // Create oscillator
       const osc = ctx.createOscillator();
       osc.type = config.wave;
       osc.frequency.value = freq * Math.pow(2, config.tune / 1200);
 
+      // Create gain node for oscillator level
       const gain = ctx.createGain();
       gain.gain.value = config.gain * velocity;
 
+      // Create per-oscillator filter with key tracking
+      const filter = ctx.createBiquadFilter();
+      filter.type = config.filterType;
+      const trackedFreq = calculateFilterFreq(config.filterFreq, midiNote, config.filterKeyTrack);
+      filter.frequency.value = trackedFreq;
+      filter.Q.value = Math.max(0.1, Math.min(30, config.filterRes));
+
+      // Per-oscillator filter envelope (if filterAmount > 0)
+      if (config.filterAmount > 0) {
+        const filterPeak = trackedFreq * (1 + config.filterAmount * 10);
+        const filterSustain = trackedFreq + (filterPeak - trackedFreq) * config.filterS;
+
+        filter.frequency.setValueAtTime(trackedFreq, now);
+        filter.frequency.linearRampToValueAtTime(
+          Math.min(20000, filterPeak),
+          now + config.filterA / 1000
+        );
+        filter.frequency.linearRampToValueAtTime(
+          Math.min(20000, filterSustain),
+          now + (config.filterA + config.filterD) / 1000
+        );
+      }
+
+      // Create per-oscillator VCA envelope
+      const vca = ctx.createGain();
+      vca.gain.setValueAtTime(0, now);
+      vca.gain.linearRampToValueAtTime(1, now + config.vcaA / 1000);
+      vca.gain.linearRampToValueAtTime(
+        config.vcaS,
+        now + (config.vcaA + config.vcaD) / 1000
+      );
+
+      // Create panner
       const panner = ctx.createStereoPanner();
       panner.pan.value = config.pan;
 
+      // Connect: osc → gain → filter → vca → panner
       osc.connect(gain);
-      gain.connect(panner);
+      gain.connect(filter);
+      filter.connect(vca);
+      vca.connect(panner);
 
       oscs.push(osc);
       oscGains.push(gain);
+      oscFilters.push(filter);
+      oscVcas.push(vca);
       panners.push(panner);
     }
   });
@@ -202,47 +365,42 @@ export function playNoteWithSynth(
     return '';
   }
 
-  // Create filter
-  const filter = ctx.createBiquadFilter();
-  filter.type = synthParams.vcfType;
-  filter.frequency.value = Math.max(20, Math.min(20000, synthParams.vcfFreq));
-  filter.Q.value = Math.max(0.1, Math.min(30, synthParams.vcfRes));
+  // Create output filter (final stage) with key tracking
+  const outputFilter = ctx.createBiquadFilter();
+  outputFilter.type = synthParams.outputFilterType;
+  const outputTrackedFreq = calculateFilterFreq(
+    synthParams.outputFilterFreq,
+    midiNote,
+    synthParams.outputFilterKeyTrack
+  );
+  outputFilter.frequency.value = outputTrackedFreq;
+  outputFilter.Q.value = Math.max(0.1, Math.min(30, synthParams.outputFilterRes));
 
-  // VCF envelope (if vcfAmount > 0)
-  if (synthParams.vcfAmount > 0) {
-    const vcfPeak = synthParams.vcfFreq * (1 + synthParams.vcfAmount * 10);
-    const vcfSustain = synthParams.vcfFreq + (vcfPeak - synthParams.vcfFreq) * synthParams.vcfS;
+  // Output filter envelope (if outputFilterAmount > 0)
+  if (synthParams.outputFilterAmount > 0) {
+    const outputFilterPeak = outputTrackedFreq * (1 + synthParams.outputFilterAmount * 10);
+    const outputFilterSustain = outputTrackedFreq + (outputFilterPeak - outputTrackedFreq) * synthParams.outputFilterS;
 
-    filter.frequency.setValueAtTime(synthParams.vcfFreq, now);
-    filter.frequency.linearRampToValueAtTime(
-      Math.min(20000, vcfPeak),
-      now + synthParams.vcfA / 1000
+    outputFilter.frequency.setValueAtTime(outputTrackedFreq, now);
+    outputFilter.frequency.linearRampToValueAtTime(
+      Math.min(20000, outputFilterPeak),
+      now + synthParams.outputFilterA / 1000
     );
-    filter.frequency.linearRampToValueAtTime(
-      Math.min(20000, vcfSustain),
-      now + (synthParams.vcfA + synthParams.vcfD) / 1000
+    outputFilter.frequency.linearRampToValueAtTime(
+      Math.min(20000, outputFilterSustain),
+      now + (synthParams.outputFilterA + synthParams.outputFilterD) / 1000
     );
   }
 
-  // VCA envelope
-  const vca = ctx.createGain();
-  vca.gain.setValueAtTime(0, now);
-  vca.gain.linearRampToValueAtTime(1, now + synthParams.vcaA / 1000);
-  vca.gain.linearRampToValueAtTime(
-    synthParams.vcaS,
-    now + (synthParams.vcaA + synthParams.vcaD) / 1000
-  );
-
-  // Master gain (with mobile boost)
+  // Output gain (final stage with mobile boost)
   const mobileBoost = !isDesktop ? 2.2 : 1.8;
-  const masterGain = ctx.createGain();
-  masterGain.gain.value = synthParams.masterGain * mobileBoost * 0.8;
+  const outputGainNode = ctx.createGain();
+  outputGainNode.gain.value = synthParams.outputGain * mobileBoost * 0.8;
 
-  // Connect signal chain: oscs → filter → vca → master → output
-  panners.forEach(p => p.connect(filter));
-  filter.connect(vca);
-  vca.connect(masterGain);
-  masterGain.connect(ctx.destination);
+  // Connect signal chain: panners → outputFilter → outputGain → destination
+  panners.forEach(p => p.connect(outputFilter));
+  outputFilter.connect(outputGainNode);
+  outputGainNode.connect(ctx.destination);
 
   // LFO (if depth > 0 and any target enabled)
   let lfo: OscillatorNode | undefined;
@@ -272,17 +430,21 @@ export function playNoteWithSynth(
 
     // Connect LFO to targets
     if (synthParams.lfoTargetVCA) {
-      const vcaLfoGain = ctx.createGain();
-      vcaLfoGain.gain.value = 0.5; // ±50% at full depth
-      lfoGain.connect(vcaLfoGain);
-      vcaLfoGain.connect(vca.gain);
+      // Modulate all per-osc VCAs
+      oscVcas.forEach(vca => {
+        const vcaLfoGain = ctx.createGain();
+        vcaLfoGain.gain.value = 0.5; // ±50% at full depth
+        lfoGain!.connect(vcaLfoGain);
+        vcaLfoGain.connect(vca.gain);
+      });
     }
 
     if (synthParams.lfoTargetVCF) {
+      // Modulate output filter
       const vcfLfoGain = ctx.createGain();
-      vcfLfoGain.gain.value = synthParams.vcfFreq * 0.5; // ±50% at full depth
+      vcfLfoGain.gain.value = synthParams.outputFilterFreq * 0.5; // ±50% at full depth
       lfoGain.connect(vcfLfoGain);
-      vcfLfoGain.connect(filter.frequency);
+      vcfLfoGain.connect(outputFilter.frequency);
     }
 
     // Pitch modulation (vibrato/FM)
@@ -337,12 +499,14 @@ export function playNoteWithSynth(
   activeNotes.set(noteId, {
     oscs,
     oscGains,
+    oscFilters,
+    oscVcas,
     panners,
-    filter,
-    vca,
+    outputFilter,
     lfo,
     lfoGain,
-    synthParams
+    synthParams,
+    midiNote
   });
 
   return noteId;
@@ -356,25 +520,74 @@ export function stopNoteById(ctx: AudioContext, noteId: string): void {
   if (!note) return;
 
   const now = ctx.currentTime;
-  const releaseTime = note.synthParams.vcaR / 1000;
 
-  // VCA release (exponential for smooth fadeout)
-  note.vca.gain.cancelScheduledValues(now);
-  note.vca.gain.setValueAtTime(note.vca.gain.value, now);
-  note.vca.gain.exponentialRampToValueAtTime(0.001, now + releaseTime);
+  // Release each oscillator's VCA with its own release time
+  note.oscVcas.forEach((vca, i) => {
+    const config = [
+      {
+        vcaR: note.synthParams.osc1VcaR,
+        filterR: note.synthParams.osc1FilterR,
+        filterAmount: note.synthParams.osc1FilterAmount,
+        filterFreq: note.synthParams.osc1FilterFreq,
+      },
+      {
+        vcaR: note.synthParams.osc2VcaR ?? note.synthParams.osc1VcaR,
+        filterR: note.synthParams.osc2FilterR ?? note.synthParams.osc1FilterR,
+        filterAmount: note.synthParams.osc2FilterAmount ?? note.synthParams.osc1FilterAmount,
+        filterFreq: note.synthParams.osc2FilterFreq ?? note.synthParams.osc1FilterFreq,
+      },
+      {
+        vcaR: note.synthParams.osc3VcaR ?? note.synthParams.osc1VcaR,
+        filterR: note.synthParams.osc3FilterR ?? note.synthParams.osc1FilterR,
+        filterAmount: note.synthParams.osc3FilterAmount ?? note.synthParams.osc1FilterAmount,
+        filterFreq: note.synthParams.osc3FilterFreq ?? note.synthParams.osc1FilterFreq,
+      }
+    ][i];
 
-  // VCF release (if envelope active)
-  if (note.synthParams.vcfAmount > 0) {
-    const vcfRelease = note.synthParams.vcfR / 1000;
-    note.filter.frequency.cancelScheduledValues(now);
-    note.filter.frequency.setValueAtTime(note.filter.frequency.value, now);
-    note.filter.frequency.exponentialRampToValueAtTime(
-      Math.max(20, note.synthParams.vcfFreq),
-      now + vcfRelease
+    if (!config) return;
+
+    const releaseTime = config.vcaR / 1000;
+
+    // VCA release (exponential for smooth fadeout)
+    vca.gain.cancelScheduledValues(now);
+    vca.gain.setValueAtTime(vca.gain.value, now);
+    vca.gain.exponentialRampToValueAtTime(0.001, now + releaseTime);
+
+    // Per-osc filter release (if envelope active)
+    if (config.filterAmount > 0 && note.oscFilters[i]) {
+      const filterRelease = config.filterR / 1000;
+      note.oscFilters[i].frequency.cancelScheduledValues(now);
+      note.oscFilters[i].frequency.setValueAtTime(note.oscFilters[i].frequency.value, now);
+      note.oscFilters[i].frequency.exponentialRampToValueAtTime(
+        Math.max(20, config.filterFreq),
+        now + filterRelease
+      );
+    }
+  });
+
+  // Output filter release (if envelope active)
+  if (note.synthParams.outputFilterAmount > 0) {
+    const outputFilterRelease = note.synthParams.outputFilterR / 1000;
+    note.outputFilter.frequency.cancelScheduledValues(now);
+    note.outputFilter.frequency.setValueAtTime(note.outputFilter.frequency.value, now);
+    note.outputFilter.frequency.exponentialRampToValueAtTime(
+      Math.max(20, note.synthParams.outputFilterFreq),
+      now + outputFilterRelease
     );
   }
 
   // Stop oscillators and LFO (scheduled to prevent clicks)
+  // Use longest release time from all oscillators
+  const maxReleaseTime = Math.max(
+    note.synthParams.osc1VcaR,
+    note.synthParams.osc2VcaR ?? note.synthParams.osc1VcaR,
+    note.synthParams.osc3VcaR ?? note.synthParams.osc1VcaR,
+    note.synthParams.osc1FilterR,
+    note.synthParams.osc2FilterR ?? note.synthParams.osc1FilterR,
+    note.synthParams.osc3FilterR ?? note.synthParams.osc1FilterR,
+    note.synthParams.outputFilterR
+  ) / 1000;
+
   setTimeout(() => {
     try {
       note.oscs.forEach(osc => osc.stop(now + 0.001));
@@ -383,7 +596,7 @@ export function stopNoteById(ctx: AudioContext, noteId: string): void {
       // Already stopped
     }
     activeNotes.delete(noteId);
-  }, Math.max(releaseTime, note.synthParams.vcfR / 1000) * 1000 + 50);
+  }, maxReleaseTime * 1000 + 50);
 }
 
 /**
@@ -414,4 +627,4 @@ export function getActiveNoteCount(): number {
   return activeNotes.size;
 }
 
-// EOF - Synthesizer.ts v4.4.0
+// EOF - Synthesizer.ts v4.5.0

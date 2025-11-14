@@ -364,6 +364,20 @@ oscs → panners → filter → vca → masterGain → output
 
 ### Version History
 
+#### v4.4.0 (2025-11-13) - Synthesizer Module Extraction ✅ CURRENT
+**See**: [V4.4.0_SYNTH_MODULE_SESSION.md](V4.4.0_SYNTH_MODULE_SESSION.md)
+
+- **Extracted audio engine** to `src/audio/Synthesizer.ts` (337 lines)
+- **Added type definitions** in `src/audio/types.ts` (127 lines)
+- **47 parameters**: 3 oscs, VCA ADSR, VCF with ADSR, LFO with 13 targets
+- **Parameter parsing**: `@paramName value` syntax in songs
+- **Demo song**: "Synth Defaults (v4.4.0)" with all parameters
+- **Reduced HarmonyWheel.tsx**: 8,388 → 8,313 lines (-75 lines)
+- **Bundle impact**: +330 bytes gzipped
+- **Architecture**: Clean separation, testable, reusable
+
+**Status**: ✅ Build succeeds, ready for testing
+
 #### v4.3.1 (2025-11-13) - Volume Reduction
 - Peak level: 0.5 → 0.25 (50% reduction)
 - Sustain level: 0.3 → 0.15 (50% reduction)
