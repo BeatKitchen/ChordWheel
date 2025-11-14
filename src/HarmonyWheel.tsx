@@ -520,6 +520,7 @@ useEffect(() => {
   // Voice leading for chord playback
   const previousVoicingRef = useRef<number[]>([60, 64, 67]); // Default C major [C4, E4, G4]
   const activeChordNoteIdsRef = useRef<Set<string>>(new Set()); // Track note IDs instead of MIDI numbers
+  const active7thNoteIdRef = useRef<string | null>(null); // ✅ v4.5.2: Track the 7th note ID separately for drag behavior
   const wedgeHeldRef = useRef(false); // Track if wedge is being held down
   const lastWedgeClickTimeRef = useRef<number>(0); // ✅ Track click timing
   const wedgeClickFnRef = useRef<Fn | "">(""); // ✅ Track which wedge was clicked
@@ -4620,24 +4621,21 @@ useEffect(() => {
                        while (fourthNoteMidi > 72) fourthNoteMidi -= 12;
                      }
 
-                     console.log('⏺️ž• Adding 4th note:', fourthNoteMidi);
+                     console.log('➕ Adding 4th note:', fourthNoteMidi);
                      const noteId = playNote(fourthNoteMidi, 0.6, true);
                      if (noteId) {
                        activeChordNoteIdsRef.current.add(noteId);
+                       active7thNoteIdRef.current = noteId; // ✅ v4.5.2: Track 7th note separately
                      }
                    } else {
                      // Remove the 4th note without re-triggering the triad
                      console.log('🎵 Removing 4th note (stopping 7th only)');
 
-                     // Find the 7th note in active chord notes and stop it
-                     const ctx = audioContextRef.current;
-                     if (ctx) {
-                       const now = ctx.currentTime;
-
-                       // Find and stop the 7th note
-                       activeChordNoteIdsRef.current.forEach(noteId => {
-                         stopNoteById(noteId);
-                       });
+                     // ✅ v4.5.2: Stop ONLY the 7th note, not the entire triad
+                     if (active7thNoteIdRef.current) {
+                       stopNoteById(active7thNoteIdRef.current);
+                       activeChordNoteIdsRef.current.delete(active7thNoteIdRef.current);
+                       active7thNoteIdRef.current = null;
                      }
                    }
                  }
@@ -4650,6 +4648,7 @@ useEffect(() => {
              wedgeHeldRef.current = false; // Release wedge
              currentHeldFnRef.current = null;
              lastPlayedWith7thRef.current = null; // Reset
+            active7thNoteIdRef.current = null; // ✅ v4.5.2: Clear 7th tracking
              // Stop all active chord notes with fade
              const ctx = audioContextRef.current;
              if (ctx) {
@@ -4673,6 +4672,7 @@ useEffect(() => {
              wedgeHeldRef.current = false; // Release wedge
              currentHeldFnRef.current = null;
              lastPlayedWith7thRef.current = null; // Reset
+            active7thNoteIdRef.current = null; // ✅ v4.5.2: Clear 7th tracking
              // Stop all active chord notes with fade
              const ctx = audioContextRef.current;
              if (ctx) {
@@ -5316,6 +5316,7 @@ useEffect(() => {
         });
         
         activeChordNoteIdsRef.current.clear();
+        active7thNoteIdRef.current = null; // ✅ v4.5.2: Clear 7th tracking when playing new chord
         
         // Play all notes
         console.log('ðŸ”Š Playing', notesToPlay.length, 'notes');
