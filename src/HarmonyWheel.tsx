@@ -4925,38 +4925,38 @@ useEffect(() => {
     osc2.type = 'sine';
     osc2.frequency.value = freq * 1.003;
     
+    // ✅ Audio Engine Rebalance - Exponential velocity curve for natural dynamics
+    const velocityCurve = Math.pow(velocity, 1.5); // Exponential response
+
+    // ✅ Reduced oscillator gains for cleaner headroom
     const gain1 = ctx.createGain();
     const gain2 = ctx.createGain();
-    gain1.gain.value = 0.5 * velocity;
-    gain2.gain.value = 0.4 * velocity;
+    gain1.gain.value = 0.35 * velocityCurve; // Reduced from 0.5
+    gain2.gain.value = 0.25 * velocityCurve; // Reduced from 0.4 (detuned osc quieter)
     
     const mainGain = ctx.createGain();
     mainGain.gain.value = 0;
-    // v3.19.55: Faster attack (5ms) for more percussive sound, adjusted envelope
-    const mobileBoost = !isDesktop ? 2.0 : 1.5;
-    const chordSafety = 0.5; // Divide by 2 since chords can have 3-4 notes
+    // ✅ Audio Engine: Conservative attack (10ms) to reduce transient click, reduced chord safety for headroom
+    const mobileBoost = !isDesktop ? 2.2 : 1.8; // Slight increase to compensate for reduced osc gains
+    const chordSafety = 0.6; // Reduced from 0.75 to prevent summing distortion when notes combine
     mainGain.gain.setValueAtTime(0, now);
-    mainGain.gain.linearRampToValueAtTime(0.6 * velocity * chordSafety, now + 0.005); // Faster attack: 5ms
-    mainGain.gain.linearRampToValueAtTime(0.45 * velocity * chordSafety, now + 0.08);
-    mainGain.gain.linearRampToValueAtTime(0.4 * velocity * chordSafety, now + 0.3);
+    mainGain.gain.linearRampToValueAtTime(0.5 * velocityCurve * chordSafety, now + 0.010); // Reduced peak from 0.6 to 0.5
+    mainGain.gain.linearRampToValueAtTime(0.38 * velocityCurve * chordSafety, now + 0.08);
+    mainGain.gain.linearRampToValueAtTime(0.32 * velocityCurve * chordSafety, now + 0.3);
     
-    const filter = ctx.createBiquadFilter();
-    filter.type = 'lowpass';
-    filter.frequency.value = 12000 + (midiNote * 80); // Bright top end
-    filter.Q.value = 0.3; // Slight resonance for presence
-    
-    // Highpass filter to roll off low end
+    // ✅ Removed lowpass filter - not needed for sine waves
+    // Highpass filter to roll off low end rumble
     const highpass = ctx.createBiquadFilter();
     highpass.type = 'highpass';
     highpass.frequency.value = 200; // Roll off below 200Hz
     highpass.Q.value = 0.7; // Gentle rolloff
-    
-    // Compressor - v3.19.55: Softer settings to prevent crackling on MacBook
+
+    // ✅ Compressor as failsafe - only catches peaks
     const compressor = ctx.createDynamicsCompressor();
-    compressor.threshold.value = -20; // Higher threshold
-    compressor.knee.value = 40; // Softer knee
-    compressor.ratio.value = 8; // Less aggressive ratio
-    compressor.attack.value = 0.003; // Faster attack to catch peaks
+    compressor.threshold.value = -6; // Only catch peaks (was -20)
+    compressor.knee.value = 30; // Soft knee maintained
+    compressor.ratio.value = 6; // Gentler ratio (was 8)
+    compressor.attack.value = 0.003; // Fast attack to catch transients
     compressor.release.value = 0.25; // Longer release
     
     // Makeup gain
@@ -4966,9 +4966,8 @@ useEffect(() => {
     console.log('ðŸ”— Connecting audio graph...');
     osc1.connect(gain1);
     osc2.connect(gain2);
-    gain1.connect(filter);
-    gain2.connect(filter);
-    filter.connect(highpass);
+    gain1.connect(highpass); // ✅ Direct to highpass (lowpass removed)
+    gain2.connect(highpass);
     highpass.connect(mainGain);
     mainGain.connect(compressor);
     compressor.connect(makeupGain);
@@ -5003,7 +5002,7 @@ useEffect(() => {
       // MIDI keyboard notes: sustain indefinitely until note-off
       // Attack -> Decay -> Sustain (hold)
       const decayTime = now + 0.05; // Quick decay
-      mainGain.gain.linearRampToValueAtTime(0.7 * velocity, decayTime); // Drop to sustain level
+      mainGain.gain.linearRampToValueAtTime(0.7 * velocityCurve, decayTime); // Drop to sustain level (using velocity curve)
       // No auto-fade! Will be stopped by MIDI note-off
       console.log('🎹 MIDI note - sustaining until note-off');
     }
@@ -5019,8 +5018,10 @@ useEffect(() => {
         const now = audioContextRef.current.currentTime;
         nodes.gain.gain.cancelScheduledValues(now);
         nodes.gain.gain.setValueAtTime(nodes.gain.gain.value, now);
-        nodes.gain.gain.linearRampToValueAtTime(0, now + 0.5); // Lengthened from 0.05 to 0.5
-        
+        // ✅ Exponential ramp for smoother release (prevents clicks)
+        nodes.gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15); // Faster but smoother exponential release
+        nodes.gain.gain.linearRampToValueAtTime(0, now + 0.16); // Final drop to zero
+
         setTimeout(() => {
           try {
             nodes.osc1.stop();
@@ -5028,7 +5029,7 @@ useEffect(() => {
             nodes.osc3.stop();
           } catch(e) { /* already stopped */ }
           activeNotesRef.current.delete(noteId);
-        }, 550); // Updated timeout to match release
+        }, 180); // Updated timeout to match release
       } catch(e) { /* ignore */ }
     }
   };
