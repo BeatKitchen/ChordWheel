@@ -171,12 +171,23 @@ const APP_VERSION = "v4.X.X-description";  ← UPDATE (line ~1364)
 - `lib/engine/wedges.ts` - Function → wedge ID (0-11)
 
 ### Adapter (React)
-- `src/HarmonyWheel.tsx` - Main component (~8400 lines)
+- `src/HarmonyWheel.tsx` - Main component (~8313 lines, down from 8388 in v4.3.1)
   - Lines 1-500: Imports, types, constants
   - Lines 500-1500: State management, MIDI handling
   - Lines 1500-3000: Engine integration
-  - Lines 3000-8400: UI rendering (wheel, wedges, sequencer)
-  - **Lines 4978-5082**: Audio engine (playNote function) ← SYNTH LIVES HERE
+  - Lines 3000-8313: UI rendering (wheel, wedges, sequencer)
+  - **Lines 4982-5027**: Audio wrappers (call Synthesizer module) ← AUDIO INTEGRATION
+
+### Audio (Synthesizer)
+- **`src/audio/Synthesizer.ts`** - Full synthesizer implementation (337 lines) ← v4.4.0 NEW
+  - `playNoteWithSynth()` - Main note playback
+  - `stopNote()`, `stopNoteById()` - Note release
+  - `parseSynthParams()` - Parse @param directives from song
+  - `getLFOFrequency()` - Calculate LFO rate (tempo sync or Hz)
+- **`src/audio/types.ts`** - Type definitions (127 lines) ← v4.4.0 NEW
+  - `SynthParams` interface (47 parameters)
+  - `ActiveNote` interface (node storage)
+  - `DEFAULT_SYNTH_PARAMS` constant
 
 ### Theory & Utilities
 - `lib/theory.ts` - Music theory (getSubKey, getParKey, note names)
@@ -266,7 +277,7 @@ Before marking ANY task complete:
 
 ---
 
-## 8. 🎛️ Current State (v4.3.1)
+## 8. 🎛️ Current State (v4.4.0)
 
 ### Working Features
 - ✅ All 12 major keys with MIDI transpose
@@ -283,45 +294,67 @@ Before marking ANY task complete:
 - ✅ Stability debouncing
 - ✅ Song sharing via URL (iframe postMessage)
 - ✅ MIDI input/output support
-- ✅ Simplified audio engine (v4.3.0-v4.3.1) - ready for synth design
+- ✅ Full synthesizer module (v4.4.0) - 47 parameters, 3 oscs, VCF, LFO
 
 ---
 
 ## 9. 🔊 Audio Engine (Current State)
 
 ### Location
-**File**: `src/HarmonyWheel.tsx`
-**Function**: `playNote()` - lines 4978-5082
-**Version**: v4.3.1 (simplified, ready for synth design)
+**Files**:
+- `src/audio/Synthesizer.ts` - Core synth engine (337 lines)
+- `src/audio/types.ts` - Type definitions (127 lines)
+- `src/HarmonyWheel.tsx` - Wrapper functions (lines 4982-5027)
+**Version**: v4.4.0 (full synthesizer with 47 parameters)
 
-### Current Architecture (v4.3.1)
+### Current Architecture (v4.4.0)
 ```typescript
-// Oscillator
-const osc1 = ctx.createOscillator();
-osc1.type = 'sine';  // ← Single sine wave
-osc1.frequency.value = freq;
+// ✅ NEW: Extracted to src/audio/Synthesizer.ts
 
-// Velocity → Amplitude (direct linear, no curves)
-const gain1 = ctx.createGain();
-gain1.gain.value = velocity;  // ← Linear mapping
+// Up to 3 oscillators (only if gain > 0)
+osc1, osc2, osc3: {
+  wave: sine|square|sawtooth|triangle
+  gain: 0-1
+  tune: cents (-1200 to +1200)
+  pan: -1 (left) to +1 (right)
+}
 
-// ADSR Envelope (fixed, no velocity modulation)
-const mainGain = ctx.createGain();
-mainGain.gain.setValueAtTime(0, now);
-mainGain.gain.linearRampToValueAtTime(0.25, now + 0.010);  // 10ms attack
-mainGain.gain.linearRampToValueAtTime(0.15, now + 0.100);  // 90ms decay
-// Sustains at 0.15 indefinitely (no auto-fade!)
+// VCA Envelope
+vcaA: 10ms    (attack)
+vcaD: 90ms    (decay)
+vcaS: 0.15    (sustain level)
+vcaR: 50ms    (release - exponential)
+
+// VCF (Filter with envelope)
+vcfType: lowpass|highpass|bandpass
+vcfFreq: 20-20000 Hz
+vcfRes: Q value (0.1-30)
+vcfA/D/S/R: separate ADSR for filter
+vcfAmount: 0-1 (envelope depth)
+
+// LFO (13 modulation targets)
+lfoSpeed: Hz or tempo-synced
+lfoDepth: 0-1 (master depth)
+Targets: VCA, VCF, Osc1/2/3 Pitch, Osc1/2/3 Pan, Osc1/2/3 Phase
 
 // Signal Chain
-osc1 → gain1(velocity) → highpass → mainGain(ADSR) → makeupGain → output
+oscs → panners → filter → vca → masterGain → output
+         ↑         ↑       ↑
+        LFO ←──────┴───────┴── (if enabled)
 ```
 
-### Key Sections
-- **Line 4985-4990**: Oscillator creation (osc1 only)
-- **Line 4994-4995**: Velocity → amplitude (linear)
-- **Line 5001-5008**: ADSR envelope (fixed values)
-- **Line 5022-5031**: Signal chain (simplified)
-- **Line 5065-5066**: Release envelope (50ms exponential)
+### Key Sections in Synthesizer.ts
+- **Lines 24-124**: `parseSynthParams()` - Parse @param directives from song text
+- **Lines 126-135**: `getLFOFrequency()` - Calculate LFO rate (tempo sync/Hz)
+- **Lines 137-313**: `playNoteWithSynth()` - Main synthesizer engine
+  - Lines 158-187: Create up to 3 oscillators with pan
+  - Lines 195-208: VCF (filter) with envelope
+  - Lines 211-218: VCA envelope
+  - Lines 228-295: LFO with 13 modulation targets
+  - Lines 298-299: Start oscillators
+- **Lines 315-345**: `stopNoteById()` - Note release with exponential curves
+- **Lines 347-353**: `stopNote()` - Stop all instances of a MIDI note
+- **Lines 355-359**: `stopAllNotes()` - Panic button
 
 ### Current ADSR Values
 - **Attack**: 10ms (0 → 0.25)
@@ -388,51 +421,78 @@ Example: `|C (stand-in for A7; C#dim)|`
 
 ---
 
-## 12. 🎹 Synth Parameters (Next Session)
+## 12. 🎹 Synth Parameters (v4.4.0 - COMPLETE)
 
-### User's Intent
-User wants to expose basic sound engine as **editable variables** in the sequencer editor area.
+### Implementation Status
+✅ **DONE** - Full synthesizer with 47 parameters implemented in `src/audio/Synthesizer.ts`
 
-### Requested Parameters
-- `@osc1GAIN` - Oscillator 1 gain/volume
-- `@osc1WAVE` - Oscillator 1 waveform (sine, square, saw, triangle)
-- `@vcaA` - VCA Attack time
-- `@vcaD` - VCA Decay time
-- `@vcaS` - VCA Sustain level
-- `@vcaR` - VCA Release time
+### All Parameters (47 total)
 
-### Implementation Notes
-**DO**:
-- Add synth parameter parsing to sequencer
-- Store parameters in song/sequence state
-- Update `playNote()` to use parameter values
-- Provide UI controls in editor area
-- Make parameters editable per song/sequence
+**Oscillators (12 params)**:
+- `@osc1Wave`, `@osc2Wave`, `@osc3Wave` - sine|square|sawtooth|triangle
+- `@osc1Gain`, `@osc2Gain`, `@osc3Gain` - 0-1
+- `@osc1Tune`, `@osc2Tune`, `@osc3Tune` - cents (-1200 to +1200)
+- `@osc1Pan`, `@osc2Pan`, `@osc3Pan` - -1 (left) to +1 (right)
 
-**DON'T**:
-- Mix synth logic into engine (`lib/engine/*.ts`) - keep it in HarmonyWheel.tsx
-- Restore removed features (osc3, compressor, auto-fade, velocity curves)
-- Change core ADSR behavior without user request
-- Add complexity without clear user request
+**VCA Envelope (4 params)**:
+- `@vcaA` - Attack (ms)
+- `@vcaD` - Decay (ms)
+- `@vcaS` - Sustain (0-1)
+- `@vcaR` - Release (ms)
 
-### Current Clean State
-The audio engine is intentionally **minimal** (v4.3.1):
-- Single sine wave
-- Linear velocity
-- Fixed ADSR
-- No distortion
-- **Perfect starting point for custom synth design**
+**VCF Filter (8 params)**:
+- `@vcfType` - lowpass|highpass|bandpass|notch
+- `@vcfFreq` - Frequency (20-20000 Hz)
+- `@vcfRes` - Resonance/Q (0.1-30)
+- `@vcfA`, `@vcfD`, `@vcfS`, `@vcfR` - Filter ADSR (ms / 0-1)
+- `@vcfAmount` - Envelope depth (0-1)
 
-### Architecture Decision
-User asked: "Is this a bad place to design a synth?"
+**LFO (16 params)**:
+- `@lfoSpeed` - Hz or tempo factor (0.01-20)
+- `@lfoSpeedSync` - on|off (tempo sync)
+- `@lfoDepth` - Master depth (0-1)
+- `@lfoTargetVCA` - on|off
+- `@lfoTargetVCF` - on|off
+- `@lfoTargetOsc1Pitch`, `@lfoTargetOsc2Pitch`, `@lfoTargetOsc3Pitch` - on|off
+- `@lfoTargetOsc1Pan`, `@lfoTargetOsc2Pan`, `@lfoTargetOsc3Pan` - on|off
+- `@lfoTargetOsc1Phase`, `@lfoTargetOsc2Phase`, `@lfoTargetOsc3Phase` - on|off (FM)
 
-**Current state**: Synth is tightly coupled in `HarmonyWheel.tsx` (8400-line monolith)
+**Master (1 param)**:
+- `@masterGain` - Overall volume (0-1)
 
-**Options**:
-1. **Quick iteration** (in HarmonyWheel.tsx): Fast to prototype, messy to maintain
-2. **Proper refactor** (separate module): Clean separation, more upfront work
+### Usage in Songs
+Add parameters to song text, typically before chord progression:
+```
+@osc1Wave saw
+@osc1Gain 0.3
+@osc2Wave square
+@osc2Gain 0.15
+@osc2Tune 7
+@vcaA 5
+@vcaD 200
+@vcaS 0.4
+@vcaR 100
+@vcfType lowpass
+@vcfFreq 2000
+@vcfRes 5
+@vcfAmount 0.8
 
-**Recommendation**: Start in HarmonyWheel.tsx for rapid iteration, refactor later if needed.
+|I| IV| V| I|
+```
+
+### Preset Examples
+See [AUDIO_ENGINE_SIMPLIFICATION_SESSION.md](AUDIO_ENGINE_SIMPLIFICATION_SESSION.md) for preset examples:
+- Warm Pad
+- Plucky Bass
+- Vibrato Lead
+- Auto-Pan Pad
+
+### Architecture Decision - RESOLVED
+✅ **Extracted to separate module** (`src/audio/`)
+- Clean separation of concerns
+- Testable, reusable
+- HarmonyWheel.tsx reduced by 106 lines
+- Ready for future enhancements
 
 ---
 

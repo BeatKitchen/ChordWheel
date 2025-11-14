@@ -214,6 +214,73 @@ export const demoSongs: DemoSong[] = [
     title: "Forgiving Notation Test",
     content: "@TITLE Notation Test\n@KEY C\n@TEMPO 120\n\n(Minus notation)\n|A-| D-|\n\n(M7 notation)\n|CM7| FM7|\n\n(Extensions)\n|G7b9| G13| D9|\n\n(Half-dim)\n|Bm7-5|\n\n(Mixed)\n|Am| E7| FM7| G7| C|\n\n@RHYTHM1 |x x x x|\n@RHYTHM2 |x / x /|\n@RHYTHM3 |x x / x x x / x|",
     bannerMessage: "[[Expert mode|expert]] for sequencer. Join a [[gym|https://beatkitchen.io/classroom]] to learn some music theory!"
+  },
+  {
+    title: "Synth Defaults (v4.4.0)",
+    content: `@TITLE Synth Defaults - All Parameters Shown
+@KEY C
+@TEMPO 120
+
+(Oscillators - only osc1 active by default)
+@osc1Wave sine
+@osc1Gain 0.25
+@osc1Tune 0
+@osc1Pan 0
+
+@osc2Wave sine
+@osc2Gain 0
+@osc2Tune 0
+@osc2Pan 0
+
+@osc3Wave sine
+@osc3Gain 0
+@osc3Tune 0
+@osc3Pan 0
+
+(VCA Envelope)
+@vcaA 10
+@vcaD 90
+@vcaS 0.15
+@vcaR 50
+
+(VCF Filter - wide open by default)
+@vcfType lowpass
+@vcfFreq 20000
+@vcfRes 1
+@vcfA 10
+@vcfD 90
+@vcfS 0.5
+@vcfR 50
+@vcfAmount 0
+
+(LFO - off by default)
+@lfoSpeed 4
+@lfoSpeedSync on
+@lfoDepth 0
+@lfoTargetVCA off
+@lfoTargetVCF off
+@lfoTargetOsc1Pitch off
+@lfoTargetOsc2Pitch off
+@lfoTargetOsc3Pitch off
+@lfoTargetOsc1Pan off
+@lfoTargetOsc2Pan off
+@lfoTargetOsc3Pan off
+@lfoTargetOsc1Phase off
+@lfoTargetOsc2Phase off
+@lfoTargetOsc3Phase off
+
+(Master)
+@masterGain 0.8
+
+(Simple progression to test)
+|I| vi| IV| V7|
+|I| IV| ii| V7|
+|I| I|
+
+@RHYTHM1 |x x x x|
+@RHYTHM2 |x / x /|
+@RHYTHM3 |x x / x x x / x|`,
+    bannerMessage: "🎹 v4.4.0 Synth defaults. Edit parameters to customize your sound!"
   }
 ];
 

@@ -499,14 +499,7 @@ useEffect(() => {
           const now = ctx.currentTime;
           console.log('🔇 Stopping', activeChordNoteIdsRef.current.size, 'chord notes');
           activeChordNoteIdsRef.current.forEach(noteId => {
-            const nodes = activeNotesRef.current.get(noteId);
-            if (nodes) {
-              nodes.gain.gain.cancelScheduledValues(now);
-              nodes.gain.gain.setValueAtTime(nodes.gain.gain.value, now);
-              // ✅ v4.2.5: Quick exponential release (50ms) to match drag handler
-              nodes.gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
-              setTimeout(() => stopNoteById(noteId), 100);
-            }
+            stopNoteById(noteId);
           });
         }
       }
@@ -4449,13 +4442,7 @@ useEffect(() => {
                  const now = ctx.currentTime;
                  console.log('ðŸ”‡ Stopping', activeChordNoteIdsRef.current.size, 'previous notes');
                  activeChordNoteIdsRef.current.forEach(noteId => {
-                   const nodes = activeNotesRef.current.get(noteId);
-                   if (nodes) {
-                     nodes.gain.gain.cancelScheduledValues(now);
-                     nodes.gain.gain.setValueAtTime(nodes.gain.gain.value, now);
-                     nodes.gain.gain.linearRampToValueAtTime(0, now + 0.05); // Quick 50ms fade
-                     setTimeout(() => stopNoteById(noteId), 100);
-                   }
+                   stopNoteById(noteId);
                  });
                  activeChordNoteIdsRef.current.clear();
                }
@@ -4649,21 +4636,7 @@ useEffect(() => {
 
                        // Find and stop the 7th note
                        activeChordNoteIdsRef.current.forEach(noteId => {
-                         const nodes = activeNotesRef.current.get(noteId);
-                         if (nodes) {
-                           // Check if this note is the 7th
-                           const noteMidi = parseInt(noteId.split('-')[0]);
-                           if ((noteMidi % 12) === seventhPc) {
-                             console.log('🎵 Stopping 7th note:', noteMidi, 'PC:', seventhPc);
-                             nodes.gain.gain.cancelScheduledValues(now);
-                             nodes.gain.gain.setValueAtTime(nodes.gain.gain.value, now);
-                             nodes.gain.gain.linearRampToValueAtTime(0, now + 0.05); // Quick 50ms fade
-                             setTimeout(() => {
-                               stopNoteById(noteId);
-                               activeChordNoteIdsRef.current.delete(noteId);
-                             }, 100);
-                           }
-                         }
+                         stopNoteById(noteId);
                        });
                      }
                    }
@@ -4683,13 +4656,7 @@ useEffect(() => {
                const now = ctx.currentTime;
                const releaseTime = 0.4; // Match keyboard release time
                activeChordNoteIdsRef.current.forEach(noteId => {
-                 const nodes = activeNotesRef.current.get(noteId);
-                 if (nodes) {
-                   nodes.gain.gain.cancelScheduledValues(now);
-                   nodes.gain.gain.setValueAtTime(nodes.gain.gain.value, now);
-                   nodes.gain.gain.linearRampToValueAtTime(0, now + releaseTime);
-                   setTimeout(() => stopNoteById(noteId), (releaseTime * 1000) + 50);
-                 }
+                 stopNoteById(noteId);
                });
              }
            }}
@@ -4712,13 +4679,7 @@ useEffect(() => {
                const now = ctx.currentTime;
                const releaseTime = 0.4;
                activeChordNoteIdsRef.current.forEach(noteId => {
-                 const nodes = activeNotesRef.current.get(noteId);
-                 if (nodes) {
-                   nodes.gain.gain.cancelScheduledValues(now);
-                   nodes.gain.gain.setValueAtTime(nodes.gain.gain.value, now);
-                   nodes.gain.gain.linearRampToValueAtTime(0, now + releaseTime);
-                   setTimeout(() => stopNoteById(noteId), (releaseTime * 1000) + 50);
-                 }
+                 stopNoteById(noteId);
                });
              }
            }}>
@@ -4979,162 +4940,44 @@ useEffect(() => {
     return audioContextRef.current;
   };
 
-  const playNote = (midiNote: number, velocity: number = 0.5, isChordNote: boolean = false) => {
-    console.log('🎵 playNote START:', {midiNote, velocity, isChordNote, audioEnabledState: audioEnabled, audioEnabledRef: audioEnabledRef.current});
-    
-    if (!audioEnabledRef.current) {  // Use ref instead of state!
-      console.log('⏺Œ Audio disabled, returning');
-      return;
-    }
-    
-    console.log('ðŸ”Š Initializing audio context...');
+  const playNote = (midiNote: number, velocity: number = 0.5, isChordNote: boolean = false): string => {
+    if (!audioEnabledRef.current) return '';
+
     const ctx = initAudioContext();
-    console.log('ðŸ”Š Context state:', ctx.state, 'Sample rate:', ctx.sampleRate);
-    
-    if (ctx.state === 'suspended') {
-      console.log('⏺š ï¸ Context suspended, attempting resume...');
-      ctx.resume();
-    }
+    if (ctx.state === 'suspended') ctx.resume();
 
-    // ✅ v4.2.2: Polyphony limiting - steal oldest voice if at limit
+    // ✅ v4.4.0: Use Synthesizer module for all audio playback
+    const noteId = playNoteWithSynth(
+      ctx,
+      midiNote,
+      velocity,
+      synthParamsRef.current,
+      tempo,
+      isDesktop
+    );
+
+    // Check polyphony limit
     const MAX_POLYPHONY = 10;
-    if (activeNotesRef.current.size >= MAX_POLYPHONY) {
-      // Get oldest note (first in the Map)
-      const oldestNoteId = activeNotesRef.current.keys().next().value;
-      if (oldestNoteId) {
-        console.log(`Polyphony limit reached (${MAX_POLYPHONY}), stealing oldest voice:`, oldestNoteId);
-        stopNoteById(oldestNoteId); // This will gracefully release with exponential envelope
-      }
+    if (getActiveNoteCount() >= MAX_POLYPHONY) {
+      console.log(`⚠️ Polyphony limit reached (${MAX_POLYPHONY})`);
     }
 
-    // Generate unique ID for this note instance (allows same MIDI note multiple times)
-    const noteId = `${midiNote}-${Date.now()}-${Math.random()}`;
-    console.log('ðŸ†” Generated note ID:', noteId);
-    
-    const freq = 440 * Math.pow(2, (midiNote - 69) / 12);
-    const now = ctx.currentTime;
-    console.log('ðŸ“Š Frequency:', freq.toFixed(2), 'Hz, Time:', now.toFixed(3));
-    
-    // ✅ v4.2.0: Single oscillator (removed detuned osc2 - testing phase issues)
-    console.log('🎹 Creating oscillators...');
-    const osc1 = ctx.createOscillator();
-    osc1.type = 'sine';
-    osc1.frequency.value = freq;
-
-    // const osc2 = ctx.createOscillator(); // ✅ COMMENTED OUT - testing phase cancellation
-    // osc2.type = 'sine';
-    // osc2.frequency.value = freq * 1.003;
-
-    // ✅ v4.3.0: SIMPLIFIED - just basic sine wave, velocity only affects amplitude
-    // No percussive element, no velocity curves, no ADSR modulation
-    const gain1 = ctx.createGain();
-    gain1.gain.value = velocity; // Direct linear velocity → amplitude mapping
-
-    const mainGain = ctx.createGain();
-    mainGain.gain.value = 0;
-    const mobileBoost = !isDesktop ? 2.2 : 1.8;
-
-    // Simple fixed envelope - NO velocity modulation of ADSR
-    // Attack: 10ms, Decay: 90ms, Sustain: 0.15, Release: 50ms (on note-off)
-    const peakLevel = 0.25; // Fixed peak (reduced from 0.5 to prevent distortion)
-    const sustainLevel = 0.15; // Fixed sustain (reduced from 0.3 to prevent distortion)
-
-    mainGain.gain.setValueAtTime(0, now);
-    mainGain.gain.linearRampToValueAtTime(peakLevel, now + 0.010); // 10ms attack
-    mainGain.gain.linearRampToValueAtTime(sustainLevel, now + 0.100); // 90ms decay
-    
-    // ✅ Removed lowpass filter - not needed for sine waves
-    // Highpass filter to roll off low end rumble
-    const highpass = ctx.createBiquadFilter();
-    highpass.type = 'highpass';
-    highpass.frequency.value = 200; // Roll off below 200Hz
-    highpass.Q.value = 0.7; // Gentle rolloff
-
-    // ✅ Compressor nearly out of the mix - only emergency failsafe
-    const compressor = ctx.createDynamicsCompressor();
-    compressor.threshold.value = -3; // Nearly out of the mix (was -6)
-    compressor.knee.value = 30; // Soft knee maintained
-    compressor.ratio.value = 6; // Gentler ratio (was 8)
-    compressor.attack.value = 0.003; // Fast attack to catch transients
-    compressor.release.value = 0.25; // Longer release
-    
-    // Makeup gain (reduced since compressor bypassed)
-    const makeupGain = ctx.createGain();
-    makeupGain.gain.value = mobileBoost * 0.8; // Reduced from 1.0
-    
-    console.log('ðŸ”— Connecting audio graph...');
-    osc1.connect(gain1);
-    // osc2.connect(gain2); // ✅ COMMENTED OUT with osc2
-    // osc3.connect(gain3); // ✅ v4.3.0: Percussive element removed
-    gain1.connect(highpass); // ✅ Direct to highpass (lowpass removed)
-    // gain2.connect(highpass); // ✅ COMMENTED OUT with osc2
-    // gain3.connect(highpass); // ✅ v4.3.0: Percussive element removed
-    highpass.connect(mainGain);
-    mainGain.connect(makeupGain); // ✅ v4.2.5: Bypass compressor - direct to output
-    makeupGain.connect(ctx.destination);
-    
-    console.log('▶ï¸ Starting oscillators...');
-    try {
-      osc1.start(now);
-      // osc2.start(now); // ✅ COMMENTED OUT with osc2
-      // osc3.start(now); // ✅ v4.3.0: Percussive element removed
-      console.log('✅ Oscillators started successfully!');
-    } catch(err) {
-      console.error('⏺Œ Error starting oscillators:', err);
-      return;
-    }
-    
-    activeNotesRef.current.set(noteId, {osc1, osc2: osc1, osc3: osc1, gain: mainGain}); // Placeholders for compatibility
-    console.log('ðŸ’¾ Stored note. Active count:', activeNotesRef.current.size);
-    
-    // ✅ v4.2.4: Notes sustain infinitely - only stop on explicit note-off (MIDI, key up, mouse up)
-    // No auto-fade! User confirmed: "they absolutely do sustain infinitely. And that's good."
-    console.log('🎵 Note sustaining - will stop on explicit release only');
-    
-    console.log('✅ playNote COMPLETE, returning ID:', noteId);
-    return noteId; // Return ID so we can stop this specific instance
+    return noteId;
   };
 
   const stopNoteById = (noteId: string) => {
-    const nodes = activeNotesRef.current.get(noteId);
-    if (nodes && audioContextRef.current) {
-      try {
-        const now = audioContextRef.current.currentTime;
-        const currentGain = nodes.gain.gain.value;
-
-        nodes.gain.gain.cancelScheduledValues(now);
-        nodes.gain.gain.setValueAtTime(currentGain, now);
-
-        // ✅ v4.2.5: Quick exponential release (50ms) - prevents clicks
-        nodes.gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
-
-        setTimeout(() => {
-          try {
-            nodes.osc1.stop();
-            // nodes.osc2.stop(); // ✅ COMMENTED OUT with osc2
-            // nodes.osc3.stop(); // ✅ v4.3.0: Percussive element removed
-          } catch(e) { /* already stopped */ }
-          activeNotesRef.current.delete(noteId);
-        }, 100); // Cleanup after 100ms
-      } catch(e) { /* ignore */ }
-    }
+    if (!audioContextRef.current) return;
+    stopNoteByIdWithSynth(audioContextRef.current, noteId);
   };
 
   const stopNote = (midiNote: number) => {
-    // Stop all instances of this MIDI note
-    const noteIdsToStop: string[] = [];
-    activeNotesRef.current.forEach((_, noteId) => {
-      if (noteId.startsWith(`${midiNote}-`)) {
-        noteIdsToStop.push(noteId);
-      }
-    });
-    noteIdsToStop.forEach(id => stopNoteById(id));
+    if (!audioContextRef.current) return;
+    stopNoteWithSynth(audioContextRef.current, midiNote);
   };
   
   const stopAllActiveNotes = () => {
-    // Stop all currently playing notes
-    const activeNotes = Array.from(activeNotesRef.current.keys());
-    activeNotes.forEach(noteId => stopNoteById(noteId));
+    if (!audioContextRef.current) return;
+    stopAllNotes(audioContextRef.current);
   };
 
   const playChord = (midiNotes: number[], duration: number = 1.0) => {
@@ -5467,13 +5310,7 @@ useEffect(() => {
         // Stop ALL previous chord notes
         console.log('ðŸ”‡ Stopping', activeChordNoteIdsRef.current.size, 'previous notes');
         activeChordNoteIdsRef.current.forEach(noteId => {
-          const nodes = activeNotesRef.current.get(noteId);
-          if (nodes) {
-            nodes.gain.gain.cancelScheduledValues(now);
-            nodes.gain.gain.setValueAtTime(nodes.gain.gain.value, now);
-            nodes.gain.gain.linearRampToValueAtTime(0, now + FAST_FADE);
-            setTimeout(() => stopNoteById(noteId), FAST_FADE * 1000 + 50);
-          }
+          stopNoteById(noteId);
         });
         
         activeChordNoteIdsRef.current.clear();
