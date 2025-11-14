@@ -408,6 +408,11 @@ Before marking ANY task complete:
 ### Keyboard Shortcuts (Non-Performance Mode)
 - **1-5**: Switch skill levels (ROOKIE → EXPERT)
 
+### Critical UI Constraints
+- **Banner Links Must Be Clickable**: Banner div MUST have `touchAction: 'auto'`, `pointerEvents: 'auto'`, `userSelect: 'auto'`, `zIndex: 10`, `position: 'relative'` to override parent's `touchAction: 'pan-y'` and allow link clicks (lines 6388-6403)
+- **Transpose Buttons Always Visible in Expert Mode**: Transpose selector (TR) and Transpose Bypass (TR ON/OFF) buttons MUST always be visible in EXPERT mode to prevent UI shifting. Bypass button is disabled (opacity 0.5) when transpose=0 but still rendered (line 7220)
+- **iframe Scroll Prevention**: When in iframe, body and html MUST have `overflow: hidden` to prevent unwanted scroll (lines 568-588)
+
 ### Pending Issues
 - ⚠️ Need comprehensive testing across all 12 keys (especially with triple-tap)
 

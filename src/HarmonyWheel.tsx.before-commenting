@@ -228,7 +228,7 @@ export default function HarmonyWheel(){
   };
   
   // 🚀 v4.0.0 Feature Flag
-  // const USE_NEW_ENGINE = true; // No longer needed - always using new engine
+  const USE_NEW_ENGINE = true;
   
   // Bonus wedges available in ADVANCED and EXPERT
   const bonusWedgesAllowed = skillLevel === "ADVANCED" || skillLevel === "EXPERT";
@@ -383,9 +383,6 @@ useEffect(() => {
   // ✅ Bonus chord recording debounce - wait for final chord before recording
   const bonusRecordDebounceRef = useRef<number | null>(null);
   const latestBonusChordNameRef = useRef<string>(""); // Track latest chord name for debounced recording
-
-  // ✅ MIDI chord detection debounce - prevent double entry when playing tetrads
-  const midiDetectionDebounceRef = useRef<number | null>(null);
   
   /* ---------- Space Lock (v3.11.0) ---------- */
   const [spaceLocked, setSpaceLocked] = useState(false);
@@ -563,28 +560,6 @@ useEffect(() => {
     return () => {
       window.removeEventListener('message', handleMessage);
     };
-  }, []);
-
-  // ✅ Fix iframe scroll issue - prevent body overflow when embedded
-  useEffect(() => {
-    const isInIframe = window.parent && window.parent !== window;
-
-    if (isInIframe) {
-      // Set overflow hidden on body and html to prevent scroll
-      const originalBodyOverflow = document.body.style.overflow;
-      const originalHtmlOverflow = document.documentElement.style.overflow;
-
-      document.body.style.overflow = 'hidden';
-      document.documentElement.style.overflow = 'hidden';
-
-      console.log('📐 Iframe detected - disabled body scroll');
-
-      // Cleanup: restore original overflow on unmount
-      return () => {
-        document.body.style.overflow = originalBodyOverflow;
-        document.documentElement.style.overflow = originalHtmlOverflow;
-      };
-    }
   }, []);
 
   // Load from URL when params change
@@ -782,16 +757,7 @@ useEffect(() => {
             playNote(transposedNote, velocity, false);
           }
         }
-
-        // ✅ Debounce chord detection to prevent double-entry (e.g., triad + tetrad)
-        // Clear any pending detection and schedule a new one
-        if (midiDetectionDebounceRef.current !== null) {
-          clearTimeout(midiDetectionDebounceRef.current);
-        }
-        midiDetectionDebounceRef.current = window.setTimeout(() => {
-          detectV4();
-          midiDetectionDebounceRef.current = null;
-        }, 100); // Wait 100ms for chord to stabilize
+        if (USE_NEW_ENGINE) { detectV4(); } else { detect(); }
       } else if (type===0x80 || (type===0x90 && d2===0)) {
         lastMidiEventRef.current = "off";
         if (d1<=36) leftHeld.current.delete(d1);
@@ -810,7 +776,7 @@ useEffect(() => {
         // User can then click "Make This My Key" button
         // Only detect after a delay
         setTimeout(() => {
-          detectV4();
+          if (USE_NEW_ENGINE) { detectV4(); } else { detect(); }
           
           // ✅ Start 10-second latch timer if all notes released
           const allNotesReleased = rightHeld.current.size === 0 && rightSus.current.size === 0;
@@ -839,7 +805,7 @@ useEffect(() => {
           for (const n of Array.from(rightSus.current))
             if (!rightHeld.current.has(n)) rightSus.current.delete(n);
           sustainOn.current = false;
-          detectV4();
+          if (USE_NEW_ENGINE) { detectV4(); } else { detect(); }
         } else if (on && !sustainOn.current){
           sustainOn.current = true;
           for (const n of rightHeld.current) rightSus.current.add(n);
@@ -1924,7 +1890,7 @@ useEffect(() => {
       lastInputWasPreviewRef.current = true;
 
       // Update display (wheel, keyboard, etc.)
-      detectV4();
+      if (USE_NEW_ENGINE) { detectV4(); } else { detect(); }
 
       // Restore previous state
       rightHeld.current = savedRightHeld;
@@ -1976,7 +1942,7 @@ useEffect(() => {
       lastInputWasPreviewRef.current = true;
 
       // Update display (wheel, keyboard, etc.)
-      detectV4();
+      if (USE_NEW_ENGINE) { detectV4(); } else { detect(); }
 
       // Restore previous state
       rightHeld.current = savedRightHeld;
@@ -2234,7 +2200,7 @@ useEffect(() => {
           setLatchedAbsNotes(notesToShow);
           latchedAbsNotesRef.current = notesToShow;
           lastInputWasPreviewRef.current = true;
-          detectV4();
+          if (USE_NEW_ENGINE) { detectV4(); } else { detect(); }
           rightHeld.current = savedRightHeld;
           lastMidiEventRef.current = savedEvent;
         }
@@ -2257,7 +2223,7 @@ useEffect(() => {
       setLatchedAbsNotes(notesToShow);
       latchedAbsNotesRef.current = notesToShow;
       lastInputWasPreviewRef.current = true;
-      detectV4();
+      if (USE_NEW_ENGINE) { detectV4(); } else { detect(); }
       rightHeld.current = savedRightHeld;
       lastMidiEventRef.current = savedEvent;
     }
@@ -2285,7 +2251,7 @@ useEffect(() => {
           setLatchedAbsNotes(notesToShow);
           latchedAbsNotesRef.current = notesToShow;
           lastInputWasPreviewRef.current = true;
-          detectV4();
+          if (USE_NEW_ENGINE) { detectV4(); } else { detect(); }
           rightHeld.current = savedRightHeld;
           lastMidiEventRef.current = savedEvent;
         }
@@ -2307,7 +2273,7 @@ useEffect(() => {
       setLatchedAbsNotes(notesToShow);
       latchedAbsNotesRef.current = notesToShow;
       lastInputWasPreviewRef.current = true;
-      detectV4();
+      if (USE_NEW_ENGINE) { detectV4(); } else { detect(); }
       rightHeld.current = savedRightHeld;
       lastMidiEventRef.current = savedEvent;
     }
@@ -3016,16 +2982,6 @@ useEffect(() => {
         setShowTransposeDropdown(false);
         setStepRecord(false);
         stepRecordRef.current = false;
-
-        // ✅ Close performance mode if open
-        if (performanceModeRef.current) {
-          setPerformanceMode(false);
-          performanceModeRef.current = false;
-        }
-
-        // ✅ Close song menu if open
-        setShowSongMenu(false);
-
         // Blur ALL inputs (BPM, textarea, etc.)
         if (document.activeElement instanceof HTMLElement) {
           document.activeElement.blur();
@@ -3250,7 +3206,7 @@ useEffect(() => {
       lastInputWasPreviewRef.current = true; // Mark as sequencer input
 
       // Update display (keyboard, wheel, etc.)
-      detectV4();
+      if (USE_NEW_ENGINE) { detectV4(); } else { detect(); }
 
       // Restore previous state (for next iteration)
       rightHeld.current = savedRightHeld;
@@ -3986,13 +3942,1333 @@ useEffect(() => {
     }, 10000);
   }
 
-  // ============================================================================
-  // OLD detect() function REMOVED (1,326 lines)
-  // Backed up to: OLD_detect_function_BACKUP.txt
-  // New engine (detectV4) is now exclusively active
-  // To revert: Restore from backup file or git
-  // ============================================================================
+  function detect(){
 
+    const evt = lastMidiEventRef.current;
+    const isNoteOn  = (evt === "on");
+    const isNoteOff = (evt === "off");
+
+    const phys=[...rightHeld.current], sus=sustainOn.current?[...rightSus.current]:[], merged=new Set<number>([...phys,...sus]);
+    const absHeld=[...merged];
+    const pcsAbs=new Set(absHeld.map(pcFromMidi));
+    
+    // MIDI shortcut detection moved to note-off to avoid interference with playing
+    // Now handled separately in MIDI message handler
+
+    if(pcsAbs.size===0){
+      console.log('ðŸ” No notes held - checking latch state:', {
+        latchedChord: latchedChordRef.current,
+        hasLatchedChord: !!latchedChordRef.current,
+        subdomActive: subdomActiveRef.current,
+        subdomLatched: subdomLatchedRef.current
+      });
+      
+      setTapEdge("REL_Am", false); setTapEdge("REL_C", false); setTapEdge("VIS_G", false);
+      bonusDeb.reset();
+
+      // ✅ Check for latched chord before clearing
+      if (latchedChordRef.current) {
+        console.log('ðŸ”’ MIDI latch active - keeping display:', latchedChordRef.current);
+        // Restore the latched chord display
+        if (latchedChordRef.current.fn) {
+          setActiveFn(latchedChordRef.current.fn);
+        }
+        setCenterLabel(latchedChordRef.current.label);
+        return; // Don't clear!
+      }
+
+      if (subdomActiveRef.current && subdomLatchedRef.current) {
+        if (!centerLabel) setCenterLabel(subKey);
+        if (!activeFnRef.current) setActiveFn(subLastSeenFnRef.current || "I");
+        hardClearGhostIfIdle();
+        return;
+      }
+      hardClearGhostIfIdle();
+      console.log('⏺Œ No latch - clearing display');
+      return clear();
+    }
+
+    setLatchedAbsNotes(absHeld);
+
+    // PHASE 2C: Convert to baseKey-relative (not C-relative!)
+    // This makes ALL isSubset() checks work in any key
+    const toRel=(n:number)=>((n-NAME_TO_PC[baseKeyRef.current]+12)%12);
+    const pcsRel=new Set([...pcsAbs].map(toRel));
+    // MODIFIED v2.37.9: Pass absHeld array to internalAbsoluteName for dim7 root disambiguation
+    const absName = internalAbsoluteName(pcsAbs, baseKeyRef.current, absHeld) || "";
+    
+  // ✅ E7-ONLY DIAGNOSTIC for double-press bug
+    if (absName === "E7") {
+      console.log('ðŸ” E7 DETECTED:', {
+        chord: absName,
+        pcsRel: [...pcsRel],
+        visitor: visitorActiveRef.current,
+        subdom: subdomActiveRef.current,
+        homeSuppressUntil: homeSuppressUntilRef.current,
+        now: performance.now(),
+        suppressed: performance.now() < homeSuppressUntilRef.current,
+        blocked: performance.now() < homeSuppressUntilRef.current ? 'YES - BLOCKED' : 'NO'
+      });
+    }
+    
+    // v3.5.0: Fix diminished chord spelling in HOME space
+    // G#dim (leading tone to A), C#dim (leading tone to D), Ebdim (ties to bIII parallel)
+    let displayName = absName;
+    if ((absName.includes('Â°') || absName.includes('dim')) && !relMinorActiveRef.current && !subdomActiveRef.current && !visitorActiveRef.current) {
+      // HOME space only - spell based on function
+      const before = displayName;
+      displayName = displayName
+        .replace(/^Ab(dim|Â°)/, 'G#$1')   // G# is leading tone to A (V/vi function)
+        .replace(/^Db(dim|Â°)/, 'C#$1')   // C# is leading tone to D (V/ii function)  
+        .replace(/^D#(dim|Â°)/, 'Eb$1');  // Eb ties to bIII in parallel (keep flat)
+      if (before !== displayName) {
+        console.log('ðŸ”¤ Spelling fix:', before, '⏺†’', displayName);
+      }
+      // Gb⏺†’F# naturally handled by theory.ts
+    }
+    
+    // Store for Make My Key - this is the pure MIDI detection result
+    if (absName) {
+      lastDetectedChordRef.current = absName;
+      console.log('ðŸ’Ž lastDetectedChordRef set to:', absName, '(from theory.ts)');
+    }
+
+    updateRecentRel(pcsRel);
+
+    const isSubset = (need:number[])=> subsetOf(T(need), pcsRel);
+
+    /* ---------- PRIORITY DIM7 CHECK (v3.5.6) ---------- */
+    // CRITICAL: Check ALL dim7 chords BEFORE any other logic (including PAR)
+    // Must run IMMEDIATELY after getting absName from theory.ts
+    
+    // v3.5.6: ALWAYS check if currently held notes form a dim7, regardless of what was detected
+    // This prevents Bdim from showing when all 4 notes of G#dim7 are held
+    const currentPcsRel = new Set([...merged].map(n => pcFromMidi(n)).map(n => (n - NAME_TO_PC[baseKeyRef.current] + 12) % 12));
+    const bassNote = absHeld.length > 0 ? Math.min(...absHeld) : null;
+    const bassPc = bassNote !== null ? (bassNote % 12) : null;
+    
+    console.log('ðŸ” [DIM7 ALWAYS-CHECK]', {
+      currentPcsRel: [...currentPcsRel].sort((a,b) => a-b),
+      absHeld,
+      bassNote,
+      bassPc,
+      absName,
+      displayName
+    });
+    
+    // G#dim7 [8,11,2,5] with G# bass ⏺†’ V/vi wedge
+    // Check if ALL 4 notes are currently held
+    if (currentPcsRel.size >= 4 && [8,11,2,5].every(pc => currentPcsRel.has(pc)) && bassPc === 8) {
+      if (shouldTriggerBonus("V/vi")) {
+        console.log('✅ G#dim7 ALWAYS detected (all 4 notes held) ⏺†’ V/vi');
+        setActiveWithTrail("V/vi", displayName);
+        return;
+      }
+    }
+    
+    // ✅ v3.17.85 FIX: Bm7b5 ABSOLUTE PRIORITY - must check before diatonic
+    // Bm7b5 [11,2,5,9] shares notes with Dm7 [2,5,9,0] - must catch it early!
+    if (pcsRel.has(11) && pcsRel.has(2) && pcsRel.has(5) && pcsRel.has(9) && pcsRel.size === 4) {
+      if (shouldShowBonusOverlay()) {
+        console.log('✅ Bm7♭5 EARLY CHECK ⏺†’ ii/vi bonus');
+        setActiveFn("");
+        setCenterLabel(displayName);
+        setBonusActive(true);
+        setBonusLabel("Bm7♭5");
+        
+        // ✅ Debounced recording for early check
+        if (stepRecordRef.current && absName) {
+          latestBonusChordNameRef.current = absName;
+          if (bonusRecordDebounceRef.current !== null) {
+            clearTimeout(bonusRecordDebounceRef.current);
+          }
+          bonusRecordDebounceRef.current = window.setTimeout(() => {
+            const chordToRecord = latestBonusChordNameRef.current;
+            console.log('ðŸ“ Recording Bm7b5 (early check, after debounce):', chordToRecord);
+            setInputText(prev => {
+              const rhythmIndex = prev.indexOf('@RHYTHM');
+              if (rhythmIndex !== -1) {
+                const beforeRhythm = prev.substring(0, rhythmIndex).trimEnd();
+                const rhythmSection = prev.substring(rhythmIndex);
+                const needsComma = beforeRhythm.length > 0 && !beforeRhythm.endsWith(',');
+                return beforeRhythm + (needsComma ? ', ' : '') + chordToRecord + '\n\n' + rhythmSection;
+              } else {
+                return prev ? `${prev}, ${chordToRecord}` : chordToRecord;
+              }
+            });
+            bonusRecordDebounceRef.current = null;
+            latestBonusChordNameRef.current = "";
+          }, 50);
+        }
+        
+        return;
+      }
+    }
+    
+  // ✅ FIX: Bdim triad EARLY CHECK - must check before diatonic
+    // Bdim [11,2,5] can match as subset of Dm [2,5,9] - catch it early!
+    if (pcsRel.has(11) && pcsRel.has(2) && pcsRel.has(5) && pcsRel.size === 3) {
+      if (shouldShowBonusOverlay()) {
+        console.log('✅ Bdim TRIAD EARLY CHECK ⏺†’ ii/vi bonus');
+        setActiveFn("");
+        setCenterLabel(displayName);
+        setBonusActive(true);
+        setBonusLabel("Bm7♭5"); // Use functional label
+        
+        // ✅ Debounced recording for early check
+        if (stepRecordRef.current && absName) {
+          latestBonusChordNameRef.current = absName;
+          if (bonusRecordDebounceRef.current !== null) {
+            clearTimeout(bonusRecordDebounceRef.current);
+          }
+          bonusRecordDebounceRef.current = window.setTimeout(() => {
+            const chordToRecord = latestBonusChordNameRef.current;
+            console.log('ðŸ“ Recording Bdim (early check, after debounce):', chordToRecord);
+            setInputText(prev => {
+              const rhythmIndex = prev.indexOf('@RHYTHM');
+              if (rhythmIndex !== -1) {
+                const beforeRhythm = prev.substring(0, rhythmIndex).trimEnd();
+                const rhythmSection = prev.substring(rhythmIndex);
+                const needsComma = beforeRhythm.length > 0 && !beforeRhythm.endsWith(',');
+                return beforeRhythm + (needsComma ? ', ' : '') + chordToRecord + '\n\n' + rhythmSection;
+              } else {
+                return prev ? `${prev}, ${chordToRecord}` : chordToRecord;
+              }
+            });
+            bonusRecordDebounceRef.current = null;
+            latestBonusChordNameRef.current = "";
+          }, 50);
+        }
+        
+        // ✅ Bonus wedge will light automatically via bonusActive + bonusLabel
+        // No need to call setActiveWithTrail - bonus overlay handles highlighting
+        return;
+      }
+    }
+    
+  // ✅ REMOVED: Early Fmaj7 check was here but it ran BEFORE SUB section
+    // This caused Fmaj7 in SUB space to light IV (Bb) instead of I (F)
+    // The proper Fmaj7 check with SUB guard is at line ~5540
+    
+    // Bdim7 [11,2,5,8] with B bass ⏺†’ V7 wedge (exception!)
+    if (currentPcsRel.size >= 4 && [11,2,5,8].every(pc => currentPcsRel.has(pc)) && bassPc === 11) {
+      console.log('✅ Bdim7 ALWAYS detected (all 4 notes held) ⏺†’ V7');
+      setActiveWithTrail("V7", displayName);
+      return;
+    }
+    
+    // ✅ v3.19.55: C#dim triad detection - check ABSOLUTE pitch classes [1,4,7]
+    // This works in ALL keys because C#-E-G is always [1,4,7] absolute
+    const absolutePcs = new Set([...merged].map(n => n % 12));
+    const hasCSharpDimTriad = absolutePcs.has(1) && absolutePcs.has(4) && absolutePcs.has(7) && absolutePcs.size === 3;
+    
+    console.log('ðŸ” C#dim triad check:', {
+      absolutePcs: Array.from(absolutePcs).sort((a,b) => a-b),
+      has1: absolutePcs.has(1),
+      has4: absolutePcs.has(4),
+      has7: absolutePcs.has(7),
+      size: absolutePcs.size,
+      shouldShow: shouldShowBonusOverlay(),
+      match: hasCSharpDimTriad
+    });
+    
+    if (hasCSharpDimTriad) {
+      if (shouldShowBonusOverlay()) {
+        console.log('✅ C#dim TRIAD EARLY CHECK ⏺†’ V/ii bonus');
+        setActiveFn("");
+        setCenterLabel(displayName);
+        setBonusActive(true);
+        setBonusLabel("A7"); // Functional label
+        
+        // ✅ Debounced recording for early check
+        if (stepRecordRef.current && absName) {
+          latestBonusChordNameRef.current = absName;
+          if (bonusRecordDebounceRef.current !== null) {
+            clearTimeout(bonusRecordDebounceRef.current);
+          }
+          bonusRecordDebounceRef.current = window.setTimeout(() => {
+            const chordToRecord = latestBonusChordNameRef.current;
+            console.log('ðŸ“ Recording C#dim (early check, after debounce):', chordToRecord);
+            setInputText(prev => {
+              const rhythmIndex = prev.indexOf('@RHYTHM');
+              if (rhythmIndex !== -1) {
+                const beforeRhythm = prev.substring(0, rhythmIndex).trimEnd();
+                const rhythmSection = prev.substring(rhythmIndex);
+                const needsComma = beforeRhythm.length > 0 && !beforeRhythm.endsWith(',');
+                return beforeRhythm + (needsComma ? ', ' : '') + chordToRecord + '\n\n' + rhythmSection;
+              } else {
+                return prev ? `${prev}, ${chordToRecord}` : chordToRecord;
+              }
+            });
+            bonusRecordDebounceRef.current = null;
+            latestBonusChordNameRef.current = "";
+          }, 50);
+        }
+        
+        return;
+      }
+    }
+    
+    // ✅ v3.19.55: C#dim7 detection - check ABSOLUTE pitch classes [1,4,7,10]
+    const hasCSharpDim7 = absolutePcs.size >= 4 && [1,4,7,10].every(pc => absolutePcs.has(pc));
+    if (hasCSharpDim7) {
+      if (shouldShowBonusOverlay()) {
+        console.log('✅ C#dim7 EARLY CHECK (any inversion) ⏺†’ V/ii bonus');
+        setActiveFn("");
+        setCenterLabel(displayName);
+        setBonusActive(true);
+        setBonusLabel("A7"); // Functional label
+        
+        // ✅ Debounced recording for early check
+        if (stepRecordRef.current && absName) {
+          latestBonusChordNameRef.current = absName;
+          if (bonusRecordDebounceRef.current !== null) {
+            clearTimeout(bonusRecordDebounceRef.current);
+          }
+          bonusRecordDebounceRef.current = window.setTimeout(() => {
+            const chordToRecord = latestBonusChordNameRef.current;
+            console.log('ðŸ“ Recording C#dim7 (early check, after debounce):', chordToRecord);
+            setInputText(prev => {
+              const rhythmIndex = prev.indexOf('@RHYTHM');
+              if (rhythmIndex !== -1) {
+                const beforeRhythm = prev.substring(0, rhythmIndex).trimEnd();
+                const rhythmSection = prev.substring(rhythmIndex);
+                const needsComma = beforeRhythm.length > 0 && !beforeRhythm.endsWith(',');
+                return beforeRhythm + (needsComma ? ', ' : '') + chordToRecord + '\n\n' + rhythmSection;
+              } else {
+                return prev ? `${prev}, ${chordToRecord}` : chordToRecord;
+              }
+            });
+            bonusRecordDebounceRef.current = null;
+            latestBonusChordNameRef.current = "";
+          }, 50);
+        }
+
+        return;
+      }
+    }
+    
+    // If we get here and it's a dim triad (3 notes), allow it through
+    // (not part of a held dim7 chord)
+    const exactSet=(need:number[])=>{
+      const needSet=T(need); if(!subsetOf(needSet, pcsRel)) return false;
+      for(const p of pcsRel) if(!needSet.has(p)) return false;
+      return true;
+    };
+
+    const amPresent = isSubset([9,0,4]) || isSubset([9,0,4,2]);
+    const cPresent  = isSubset([0,4,7]) || isSubset([0,4,7,11]);
+
+    // ---------- triple-taps ----------
+    if (isNoteOn) {
+    if(setTapEdge("REL_Am", amPresent) >= 3){
+      if(subdomActiveRef.current) subSpinExit();
+      setSubdomActive(false); subdomLatchedRef.current=false; subHasSpunRef.current=false;
+      homeSuppressUntilRef.current = 0; justExitedSubRef.current = false;
+      setRelMinorActive(true); setVisitorActive(false);
+      setActiveWithTrail("vi", absName || "Am"); return;
+    }
+    if(setTapEdge("REL_C", cPresent) >= 3){
+      if(subdomActiveRef.current) subSpinExit();
+      setSubdomActive(false); subdomLatchedRef.current=false; subHasSpunRef.current=false;
+      homeSuppressUntilRef.current = 0; justExitedSubRef.current = false;
+      setRelMinorActive(false); setVisitorActive(false);
+      setActiveWithTrail("I", absName || "C"); setCenterLabel("C"); return;
+    }
+    const gPresentTap = visitorActiveRef.current && (isSubset([7,11,2]) || isSubset([7,11,2,5]));
+    // ✅ v3.19.55: V7 detection - exclude Em7 [4,7,11,2] by checking !pcsRel.has(4)
+    if (!visitorActiveRef.current && (isSubset([7,11,2]) || isSubset([7,11,2,5])) && !pcsRel.has(4)) {
+      if (subdomActiveRef.current) subSpinExit();
+      setSubdomActive(false); subdomLatchedRef.current=false; subHasSpunRef.current=false;
+      homeSuppressUntilRef.current = 0; justExitedSubRef.current = false;
+      setVisitorActive(false); setRelMinorActive(false);
+      setActiveWithTrail("V7", absName || "G7"); return;
+    }
+    
+    // ✅ E7 (V/vi) also exits SUB - triad OR 7th
+    // E triad [4,8,11] or E7 [4,8,11,2]
+    if (!visitorActiveRef.current && (isSubset([4,8,11]) || isSubset([4,8,11,2]))) {
+      if (subdomActiveRef.current) subSpinExit();
+      setSubdomActive(false); subdomLatchedRef.current=false; subHasSpunRef.current=false;
+      homeSuppressUntilRef.current = 0; justExitedSubRef.current = false;
+      setVisitorActive(false); setRelMinorActive(false);
+      setActiveWithTrail("V/vi", absName || "E7"); return;
+    }
+
+    if(setTapEdge("VIS_G", gPresentTap) >= 3){
+      if(subdomActiveRef.current) subSpinExit();
+      setSubdomActive(false); subdomLatchedRef.current=false; subHasSpunRef.current=false;
+      homeSuppressUntilRef.current = 0; justExitedSubRef.current = false;
+      setVisitorActive(false); setRelMinorActive(false);
+      setActiveWithTrail("V7", absName || "G/G7"); return;
+    }
+    }
+
+    /* ---------- BONUS OVERLAYS ---------- */
+    {
+      const inParallel = visitorActiveRef.current;
+
+      const isFullDim7 = (() => {
+        const r = findDim7Root(pcsRel);
+        return r !== null;
+      })();
+
+      // ========== NEW v2.45.0: viiÂ°7 special case (works in all keys!) ==========
+      // viiÂ°7 (leading tone dim7) acts as dominant substitute in ANY key
+      // Pattern: [11,2,5,8] relative to tonic (7th scale degree + dim7 intervals)
+      // C: Bdim7, F: Edim7, G: F#dim7, Ab: Gdim7, etc.
+      // Allow extra notes (doubled roots, etc.) as long as core pattern present
+      const hasVii7Pattern = isSubset([11,2,5,8]) && isFullDim7;
+      if (!inParallel && hasVii7Pattern) {
+        // Light the V7 wedge, display actual chord name in hub
+        setActiveFn("V7"); 
+        setCenterLabel(displayName); // Use actual name (Bdim7, Edim7, etc.)
+        setBonusActive(false);  // Don't use bonus overlay
+        return;
+      }
+      // ========== END NEW v2.45.0 ==========
+
+      // ✅ OLD Bdim/Bm7b5 detection DISABLED
+      // This old code is superseded by better detection at line ~3105 which:
+      // - Checks shouldShowBonusOverlay() properly
+      // - Uses functional label "Bm7♭5" for consistent colors
+      // - Checks exact chord size
+      /*
+      const hasBDF   = isSubset([11,2,5]);
+      const hasBDFG  = isSubset([11,2,5,9]);
+      // Check for G7 more broadly: G-B-F tritone (with or without D)
+      // This prevents false bonus triggers on G7 voicings without the 5th
+      const hasG7 = isSubset([7,11,5]); // G-B-F (essential tritone)
+      
+      // Don't trigger dim bonus if G7 is present (G7 takes priority)
+      if (!inParallel && !isFullDim7 && !hasG7 && (hasBDF || hasBDFG)){
+        clearBdimTimer();
+        bdimTimerRef.current = window.setTimeout(()=>{
+          // Double-check G7 hasn't appeared during debounce (race condition guard)
+          const currentPcsRel = new Set([...absHeld].map(pcFromMidi).map(n => (n - NAME_TO_PC[baseKeyRef.current] + 12) % 12));
+          const stillHasG7 = [7,11,5].every(pc => currentPcsRel.has(pc));
+          if (stillHasG7) return; // Abort bonus if G7 detected
+          
+          // Use actual chord name (Bdim in C, Edim in F, etc.)
+          setActiveFn(""); 
+          setCenterLabel(displayName);
+          setBonusActive(true); 
+          setBonusLabel(displayName);
+        }, BONUS_DEBOUNCE_MS) as unknown as number;
+        return;
+      } else {
+        clearBdimTimer();
+      }
+      */
+
+      const hasCsharpDimTri  = isSubset([1,4,7]);
+      const hasCsharpHalfDim = isSubset([1,4,7,11]);
+      const isCsharpFullDim7 = (pcsRel.has(1) && pcsRel.has((1+3)%12) && pcsRel.has((1+6)%12) && pcsRel.has((1+9)%12));
+      if (!inParallel && (hasCsharpDimTri || hasCsharpHalfDim || isCsharpFullDim7) && shouldShowBonusOverlay()){
+        // MODIFIED v2.37.10: Use actual chord name instead of hardcoding "A7"
+        // The chord identifier now correctly names these (C#dim, C#dim7, C#m7⏺™­5)
+        // They still light the A7 bonus wedge (correct functional behavior)
+        setActiveFn(""); 
+        setCenterLabel(absName || "A7");  // Use absName, fallback to A7 if needed
+        setBonusActive(true); 
+        setBonusLabel("A7");  // Wedge label stays "A7" (functional label)
+        
+        // ✅ Add debounced recording
+        if (stepRecordRef.current && absName) {
+          latestBonusChordNameRef.current = absName;
+          if (bonusRecordDebounceRef.current !== null) {
+            clearTimeout(bonusRecordDebounceRef.current);
+          }
+          bonusRecordDebounceRef.current = window.setTimeout(() => {
+            const chordToRecord = latestBonusChordNameRef.current;
+            console.log('ðŸ“ Recording C#dim family (parallel space, after debounce):', chordToRecord);
+            setInputText(prev => {
+              const rhythmIndex = prev.indexOf('@RHYTHM');
+              if (rhythmIndex !== -1) {
+                const beforeRhythm = prev.substring(0, rhythmIndex).trimEnd();
+                const rhythmSection = prev.substring(rhythmIndex);
+                const needsComma = beforeRhythm.length > 0 && !beforeRhythm.endsWith(',');
+                return beforeRhythm + (needsComma ? ', ' : '') + chordToRecord + '\n\n' + rhythmSection;
+              } else {
+                return prev ? `${prev}, ${chordToRecord}` : chordToRecord;
+              }
+            });
+            bonusRecordDebounceRef.current = null;
+            latestBonusChordNameRef.current = "";
+          }, 50);
+        }
+        
+        return;
+      }
+
+      // ✅ OLD A/A7 detection DISABLED  
+      // This old code is superseded by better detection at line ~3134 which:
+      // - Checks shouldShowBonusOverlay() properly
+      // - Uses functional label "A7" for consistent colors
+      // - Checks exact chord size
+      /*
+      const hasA7tri = isSubset([9,1,4]);
+      const hasA7    = hasA7tri || isSubset([9,1,4,7]);
+      if (hasA7 && shouldShowBonusOverlay()){
+        // v3.5.0: Use absName for center label to distinguish A from A7
+        // But keep bonus wedge label as "A7" (functional label)
+        const centerLabelToUse = absName || "A7";
+        setActiveFn(""); setCenterLabel(centerLabelToUse);
+        setBonusActive(true); setBonusLabel("A7"); // Wedge always shows "A7"
+        return;
+      }
+      */
+
+      // ✅ REMOVED unconditional bonus clearing
+      // Old: setBonusActive(false); setBonusLabel("");
+      // This was clearing bonus set by earlier checks, breaking EXPERT mode display
+      // Bonus state should persist unless explicitly cleared by another detection
+    }
+
+    /* ---------- SUBDOM (F) ---------- */
+    {
+   // ✅ DEBUG: Track SUB state
+      if (absName === "Fmaj7" || absName === "F" || (pcsRel.has(5) && pcsRel.has(9) && pcsRel.has(0))) {
+        console.log('ðŸ”§ SUB SECTION START:', {
+          absName,
+          inSUB: subdomActiveRef.current,
+          pcsRel: [...pcsRel],
+          pcsRelSize: pcsRel.size
+        });
+      }
+      
+      // ✅ Check for PAR (Eb-space) chords BEFORE SUB entry
+      // Problem: Ebmaj7 [3,7,10,2] contains Gm [7,10,2] as subset
+      // Solution: Exclude Eb/Ebmaj7/Ab/Db from SUB entry
+      const isEbChord = isSubset([3,7,10]) || isSubset([3,7,10,2]);
+      const isAbChord = isSubset([8,0,3]) || isSubset([8,0,3,7]);
+      const isDbChord = isSubset([1,5,8]) || isSubset([1,5,8,0]);
+      const isParChord = isEbChord || isAbChord || isDbChord;
+      
+      const enterByGm = isSubset([7,10,2]) || isSubset([7,10,2,5]);
+      const enterByC7 = isSubset([0,4,7,10]);
+
+      // ✅ Don't enter SUB if it's actually a PAR chord
+      if (!subdomActiveRef.current && isNoteOn && (enterByGm || enterByC7) && !isParChord) {
+
+        if (relMinorActiveRef.current) setRelMinorActive(false);
+        setVisitorActive(false);
+
+        setSubdomActive(true);
+        setCenterLabel(subKey);
+        if (enterByGm) { setActiveWithTrail("ii", absName || (isSubset([7,10,2,5])?"Gm7":"Gm")); subLatch("ii"); }
+        else           { setActiveWithTrail("V7", absName || "C7");                               subLatch("V7"); }
+        subSpinEnter();
+        return;
+      }
+
+      if (subdomActiveRef.current) {
+        // Ignore mode transitions on note-off while in SUB; keep latch fresh.
+        if (isNoteOff) {
+           homeSuppressUntilRef.current = performance.now() + RECENT_PC_WINDOW_MS;
+           // Keep current fn/label; prevents Gm/Gm7 bounce on release.
+              return;
+            }
+        const useWindow = performance.now() < homeSuppressUntilRef.current;
+        const S = useWindow ? windowedRelSet() : pcsRel;
+        // Strong jiggle guard: brief hold + prioritize ii(Gm/Gm7) over bVII(Bb)
+        const now = performance.now();
+        if (now < subHoldUntilRef.current) {
+          // During hold window, refuse to exit SUB
+          return;
+        }
+        // If Bb triad present alongside G (i.e., Gm/Gm7 context), stay on ii
+        if (isSubsetIn([7,10,2], S) || isSubsetIn([7,10,2,5], S)) {
+          subLatch("ii");
+          setActiveWithTrail("ii", isSubsetIn([7,10,2,5], S) ? "Gm7" : "Gm");
+          subHoldUntilRef.current = now + 220; // short anti-bounce hold
+          return;
+        }
+
+
+        const bbTri   = isSubsetIn([10,2,5], S);
+        const bb7     = isSubsetIn([10,2,5,8], S);
+
+        const bbMaj7Exact = exactSetIn([10,2,5,9], S);
+        if (bbMaj7Exact){
+          setActiveWithTrail("IV","Bbmaj7"); subLatch("IV");
+          return;
+        }
+        const bbmStay = isSubsetIn([10,1,5], S) || isSubsetIn([10,1,5,8], S);
+        if (bbmStay){
+          setActiveWithTrail("iv", isSubsetIn([10,1,5,8], S) ? "Bbm7" : "Bbm");
+          subLatch("iv");
+          return;
+        }
+
+        if (bbTri || bb7){
+          subdomLatchedRef.current = false;
+          subSpinExit();
+          setSubdomActive(false);
+          setVisitorActive(false); setRelMinorActive(false);
+          homeSuppressUntilRef.current = 0;
+          setActiveWithTrail("♭VII", absName || (bb7 ? "Bb7" : "Bb"));
+          return;
+        }
+
+        const eb   = isSubsetIn([3,7,10], S) || isSubsetIn([3,7,10,2], S);
+        const ab   = isSubsetIn([8,0,3], S) || isSubsetIn([8,0,3,6], S);
+        const db   = isSubsetIn([1,5,8], S) || isSubsetIn([1,5,8,11], S);
+        
+        // ✅ Don't enter PAR if already in PAR (Eb/Ab/Db are diatonic in minor)
+        if ((eb || ab || db) && !visitorActiveRef.current){
+          subdomLatchedRef.current = false;
+          subSpinExit();
+          setSubdomActive(false);
+          setRelMinorActive(false);
+          setVisitorActive(true);
+          const m7 = firstMatch(EB_REQ7, pcsRel);
+          if (m7){ setActiveWithTrail(m7.f as Fn, m7.n); return; }
+          const tri = firstMatch(EB_REQT, pcsRel);
+          if (tri){ setActiveWithTrail(tri.f as Fn, tri.n); return; }
+          setActiveWithTrail("I","Eb");
+          return;
+        }
+
+        if (subdomLatchedRef.current && S.size < 3) {
+          homeSuppressUntilRef.current = performance.now() + RECENT_PC_WINDOW_MS;
+          return;
+        }
+
+        const stayOnF       = isSubsetIn([5,9,0], S) || isSubsetIn([5,9,0,4], S);
+        const stayOnGm      = isSubsetIn([7,10,2], S) || isSubsetIn([7,10,2,5], S);
+        const stayOnC7      = isSubsetIn([0,4,7,10], S);
+        const isCtriadExact = exactSetIn([0,4,7], S);
+        
+    // ✅ DEBUG: Why isn't Fmaj7 matching?
+        if (absName === "Fmaj7" || absName === "F") {
+          console.log('ðŸ” SUB F/Fmaj7 CHECK:', {
+            absName,
+            S: [...S],
+            pcsRel: [...pcsRel],
+            hasTriad: isSubsetIn([5,9,0], S),
+            hasFmaj7: isSubsetIn([5,9,0,4], S),
+            stayOnF,
+            useWindow,
+            suppressed: performance.now() < homeSuppressUntilRef.current
+          });
+        }
+
+        const exitOnCmaj7 = isSubsetIn([0,4,7,11], S);
+        const exitOnAm7   = exactSetIn([9,0,4,7], S);
+        const exitOnDm    = isSubsetIn([2,5,9], S) || isSubsetIn([2,5,9,0], S);
+
+        if (exitOnCmaj7 || exitOnAm7 || exitOnDm) {
+          console.log('ðŸšª EXITING SUB:', {
+            chord: absName,
+            exitTrigger: exitOnCmaj7 ? 'Cmaj7' : exitOnAm7 ? 'Am7' : 'Dm',
+            settingSuppress: performance.now() + 140,
+            settingJustExited: true
+          });
+          subdomLatchedRef.current = false;
+          subSpinExit();
+          setSubdomActive(false);
+          setVisitorActive(false); setRelMinorActive(false);
+          homeSuppressUntilRef.current = performance.now() + 140;
+          justExitedSubRef.current = true;
+          return;
+        }
+
+        if (stayOnF || stayOnGm || stayOnC7 || isCtriadExact) {
+          if (stayOnF)          { setActiveWithTrail("I",  absName || (isSubsetIn([5,9,0,4], S)?"Fmaj7":"F"));   subLatch("I"); }
+          else if (stayOnGm)    { setActiveWithTrail("ii", absName || (isSubsetIn([7,10,2,5], S)?"Gm7":"Gm"));   subLatch("ii"); }
+          else if (stayOnC7)    { setActiveWithTrail("V7", absName || "C7");                                     subLatch("V7"); }
+          else                  { setActiveWithTrail("V7", absName || "C");                                      subLatch("V7"); }
+          return;
+        }
+
+        if (protectedSubset(S)) { homeSuppressUntilRef.current = performance.now() + RECENT_PC_WINDOW_MS; return; }
+        const nowT = performance.now();
+        if (subExitCandidateSinceRef.current==null) { subExitCandidateSinceRef.current = nowT; return; }
+        if (nowT - subExitCandidateSinceRef.current < SUB_EXIT_DEBOUNCE_MS) return;
+
+        subExitCandidateSinceRef.current = null;
+        subdomLatchedRef.current = false;
+        subSpinExit();
+        setSubdomActive(false);
+        setVisitorActive(false); setRelMinorActive(false);
+        homeSuppressUntilRef.current = performance.now() + 140;
+        justExitedSubRef.current = true;
+        return;
+      }
+    }
+
+    /* ---------- PARALLEL quick rule ---------- */
+    if (visitorActiveRef.current && (isSubset([2,6,9,0]) || exactSet([2,6,9,0]))){
+      if (shouldTriggerBonus("V/V")) {
+        setVisitorActive(false);
+        setActiveWithTrail("V/V", "D7");
+        return;
+      }
+    }
+
+    // Guard Fm7 exact in HOME
+    if (!visitorActiveRef.current && !subdomActiveRef.current){
+      if (exactSet([5,8,0,3])){ setRelMinorActive(false); setActiveWithTrail("iv","Fm7"); return; }
+    }
+
+    /* Enter Parallel (PAR) - now dynamic for all keys! */
+      if(isNoteOn && !visitorActiveRef.current && !subdomActiveRef.current){
+      const vHit = visitorShapes.find(v=>subsetOf(v.pcs, pcsRel)) || null;
+      if(vHit){
+        if(relMinorActiveRef.current) setRelMinorActive(false);
+        setSubdomActive(false); subdomLatchedRef.current=false; subHasSpunRef.current=false;
+        setVisitorActive(true);
+        setActiveWithTrail(vHit.fn, vHit.name);
+        return;
+      }
+    }
+
+    /* Parallel exits (Eb) */
+    if(visitorActiveRef.current && !relMinorActiveRef.current){
+      if(cPresent){ setVisitorActive(false); setActiveWithTrail("I", absName || "C"); return; }
+      if(amPresent){ setVisitorActive(false); setActiveWithTrail("vi", absName || "Am"); return; }
+      const fMaj   = isSubset([5,9,0]) || isSubset([5,9,0,4]);
+      if (fMaj){
+        setVisitorActive(false);
+        setActiveWithTrail("IV", absName || (isSubset([5,9,0,4]) ? "Fmaj7" : "F"));
+        return;
+      }
+    }
+
+    if(!subdomActiveRef.current && exactSet([10,1,5,8])){ centerOnly("Bbm7"); return; }
+
+    if(visitorActiveRef.current && (isSubset([2,5,9]) || isSubset([2,5,9,0]))){
+      setVisitorActive(false); setActiveWithTrail("ii", absName || (isSubset([2,5,9,0])?"Dm7":"Dm")); return;
+    }
+    if(visitorActiveRef.current && (isSubset([4,7,11]) || isSubset([4,7,11,2]))){
+      setVisitorActive(false); setActiveWithTrail("iii", absName || (isSubset([4,7,11,2])?"Em7":"Em")); return;
+    }
+
+    /* ---------- explicit dim7 mapping in HOME ---------- */
+    if (!visitorActiveRef.current){
+      const root = findDim7Root(pcsRel);
+      if (root!==null){
+        // ========== NEW v2.37.11: Use absName from theory.ts for ALL dim7 chords ==========
+        // Previously hardcoded F#dim7, G#dim7, Bdim7 - now all use proper lowest-note naming
+        
+        // Special case: C#dim7 family uses A7 bonus overlay (not wedge)
+        if (pcsRel.has(1) && pcsRel.has((1+3)%12) && pcsRel.has((1+6)%12) && pcsRel.has((1+9)%12)){
+          // ✅ Add permission check
+          if (shouldShowBonusOverlay()) {
+            setActiveFn(""); setCenterLabel(absName || "C#dim7"); // Use absName, not hardcoded "A7"
+            setBonusActive(true); setBonusLabel("A7");
+            return;
+          }
+        }
+        
+        // ========== NEW v2.45.0: viiÂ°7 in REL Am (works in all keys!) ==========
+        // viiÂ°7 of meta-key should map to V7, not be misidentified
+        const hasVii7Pattern = pcsRel.has(11) && pcsRel.has(2) && pcsRel.has(5) && pcsRel.has(8);
+        if (hasVii7Pattern) {
+          // Always map to V7 (dominant function) regardless of current space
+          setActiveWithTrail("V7", absName); // Use actual name
+          return;
+        }
+        // ========== END v2.45.0 ==========
+        
+        // All other dim7 chords: use absName from theory.ts (which uses lowest note)
+        const dimLabel = absName || `${["C","C#","D","Eb","E","F","F#","G","Ab","A","Bb","B"][root]}dim7`;
+        const mapped = mapDimRootToFn_ByBottom(root) || "V7";
+        setActiveWithTrail(mapped as Fn, dimLabel);
+        return;
+      }
+    }
+    
+    /* ========== NEW v2.45.0: PAR EXIT for secondary dominants ========== */
+    // When in PAR, certain chords signal return to HOME (secondary dominant area)
+    // Check these BEFORE PAR diatonic matching
+    if (visitorActiveRef.current) {
+      // Exit on F#dim7 family (V/V function) - relative to meta-key
+      // Pattern [6,9,0,3] in C = F#dim7, works in all keys
+      const hasFsharpDim7 = pcsRel.has(6) && pcsRel.has(9) && pcsRel.has(0) && pcsRel.has(3);
+      if (hasFsharpDim7 && shouldTriggerBonus("V/V")) {
+        setVisitorActive(false);
+        setActiveWithTrail("V/V", absName);
+        return;
+      }
+      
+      // Exit on A7/A (V/ii function - use bonus wedge)
+      const hasA = isSubset([9,1,4]);
+      if (hasA && shouldShowBonusOverlay()) {
+        setVisitorActive(false);
+        setBonusActive(true);
+        setBonusLabel("A7");
+        setCenterLabel(displayName);
+        setActiveFn("");
+        
+        // ✅ Add debounced recording
+        if (stepRecordRef.current && absName) {
+          latestBonusChordNameRef.current = absName;
+          if (bonusRecordDebounceRef.current !== null) {
+            clearTimeout(bonusRecordDebounceRef.current);
+          }
+          bonusRecordDebounceRef.current = window.setTimeout(() => {
+            const chordToRecord = latestBonusChordNameRef.current;
+            console.log('ðŸ“ Recording A/A7 (PAR exit, after debounce):', chordToRecord);
+            setInputText(prev => {
+              const rhythmIndex = prev.indexOf('@RHYTHM');
+              if (rhythmIndex !== -1) {
+                const beforeRhythm = prev.substring(0, rhythmIndex).trimEnd();
+                const rhythmSection = prev.substring(rhythmIndex);
+                const needsComma = beforeRhythm.length > 0 && !beforeRhythm.endsWith(',');
+                return beforeRhythm + (needsComma ? ', ' : '') + chordToRecord + '\n\n' + rhythmSection;
+              } else {
+                return prev ? `${prev}, ${chordToRecord}` : chordToRecord;
+              }
+            });
+            bonusRecordDebounceRef.current = null;
+            latestBonusChordNameRef.current = "";
+          }, 50);
+        }
+        
+        return;
+      }
+      
+      // Exit on C#dim7 family (V/ii function - use bonus wedge)
+      const hasCsharpDim7 = pcsRel.has(1) && pcsRel.has(4) && pcsRel.has(7) && pcsRel.has(10);
+      if (hasCsharpDim7 && shouldShowBonusOverlay()) {
+        setVisitorActive(false);
+        setBonusActive(true);
+        setBonusLabel("A7"); // Functional label
+        setCenterLabel(displayName); // Actual chord name
+        setActiveFn("");
+        
+        // ✅ Add debounced recording
+        if (stepRecordRef.current && absName) {
+          latestBonusChordNameRef.current = absName;
+          if (bonusRecordDebounceRef.current !== null) {
+            clearTimeout(bonusRecordDebounceRef.current);
+          }
+          bonusRecordDebounceRef.current = window.setTimeout(() => {
+            const chordToRecord = latestBonusChordNameRef.current;
+            console.log('ðŸ“ Recording C#dim7 (PAR exit, after debounce):', chordToRecord);
+            setInputText(prev => {
+              const rhythmIndex = prev.indexOf('@RHYTHM');
+              if (rhythmIndex !== -1) {
+                const beforeRhythm = prev.substring(0, rhythmIndex).trimEnd();
+                const rhythmSection = prev.substring(rhythmIndex);
+                const needsComma = beforeRhythm.length > 0 && !beforeRhythm.endsWith(',');
+                return beforeRhythm + (needsComma ? ', ' : '') + chordToRecord + '\n\n' + rhythmSection;
+              } else {
+                return prev ? `${prev}, ${chordToRecord}` : chordToRecord;
+              }
+            });
+            bonusRecordDebounceRef.current = null;
+            latestBonusChordNameRef.current = "";
+          }, 50);
+        }
+        
+        return;
+      }
+    }
+    /* ========== END v2.45.0 ========== */
+
+    /* In PAR mapping - now dynamic for all keys! */
+    if(visitorActiveRef.current){
+      // CRITICAL: Check viiÂ° and viiÂ°7 FIRST (before diatonic matching)
+      // viiÂ° and viiÂ°7 act as V chord for meta-key in ALL keys
+      // In PAR space, this means V/vi function, NOT V7 of PAR key
+      // Pattern [11,2,5] for viiÂ° triad, [11,2,5,8] for viiÂ°7
+      // MUST check BEFORE diatonic because [11,2,5] matches Bb triad subset!
+      // Allow extra notes (e.g., doubled roots) as long as core pattern present
+      const hasViiTriad = isSubset([11,2,5]) && pcsRel.size <= 4; // Allow up to 4 notes
+      const hasVii7 = isSubset([11,2,5,8]); // Any size OK for dim7
+      if (hasViiTriad || hasVii7) {
+        // Light V/vi wedge, display actual chord name
+        setActiveFn("V/vi"); 
+        setCenterLabel(displayName); // Edim/Edim7 in F, Bdim/Bdim7 in C, etc.
+        setBonusActive(false);
+        return;
+      }
+      
+      // v3.18.60 FIX: Check meta-key V and V7 BEFORE diatonic matching
+      // When in PAR (e.g., C⏺†’Eb/Cm), meta-key V (G in C) should light V/vi wedge
+      // This represents V of the parallel minor (V of Cm = G)
+      // Pattern [7,11,2] = V triad, [7,11,2,5] = V7 (relative to meta-key)
+      // MUST check BEFORE diatonic to prevent matching PAR space V (Bb in Eb)
+      // Works universally: pcsRel is relative to baseKey, so [7,11,2] = V in any key
+      const hasMetaV = isSubset([7,11,2]);
+      const hasMetaV7 = isSubset([7,11,2,5]);
+      if (hasMetaV || hasMetaV7) {
+        // Light V/vi wedge, display actual chord name (G or G7 in C, D or D7 in G, etc.)
+        setActiveWithTrail("V/vi", displayName);
+        return;
+      }
+      
+      // Now check diatonic (after viiÂ° and meta-V checks)
+      const m7 = firstMatch(parDiatonic.req7, pcsRel); 
+      if(m7){ 
+        // Prefer displayName for 7th chords (with corrected spelling)
+        const hasSeventhQuality = /(maj7|m7⏺™­5|m7|mMaj7|dim7|[^m]7)$/.test(absName);
+        const chordName = hasSeventhQuality ? displayName : realizeFunction(m7.f as Fn, parKey);
+        setActiveWithTrail(m7.f as Fn, chordName); 
+        return; 
+      }
+      if(/(maj7|m7⏺™­5|m7$|dim7$|[^m]7$)/.test(absName)) { centerOnly(displayName); return; }
+      const tri = firstMatch(parDiatonic.reqt, pcsRel); 
+      if(tri){ 
+        // v3.5.0: Use absName from theory.ts instead of realizeFunction
+        const chordName = absName || realizeFunction(tri.f as Fn, parKey);
+        console.log('[DETECT] Matched PAR tri:', { 
+          fn: tri.f, 
+          chordName, 
+          absName,
+          usingAbsName: !!absName,
+          parKey,
+          baseKey: baseKeyRef.current,
+          pcsRel: [...pcsRel],
+          triPattern: tri.s ? [...tri.s] : 'none'
+        });
+        setActiveWithTrail(tri.f as Fn, chordName); 
+        return; 
+      }
+    }
+
+    /* In C mapping */
+    console.log('ðŸ  HOME CHECK:', {
+      now: performance.now(),
+      suppressUntil: homeSuppressUntilRef.current,
+      willRun: performance.now() >= homeSuppressUntilRef.current,
+      pcsRelSize: pcsRel.size
+    });
+    
+    // ✅ Smart suppression - only block ambiguous chords
+    // Check if current chord is unambiguous (has clear function)
+    // Calculate these before the suppression check
+    const baseKeyPC = NAME_TO_PC[baseKeyRef.current];
+    
+    // Secondary dominants (V/V, V/vi) - always unambiguous
+    const vOfV_root = (baseKeyPC + 2) % 12;
+    const vOfV_triad = [(vOfV_root + 0) % 12, (vOfV_root + 4) % 12, (vOfV_root + 7) % 12];
+    const isVofV = isSubsetIn(vOfV_triad, pcsAbs);
+    
+    const vOfVi_root = (baseKeyPC + 4) % 12;
+    const vOfVi_triad = [(vOfVi_root + 0) % 12, (vOfVi_root + 4) % 12, (vOfVi_root + 7) % 12];
+    const isVofVi = isSubsetIn(vOfVi_triad, pcsAbs);
+    
+    // Clear diatonic chords (ii, iii, vi, IV)
+    const isII = isSubsetIn([2, 5, 9], pcsRel);
+    const isIII = isSubsetIn([4, 7, 11], pcsRel);
+    const isVI = isSubsetIn([9, 0, 4], pcsRel);
+    const isIV = isSubsetIn([5, 9, 0], pcsRel);
+    
+    // Ambiguous chords (I triad could be confused with V in SUB)
+    const isTonic = isSubsetIn([0, 4, 7], pcsRel) && !isSubsetIn([0, 4, 7, 11], pcsRel) && !isSubsetIn([0, 4, 7, 10], pcsRel);
+    
+  // ✅ FIX: V/vi (E7) should bypass suppression after SUB exit
+    // Bug: After SUB exit, E7 requires 2 presses because homeSuppressUntilRef blocks detection
+    // Solution: Check absName directly - if theory.ts detected E7, it's unambiguous
+    const isE7 = absName === "E7" || absName === "E";
+    const isUnambiguous = isVofV || isVofVi || isII || isIII || isVI || isIV || isE7;
+    
+    // If chord is unambiguous OR suppression period has passed, allow detection
+    const allowHomeCheck = isUnambiguous || (performance.now() >= homeSuppressUntilRef.current);
+    
+    console.log('ðŸ”’ ALLOW HOME CHECK:', {
+      allowHomeCheck,
+      isUnambiguous,
+      isVofV,
+      isVofVi,
+      isII,
+      isIII,
+      isVI,
+      isIV,
+      suppressed: performance.now() < homeSuppressUntilRef.current,
+      chord: absName
+    });
+    
+    if (allowHomeCheck){
+      // v3.5.1: Get bass note for diminished chord function detection
+      const bassNote = absHeld.length > 0 ? Math.min(...absHeld) : null;
+      const bassPc = bassNote !== null ? (bassNote % 12) : null;
+      
+      // ✅ Check secondary dominants BEFORE main pattern matching
+      // (baseKeyPC already calculated above for suppression check)
+      
+      // V/V = V of V = dominant of scale degree 5 = scale degree 2
+      // In C: D or D7 (2,6,9) or (2,6,9,0). In F: G or G7 (7,11,2) or (7,11,2,5).
+      // (vOfV_root already calculated above)
+      const vOfV_seventh = (vOfV_root + 10) % 12;
+      const vOfV_hasTriad = isSubsetIn(vOfV_triad, pcsAbs);
+      const vOfV_has7th = isSubsetIn([vOfV_seventh], pcsAbs);
+      const vOfV = vOfV_hasTriad; // Trigger on triad alone OR with 7th
+      
+      // V/vi = V of vi = dominant of scale degree 6 (relative minor) = scale degree 4  
+      // In C: E or E7 (4,8,11) or (4,8,11,2). In F: A or A7 (9,1,4) or (9,1,4,7).
+      // (vOfVi_root and vOfVi_triad already calculated above)
+      const vOfVi_seventh = (vOfVi_root + 10) % 12;
+      const vOfVi_hasTriad = isSubsetIn(vOfVi_triad, pcsAbs);
+      const vOfVi_has7th = isSubsetIn([vOfVi_seventh], pcsAbs);
+      const vOfVi = vOfVi_hasTriad; // Trigger on triad alone OR with 7th
+      
+      console.log('ðŸ” V/vi CALC:', {
+        vOfVi_root,
+        vOfVi_triad,
+        vOfVi_hasTriad,
+        vOfVi_has7th,
+        vOfVi,
+        pcsAbs: [...pcsAbs],
+        absName
+      });
+      
+      // V/vi also includes diminished substitution (e.g., G#dim for E7 in C)
+      const vOfVi_dimSub_root = (vOfVi_root + 4) % 12; // Minor third above V/vi root
+      const vOfVi_dimTriad = [(vOfVi_dimSub_root + 0) % 12, (vOfVi_dimSub_root + 3) % 12, (vOfVi_dimSub_root + 6) % 12];
+      const vOfVi_dimSub = isSubsetIn(vOfVi_dimTriad, pcsAbs) && (pcsAbs.size === 3 || (pcsAbs.size === 4 && bassPc === vOfVi_dimSub_root));
+
+      // ✅ V/V and V/vi ALWAYS trigger (have dedicated wedges)
+      // shouldTriggerBonus only gates bonus overlays (ii/vi, V/ii) without wedges
+      if (vOfV){ 
+        const vOfV_rootName = pcNameForKey(vOfV_root, baseKeyRef.current);
+        const chordLabel = vOfV_has7th ? `${vOfV_rootName}7` : vOfV_rootName;
+        setActiveWithTrail("V/V", chordLabel); 
+        return; 
+      }
+      if (vOfVi || vOfVi_dimSub){ 
+        console.log('🎵 V/vi DETECTED:', {
+          chord: absName,
+          vOfVi_match: vOfVi,
+          dimSub_match: vOfVi_dimSub,
+          isUnambiguous: true,
+          suppressUntil: homeSuppressUntilRef.current,
+          now: performance.now(),
+          wasSuppressed: performance.now() < homeSuppressUntilRef.current
+        });
+        let chordName: string;
+        if (vOfVi_dimSub) {
+          chordName = displayName;
+        } else {
+          const rootName = pcNameForKey(vOfVi_root, baseKeyRef.current);
+          chordName = vOfVi_has7th ? `${rootName}7` : rootName;
+        }
+        setActiveWithTrail("V/vi", chordName); 
+        return; 
+      }
+      
+      // ✅ Check common diatonic triads (ii, iii, vi) - pattern matcher may not have them
+      // These are RELATIVE to baseKey (scale degrees), not absolute pitch classes
+      
+   // ✅ FIX: Check Cmaj7 BEFORE iii triad
+      // Bug: Cmaj7 [0,4,7,11] contains iii triad [4,7,11] as subset
+      // Must check exact Cmaj7 first to prevent false iii match
+      if (exactSetIn([0, 4, 7, 11], pcsRel)) {
+        console.log('✅ EARLY Cmaj7 CHECK: [0,4,7,11] ⏺†’ I wedge');
+        setActiveWithTrail("I", displayName || "Cmaj7");
+        return;
+      }
+      
+      const ii_triad = isSubsetIn([2, 5, 9], pcsRel);
+      const ii_7th = isSubsetIn([2, 5, 9, 0], pcsRel);
+      const iii_triad = isSubsetIn([4, 7, 11], pcsRel);
+      const iii_7th = isSubsetIn([4, 7, 11, 2], pcsRel);
+      const vi_triad = isSubsetIn([9, 0, 4], pcsRel);
+      const vi_7th = isSubsetIn([9, 0, 4, 7], pcsRel);
+      
+   // ✅ FIX: Exclude Bm7b5 from ii when bonus disabled
+      // Bm7b5 [11,2,5,9] contains ii notes [2,5,9] as subset
+      // If bonus disabled, Bm7b5 early check returns false and falls through to here
+      // Solution: Check for B (11) - if present with exact size 4, it's Bm7b5, not Dm
+      const isBm7b5Pattern = pcsRel.has(11) && pcsRel.has(2) && pcsRel.has(5) && pcsRel.has(9) && pcsRel.size === 4;
+      const shouldExcludeFromIi = isBm7b5Pattern && !shouldShowBonusOverlay();
+      
+      if ((ii_triad || ii_7th) && !shouldExcludeFromIi) {
+        const chordName = absName || realizeFunction("ii" as Fn, baseKeyRef.current);
+        // ✅ Don't append 7 if already present (Fm7 ⏺†’ Fm77 bug)
+        const label = ii_7th && !chordName.match(/7|9|11|13/) ? `${chordName}7` : chordName;
+        setActiveWithTrail("ii", label);
+        return;
+      }
+      if (iii_triad || iii_7th) {
+        const chordName = absName || realizeFunction("iii" as Fn, baseKeyRef.current);
+        const label = iii_7th && !chordName.match(/7|9|11|13/) ? `${chordName}7` : chordName;
+        setActiveWithTrail("iii", label);
+        return;
+      }
+      
+   // ✅ FIX: Check A7 bonus BEFORE vi check
+      // Bug: A7 [9,1,4,7] matches vi_triad check [9,0,4] via isSubsetIn (9 and 4 present)
+      // This causes vi to return before A7 bonus check can run
+      // Solution: Check A7 bonus family first (must be EXACT size match)
+      // ✅ v3.19.55: Use ABSOLUTE pitch classes to work in all keys
+      // A = [9,1,4] absolute, C#dim = [1,4,7] absolute, C#m7⏺™­5 = [1,4,7,11] absolute
+      const hasA = absolutePcs.has(9) && absolutePcs.has(1) && absolutePcs.has(4) && absolutePcs.size === 3;
+      const hasA7 = absolutePcs.has(9) && absolutePcs.has(1) && absolutePcs.has(4) && absolutePcs.has(7) && absolutePcs.size === 4;
+      const hasCSharpDimTriad = absolutePcs.has(1) && absolutePcs.has(4) && absolutePcs.has(7) && absolutePcs.size === 3;
+      const hasCSharpHalfDim = absolutePcs.has(1) && absolutePcs.has(4) && absolutePcs.has(7) && absolutePcs.has(11) && absolutePcs.size === 4;
+      
+      if (!visitorActiveRef.current && (hasA || hasA7 || hasCSharpDimTriad || hasCSharpHalfDim) && shouldShowBonusOverlay()) {
+        const recordName = absName || displayName;
+        console.log('✅ A7 BONUS TRIGGERED (before vi check)!', {
+          hasA,
+          hasA7,
+          displayName,
+          absName,
+          recordName,
+          pcsRel: Array.from(pcsRel),
+          stepRecord: stepRecordRef.current
+        });
+        setActiveFn(""); 
+        setCenterLabel(displayName); // Show actual chord name
+        setBonusActive(true); 
+        setBonusLabel("A7"); // Use functional label for wedge
+        
+        // ✅ Debounced recording
+        if (stepRecordRef.current && absName) {
+          latestBonusChordNameRef.current = absName;
+          if (bonusRecordDebounceRef.current !== null) {
+            clearTimeout(bonusRecordDebounceRef.current);
+          }
+          bonusRecordDebounceRef.current = window.setTimeout(() => {
+            const chordToRecord = latestBonusChordNameRef.current;
+            console.log('ðŸ“ Recording A/A7 bonus chord (after debounce):', chordToRecord);
+            setInputText(prev => {
+              const rhythmIndex = prev.indexOf('@RHYTHM');
+              if (rhythmIndex !== -1) {
+                const beforeRhythm = prev.substring(0, rhythmIndex).trimEnd();
+                const rhythmSection = prev.substring(rhythmIndex);
+                const needsComma = beforeRhythm.length > 0 && !beforeRhythm.endsWith(',');
+                return beforeRhythm + (needsComma ? ', ' : '') + chordToRecord + '\n\n' + rhythmSection;
+              } else {
+                return prev ? `${prev}, ${chordToRecord}` : chordToRecord;
+              }
+            });
+            bonusRecordDebounceRef.current = null;
+            latestBonusChordNameRef.current = "";
+          }, 50);
+        }
+        return;
+      }
+      
+      // ✅ EARLY Fmaj7 check BEFORE vi check
+      // Fmaj7 [5,9,0,4] contains vi_triad [9,0,4] as subset
+      // Must check exact match first to prevent misidentification as Am
+      if (exactSetIn([5, 9, 0, 4], pcsRel)) {
+        console.log('✅ EARLY Fmaj7 CHECK: [5,9,0,4] ⏺†’ IV wedge');
+        setActiveWithTrail("IV", displayName || "Fmaj7");
+        return;
+      }
+      
+      // NOW check vi (after A7 bonus ruled out AND Fmaj7 ruled out)
+      if (vi_triad || vi_7th) {
+        const chordName = absName || realizeFunction("vi" as Fn, baseKeyRef.current);
+        const label = vi_7th && !chordName.match(/7|9|11|13/) ? `${chordName}7` : chordName;
+        setActiveWithTrail("vi", label);
+        return;
+      }
+      
+      // ✅ v3.6.1 FIX: REMOVED hardcoded E/E7 and G/G7 checks
+      // Old code checked for patterns [4,8,11] (E) and [7,11,2] (G) in C
+      // But these patterns mean DIFFERENT chords in other keys!
+      // In Eb: [7,11,2] = Bb (not G), [4,8,11] = G (not E)
+      // Solution: Let homeDiatonic patterns handle ALL diatonic chords
+      // This makes the system work correctly in ANY key
+      
+      // PRIORITY: Check bonus chords (triads and half-dim only - dim7 checked above)
+      // ii/vi bonus: Bdim triad (any inversion) or Bm7♭5 (any inversion)
+      // ✅ v3.19.55: Use ABSOLUTE pitch classes [11,2,5] to work in all keys
+      const hasBdimTriad = absolutePcs.has(11) && absolutePcs.has(2) && absolutePcs.has(5) && absolutePcs.size === 3;
+      const hasBm7b5 = absolutePcs.has(11) && absolutePcs.has(2) && absolutePcs.has(5) && absolutePcs.has(9) && absolutePcs.size === 4;
+      
+      console.log('ðŸ” Bm7♭5 bonus check:', {
+        absolutePcs: Array.from(absolutePcs).sort((a,b) => a-b),
+        hasBdimTriad,
+        hasBm7b5,
+        visitorActive: visitorActiveRef.current,
+        shouldShow: shouldShowBonusOverlay(),
+        skillLevel
+      });
+      
+      // ✅ Re-add shouldShowBonusOverlay check (was removed in v3.13.9 by mistake)
+      if (!visitorActiveRef.current && (hasBdimTriad || hasBm7b5) && shouldShowBonusOverlay()) {
+        const recordName = absName || displayName;
+        console.log('✅ Bm7♭5 BONUS TRIGGERED!');
+        setActiveFn(""); 
+        setCenterLabel(displayName);
+        setBonusActive(true); 
+        setBonusLabel("Bm7♭5"); // ✅ Use functional label for wedge
+        // ✅ Debounced recording using ref
+        if (stepRecordRef.current && absName) {
+          latestBonusChordNameRef.current = absName;
+          console.log('ðŸ• Setting Bdim/Bm7b5 debounce timer for:', absName);
+          
+          if (bonusRecordDebounceRef.current !== null) {
+            console.log('ðŸš« Clearing old Bdim timer');
+            clearTimeout(bonusRecordDebounceRef.current);
+          }
+          
+          bonusRecordDebounceRef.current = window.setTimeout(() => {
+            const chordToRecord = latestBonusChordNameRef.current;
+            console.log('ðŸ“ Recording Bdim/Bm7b5 bonus chord (after debounce):', chordToRecord);
+            setInputText(prev => {
+              const rhythmIndex = prev.indexOf('@RHYTHM');
+              if (rhythmIndex !== -1) {
+                const beforeRhythm = prev.substring(0, rhythmIndex).trimEnd();
+                const rhythmSection = prev.substring(rhythmIndex);
+                const needsComma = beforeRhythm.length > 0 && !beforeRhythm.endsWith(',');
+                return beforeRhythm + (needsComma ? ', ' : '') + chordToRecord + '\n\n' + rhythmSection;
+              } else {
+                return prev ? `${prev}, ${chordToRecord}` : chordToRecord;
+              }
+            });
+            bonusRecordDebounceRef.current = null;
+            latestBonusChordNameRef.current = "";
+          }, 50);
+        }
+        return;
+      }
+      
+      // ✅ A7 bonus check MOVED to before vi check (line ~5620)
+      // Was here but vi check was matching A7 [9,1,4,7] as vi [9,0,4] subset
+      
+      if (exactSet([6,9,0,4]) && shouldTriggerBonus("V/V")){ setActiveWithTrail("V/V","F#m7⏺™­5"); return; }
+      
+      // ✅ v3.17.85 FIX #3: DEFENSIVE - Don't let bonus chords match diatonic
+      // If bonus chord present but permission denied, show in hub without lighting wedge
+      const isBonusChordPattern = 
+        (pcsRel.has(11) && pcsRel.has(2) && pcsRel.has(5) && (pcsRel.size === 3 || (pcsRel.has(9) && pcsRel.size === 4))) || // Bdim/Bm7b5
+        (pcsRel.has(1) && pcsRel.has(4) && pcsRel.has(7) && pcsRel.has(10) && pcsRel.size === 4) || // C#dim7
+        (pcsRel.has(9) && pcsRel.has(1) && pcsRel.has(4) && (pcsRel.size === 3 || (pcsRel.has(7) && pcsRel.size === 4))); // A/A7
+        
+      if (isBonusChordPattern && !shouldShowBonusOverlay()) {
+        console.log('ðŸ›¡ï¸ DEFENSIVE: Bonus chord detected but permission denied - showing in hub only');
+        centerOnly(displayName);
+        return;
+      }
+      
+   // ✅ FIX: Fmaj7 early detection to prevent Am7 subset match
+      // Bug: Fmaj7 [5,9,0,4] contains Am [9,0,4] as subset
+      // If Am7 is checked first in diatonic tables, it incorrectly matches vi
+      // Solution: Check Fmaj7 explicitly before diatonic matching
+      // ✅ FIX #2: Only in HOME - in SUB, Fmaj7 is I not IV
+      if (!subdomActiveRef.current && exactSet([5,9,0,4])) {
+        console.log('✅ EARLY Fmaj7 CHECK: [5,9,0,4] ⏺†’ IV wedge (HOME only)');
+        setActiveWithTrail("IV", displayName || "Fmaj7");
+        return;
+      }
+      
+      const m7 = firstMatch(homeDiatonic.req7, pcsRel); 
+      if(m7){ 
+    // ✅ DEBUG: Why is Cmaj7 matching iii?
+        if (absName === "Cmaj7") {
+          console.log('ðŸ” Cmaj7 DEBUG:', {
+            absName,
+            pcsRel: [...pcsRel],
+            pcsAbs: [...pcsAbs],
+            absHeld: absHeld,
+            matchedPattern: m7.s ? [...m7.s] : 'none',
+            matchedFn: m7.f,
+            matchedName: m7.n,
+            bassNote: absHeld.length > 0 ? Math.min(...absHeld) : 'none',
+            allPatterns: homeDiatonic.req7.map(p => ({ n: p.n, s: [...p.s], f: p.f }))
+          });
+        }
+        
+        // Prefer displayName for 7th chords (with corrected spelling)
+        const hasSeventhQuality = /(maj7|m7⏺™­5|m7|mMaj7|dim7|[^m]7)$/.test(absName);
+        const chordName = hasSeventhQuality ? displayName : realizeFunction(m7.f as Fn, baseKeyRef.current);
+        console.log('[DETECT] Matched m7:', { fn: m7.f, chordName, absName, displayName, hasSeventhQuality, baseKey: baseKeyRef.current });
+        setActiveWithTrail(m7.f as Fn, chordName); 
+        return; 
+      }
+      if(/(maj7|m7⏺™­5|m7$|dim7$|[^m]7$)/.test(absName)) { centerOnly(displayName); return; }
+      const tri = firstMatch(homeDiatonic.reqt, pcsRel); 
+      if(tri){ 
+        // ✅ v3.6.2 FIX: Filter out incorrect secondary dominant matches
+        // Bug: In Eb, pattern [5,9,0] (Ab = IV) matches as "V/V" instead of "IV"
+        // Root cause: homeDiatonic includes V/V and V/vi patterns that overlap with diatonic chords
+        // Solution: If it matches V/V or V/vi, verify it's actually a secondary dominant
+        
+        let functionToUse = tri.f;
+        
+        // Check if this is a false V/V or V/vi match
+        if (tri.f === "V/V" || tri.f === "V/vi") {
+          // These should only match if they're ACTUALLY secondary dominants
+          // In the base key, check if this chord is diatonic
+          const rootPc = pcsAbs.values().next().value;
+          if (rootPc === undefined) {
+            // Safety check - if we can't get the root, use the match as-is
+            functionToUse = tri.f;
+          } else {
+            const relativeToBase = (rootPc - NAME_TO_PC[baseKeyRef.current] + 12) % 12;
+            
+            // Check if this is actually a diatonic chord in the base key
+            // IV in any key has relative degree 5 (5 semitones from tonic)
+            // V in any key has relative degree 7 (7 semitones from tonic)
+            if (relativeToBase === 5) {
+              // This is IV, not V/V!
+              functionToUse = "IV";
+              console.log('ðŸ”§ Corrected V/V ⏺†’ IV (diatonic subdominant)');
+            } else if (relativeToBase === 7) {
+              // This is V, not V/vi!
+              functionToUse = "V7";
+              console.log('ðŸ”§ Corrected V/vi ⏺†’ V7 (diatonic dominant)');
+            }
+          }
+        }
+        
+        // v3.5.0: Use absName from theory.ts instead of realizeFunction
+        // This prevents G triad from being labeled "G7" just because it triggers V7 function
+        const chordName = absName || realizeFunction(functionToUse as Fn, baseKeyRef.current);
+        console.log('[DETECT] Matched tri:', { 
+          fn: tri.f,
+          correctedFn: functionToUse,
+          chordName, 
+          absName,
+          usingAbsName: !!absName,
+          baseKey: baseKeyRef.current, 
+          pcsRel: [...pcsRel],
+          triPattern: tri.s ? [...tri.s] : 'none'
+        });
+        console.log('ðŸŽ¯ WEDGE ACTIVATION:', functionToUse, '⏺†’', chordName, 'in key', baseKeyRef.current);
+        setActiveWithTrail(functionToUse as Fn, chordName); 
+        return; 
+      }
+      
+      // ✅ v3.6.3 DEBUG: Log why no match was found
+      console.log('⏺Œ NO TRI MATCH FOUND:', {
+        pcsRel: [...pcsRel],
+        absName,
+        baseKey: baseKeyRef.current,
+        availablePatterns: homeDiatonic.reqt.map(p => ({
+          f: p.f,
+          pattern: [...p.s]
+        }))
+      });
+    }
+
+    // diminished fallback by bottom note
+    const rhs=absHeld.filter(n=>n>36).sort((a,b)=>a-b);
+    if(rhs.length>=3){
+      const bottom=rhs[0], rootPc=pcFromMidi(bottom);
+      const tri=T([rootPc, add12(rootPc,3), add12(rootPc,6)]);
+      const sev=T([rootPc, add12(rootPc,3), add12(rootPc,6), add12(rootPc,9)]);
+      const pcsRH=new Set(rhs.map(pcFromMidi));
+      const has7=subsetOf(sev, pcsRH) , hasTri=subsetOf(tri, pcsRH);
+      if(has7 || hasTri){
+        // ✅ v3.6.7 FIX: Use dimRootName for proper sharp spelling (G#dim not Abdim)
+        // Import dimRootName logic: Bb(10), Eb(3), C#(1), else use sharps
+        const dimName = (pc: number) => 
+          pc===10 ? "Bb" : (pc===3 ? "Eb" : (pc===1 ? "C#" : 
+          ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"][pc]));
+        const label=has7?`${dimName(rootPc)}dim7`:`${dimName(rootPc)}dim`;
+        const mapped = visitorActiveRef.current ? (mapDim7_EbVisitor(pcsRel) || mapDimRootToFn_ByBottom(rootPc)) : mapDimRootToFn_ByBottom(rootPc);
+        if(mapped){ setActiveWithTrail(mapped, label); return; }
+        centerOnly(label); return;
+      }
+    }
+
+    const triDisp = detectDisplayTriadLabel(pcsRel, baseKeyRef.current, absHeld);
+    console.log('[DETECT] Fallback:', { triDisp, absName, displayName, result: triDisp || displayName });
+    // ✅ Clear wedge for unmapped chords
+    setActiveFn("");
+    centerOnly(triDisp || displayName);
+  }
   /* ---------- controls ---------- */
   const goHome = ()=>{
     if(subdomActiveRef.current) subSpinExit();
@@ -6392,14 +7668,7 @@ useEffect(() => {
                       overflow:'hidden',
                       textOverflow:'ellipsis',
                       whiteSpace:'nowrap',
-                      width:'100%',
-                      userSelect: 'auto',  // ✅ Allow text selection for links
-                      WebkitUserSelect: 'auto',
-                      pointerEvents: 'auto',  // ✅ Allow clicks on links
-                      touchAction: 'auto',  // ✅ Override parent's pan-y to allow link clicks
-                      cursor: 'default',
-                      zIndex: 10,  // ✅ Ensure banner is above any overlays
-                      position: 'relative'  // ✅ Enable z-index
+                      width:'100%'
                     }}>
                       {(() => {
                         const message = (bannerMessage && bannerMessage.trim())
@@ -6544,12 +7813,11 @@ useEffect(() => {
 
                               const shouldHighlight = isCurrent || isCommentForNextChord || isAttachedCommentForCurrent || isPartOfTiedGroup;
                               
-                              const isConfig = item.kind === "modifier" && item.chord &&
-                                (item.chord.startsWith("RHYTHM") ||
-                                 item.chord === "LOOP" ||
-                                 item.chord.startsWith("TEMPO") ||
-                                 item.chord.startsWith("KEY"));
-
+                              const isConfig = item.kind === "modifier" && item.chord && 
+                                (item.chord.startsWith("RHYTHM") || 
+                                 item.chord === "LOOP" || 
+                                 item.chord.startsWith("TEMPO"));
+                              
                               if (isTitle || isConfig) return null;
                               
                               return (
@@ -6783,7 +8051,7 @@ useEffect(() => {
                                 onMouseDown={()=>{
                                   lastInputWasPreviewRef.current = false;
                                   rightHeld.current.add(m);
-                                  detectV4();
+                                  if (USE_NEW_ENGINE) { detectV4(); } else { detect(); }
                                   // Play audio
                                   if (audioEnabledRef.current) {
                                     playNote(m, 0.6, false);
@@ -6793,7 +8061,7 @@ useEffect(() => {
                                   // Support drag - if mouse is down, play note
                                   if (e.buttons === 1) { // Left button held
                                     rightHeld.current.add(m);
-                                    detectV4();
+                                    if (USE_NEW_ENGINE) { detectV4(); } else { detect(); }
                                     if (audioEnabledRef.current) {
                                       playNote(m, 0.6, false);
                                     }
@@ -6802,7 +8070,7 @@ useEffect(() => {
                                 onMouseUp={()=>{
                                   rightHeld.current.delete(m);
                                   rightSus.current.delete(m);
-                                  detectV4();
+                                  if (USE_NEW_ENGINE) { detectV4(); } else { detect(); }
                                   // Stop audio
                                   if (audioEnabledRef.current) {
                                     stopNote(m);
@@ -6814,7 +8082,7 @@ useEffect(() => {
                                   rightSus.current.delete(m);
                                   // Only call detect() if this note was actually being played
                                   if (wasHeld) {
-                                    detectV4();
+                                    if (USE_NEW_ENGINE) { detectV4(); } else { detect(); }
                                   }
                                   // Stop audio
                                   if (audioEnabledRef.current) {
@@ -6843,7 +8111,7 @@ useEffect(() => {
                                 onMouseDown={()=>{
                                   lastInputWasPreviewRef.current = false;
                                   rightHeld.current.add(m);
-                                  detectV4();
+                                  if (USE_NEW_ENGINE) { detectV4(); } else { detect(); }
                                   // Play audio
                                   if (audioEnabledRef.current) {
                                     playNote(m, 0.6, false);
@@ -6853,7 +8121,7 @@ useEffect(() => {
                                   // Support drag
                                   if (e.buttons === 1) {
                                     rightHeld.current.add(m);
-                                    detectV4();
+                                    if (USE_NEW_ENGINE) { detectV4(); } else { detect(); }
                                     if (audioEnabledRef.current) {
                                       playNote(m, 0.6, false);
                                     }
@@ -6862,7 +8130,7 @@ useEffect(() => {
                                 onMouseUp={()=>{
                                   rightHeld.current.delete(m);
                                   rightSus.current.delete(m);
-                                  detectV4();
+                                  if (USE_NEW_ENGINE) { detectV4(); } else { detect(); }
                                   // Stop audio
                                   if (audioEnabledRef.current) {
                                     stopNote(m);
@@ -6874,7 +8142,7 @@ useEffect(() => {
                                   rightSus.current.delete(m);
                                   // Only call detect() if this note was actually being played
                                   if (wasHeld) {
-                                    detectV4();
+                                    if (USE_NEW_ENGINE) { detectV4(); } else { detect(); }
                                   }
                                   // Stop audio
                                   if (audioEnabledRef.current) {
@@ -7216,60 +8484,46 @@ useEffect(() => {
                   );
                 })()}
                 
-                {/* Transpose Bypass - v3.5.0: Toggle to temporarily disable - Always visible in expert mode */}
-                {skillLevel === "EXPERT" && (
-                  <button
+                {/* Transpose Bypass - v3.5.0: Toggle to temporarily disable */}
+                {transpose !== 0 && (
+                  <button 
                     onClick={() => setTransposeBypass(!transposeBypass)}
-                    disabled={transpose === 0}
                     style={{
-                      padding:'6px 10px',
-                      border: transposeBypass ? '1px solid #6B7280' : (transpose === 0 ? '1px solid #374151' : '2px solid #10B981'),
-                      borderRadius:8,
-                      background: transposeBypass ? '#111' : (transpose === 0 ? '#111' : '#1a3a2a'),
-                      color: transposeBypass ? '#6B7280' : (transpose === 0 ? '#4B5563' : '#10B981'),
-                      cursor: transpose === 0 ? 'not-allowed' : 'pointer',
+                      padding:'6px 10px', 
+                      border: transposeBypass ? '1px solid #6B7280' : '2px solid #10B981', 
+                      borderRadius:8, 
+                      background: transposeBypass ? '#111' : '#1a3a2a', 
+                      color: transposeBypass ? '#6B7280' : '#10B981', 
+                      cursor:'pointer', 
                       fontSize:11,
-                      fontWeight: transposeBypass ? 400 : (transpose === 0 ? 400 : 600),
-                      opacity: transpose === 0 ? 0.5 : 1
+                      fontWeight: transposeBypass ? 400 : 600
                     }}
-                    title={transpose === 0 ? "Transpose bypass (inactive - no transpose set)" : (transposeBypass ? "Resume transpose" : "Bypass transpose (temporary disable)")}
+                    title={transposeBypass ? "Resume transpose" : "Bypass transpose (temporary disable)"}
                   >
                     {transposeBypass ? 'TR OFF' : 'TR ON'}
                   </button>
                 )}
                 
-                {/* Play in C - Transpose to C (capo analogy) - Toggleable */}
+                {/* Play in C - Transpose to C (capo analogy) */}
                 {baseKey !== 'C' && skillLevel === "EXPERT" && (
-                  <button
+                  <button 
                     onClick={() => {
+                      // Calculate transpose needed to reach C from current key
                       const currentPc = NAME_TO_PC[baseKey] || 0;
                       const transposeAmount = currentPc === 0 ? 0 : (12 - currentPc) % 12;
-
-                      // ✅ Toggle: if already transposed to C, turn it off
-                      if (transpose === transposeAmount && !transposeBypass) {
-                        setTranspose(0);
-                        setTransposeBypass(false);
-                      } else {
-                        // Engage transpose to C
-                        setTranspose(transposeAmount);
-                        setTransposeBypass(false);
-                      }
+                      setTranspose(transposeAmount);
+                      setTransposeBypass(false); // Engage transpose
                     }}
                     style={{
-                      padding:'6px 10px',
-                      border: (transpose === ((NAME_TO_PC[baseKey] || 0) === 0 ? 0 : (12 - (NAME_TO_PC[baseKey] || 0)) % 12) && !transposeBypass)
-                        ? '2px solid #60A5FA'  // Active: thicker border
-                        : '1px solid #60A5FA',  // Inactive: thin border
-                      borderRadius:8,
-                      background: (transpose === ((NAME_TO_PC[baseKey] || 0) === 0 ? 0 : (12 - (NAME_TO_PC[baseKey] || 0)) % 12) && !transposeBypass)
-                        ? '#1e3a5f'  // Active: darker blue background
-                        : '#111',    // Inactive: dark background
-                      color:'#60A5FA',
-                      cursor:'pointer',
-                      fontSize:11,
-                      opacity: (transpose === ((NAME_TO_PC[baseKey] || 0) === 0 ? 0 : (12 - (NAME_TO_PC[baseKey] || 0)) % 12) && !transposeBypass) ? 1 : 0.7
+                      padding:'6px 10px', 
+                      border:'1px solid #60A5FA', 
+                      borderRadius:8, 
+                      background:'#111', 
+                      color:'#60A5FA', 
+                      cursor:'pointer', 
+                      fontSize:11
                     }}
-                    title={`Transpose to C (like a capo on fret ${NAME_TO_PC[baseKey] || 0}) - Click to toggle`}
+                    title={`Transpose to C (like a capo on fret ${NAME_TO_PC[baseKey] || 0})`}
                   >
                     🎹 Play in C
                   </button>
