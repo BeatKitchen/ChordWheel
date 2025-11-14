@@ -6,11 +6,18 @@ Enables users to share songs via URL (e.g., `https://beatkitchen.io/harmony?song
 ## What You Need to Do
 Add ONE script tag to the beatkitchen.io/harmony page (wherever the iframe is embedded).
 
-## Step 1: Locate the Page
+## Step 1: Add MIDI Permission to iframe
 Find the HTML file that contains the Harmony Wheel iframe. It probably looks like:
 ```html
 <iframe src="https://chord-wheel-plum.vercel.app/" ...></iframe>
 ```
+
+**CRITICAL**: Add `allow="midi"` to the iframe tag to enable MIDI output:
+```html
+<iframe src="https://chord-wheel-plum.vercel.app/" allow="midi" ...></iframe>
+```
+
+Without this, users won't be able to send MIDI from the Harmony Wheel to their DAWs (Logic, Ableton, etc.).
 
 ## Step 2: Add the Script
 Add this script **BEFORE** the iframe tag:
@@ -70,9 +77,10 @@ Add this script **BEFORE** the iframe tag:
     });
   </script>
 
-  <!-- Your existing iframe -->
+  <!-- Your existing iframe - MUST include allow="midi" for MIDI output to work -->
   <iframe
     src="https://chord-wheel-plum.vercel.app/"
+    allow="midi"
     width="100%"
     height="800"
     frameborder="0"
@@ -88,6 +96,8 @@ Add this script **BEFORE** the iframe tag:
 4. The song should load automatically!
 
 ## Troubleshooting
+
+### Song Sharing Not Working
 Open browser console (F12) and look for:
 - ✅ `📤 Asking parent for URL parameters...` (from iframe)
 - ✅ `📨 Received message from iframe` (from parent page)
@@ -95,6 +105,15 @@ Open browser console (F12) and look for:
 - ✅ `🎵 Parent has song parameter` (from iframe)
 
 If you don't see these messages, the script might not be in the right place.
+
+### MIDI Output Not Working
+If users can't send MIDI to their DAWs:
+1. **Check the iframe has `allow="midi"`** - This is CRITICAL!
+2. Open browser console and look for MIDI errors
+3. Make sure the user has:
+   - Selected their MIDI output device from the dropdown (e.g., "IAC Driver Bus 1")
+   - Enabled audio (speaker icon on)
+   - MIDI input configured in their DAW (Logic, Ableton, etc.)
 
 ## Reverting
 To revert, simply remove the `<script>` tag. The app will continue to work normally, but shared links won't load songs.

@@ -4,6 +4,9 @@
  * This script enables the iframe to receive URL parameters from the parent page.
  * Add this to the beatkitchen.io/harmony page where the iframe is embedded.
  *
+ * CRITICAL: The iframe MUST have allow="midi" attribute for MIDI output to work!
+ * Example: <iframe src="..." allow="midi"></iframe>
+ *
  * Usage:
  * <script src="iframe-parent-script.js"></script>
  * OR just paste this code directly into a <script> tag on the page.

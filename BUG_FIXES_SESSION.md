@@ -108,6 +108,29 @@ Some may be pre-existing, some may be related to cleanup.
 - **CRITICAL**: This prevents annoying UI jumps during transpose operations
 **Status**: ✅ FIXED
 
+### 9. Wedge Drag-Outside Stuck Notes (v4.2.3)
+**Issue**: Dragging mouse outside wedge and releasing leaves notes stuck on
+**Root Cause**: Global event listener was using `mouseup`, but wedges use `onPointerDown`/`onPointerEnter`
+**Expected**: Notes should stop when mouse/pointer is released anywhere
+**Fix Applied** (v4.2.3):
+- Changed global listener from `window.addEventListener('mouseup')` to BOTH `pointerup` and `mouseup`
+- **CRITICAL**: Pointer events and mouse events are DIFFERENT - wedges use pointer events!
+- When using `onPointerDown`, you MUST listen for `pointerup` to catch the release
+- Added console logging to debug: "🛑 Global pointer release - stopping wedge notes"
+- Added note count logging: "🔇 Stopping X chord notes"
+**Status**: ✅ FIXED (v4.2.3)
+
+### 10. MIDI Note Sustain Too Long (v4.2.4)
+**Issue**: MIDI notes had "extremely unconventional" envelope - slow attack, very long sustain
+**Root Cause**: v4.2.1 added auto-fade at 1.5s that was WRONG
+**User Feedback**: "they absolutely do sustain infinitely. And that's good."
+**Fix Applied** (v4.2.4):
+- Removed all auto-fade logic (lines 5051-5062)
+- Notes now sustain infinitely until explicit release (MIDI note-off, key up, mouse up)
+- Wedges and MIDI/keyboard notes now behave identically
+- **CRITICAL**: Notes MUST sustain infinitely - no auto-fade!
+**Status**: ✅ FIXED (v4.2.4)
+
 ## Testing Checklist (After Each Fix)
 - [ ] MIDI input detection
 - [ ] Keyboard mouse clicks

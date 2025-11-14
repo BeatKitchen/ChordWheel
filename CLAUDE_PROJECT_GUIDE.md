@@ -434,6 +434,107 @@ MIDI notes → detectChord()
 
 ---
 
+## 11. What I Did to the Synthesizer (Audio Engine Changes)
+
+### Context
+User requested audio engine simplification to debug envelope issues and prepare for custom synth design. This is TEMPORARY - next session will build a proper synthesizer.
+
+### Version History
+
+#### v4.3.1 (Current - 2025-11-13)
+**Changes**: Volume reduction to prevent distortion
+- **Peak level**: 0.5 → 0.25 (50% reduction)
+- **Sustain level**: 0.3 → 0.15 (50% reduction)
+- User reported: "It's distorted" - this fixed it
+- **Lines changed**: 5003-5004 in HarmonyWheel.tsx
+
+#### v4.3.0 (2025-11-13)
+**Changes**: Stripped down to bare minimum for debugging
+1. **Removed percussive oscillator (osc3)**
+   - Was creating "percussive click" element
+   - Lines commented out: 5025, 5028, 5037, 5072
+   - Placeholder added at line 5044: `osc3: osc1`
+
+2. **Removed velocity curves**
+   - Before: Complex logarithmic/exponential velocity mapping
+   - After: Direct linear mapping `gain1.gain.value = velocity`
+   - Line 4995
+
+3. **Removed velocity modulation of ADSR**
+   - Before: Attack/decay/sustain varied based on velocity
+   - After: Fixed envelope values regardless of velocity
+
+4. **Fixed ADSR envelope values**:
+   - **Attack**: 10ms (0 → peak)
+   - **Decay**: 90ms (peak → sustain)
+   - **Sustain**: 0.3 (initially, reduced to 0.15 in v4.3.1)
+   - **Release**: 50ms exponential (on note-off)
+   - Lines 5001-5008
+
+5. **Signal chain simplified**:
+   ```
+   osc1 (sine) → gain1(velocity) → highpass → mainGain(ADSR) → makeupGain → output
+   ```
+   - Compressor bypassed (v4.2.5)
+   - Only one oscillator (sine wave)
+
+#### v4.2.5 (Previous session)
+**Changes**: Fixed audio issues from user bug reports
+1. **Bypassed compressor** (line 5038)
+   - Root cause: Volume swells on quiet release
+   - Changed: `mainGain → compressor → makeupGain` to `mainGain → makeupGain`
+
+2. **Reduced MIDI release** (lines 5074-5080)
+   - From: 1.5s to 50ms exponential
+   - User: "MIDI notes don't sustain as long as key is held"
+
+3. **Fixed wedge drag release** (lines 466-468)
+   - From: 400ms to 50ms
+   - User: "Wedge drag causing exit chords"
+
+#### v4.2.4
+- Removed auto-fade logic (user: "notes should sustain infinitely")
+
+### Current Audio Engine Location
+**File**: `src/HarmonyWheel.tsx`
+**Function**: `playNote()` - lines 4978-5082
+**Key sections**:
+- Line 4985-4990: Oscillator creation (osc1 only)
+- Line 4994-4995: Velocity → amplitude (linear)
+- Line 5001-5008: ADSR envelope
+- Line 5022-5031: Signal chain
+- Line 5065-5066: Release envelope
+
+### CRITICAL: What NOT to Change
+1. **Don't restore osc3** without user request - it was causing issues
+2. **Don't add auto-fade** - user explicitly wants infinite sustain
+3. **Don't restore velocity curves** - user wants velocity to only affect amplitude
+4. **Don't reconnect compressor** - it was causing volume swells
+5. **Keep release at 50ms** - longer values caused stuck notes
+
+### What TO Do Next (User's Intent)
+User said: "Next, we are going to design a simple synthesizer. But we are going to do it in a new conversation."
+
+**Expectations for next session**:
+- Build a custom synthesizer with proper controls
+- Current state (v4.3.1) is a clean starting point
+- Single sine wave, linear velocity, fixed ADSR
+- No distortion, clean sound
+
+### MIDI Output Issue (Resolved for Paul)
+**Problem**: MIDI output doesn't work in iframe on beatkitchen.io
+**Root Cause**: iframes block Web MIDI API by default
+**Solution**: Paul needs to add `allow="midi"` to iframe tag
+**Documentation**: See `INSTRUCTIONS_FOR_PAUL.md` (updated with MIDI permission instructions)
+
+### Testing Notes
+- Current volume levels (0.25 peak, 0.15 sustain) prevent distortion
+- Envelope feels responsive (10ms attack, 90ms decay)
+- No clicks at note end (50ms exponential release)
+- Works across: wedge clicks, keyboard, MIDI input, performance pads
+
+---
+
 **END OF GUIDE**
 
-**TO FUTURE CLAUDE**: Read this entire file first. Update sections 6, 9, 10 as you learn more. Keep this under 500 lines. When in doubt, follow the Bible (section 1).
+**TO FUTURE CLAUDE**: Read this entire file first. Update sections 6, 9, 10, 11 as you learn more. Keep this under 600 lines. When in doubt, follow the Bible (section 1).

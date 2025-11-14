@@ -1,13 +1,56 @@
 /*
- * HarmonyWheel.tsx — v4.1.9 🎯 FIXED: FUNCTIONAL DIMS ALWAYS USE SHARP NAMES
+ * HarmonyWheel.tsx — v4.3.1 🔊 SIMPLIFIED AUDIO ENGINE - Volume reduced
  *
  *
- * 🔧 v4.1.9 CHANGES (CRITICAL):
- * - FIXED: Functional diminished chords now ALWAYS use sharp names (C#, F#, G#)
- * - Theory.ts v4.1.9: Relative PC 1/6/8 → SHARP_NAMES[pc] (not pcNameForKey)
- * - Reason: Named after THIRD of dominant - major thirds are always sharp
- * - Result: Key F + C#dim7 → "C#dim7" (not "Dbdim7") ✓
- * - Examples: A7 third=C#, D7 third=F#, E7 third=G# (in ALL keys)
+ * 🔧 v4.3.1 CHANGES:
+ * - Reduced peak level from 0.5 → 0.25 (prevent distortion)
+ * - Reduced sustain level from 0.3 → 0.15 (prevent distortion)
+ *
+ * 🔧 v4.3.0 CHANGES (TEMPORARY SIMPLIFICATION):
+ * - Removed percussive oscillator (osc3) - just single sine wave
+ * - Removed velocity curves - velocity only affects amplitude (linear)
+ * - Removed velocity modulation of ADSR envelope
+ * - Fixed envelope: A=10ms, D=90ms, S=0.3, R=50ms
+ * - Signal chain: osc1 → gain1(velocity) → highpass → mainGain(ADSR) → output
+ *
+ * 🔧 v4.2.5 CHANGES:
+ * - Fixed: MIDI release reduced from 1.5s to 50ms (exponential)
+ * - Fixed: Wedge drag release reduced from 400ms to 50ms
+ * - Fixed: Compressor BYPASSED - was causing volume swells on quiet release
+ * - Fixed: Removed clicks at end of notes (simplified release envelope)
+ * - CRITICAL: All releases now 50ms exponential - quick and click-free
+ *
+ * 🔧 v4.2.4 CHANGES:
+ * - Fixed: Removed auto-fade logic that was causing long sustain on MIDI notes
+ * - CRITICAL: Notes now sustain infinitely until explicit release (MIDI note-off, key up, mouse up)
+ * - v4.2.1 auto-fade was WRONG - user wants infinite sustain: "they absolutely do sustain infinitely. And that's good."
+ *
+ * 🔧 v4.2.3 CHANGES:
+ * - Fixed: Global event listener now uses pointerup (not just mouseup)
+ * - CRITICAL: Wedges use onPointerDown, so global handler MUST listen for pointerup
+ * - Notes no longer stick when dragging outside wedge and releasing
+ *
+ * 🔧 v4.2.2 CHANGES:
+ * - Audio: Added 10-voice polyphony limit with oldest-voice-stealing (prevents clicks)
+ * - Audio: Wedge drag-release now uses exponential envelope (no more linear clicks)
+ * - Fixed: Dragging mouse outside wedge now properly releases notes
+ *
+ * 🔧 v4.2.1 CHANGES:
+ * - Audio: MIDI/keyboard now use same envelope as wedge clicks (auto-fade at 1.5s)
+ * - Audio: All notes get clean auto-fade regardless of input method
+ * - Removed sustain-indefinitely behavior from MIDI notes
+ *
+ * 🔧 v4.2.0 CHANGES:
+ * - FIXED: MIDI triple-tap now works (was broken by debounce delay)
+ * - Audio: Removed detuned oscillator (osc2) - testing phase cancellation issues
+ * - Audio: Velocity curve steeper (^2.0 instead of ^1.5) - harder to reach max volume
+ * - Audio: Percussive element at 1 octave, separate fast-decay envelope
+ * - Audio: Extended release with slow exponential tail for audible decay
+ * - Audio: Attack shortened to 7ms for clarity
+ * - Audio: Compressor threshold raised to -3dB (nearly out of mix)
+ * - Audio: Velocity safety factor (0.85x when vel>0.9) prevents 4-note blowout
+ * - MIDI: detectV4() now called immediately (not debounced) for triple-tap timing
+ * - MIDI: Step recording debounced separately to prevent triad→tetrad double-entry
  *
  * 🔧 v4.1.8 CHANGES:
  * - Diminished chord naming now FULLY functional (transposes correctly to all keys)
@@ -172,7 +215,7 @@ import {
   parseSongMetadata
 } from "./lib/songManager";
 
-const HW_VERSION = 'v4.1.9';
+const HW_VERSION = 'v4.3.1';
 
 // v4.0.24: Fallback constants for old code (not used by new engine)
 const EPS_DEG = 0.1;
@@ -384,8 +427,9 @@ useEffect(() => {
   const bonusRecordDebounceRef = useRef<number | null>(null);
   const latestBonusChordNameRef = useRef<string>(""); // Track latest chord name for debounced recording
 
-  // ✅ MIDI chord detection debounce - prevent double entry when playing tetrads
-  const midiDetectionDebounceRef = useRef<number | null>(null);
+  // ✅ MIDI step recording debounce - prevent double entry when playing tetrads
+  const midiStepRecordDebounceRef = useRef<number | null>(null);
+  const lastStepRecordedChordRef = useRef<string | null>(null);
   
   /* ---------- Space Lock (v3.11.0) ---------- */
   const [spaceLocked, setSpaceLocked] = useState(false);
@@ -419,7 +463,7 @@ useEffect(() => {
       }
     }
     
-    // Global mouseup to catch releases outside wedges (for drag)
+    // Global pointerup/mouseup to catch releases outside wedges (for drag)
     const handleGlobalMouseUp = () => {
       if (wedgeHeldRef.current) {
         console.log('ðŸ›‘ Global mouseup - releasing wedge');
@@ -427,26 +471,32 @@ useEffect(() => {
         currentHeldFnRef.current = null;
         lastPlayedWith7thRef.current = null;
         
-        // Stop all active chord notes
+        // Stop all active chord notes with exponential release (no clicks)
         const ctx = audioContextRef.current;
         if (ctx) {
           const now = ctx.currentTime;
-          const releaseTime = 0.4;
+          console.log('🔇 Stopping', activeChordNoteIdsRef.current.size, 'chord notes');
           activeChordNoteIdsRef.current.forEach(noteId => {
             const nodes = activeNotesRef.current.get(noteId);
             if (nodes) {
               nodes.gain.gain.cancelScheduledValues(now);
               nodes.gain.gain.setValueAtTime(nodes.gain.gain.value, now);
-              nodes.gain.gain.linearRampToValueAtTime(0, now + releaseTime);
-              setTimeout(() => stopNoteById(noteId), (releaseTime * 1000) + 50);
+              // ✅ v4.2.5: Quick exponential release (50ms) to match drag handler
+              nodes.gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+              setTimeout(() => stopNoteById(noteId), 100);
             }
           });
         }
       }
     };
     
+    // Listen for BOTH pointerup (touch/stylus) and mouseup (mouse)
+    window.addEventListener('pointerup', handleGlobalMouseUp);
     window.addEventListener('mouseup', handleGlobalMouseUp);
-    return () => window.removeEventListener('mouseup', handleGlobalMouseUp);
+    return () => {
+      window.removeEventListener('pointerup', handleGlobalMouseUp);
+      window.removeEventListener('mouseup', handleGlobalMouseUp);
+    };
   }, [audioEnabled]); // Run once on mount
   const audioContextRef = useRef<AudioContext | null>(null);
   const activeNotesRef = useRef<Map<string, {osc1: OscillatorNode, osc2: OscillatorNode, osc3: OscillatorNode, gain: GainNode}>>(new Map());
@@ -783,15 +833,9 @@ useEffect(() => {
           }
         }
 
-        // ✅ Debounce chord detection to prevent double-entry (e.g., triad + tetrad)
-        // Clear any pending detection and schedule a new one
-        if (midiDetectionDebounceRef.current !== null) {
-          clearTimeout(midiDetectionDebounceRef.current);
-        }
-        midiDetectionDebounceRef.current = window.setTimeout(() => {
-          detectV4();
-          midiDetectionDebounceRef.current = null;
-        }, 100); // Wait 100ms for chord to stabilize
+        // ✅ IMMEDIATE detection for triple-tap to work properly
+        // Debouncing was breaking triple-tap timing (100ms delay per tap exceeded MAX_GAP_MS)
+        detectV4();
       } else if (type===0x80 || (type===0x90 && d2===0)) {
         lastMidiEventRef.current = "off";
         if (d1<=36) leftHeld.current.delete(d1);
@@ -1317,7 +1361,7 @@ useEffect(() => {
   };
 
   const parseAndLoadSequence = (textOverride?: string)=>{
-    const APP_VERSION = "v4.1.9-functional-dims-always-sharp";
+    const APP_VERSION = "v4.3.1-simplified";
     // ✅ Use textOverride if provided (for URL loading), otherwise use inputText state
     const textToParse = textOverride !== undefined ? textOverride : inputText;
     // console.log('=== PARSE AND LOAD START ===');
@@ -3964,17 +4008,30 @@ useEffect(() => {
       setBonusFunction(null);
     }
     
-    // Step recording
+    // Step recording (debounced to prevent double-entry on triad→tetrad)
     if (stepRecordRef.current && result.chordName) {
-      setInputText(prev => {
-        const rhythmIndex = prev.indexOf("@RHYTHM");
-        if (rhythmIndex !== -1) {
-          const beforeRhythm = prev.substring(0, rhythmIndex).trimEnd();
-          const rhythmSection = prev.substring(rhythmIndex);
-          return beforeRhythm + ", " + result.chordName + "\n\n" + rhythmSection;
+      // Clear pending step record
+      if (midiStepRecordDebounceRef.current !== null) {
+        clearTimeout(midiStepRecordDebounceRef.current);
+      }
+
+      // Schedule step record after 100ms (allows tetrad to override triad)
+      midiStepRecordDebounceRef.current = window.setTimeout(() => {
+        // Only add if chord name changed (prevents double-entry)
+        if (lastStepRecordedChordRef.current !== result.chordName) {
+          setInputText(prev => {
+            const rhythmIndex = prev.indexOf("@RHYTHM");
+            if (rhythmIndex !== -1) {
+              const beforeRhythm = prev.substring(0, rhythmIndex).trimEnd();
+              const rhythmSection = prev.substring(rhythmIndex);
+              return beforeRhythm + ", " + result.chordName + "\n\n" + rhythmSection;
+            }
+            return prev ? `${prev}, ${result.chordName}` : result.chordName;
+          });
+          lastStepRecordedChordRef.current = result.chordName;
         }
-        return prev ? `${prev}, ${result.chordName}` : result.chordName;
-      });
+        midiStepRecordDebounceRef.current = null;
+      }, 100);
     }
     // MIDI latch
     latchedChordRef.current = { fn: result.function, label: result.chordName };
@@ -4906,7 +4963,18 @@ useEffect(() => {
       console.log('⏺š ï¸ Context suspended, attempting resume...');
       ctx.resume();
     }
-    
+
+    // ✅ v4.2.2: Polyphony limiting - steal oldest voice if at limit
+    const MAX_POLYPHONY = 10;
+    if (activeNotesRef.current.size >= MAX_POLYPHONY) {
+      // Get oldest note (first in the Map)
+      const oldestNoteId = activeNotesRef.current.keys().next().value;
+      if (oldestNoteId) {
+        console.log(`Polyphony limit reached (${MAX_POLYPHONY}), stealing oldest voice:`, oldestNoteId);
+        stopNoteById(oldestNoteId); // This will gracefully release with exponential envelope
+      }
+    }
+
     // Generate unique ID for this note instance (allows same MIDI note multiple times)
     const noteId = `${midiNote}-${Date.now()}-${Math.random()}`;
     console.log('ðŸ†” Generated note ID:', noteId);
@@ -4915,34 +4983,33 @@ useEffect(() => {
     const now = ctx.currentTime;
     console.log('ðŸ“Š Frequency:', freq.toFixed(2), 'Hz, Time:', now.toFixed(3));
     
-    // Simplified Rhodes - 2 oscillators for cleaner sound
+    // ✅ v4.2.0: Single oscillator (removed detuned osc2 - testing phase issues)
     console.log('🎹 Creating oscillators...');
     const osc1 = ctx.createOscillator();
     osc1.type = 'sine';
     osc1.frequency.value = freq;
-    
-    const osc2 = ctx.createOscillator();
-    osc2.type = 'sine';
-    osc2.frequency.value = freq * 1.003;
-    
-    // ✅ Audio Engine Rebalance - Exponential velocity curve for natural dynamics
-    const velocityCurve = Math.pow(velocity, 1.5); // Exponential response
 
-    // ✅ Reduced oscillator gains for cleaner headroom
+    // const osc2 = ctx.createOscillator(); // ✅ COMMENTED OUT - testing phase cancellation
+    // osc2.type = 'sine';
+    // osc2.frequency.value = freq * 1.003;
+
+    // ✅ v4.3.0: SIMPLIFIED - just basic sine wave, velocity only affects amplitude
+    // No percussive element, no velocity curves, no ADSR modulation
     const gain1 = ctx.createGain();
-    const gain2 = ctx.createGain();
-    gain1.gain.value = 0.35 * velocityCurve; // Reduced from 0.5
-    gain2.gain.value = 0.25 * velocityCurve; // Reduced from 0.4 (detuned osc quieter)
-    
+    gain1.gain.value = velocity; // Direct linear velocity → amplitude mapping
+
     const mainGain = ctx.createGain();
     mainGain.gain.value = 0;
-    // ✅ Audio Engine: Conservative attack (10ms) to reduce transient click, reduced chord safety for headroom
-    const mobileBoost = !isDesktop ? 2.2 : 1.8; // Slight increase to compensate for reduced osc gains
-    const chordSafety = 0.6; // Reduced from 0.75 to prevent summing distortion when notes combine
+    const mobileBoost = !isDesktop ? 2.2 : 1.8;
+
+    // Simple fixed envelope - NO velocity modulation of ADSR
+    // Attack: 10ms, Decay: 90ms, Sustain: 0.15, Release: 50ms (on note-off)
+    const peakLevel = 0.25; // Fixed peak (reduced from 0.5 to prevent distortion)
+    const sustainLevel = 0.15; // Fixed sustain (reduced from 0.3 to prevent distortion)
+
     mainGain.gain.setValueAtTime(0, now);
-    mainGain.gain.linearRampToValueAtTime(0.5 * velocityCurve * chordSafety, now + 0.010); // Reduced peak from 0.6 to 0.5
-    mainGain.gain.linearRampToValueAtTime(0.38 * velocityCurve * chordSafety, now + 0.08);
-    mainGain.gain.linearRampToValueAtTime(0.32 * velocityCurve * chordSafety, now + 0.3);
+    mainGain.gain.linearRampToValueAtTime(peakLevel, now + 0.010); // 10ms attack
+    mainGain.gain.linearRampToValueAtTime(sustainLevel, now + 0.100); // 90ms decay
     
     // ✅ Removed lowpass filter - not needed for sine waves
     // Highpass filter to roll off low end rumble
@@ -4951,61 +5018,46 @@ useEffect(() => {
     highpass.frequency.value = 200; // Roll off below 200Hz
     highpass.Q.value = 0.7; // Gentle rolloff
 
-    // ✅ Compressor as failsafe - only catches peaks
+    // ✅ Compressor nearly out of the mix - only emergency failsafe
     const compressor = ctx.createDynamicsCompressor();
-    compressor.threshold.value = -6; // Only catch peaks (was -20)
+    compressor.threshold.value = -3; // Nearly out of the mix (was -6)
     compressor.knee.value = 30; // Soft knee maintained
     compressor.ratio.value = 6; // Gentler ratio (was 8)
     compressor.attack.value = 0.003; // Fast attack to catch transients
     compressor.release.value = 0.25; // Longer release
     
-    // Makeup gain
+    // Makeup gain (reduced since compressor bypassed)
     const makeupGain = ctx.createGain();
-    makeupGain.gain.value = mobileBoost * 1.0;
+    makeupGain.gain.value = mobileBoost * 0.8; // Reduced from 1.0
     
     console.log('ðŸ”— Connecting audio graph...');
     osc1.connect(gain1);
-    osc2.connect(gain2);
+    // osc2.connect(gain2); // ✅ COMMENTED OUT with osc2
+    // osc3.connect(gain3); // ✅ v4.3.0: Percussive element removed
     gain1.connect(highpass); // ✅ Direct to highpass (lowpass removed)
-    gain2.connect(highpass);
+    // gain2.connect(highpass); // ✅ COMMENTED OUT with osc2
+    // gain3.connect(highpass); // ✅ v4.3.0: Percussive element removed
     highpass.connect(mainGain);
-    mainGain.connect(compressor);
-    compressor.connect(makeupGain);
+    mainGain.connect(makeupGain); // ✅ v4.2.5: Bypass compressor - direct to output
     makeupGain.connect(ctx.destination);
     
     console.log('▶ï¸ Starting oscillators...');
     try {
       osc1.start(now);
-      osc2.start(now);
+      // osc2.start(now); // ✅ COMMENTED OUT with osc2
+      // osc3.start(now); // ✅ v4.3.0: Percussive element removed
       console.log('✅ Oscillators started successfully!');
     } catch(err) {
       console.error('⏺Œ Error starting oscillators:', err);
       return;
     }
     
-    activeNotesRef.current.set(noteId, {osc1, osc2, osc3: osc1, gain: mainGain});
+    activeNotesRef.current.set(noteId, {osc1, osc2: osc1, osc3: osc1, gain: mainGain}); // Placeholders for compatibility
     console.log('ðŸ’¾ Stored note. Active count:', activeNotesRef.current.size);
     
-    // Shorter sustain times
-    if (isChordNote) {
-      // Chord notes: check if wedge is being held
-      if (wedgeHeldRef.current) {
-        // Don't auto-fade - will be stopped on mouse up
-        console.log('🎹 Wedge held - no auto-fade');
-      } else {
-        // Normal fade after 1.5 seconds
-        const fadeStart = now + 1.5;
-        mainGain.gain.linearRampToValueAtTime(0, fadeStart + 0.15);
-        setTimeout(() => stopNoteById(noteId), 1700);
-      }
-    } else {
-      // MIDI keyboard notes: sustain indefinitely until note-off
-      // Attack -> Decay -> Sustain (hold)
-      const decayTime = now + 0.05; // Quick decay
-      mainGain.gain.linearRampToValueAtTime(0.7 * velocityCurve, decayTime); // Drop to sustain level (using velocity curve)
-      // No auto-fade! Will be stopped by MIDI note-off
-      console.log('🎹 MIDI note - sustaining until note-off');
-    }
+    // ✅ v4.2.4: Notes sustain infinitely - only stop on explicit note-off (MIDI, key up, mouse up)
+    // No auto-fade! User confirmed: "they absolutely do sustain infinitely. And that's good."
+    console.log('🎵 Note sustaining - will stop on explicit release only');
     
     console.log('✅ playNote COMPLETE, returning ID:', noteId);
     return noteId; // Return ID so we can stop this specific instance
@@ -5016,20 +5068,22 @@ useEffect(() => {
     if (nodes && audioContextRef.current) {
       try {
         const now = audioContextRef.current.currentTime;
+        const currentGain = nodes.gain.gain.value;
+
         nodes.gain.gain.cancelScheduledValues(now);
-        nodes.gain.gain.setValueAtTime(nodes.gain.gain.value, now);
-        // ✅ Exponential ramp for smoother release (prevents clicks)
-        nodes.gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15); // Faster but smoother exponential release
-        nodes.gain.gain.linearRampToValueAtTime(0, now + 0.16); // Final drop to zero
+        nodes.gain.gain.setValueAtTime(currentGain, now);
+
+        // ✅ v4.2.5: Quick exponential release (50ms) - prevents clicks
+        nodes.gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
 
         setTimeout(() => {
           try {
             nodes.osc1.stop();
-            nodes.osc2.stop();
-            nodes.osc3.stop();
+            // nodes.osc2.stop(); // ✅ COMMENTED OUT with osc2
+            // nodes.osc3.stop(); // ✅ v4.3.0: Percussive element removed
           } catch(e) { /* already stopped */ }
           activeNotesRef.current.delete(noteId);
-        }, 180); // Updated timeout to match release
+        }, 100); // Cleanup after 100ms
       } catch(e) { /* ignore */ }
     }
   };
@@ -8331,4 +8385,4 @@ useEffect(() => {
 }
 
 
-// EOF - HarmonyWheel.tsx v4.1.9
+// EOF - HarmonyWheel.tsx v4.3.1
