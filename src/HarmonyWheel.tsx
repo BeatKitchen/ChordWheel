@@ -237,7 +237,7 @@ import {
 } from "./audio/Synthesizer";
 import { SynthParams, DEFAULT_SYNTH_PARAMS } from "./audio/types";
 
-const HW_VERSION = 'v4.5.0';
+const HW_VERSION = 'v4.5.1';
 
 // v4.0.24: Fallback constants for old code (not used by new engine)
 const EPS_DEG = 0.1;
@@ -4808,7 +4808,9 @@ useEffect(() => {
 
     setActiveWithTrail(fn, chordLabel);
 
-    if (audioEnabledRef.current) {
+    // ✅ v4.5.0: Don't play chord if rhythm is enabled (rhythm loop will handle playback)
+    // Otherwise we get double-triggering: immediate chord + rhythm pattern
+    if (audioEnabledRef.current && !rhythmEnabledRef.current) {
       playChordWithVoiceLeading(pcs);
     }
     
@@ -7839,8 +7841,8 @@ useEffect(() => {
                         // Use flash state for momentary highlight (500ms)
                         const isFlashing = performanceFlashKey === key;
                         return (
-                          <div 
-                            key={key} 
+                          <div
+                            key={key}
                             onPointerDown={(e) => {
                               e.stopPropagation();
                               e.preventDefault();
@@ -7851,10 +7853,10 @@ useEffect(() => {
                               }
                               // Flash this key
                               setPerformanceFlashKey(key);
-                              
-                              // Play the chord
+
+                              // Play the chord (previewFn now handles rhythm check internally)
                               previewFn(fn as Fn, with7th);
-                              
+
                               // ✅ Explicitly start rhythm for iOS/mobile
                               if (rhythmEnabledRef.current && latchedAbsNotesRef.current.length > 0) {
                                 setTimeout(() => {
@@ -7869,12 +7871,15 @@ useEffect(() => {
                               e.preventDefault();
                               // Stop flashing
                               setPerformanceFlashKey('');
-                              // Clear piano highlights
+                              // ✅ Stop rhythm loop and clear notes (like keyboard keyup)
+                              stopRhythmLoop();
                               setLatchedAbsNotes([]);
                             }}
                             onPointerLeave={(e) => {
                               // Also clear if pointer leaves button while held
                               setPerformanceFlashKey('');
+                              // ✅ Stop rhythm loop and clear notes
+                              stopRhythmLoop();
                               setLatchedAbsNotes([]);
                             }}
                             style={{
