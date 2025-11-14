@@ -151,7 +151,8 @@ function evaluateHomeTransitions(
   const hasC7 = (pcsRel.has(0) && pcsRel.has(4) && pcsRel.has(7) && pcsRel.has(10));
   
   // Edim/Edim7/E°7: [4,7,10] + optional [1]
-  const hasEdim = (pcsRel.has(4) && pcsRel.has(7) && pcsRel.has(10) && detected.quality === "dim" || detected.quality === "dim7" || detected.quality === "halfdim7");
+  // ✅ v4.5.2: Fixed operator precedence - quality check must be grouped with pitch class check
+  const hasEdim = (pcsRel.has(4) && pcsRel.has(7) && pcsRel.has(10) && (detected.quality === "dim" || detected.quality === "dim7" || detected.quality === "halfdim7"));
   
   if (hasGm || hasC7 || hasEdim) {
     return { action: "enter", newSpace: "SUB" };
