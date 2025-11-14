@@ -7562,7 +7562,7 @@ useEffect(() => {
                           }}
                           onMouseEnter={(e) => e.currentTarget.style.background = '#374151'}
                           onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
-                            ðŸ“‚ Import from file...
+                            📂 Import from file...
                             <input 
                               type="file" 
                               accept=".txt,.md" 
@@ -7589,7 +7589,7 @@ useEffect(() => {
                             onMouseEnter={(e) => e.currentTarget.style.background = '#374151'}
                             onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                           >
-                            ðŸ’¾ Export to file...
+                            💾 Export to file...
                           </button>
                           
                           {/* Share URL */}
@@ -7609,7 +7609,7 @@ useEffect(() => {
                             onMouseEnter={(e) => e.currentTarget.style.background = '#374151'}
                             onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                           >
-                            ðŸ”— Copy share link
+                            🔗 Copy share link
                           </button>
                           
                           {shareURL && (
