@@ -1,6 +1,19 @@
 /*
- * HarmonyWheel.tsx — v4.3.1 🔊 SIMPLIFIED AUDIO ENGINE - Volume reduced
+ * HarmonyWheel.tsx — v4.4.0 🎹 SYNTHESIZER MODULE EXTRACTION
  *
+ *
+ * 🔧 v4.4.0 CHANGES:
+ * - EXTRACTED audio engine to src/audio/Synthesizer.ts (337 lines)
+ * - Added full synthesizer with 47 parameters:
+ *   - 3 oscillators (wave, gain, tune, pan)
+ *   - VCA ADSR envelope (exponential release)
+ *   - VCF with ADSR + amount control
+ *   - LFO with 13 modulation targets (VCA, VCF, pitch, pan, phase)
+ *   - Master gain control
+ * - Deleted commented osc2/osc3 code (~35 lines cleanup)
+ * - HarmonyWheel.tsx reduced from 8,388 → 8,246 lines (-142 lines)
+ * - Synth parameters parsed from song text (@osc1Wave, @vcaA, etc.)
+ * - Anti-click fixes: exponential release, scheduled osc.stop(), filter bounds
  *
  * 🔧 v4.3.1 CHANGES:
  * - Reduced peak level from 0.5 → 0.25 (prevent distortion)
@@ -206,16 +219,25 @@ import {
 import { BonusDebouncer } from "./lib/overlays";
 import * as preview from "./lib/preview";
 import { defaultSong, demoSongs, DEFAULT_BANNER } from "./data/demoSongs";
-import { 
-  generateShareableURL, 
-  getSongFromURL, 
-  exportSongToFile, 
+import {
+  generateShareableURL,
+  getSongFromURL,
+  exportSongToFile,
   importSongFromFile,
   copyToClipboard,
   parseSongMetadata
 } from "./lib/songManager";
+import {
+  playNoteWithSynth,
+  stopNote as stopNoteWithSynth,
+  stopNoteById as stopNoteByIdWithSynth,
+  stopAllNotes,
+  parseSynthParams,
+  getActiveNoteCount
+} from "./audio/Synthesizer";
+import { SynthParams, DEFAULT_SYNTH_PARAMS } from "./audio/types";
 
-const HW_VERSION = 'v4.3.1';
+const HW_VERSION = 'v4.4.0';
 
 // v4.0.24: Fallback constants for old code (not used by new engine)
 const EPS_DEG = 0.1;
@@ -499,7 +521,7 @@ useEffect(() => {
     };
   }, [audioEnabled]); // Run once on mount
   const audioContextRef = useRef<AudioContext | null>(null);
-  const activeNotesRef = useRef<Map<string, {osc1: OscillatorNode, osc2: OscillatorNode, osc3: OscillatorNode, gain: GainNode}>>(new Map());
+  // ✅ v4.4.0: activeNotesRef no longer needed - managed internally by Synthesizer module
   let noteIdCounter = 0; // For generating unique note IDs
   
   // Voice leading for chord playback
@@ -958,7 +980,11 @@ useEffect(() => {
   const [showSequencerDisplay, setShowSequencerDisplay] = useState(false); // ✅ Keep display visible for 2 min after stop
   const displayTimerRef = useRef<number | null>(null);
   const [tempo, setTempo] = useState(120); // BPM (beats per minute) - ✅ v3.18.4: Changed default from 60 to 120
-  
+
+  // ✅ v4.4.0: Synth parameters (parsed from song text)
+  const [synthParams, setSynthParams] = useState<SynthParams>(DEFAULT_SYNTH_PARAMS);
+  const synthParamsRef = useRef<SynthParams>(DEFAULT_SYNTH_PARAMS);
+
   // ✅ Rhythm patterns for performance mode
   type RhythmAction = { action: 'play' | 'hold' | 'rest'; duration: number };
   const [rhythmPattern1, setRhythmPattern1] = useState<RhythmAction[]>([]);
@@ -1361,7 +1387,7 @@ useEffect(() => {
   };
 
   const parseAndLoadSequence = (textOverride?: string)=>{
-    const APP_VERSION = "v4.3.1-simplified";
+    const APP_VERSION = "v4.4.0-synth";
     // ✅ Use textOverride if provided (for URL loading), otherwise use inputText state
     const textToParse = textOverride !== undefined ? textOverride : inputText;
     // console.log('=== PARSE AND LOAD START ===');
@@ -1384,6 +1410,12 @@ useEffect(() => {
       goHome();
       return;
     }
+
+    // ✅ v4.4.0: Parse synth parameters from song text
+    const parsedSynthParams = parseSynthParams(textToParse);
+    setSynthParams(parsedSynthParams);
+    synthParamsRef.current = parsedSynthParams;
+    console.log('🎹 Parsed synth params:', parsedSynthParams);
 
     // ✅ v4.1.0: Parse @RHYTHM directives from FULL input (not just chord section)
     // Rhythm patterns come AFTER @RHYTHM marker, so we need to search entire text
